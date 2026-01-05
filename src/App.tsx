@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Suspense } from 'react';
 import { appRoutes } from './config/routes';
-// import AuthLayout from '@/layouts/AuthLayout';
+//import AuthLayout from "./pages/AuthLayout";
 // import MainLayout from '@/layouts/MainLayout';
 
 export default function App() {
@@ -13,18 +13,20 @@ export default function App() {
           //   route.layout === 'auth' ? AuthLayout : MainLayout;
 
           const Page = route.element;
-
-          return (
-            <Route
-              key={route.path}
-              path={route.path}
-              element={
-                // <Layout>
-                <Page />
-                // </Layout>
-              }
-            />
-          );
+          // layout auth
+          if (route.layout === "auth") {
+            return (
+              <Route
+                key={route.path}
+                path={route.path}
+                element={
+                  // <Layout>
+                  <Page />
+                  // </Layout>
+                }
+              />
+            );
+          }
         })}
 
         {/* Fallback route */}

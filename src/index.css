@@ -1,1 +1,21 @@
 @import "tailwindcss";
+
+@layer components {
+  .auth-input {
+    @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900
+      placeholder:text-slate-400 outline-none
+      focus:border-sky-300 focus:ring-4 focus:ring-emerald-200/70;
+  }
+
+  /* Nút chính màu CAM FPT */
+  .primary-btn {
+    @apply w-full rounded-xl py-3 font-extrabold text-white
+      bg-orange-500 hover:bg-orange-600
+      disabled:opacity-60 disabled:cursor-not-allowed transition;
+  }
+
+  .social-btn {
+    @apply w-full rounded-xl border border-slate-200 bg-white py-3 font-bold text-slate-800
+      hover:bg-sky-50 transition flex items-center justify-center gap-2;
+  }
+}

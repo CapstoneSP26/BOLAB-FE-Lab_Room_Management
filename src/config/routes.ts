@@ -1,13 +1,13 @@
-import { lazy, type LazyExoticComponent } from 'react';
+import { lazy, type LazyExoticComponent, type ComponentType } from 'react';
 
 export interface AppRoute {
   path: string;
-  element: LazyExoticComponent<React.ComponentType>;
+  element: LazyExoticComponent<ComponentType>;
   isPrivate: boolean;
   layout: 'auth' | 'main';
 }
 
-const LoginPage = lazy(() => import('../pages/LoginPage.tsx'));
+const LoginPage = lazy(() => import("../pages/LoginPage"));
 
 export const appRoutes: AppRoute[] = [
   {
