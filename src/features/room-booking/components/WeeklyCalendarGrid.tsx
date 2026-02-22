@@ -106,6 +106,20 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
   const weekStart = weekDays[0];
   const weekEnd = weekDays[6];
 
+  // Check if time slot is in the past
+  const isPastSlot = (dayIndex: number, timeSlot: string): boolean => {
+    const now = new Date();
+    const slotDate = new Date(weekDays[dayIndex]);
+    const [hours, minutes] = timeSlot.split(':').map(Number);
+    slotDate.setHours(hours, minutes, 0, 0);
+    return slotDate < now;
+  };
+
+  // Check if fixed slot (OldSlot mode) is in the past
+  const isPastFixedSlot = (dayIndex: number, startTime: string): boolean => {
+    return isPastSlot(dayIndex, startTime);
+  };
+
   // Check if time slot has booking
   const hasBooking = (dayIndex: number, timeSlot: string): TimeSlot | null => {
     const date = weekDays[dayIndex].toISOString().split('T')[0];
@@ -164,6 +178,9 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
     // Only allow drag in OutSlot mode
     if (bookingMode === 'OldSlot') return;
     
+    // Don't allow booking in the past
+    if (isPastSlot(dayIndex, timeSlots[timeSlotIndex])) return;
+    
     // Don't start drag if cell already has booking
     if (hasBooking(dayIndex, timeSlots[timeSlotIndex])) return;
 
@@ -189,6 +206,10 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
     if (bookingMode !== 'OldSlot') return;
 
     const date = weekDays[dayIndex].toISOString().split('T')[0];
+    
+    // Get slot start time to check if it's in the past
+    const slot = fixedSlots.find(s => s.slotNumber === slotNumber);
+    if (slot && isPastFixedSlot(dayIndex, slot.startTime)) return; // Don't allow booking past slots
     
     // Check if this slot is already booked
     const existingBooking = existingBookings.find(
@@ -222,10 +243,30 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
 
     const gridRect = gridRef.current.getBoundingClientRect();
     const scrollContainer = gridRef.current.parentElement;
-    const scrollTop = scrollContainer?.scrollTop || 0;
     
-    // Calculate Y position relative to grid
-    const relativeY = e.clientY - gridRect.top + scrollTop - 56; // 56px = header height
+    // Auto-scroll when dragging near edges
+    if (scrollContainer) {
+      const containerRect = scrollContainer.getBoundingClientRect();
+      const scrollThreshold = 80; // Distance from edge to trigger scroll
+      const scrollSpeed = 15; // Pixels to scroll per frame
+      
+      // Check if mouse is near top edge
+      if (e.clientY < containerRect.top + scrollThreshold) {
+        scrollContainer.scrollTop -= scrollSpeed;
+      }
+      // Check if mouse is near bottom edge
+      else if (e.clientY > containerRect.bottom - scrollThreshold) {
+        scrollContainer.scrollTop += scrollSpeed;
+      }
+    }
+    
+    // Get actual header height by finding the day header element (not time column)
+    const dayHeader = gridRef.current.querySelector('[data-day-header]');
+    const headerHeight = dayHeader?.getBoundingClientRect().height || 0;
+    
+    // Calculate Y position relative to grid content (after headers)
+    // gridRect.top already accounts for scroll (can be negative), so just subtract it and header
+    const relativeY = e.clientY - gridRect.top - headerHeight;
     const currentY = Math.max(0, Math.min(relativeY, timeSlots.length * CELL_HEIGHT));
 
     const minY = Math.min(dragState.startY, currentY);
@@ -391,7 +432,7 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
       <div className="flex-1 overflow-auto bg-gradient-to-b from-white to-gray-50">
         <div
           ref={gridRef}
-          className="grid grid-cols-[80px_repeat(7,1fr)] border-l border-t border-gray-200 relative"
+          className="grid grid-cols-[80px_repeat(7,1fr)] border-l border-t border-gray-200 relative select-none"
           style={{ minWidth: '1000px' }}
         >
           {/* Time column header */}
@@ -407,7 +448,8 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
             return (
               <div
                 key={dayIndex}
-                className={`sticky top-0 z-10 border-b-2 border-r border-gray-200 transition-all ${
+                data-day-header
+                className={`sticky top-0 z-50 border-b-2 border-r border-gray-200 transition-all ${
                   isToday 
                     ? 'bg-gradient-to-b from-blue-50 to-blue-100 shadow-sm' 
                     : 'bg-white hover:bg-gray-50 shadow-sm'
@@ -464,22 +506,27 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
                     const booking = hasBooking(dayIndex, time);
                     const inSelection = isInDragSelection(dayIndex, timeSlotIndex);
                     const isDraggingThisColumn = dragState.isActive && dragState.dayIndex === dayIndex;
+                    const isPast = isPastSlot(dayIndex, time);
 
                     return (
                       <div
                         key={`${dayIndex}-${timeSlotIndex}`}
-                        className={`h-20 border-b border-r border-gray-300 relative cursor-pointer transition-all ${
-                          inSelection && conflict
-                            ? 'bg-red-50 border-red-200'
+                        data-time-cell
+                        data-slot-index={timeSlotIndex}
+                        className={`h-20 border-b border-r border-gray-300 relative transition-all ${
+                          isPast
+                            ? 'bg-gray-100/50 cursor-not-allowed opacity-60'
+                            : inSelection && conflict
+                            ? 'bg-red-50 border-red-200 cursor-pointer'
                             : inSelection
-                            ? 'bg-blue-50 border-blue-200'
+                            ? 'bg-blue-50 border-blue-200 cursor-pointer'
                             : booking
                             ? booking.status === 'Available'
-                              ? 'bg-white hover:bg-gray-50 hover:shadow-sm'
+                              ? 'bg-white hover:bg-gray-50 hover:shadow-sm cursor-pointer'
                               : booking.status === 'Pending'
-                              ? 'bg-amber-50'
-                              : 'bg-indigo-50'
-                            : 'bg-white hover:bg-gray-50 hover:shadow-sm'
+                              ? 'bg-amber-50 cursor-pointer'
+                              : 'bg-indigo-50 cursor-pointer'
+                            : 'bg-white hover:bg-gray-50 hover:shadow-sm cursor-pointer'
                         }`}
                         onMouseDown={(e) => handleMouseDown(e, dayIndex, timeSlotIndex)}
                       >
@@ -498,24 +545,36 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
                         )}
 
                         {/* Drag preview - render only in the first cell of dragging column */}
-                        {isDraggingThisColumn && timeSlotIndex === 0 && dragState.startY !== null && dragState.currentY !== null && (
-                          <div
-                            className={`absolute left-1 right-1 rounded-lg px-3 py-2 text-xs font-medium pointer-events-none z-30 border-l-4 ${
-                              conflict
-                                ? 'bg-red-100 text-red-900 border-red-400'
-                                : 'bg-blue-100 text-blue-900 border-blue-400'
-                            }`}
-                            style={{
-                              top: `${Math.min(dragState.startY, dragState.currentY)}px`,
-                              height: `${Math.abs(dragState.currentY - dragState.startY)}px`,
-                            }}
-                          >
-                            <div className="font-semibold">(No title)</div>
-                            <div className="text-xs opacity-90 mt-0.5">
-                              {dragState.startTime} - {dragState.endTime}
+                        {isDraggingThisColumn && timeSlotIndex === 0 && dragState.startY !== null && dragState.currentY !== null && (() => {
+                          const isDraggingDown = dragState.currentY > dragState.startY;
+                          const height = Math.abs(dragState.currentY - dragState.startY);
+                          const showContent = height >= 35;
+                          
+                          return (
+                            <div
+                              className={`absolute left-1 right-1 rounded-lg overflow-hidden text-xs font-medium pointer-events-none z-40 border-l-4 ${
+                                conflict
+                                  ? 'bg-red-100 text-red-900 border-red-400'
+                                  : 'bg-blue-100 text-blue-900 border-blue-400'
+                              }`}
+                              style={{
+                                top: `${Math.min(dragState.startY, dragState.currentY)}px`,
+                                height: `${height}px`,
+                              }}
+                            >
+                              {showContent && (
+                                <div className={`absolute inset-x-0 px-3 py-2 ${
+                                  isDraggingDown ? 'bottom-0' : 'top-0'
+                                }`}>
+                                  <div className="font-semibold truncate">(No title)</div>
+                                  <div className="text-xs opacity-90 mt-0.5 truncate">
+                                    {dragState.startTime} - {dragState.endTime}
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                          </div>
-                        )}
+                          );
+                        })()}
                       </div>
                     );
                   })}
@@ -541,20 +600,27 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
                     const existingSlot = existingBookings.find(
                       (b) => b.date === date && b.slotNumber === slot.slotNumber && b.slotType === 'OldSlot'
                     );
+                    const isPast = isPastFixedSlot(dayIndex, slot.startTime);
 
                     return (
                       <div
                         key={`${dayIndex}-${slotIndex}`}
                         onClick={() => handleOldSlotClick(dayIndex, slot.slotNumber)}
-                        className={`h-32 border-b border-r border-gray-300 relative cursor-pointer transition-all ${
-                          existingSlot
+                        className={`h-32 border-b border-r border-gray-300 relative transition-all ${
+                          isPast
+                            ? 'bg-gray-100/50 cursor-not-allowed opacity-60'
+                            : existingSlot
                             ? existingSlot.status === 'Booked'
                               ? 'bg-indigo-100 cursor-not-allowed border-l-4 border-l-indigo-400'
                               : 'bg-amber-100 cursor-not-allowed border-l-4 border-l-amber-400 border-dashed'
-                            : 'bg-white hover:bg-gray-50 hover:shadow-sm'
+                            : 'bg-white hover:bg-gray-50 hover:shadow-sm cursor-pointer'
                         }`}
                       >
-                        {existingSlot ? (
+                        {isPast ? (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="text-gray-400 font-medium text-sm">Past</div>
+                          </div>
+                        ) : existingSlot ? (
                           <div className="absolute inset-0 flex flex-col items-center justify-center p-3">
                             <div className={`font-semibold text-sm truncate w-full text-center ${
                               existingSlot.status === 'Booked' ? 'text-indigo-900' : 'text-amber-900'
@@ -584,48 +650,48 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
 
       {/* Slot Configuration Modal */}
       {showSlotConfig && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 m-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-4">
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Settings className="w-5 h-5 text-blue-700" />
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-blue-100 rounded-lg">
+                  <Settings className="w-4 h-4 text-blue-700" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900">Slot Configuration</h3>
+                <h3 className="text-lg font-bold text-gray-900">Slot Configuration</h3>
               </div>
               <button
                 onClick={() => setShowSlotConfig(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
             {/* Form */}
-            <div className="space-y-5">
+            <div className="space-y-3">
               {/* Slot Duration */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                   Slot Duration (hours)
                 </label>
                 <input
                   type="number"
-                  step="0.5"
-                  min="0.5"
+                  step="0.25"
+                  min="0.25"
                   max="8"
                   value={slotConfig.slotDuration}
-                  onChange={(e) => setSlotConfig({ ...slotConfig, slotDuration: parseFloat(e.target.value) || 0.5 })}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  onChange={(e) => setSlotConfig({ ...slotConfig, slotDuration: parseFloat(e.target.value) || 0.25 })}
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 />
-                <p className="text-xs text-gray-500 mt-1">Duration of each time slot</p>
+                <p className="text-xs text-gray-500 mt-0.5">Duration of each time slot</p>
               </div>
 
               {/* Break Duration */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                   Break Duration (hours)
                 </label>
                 <input
@@ -635,14 +701,14 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
                   max="2"
                   value={slotConfig.breakDuration}
                   onChange={(e) => setSlotConfig({ ...slotConfig, breakDuration: parseFloat(e.target.value) || 0 })}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 />
-                <p className="text-xs text-gray-500 mt-1">Rest time between slots</p>
+                <p className="text-xs text-gray-500 mt-0.5">Rest time between slots</p>
               </div>
 
               {/* Number of Slots */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                   Number of Slots
                 </label>
                 <input
@@ -651,24 +717,24 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
                   max="10"
                   value={slotConfig.numberOfSlots}
                   onChange={(e) => setSlotConfig({ ...slotConfig, numberOfSlots: parseInt(e.target.value) || 1 })}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 />
-                <p className="text-xs text-gray-500 mt-1">Total number of bookable slots</p>
+                <p className="text-xs text-gray-500 mt-0.5">Total number of bookable slots</p>
               </div>
 
               {/* Preview */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm font-semibold text-blue-900 mb-2">Preview:</p>
-                <div className="space-y-1.5 text-xs text-blue-800">
-                  {fixedSlots.slice(0, 3).map((slot, idx) => (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-2.5">
+                <p className="text-xs font-semibold text-blue-900 mb-1.5">Preview:</p>
+                <div className="space-y-1 text-xs text-blue-800">
+                  {fixedSlots.slice(0, 2).map((slot, idx) => (
                     <div key={idx} className="flex items-center gap-2">
                       <span className="font-medium">{slot.label}:</span>
                       <span>{slot.startTime} - {slot.endTime}</span>
                     </div>
                   ))}
-                  {fixedSlots.length > 3 && (
+                  {fixedSlots.length > 2 && (
                     <div className="text-blue-600 font-medium">
-                      ... and {fixedSlots.length - 3} more slots
+                      ... and {fixedSlots.length - 2} more slots
                     </div>
                   )}
                 </div>
@@ -676,16 +742,16 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
             </div>
 
             {/* Actions */}
-            <div className="flex gap-3 mt-6">
+            <div className="flex gap-2 mt-4">
               <button
                 onClick={() => setShowSlotConfig(false)}
-                className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors"
+                className="flex-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors text-sm"
               >
                 Cancel
               </button>
               <button
                 onClick={() => setShowSlotConfig(false)}
-                className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors shadow-sm"
+                className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors shadow-sm text-sm"
               >
                 Apply Settings
               </button>

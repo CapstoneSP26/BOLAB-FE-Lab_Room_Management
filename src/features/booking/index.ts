@@ -22,3 +22,4 @@ export { BookingStatsCard } from './components/BookingStatsCard';
 export { RecentRequestCard } from './components/RecentRequestCard';
 export { BookingDashboard } from './components/BookingDashboard';
 export { BookingCalendar } from './components/BookingCalendar';
+export { BookingDetailsModal } from './components/BookingDetailsModal';

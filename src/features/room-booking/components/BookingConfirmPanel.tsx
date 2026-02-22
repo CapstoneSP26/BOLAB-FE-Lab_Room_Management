@@ -76,95 +76,94 @@ export const BookingConfirmPanel: React.FC<BookingConfirmPanelProps> = ({
     <>
       {/* Overlay */}
       <div
-        className="fixed inset-0 bg-white bg-opacity-20 z-40 transition-opacity backdrop-blur-md"
+        className="fixed inset-0 bg-white bg-opacity-20 z-[100] transition-opacity backdrop-blur-md"
         onClick={onClose}
       />
 
       {/* Modal Panel - Centered */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-scale-in">
+      <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden animate-scale-in">
           {/* Header */}
-          <div className="px-8 py-6 border-b border-gray-100">
+          <div className="px-5 py-4 border-b border-gray-100">
             <div className="flex items-start justify-between">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Booking Details</h2>
-                <p className="text-sm text-gray-500 mt-1">Review and confirm your booking</p>
+                <h2 className="text-xl font-bold text-gray-900">Booking Details</h2>
+                <p className="text-xs text-gray-500 mt-1">Review and confirm your booking</p>
               </div>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
+                className="p-1.5 hover:bg-gray-100 rounded-full transition-colors">
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
+          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
             {/* Booking Info Card */}
-            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-6 border border-orange-200">
-              <div className="flex items-center gap-2 mb-4">
-                <Calendar className="w-5 h-5 text-orange-600" />
-                <h3 className="font-semibold text-gray-900">Selected Time Slot</h3>
+            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
+              <div className="flex items-center gap-2 mb-3">
+                <Calendar className="w-4 h-4 text-orange-600" />
+                <h3 className="font-semibold text-sm text-gray-900">Selected Time Slot</h3>
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white rounded-lg p-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-white rounded-lg p-3">
                   <p className="text-xs text-gray-500 uppercase font-medium mb-1">Date</p>
-                  <p className="text-lg font-semibold text-gray-900">
+                  <p className="text-sm font-semibold text-gray-900">
                     {formatDate(new Date(selectedDate), 'MMM DD, YYYY')}
                   </p>
                 </div>
-                <div className="bg-white rounded-lg p-4">
+                <div className="bg-white rounded-lg p-3">
                   <p className="text-xs text-gray-500 uppercase font-medium mb-1">Time</p>
-                  <p className="text-lg font-semibold text-gray-900">
+                  <p className="text-sm font-semibold text-gray-900">
                     {startTime} - {endTime}
                   </p>
                 </div>
               </div>
               
-              <div className="mt-4 bg-white rounded-lg p-4">
+              <div className="mt-3 bg-white rounded-lg p-3">
                 <p className="text-xs text-gray-500 uppercase font-medium mb-1">Room</p>
-                <p className="text-lg font-semibold text-orange-600">{roomName}</p>
+                <p className="text-sm font-semibold text-orange-600">{roomName}</p>
               </div>
             </div>
 
             {/* Student Group Selection */}
             <div>
-              <label className="flex items-center gap-2 mb-3">
-                <Users className="w-5 h-5 text-gray-600" />
-                <span className="font-semibold text-gray-900">Select Student Group</span>
-                <span className="text-sm text-gray-500">(Optional)</span>
+              <label className="flex items-center gap-2 mb-2">
+                <Users className="w-4 h-4 text-gray-600" />
+                <span className="font-semibold text-sm text-gray-900">Select Student Group</span>
+                <span className="text-xs text-gray-500">(Optional)</span>
               </label>
               
-              <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto">
+              <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto">
                 {studentGroups.map(group => (
                   <label
                     key={group.id}
-                    className={`flex items-center justify-between p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                    className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all ${
                       selectedGroupId === group.id
                         ? 'border-orange-500 bg-orange-50'
                         : 'border-gray-200 hover:border-orange-300 bg-white'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2.5">
                       <input
                         type="radio"
                         name="studentGroup"
                         value={group.id}
                         checked={selectedGroupId === group.id}
                         onChange={(e) => setSelectedGroupId(e.target.value)}
-                        className="w-5 h-5 text-orange-600 focus:ring-orange-500"
+                        className="w-4 h-4 text-orange-600 focus:ring-orange-500"
                       />
                       <div>
-                        <p className="font-semibold text-gray-900">{group.name}</p>
-                        <p className="text-sm text-gray-500">
+                        <p className="font-semibold text-sm text-gray-900">{group.name}</p>
+                        <p className="text-xs text-gray-500">
                           {group.courseCode} • {group.studentCount} students
                         </p>
                       </div>
                     </div>
                     {selectedGroupId === group.id && (
-                      <CheckCircle2 className="w-5 h-5 text-orange-600" />
+                      <CheckCircle2 className="w-4 h-4 text-orange-600" />
                     )}
                   </label>
                 ))}
@@ -172,18 +171,18 @@ export const BookingConfirmPanel: React.FC<BookingConfirmPanelProps> = ({
             </div>
 
             {/* Repeat Weekly Option */}
-            <div className="border-t border-gray-200 pt-6">
-              <label className="flex items-center gap-3 cursor-pointer group">
+            <div className="border-t border-gray-200 pt-4">
+              <label className="flex items-center gap-2.5 cursor-pointer group">
                 <div className="relative">
                   <input
                     type="checkbox"
                     checked={repeatWeekly}
                     onChange={(e) => setRepeatWeekly(e.target.checked)}
-                    className="w-5 h-5 text-orange-600 focus:ring-orange-500 rounded"
+                    className="w-4 h-4 text-orange-600 focus:ring-orange-500 rounded"
                   />
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900 group-hover:text-orange-600 transition-colors">
+                  <p className="font-semibold text-sm text-gray-900 group-hover:text-orange-600 transition-colors">
                     Repeat Weekly
                   </p>
                   <p className="text-sm text-gray-500">
@@ -193,7 +192,7 @@ export const BookingConfirmPanel: React.FC<BookingConfirmPanelProps> = ({
               </label>
 
               {repeatWeekly && (
-                <div className="mt-4 ml-8 space-y-4 animate-fade-in">
+                <div className="mt-3 ml-6 space-y-3 animate-fade-in">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Number of weeks: <span className="text-orange-600 font-bold">{repeatWeeksCount}</span>
@@ -213,14 +212,14 @@ export const BookingConfirmPanel: React.FC<BookingConfirmPanelProps> = ({
                   </div>
 
                   {/* Preview of repeated dates */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                     <div className="flex items-start gap-2">
-                      <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <AlertCircle className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="font-semibold text-blue-900 mb-2">
+                        <p className="font-semibold text-sm text-blue-900 mb-2">
                           {repeatWeeksCount + 1} bookings will be created
                         </p>
-                        <div className="space-y-1 text-sm text-blue-800 max-h-32 overflow-y-auto">
+                        <div className="space-y-1 text-xs text-blue-800 max-h-28 overflow-y-auto">
                           <div className="flex items-center gap-2">
                             <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
                             {formatDate(new Date(selectedDate), 'MMM DD, YYYY')} (Today)
@@ -241,13 +240,13 @@ export const BookingConfirmPanel: React.FC<BookingConfirmPanelProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="px-8 py-6 bg-gray-50 border-t border-gray-200">
-            <div className="flex gap-3">
+          <div className="px-5 py-4 bg-gray-50 border-t border-gray-200">
+            <div className="flex gap-2.5">
               <Button
                 onClick={onClose}
                 variant="outline"
                 fullWidth
-                className="py-3"
+                size="sm"
               >
                 Cancel
               </Button>
@@ -255,8 +254,9 @@ export const BookingConfirmPanel: React.FC<BookingConfirmPanelProps> = ({
                 onClick={handleConfirm}
                 variant="primary"
                 fullWidth
+                size="sm"
                 isLoading={loading}
-                className="py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
               >
                 {loading ? 'Saving...' : 'Confirm Booking'}
               </Button>

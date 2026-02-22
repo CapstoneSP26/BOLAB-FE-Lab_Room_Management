@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Calendar, Clock, Search, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { useBookingHistory } from '../features/booking/hooks/useBookingHistory';
 import { useBookingStats } from '../features/booking/hooks/useBookingStats';
+import { BookingDetailsModal } from '../features/booking';
 import type { BookingStatus, Booking } from '../features/booking/types';
 
 // Mock data - Remove when API is ready
@@ -161,6 +162,18 @@ const BookingHistoryPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<BookingStatus | 'all'>('all');
   const [dateRange, setDateRange] = useState<'week' | 'month' | 'semester' | 'all'>('month');
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+
+  const handleViewDetails = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setIsDetailsModalOpen(true);
+  };
+
+  const handleCloseDetailsModal = () => {
+    setIsDetailsModalOpen(false);
+    setSelectedBooking(null);
+  };
 
   // Fetch data
   const { data: bookingsData, isLoading } = useBookingHistory({ 
@@ -524,7 +537,10 @@ const BookingHistoryPage: React.FC = () => {
                       </div>
 
                       <div className="flex flex-col gap-2">
-                        <button className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm">
+                        <button 
+                          onClick={() => handleViewDetails(booking)}
+                          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm"
+                        >
                           View Details
                         </button>
                         {booking.status === 'pending' && (
@@ -586,6 +602,13 @@ const BookingHistoryPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Booking Details Modal */}
+      <BookingDetailsModal
+        isOpen={isDetailsModalOpen}
+        onClose={handleCloseDetailsModal}
+        booking={selectedBooking}
+      />
     </div>
   );
 };
