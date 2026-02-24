@@ -20,33 +20,40 @@ export const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
 
   const getStatusConfig = (status: BookingStatus) => {
     const configs = {
-      confirmed: {
-        icon: CheckCircle,
-        bgColor: 'bg-green-100',
-        textColor: 'text-green-700',
-        borderColor: 'border-green-300',
-        label: 'Confirmed'
+      Draft: {
+        icon: AlertCircle,
+        bgColor: 'bg-amber-100',
+        textColor: 'text-amber-700',
+        borderColor: 'border-amber-300',
+        label: 'Draft'
       },
-      pending: {
+      PendingApproval: {
         icon: AlertCircle,
         bgColor: 'bg-yellow-100',
         textColor: 'text-yellow-700',
         borderColor: 'border-yellow-300',
-        label: 'Pending'
+        label: 'Pending Approval'
       },
-      cancelled: {
+      Approved: {
+        icon: CheckCircle,
+        bgColor: 'bg-green-100',
+        textColor: 'text-green-700',
+        borderColor: 'border-green-300',
+        label: 'Approved'
+      },
+      Rejected: {
         icon: XCircle,
         bgColor: 'bg-red-100',
         textColor: 'text-red-700',
         borderColor: 'border-red-300',
-        label: 'Cancelled'
+        label: 'Rejected'
       },
-      completed: {
-        icon: CheckCircle,
-        bgColor: 'bg-blue-100',
-        textColor: 'text-blue-700',
-        borderColor: 'border-blue-300',
-        label: 'Completed'
+      Cancelled: {
+        icon: XCircle,
+        bgColor: 'bg-gray-100',
+        textColor: 'text-gray-700',
+        borderColor: 'border-gray-300',
+        label: 'Cancelled'
       }
     };
     return configs[status];

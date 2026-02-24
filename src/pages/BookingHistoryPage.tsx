@@ -15,7 +15,7 @@ const MOCK_BOOKINGS: Booking[] = [
     date: '2026-02-15',
     startTime: '08:00',
     endTime: '10:30',
-    status: 'confirmed' as BookingStatus,
+    status: 'Approved' as BookingStatus,
     purpose: 'Software Engineering Practice Session',
     userName: 'Nguyen Van A',
   },
@@ -27,7 +27,7 @@ const MOCK_BOOKINGS: Booking[] = [
     date: '2026-02-18',
     startTime: '13:00',
     endTime: '15:30',
-    status: 'pending' as BookingStatus,
+    status: 'PendingApproval' as BookingStatus,
     purpose: 'Database Management Project Review',
     userName: 'Nguyen Van A',
   },
@@ -39,7 +39,7 @@ const MOCK_BOOKINGS: Booking[] = [
     date: '2026-02-20',
     startTime: '09:00',
     endTime: '11:30',
-    status: 'confirmed' as BookingStatus,
+    status: 'Approved' as BookingStatus,
     purpose: 'AI Machine Learning Workshop',
     userName: 'Nguyen Van A',
   },
@@ -51,7 +51,7 @@ const MOCK_BOOKINGS: Booking[] = [
     date: '2026-02-12',
     startTime: '14:00',
     endTime: '16:30',
-    status: 'completed' as BookingStatus,
+    status: 'Draft' as BookingStatus,
     purpose: 'Web Development Team Meeting',
     userName: 'Nguyen Van A',
   },
@@ -63,7 +63,7 @@ const MOCK_BOOKINGS: Booking[] = [
     date: '2026-02-10',
     startTime: '10:00',
     endTime: '12:00',
-    status: 'cancelled' as BookingStatus,
+    status: 'Cancelled' as BookingStatus,
     purpose: 'Mobile App Development Session',
     userName: 'Nguyen Van A',
   },
@@ -75,7 +75,7 @@ const MOCK_BOOKINGS: Booking[] = [
     date: '2026-02-22',
     startTime: '15:00',
     endTime: '17:30',
-    status: 'confirmed' as BookingStatus,
+    status: 'Approved' as BookingStatus,
     purpose: 'Network Security Presentation',
     userName: 'Nguyen Van A',
   },
@@ -87,7 +87,7 @@ const MOCK_BOOKINGS: Booking[] = [
     date: '2026-02-08',
     startTime: '08:30',
     endTime: '11:00',
-    status: 'completed' as BookingStatus,
+    status: 'Rejected' as BookingStatus,
     purpose: 'Data Structures and Algorithms Practice',
     userName: 'Nguyen Van A',
   },
@@ -99,7 +99,7 @@ const MOCK_BOOKINGS: Booking[] = [
     date: '2026-02-25',
     startTime: '13:30',
     endTime: '16:00',
-    status: 'pending' as BookingStatus,
+    status: 'PendingApproval' as BookingStatus,
     purpose: 'Cloud Computing Workshop',
     userName: 'Nguyen Van A',
   },
@@ -111,7 +111,7 @@ const MOCK_BOOKINGS: Booking[] = [
     date: '2026-02-05',
     startTime: '09:00',
     endTime: '11:30',
-    status: 'completed' as BookingStatus,
+    status: 'Approved' as BookingStatus,
     purpose: 'IoT Project Development',
     userName: 'Nguyen Van A',
   },
@@ -123,7 +123,7 @@ const MOCK_BOOKINGS: Booking[] = [
     date: '2026-02-28',
     startTime: '14:00',
     endTime: '16:30',
-    status: 'confirmed' as BookingStatus,
+    status: 'Approved' as BookingStatus,
     purpose: 'Blockchain Technology Seminar',
     userName: 'Nguyen Van A',
   },
@@ -135,7 +135,7 @@ const MOCK_BOOKINGS: Booking[] = [
     date: '2026-02-16',
     startTime: '10:30',
     endTime: '13:00',
-    status: 'pending' as BookingStatus,
+    status: 'PendingApproval' as BookingStatus,
     purpose: 'Cybersecurity Lab Session',
     userName: 'Nguyen Van A',
   },
@@ -147,7 +147,7 @@ const MOCK_BOOKINGS: Booking[] = [
     date: '2026-02-07',
     startTime: '15:30',
     endTime: '18:00',
-    status: 'cancelled' as BookingStatus,
+    status: 'Cancelled' as BookingStatus,
     purpose: 'Game Development Workshop',
     userName: 'Nguyen Van A',
   },
@@ -189,11 +189,11 @@ const BookingHistoryPage: React.FC = () => {
 
   // Calculate stats from mock data
   const mockStats = {
-    totalAccepted: MOCK_BOOKINGS.filter(b => b.status === 'confirmed').length,
-    totalPending: MOCK_BOOKINGS.filter(b => b.status === 'pending').length,
-    totalRejected: MOCK_BOOKINGS.filter(b => b.status === 'cancelled').length,
+    totalAccepted: MOCK_BOOKINGS.filter(b => b.status === 'Approved').length,
+    totalPending: MOCK_BOOKINGS.filter(b => b.status === 'PendingApproval' || b.status === 'Draft').length,
+    totalRejected: MOCK_BOOKINGS.filter(b => b.status === 'Rejected').length,
     upcomingBookings: MOCK_BOOKINGS.filter(b => 
-      b.status === 'confirmed' && new Date(b.date) > new Date()
+      b.status === 'Approved' && new Date(b.date) > new Date()
     ).length,
   };
 
@@ -209,25 +209,30 @@ const BookingHistoryPage: React.FC = () => {
 
   const getStatusBadge = (status: BookingStatus) => {
     const statusConfig = {
-      confirmed: { 
-        icon: CheckCircle, 
-        text: 'Confirmed', 
-        className: 'bg-green-100 text-green-700 border-green-300' 
-      },
-      pending: { 
+      Draft: { 
         icon: AlertCircle, 
-        text: 'Pending', 
+        text: 'Draft', 
+        className: 'bg-amber-100 text-amber-700 border-amber-300' 
+      },
+      PendingApproval: { 
+        icon: AlertCircle, 
+        text: 'Pending Approval', 
         className: 'bg-yellow-100 text-yellow-700 border-yellow-300' 
       },
-      cancelled: { 
+      Approved: { 
+        icon: CheckCircle, 
+        text: 'Approved', 
+        className: 'bg-green-100 text-green-700 border-green-300' 
+      },
+      Rejected: { 
         icon: XCircle, 
-        text: 'Cancelled', 
+        text: 'Rejected', 
         className: 'bg-red-100 text-red-700 border-red-300' 
       },
-      completed: { 
-        icon: CheckCircle, 
-        text: 'Completed', 
-        className: 'bg-blue-100 text-blue-700 border-blue-300' 
+      Cancelled: { 
+        icon: XCircle, 
+        text: 'Cancelled', 
+        className: 'bg-gray-100 text-gray-700 border-gray-300' 
       },
     };
 
@@ -263,7 +268,7 @@ const BookingHistoryPage: React.FC = () => {
           <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 font-medium">Confirmed</p>
+                <p className="text-sm text-gray-600 font-medium">Approved</p>
                 <p className="text-3xl font-bold text-green-600 mt-1">{displayStats.totalAccepted}</p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -287,7 +292,7 @@ const BookingHistoryPage: React.FC = () => {
           <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 font-medium">Cancelled</p>
+                <p className="text-sm text-gray-600 font-medium">Rejected</p>
                 <p className="text-3xl font-bold text-red-600 mt-1">{displayStats.totalRejected}</p>
               </div>
               <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
@@ -341,20 +346,20 @@ const BookingHistoryPage: React.FC = () => {
                   All Status
                 </button>
                 <button
-                  onClick={() => setStatusFilter('confirmed')}
+                  onClick={() => setStatusFilter('Draft')}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
-                    statusFilter === 'confirmed'
-                      ? 'bg-green-100 text-green-700 border-2 border-green-300 shadow-sm'
+                    statusFilter === 'Draft'
+                      ? 'bg-amber-100 text-amber-700 border-2 border-amber-300 shadow-sm'
                       : 'bg-gray-50 text-gray-600 border-2 border-transparent hover:border-gray-200 hover:bg-gray-100'
                   }`}
                 >
-                  <CheckCircle className="w-4 h-4" />
-                  Confirmed
+                  <AlertCircle className="w-4 h-4" />
+                  Draft
                 </button>
                 <button
-                  onClick={() => setStatusFilter('pending')}
+                  onClick={() => setStatusFilter('PendingApproval')}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
-                    statusFilter === 'pending'
+                    statusFilter === 'PendingApproval'
                       ? 'bg-yellow-100 text-yellow-700 border-2 border-yellow-300 shadow-sm'
                       : 'bg-gray-50 text-gray-600 border-2 border-transparent hover:border-gray-200 hover:bg-gray-100'
                   }`}
@@ -363,26 +368,37 @@ const BookingHistoryPage: React.FC = () => {
                   Pending
                 </button>
                 <button
-                  onClick={() => setStatusFilter('cancelled')}
+                  onClick={() => setStatusFilter('Approved')}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
-                    statusFilter === 'cancelled'
+                    statusFilter === 'Approved'
+                      ? 'bg-green-100 text-green-700 border-2 border-green-300 shadow-sm'
+                      : 'bg-gray-50 text-gray-600 border-2 border-transparent hover:border-gray-200 hover:bg-gray-100'
+                  }`}
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  Approved
+                </button>
+                <button
+                  onClick={() => setStatusFilter('Rejected')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
+                    statusFilter === 'Rejected'
                       ? 'bg-red-100 text-red-700 border-2 border-red-300 shadow-sm'
                       : 'bg-gray-50 text-gray-600 border-2 border-transparent hover:border-gray-200 hover:bg-gray-100'
                   }`}
                 >
                   <XCircle className="w-4 h-4" />
-                  Cancelled
+                  Rejected
                 </button>
                 <button
-                  onClick={() => setStatusFilter('completed')}
+                  onClick={() => setStatusFilter('Cancelled')}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
-                    statusFilter === 'completed'
-                      ? 'bg-blue-100 text-blue-700 border-2 border-blue-300 shadow-sm'
+                    statusFilter === 'Cancelled'
+                      ? 'bg-gray-100 text-gray-700 border-2 border-gray-300 shadow-sm'
                       : 'bg-gray-50 text-gray-600 border-2 border-transparent hover:border-gray-200 hover:bg-gray-100'
                   }`}
                 >
-                  <CheckCircle className="w-4 h-4" />
-                  Completed
+                  <XCircle className="w-4 h-4" />
+                  Cancelled
                 </button>
               </div>
             </div>
@@ -465,10 +481,11 @@ const BookingHistoryPage: React.FC = () => {
                 <div 
                   key={booking.id} 
                   className={`bg-white rounded-xl border-2 shadow-sm hover:shadow-md transition-all group ${
-                    booking.status === 'confirmed' ? 'border-green-200 hover:border-green-300' :
-                    booking.status === 'pending' ? 'border-yellow-200 hover:border-yellow-300' :
-                    booking.status === 'cancelled' ? 'border-red-200 hover:border-red-300' :
-                    'border-blue-200 hover:border-blue-300'
+                    booking.status === 'Approved' ? 'border-green-200 hover:border-green-300' :
+                    booking.status === 'PendingApproval' ? 'border-yellow-200 hover:border-yellow-300' :
+                    booking.status === 'Draft' ? 'border-amber-200 hover:border-amber-300' :
+                    booking.status === 'Cancelled' ? 'border-gray-200 hover:border-gray-300' :
+                    'border-red-200 hover:border-red-300'
                   }`}
                 >
                   <div className="p-5">
@@ -476,10 +493,11 @@ const BookingHistoryPage: React.FC = () => {
                       <div className="flex items-start gap-4">
                         {/* Color-coded sidebar */}
                         <div className={`w-1 h-20 rounded-full flex-shrink-0 ${
-                          booking.status === 'confirmed' ? 'bg-gradient-to-b from-green-400 to-green-600' :
-                          booking.status === 'pending' ? 'bg-gradient-to-b from-yellow-400 to-yellow-600' :
-                          booking.status === 'cancelled' ? 'bg-gradient-to-b from-red-400 to-red-600' :
-                          'bg-gradient-to-b from-blue-400 to-blue-600'
+                          booking.status === 'Approved' ? 'bg-gradient-to-b from-green-400 to-green-600' :
+                          booking.status === 'PendingApproval' ? 'bg-gradient-to-b from-yellow-400 to-yellow-600' :
+                          booking.status === 'Draft' ? 'bg-gradient-to-b from-amber-400 to-amber-600' :
+                          booking.status === 'Cancelled' ? 'bg-gradient-to-b from-gray-400 to-gray-600' :
+                          'bg-gradient-to-b from-red-400 to-red-600'
                         }`}></div>
 
                         <div className="flex-1 min-w-0">
@@ -496,10 +514,11 @@ const BookingHistoryPage: React.FC = () => {
 
                           <div className="flex flex-wrap items-center gap-4">
                             <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${
-                              booking.status === 'confirmed' ? 'bg-green-50' :
-                              booking.status === 'pending' ? 'bg-yellow-50' :
-                              booking.status === 'cancelled' ? 'bg-red-50' :
-                              'bg-blue-50'
+                              booking.status === 'Approved' ? 'bg-green-50' :
+                              booking.status === 'PendingApproval' ? 'bg-yellow-50' :
+                              booking.status === 'Draft' ? 'bg-amber-50' :
+                              booking.status === 'Cancelled' ? 'bg-gray-50' :
+                              'bg-red-50'
                             }`}>
                               <Calendar className="w-4 h-4 text-gray-600" />
                               <span className="text-sm font-medium text-gray-900">
@@ -513,10 +532,11 @@ const BookingHistoryPage: React.FC = () => {
                             </div>
                             
                             <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${
-                              booking.status === 'confirmed' ? 'bg-green-50' :
-                              booking.status === 'pending' ? 'bg-yellow-50' :
-                              booking.status === 'cancelled' ? 'bg-red-50' :
-                              'bg-blue-50'
+                              booking.status === 'Approved' ? 'bg-green-50' :
+                              booking.status === 'PendingApproval' ? 'bg-yellow-50' :
+                              booking.status === 'Draft' ? 'bg-amber-50' :
+                              booking.status === 'Cancelled' ? 'bg-gray-50' :
+                              'bg-red-50'
                             }`}>
                               <Clock className="w-4 h-4 text-gray-600" />
                               <span className="text-sm font-medium text-gray-900">
@@ -543,7 +563,7 @@ const BookingHistoryPage: React.FC = () => {
                         >
                           View Details
                         </button>
-                        {booking.status === 'pending' && (
+                        {(booking.status === 'PendingApproval' || booking.status === 'Draft') && (
                           <button className="px-4 py-2 text-sm font-medium text-red-700 bg-red-50 border-2 border-red-300 rounded-lg hover:bg-red-100 hover:border-red-400 transition-all shadow-sm">
                             Cancel
                           </button>

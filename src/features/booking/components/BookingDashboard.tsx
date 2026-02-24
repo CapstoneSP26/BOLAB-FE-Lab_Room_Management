@@ -30,7 +30,7 @@ export const BookingDashboard: React.FC = () => {
       startTime: '08:00',
       endTime: '10:00',
       date: new Date(Date.now() + 86400000).toISOString(),
-      status: 'confirmed' as const,
+      status: 'Approved' as const,
       purpose: 'Web Development Workshop',
     },
     {
@@ -41,7 +41,7 @@ export const BookingDashboard: React.FC = () => {
       startTime: '14:00',
       endTime: '16:00',
       date: new Date(Date.now() + 172800000).toISOString(),
-      status: 'pending' as const,
+      status: 'PendingApproval' as const,
       purpose: 'AI Research Project',
     },
     {
@@ -52,7 +52,7 @@ export const BookingDashboard: React.FC = () => {
       startTime: '10:00',
       endTime: '12:00',
       date: new Date(Date.now() + 259200000).toISOString(),
-      status: 'confirmed' as const,
+      status: 'Approved' as const,
       purpose: 'Database Design Class',
     },
   ];
@@ -68,7 +68,7 @@ export const BookingDashboard: React.FC = () => {
       startTime: '08:00',
       endTime: '10:00',
       date: new Date(Date.now() + 86400000).toISOString(),
-      status: 'pending' as const,
+      status: 'PendingApproval' as const,
     },
     {
       id: 2,
