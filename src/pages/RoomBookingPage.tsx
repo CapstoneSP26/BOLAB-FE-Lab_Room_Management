@@ -29,7 +29,6 @@ interface PendingBooking {
 const RoomBookingPage: React.FC = () => {
   const navigate = useNavigate();
   const [activeView, setActiveView] = useState<BookingView>('calendar');
-  const [selectedCampus, setSelectedCampus] = useState<string>('');
   const [selectedBuilding, setSelectedBuilding] = useState<string>('');
   const [selectedRoomId, setSelectedRoomId] = useState<string>('');
   const [weekOffset, setWeekOffset] = useState(0);
@@ -72,15 +71,11 @@ const RoomBookingPage: React.FC = () => {
   const slots = slotsData?.slots ?? [];
 
   // Mock data for development - Remove when API is ready
-  const MOCK_CAMPUSES = [
-    { id: 'hola', name: 'Hola Campus' },
-    { id: 'hcm', name: 'HCM Campus' },
-  ];
-
+  // Note: Campus is pre-determined for each lecturer
   const MOCK_BUILDINGS = [
-    { id: 'alpha', name: 'Alpha Building', campusId: 'hola' },
-    { id: 'beta', name: 'Beta Building', campusId: 'hola' },
-    { id: 'gamma', name: 'Gamma Building', campusId: 'hcm' },
+    { id: 'alpha', name: 'Alpha Building' },
+    { id: 'beta', name: 'Beta Building' },
+    { id: 'gamma', name: 'Gamma Building' },
   ];
 
   const MOCK_ROOMS = [
@@ -89,7 +84,6 @@ const RoomBookingPage: React.FC = () => {
       name: 'Lab 501',
       building: 'Alpha Building',
       buildingId: 'alpha',
-      campusId: 'hola',
       capacity: 40,
       features: ['Computers', 'Projector', 'Whiteboard'],
       image: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=400',
@@ -99,7 +93,6 @@ const RoomBookingPage: React.FC = () => {
       name: 'Lab 502',
       building: 'Alpha Building',
       buildingId: 'alpha',
-      campusId: 'hola',
       capacity: 35,
       features: ['Computers', 'Smart Board'],
     },
@@ -108,7 +101,6 @@ const RoomBookingPage: React.FC = () => {
       name: 'Lab 601',
       building: 'Beta Building',
       buildingId: 'beta',
-      campusId: 'hola',
       capacity: 30,
       features: ['Computers', 'Projector'],
     },
@@ -157,21 +149,14 @@ const RoomBookingPage: React.FC = () => {
 
   const selectedRoom = displayRooms.find(r => r.id === selectedRoomId) ?? null;
 
-  // Filter buildings based on selected campus
-  const availableBuildings = MOCK_BUILDINGS.filter(b => b.campusId === selectedCampus);
+  // All buildings are available (campus is pre-determined for lecturer)
+  const availableBuildings = MOCK_BUILDINGS;
   
   // Filter rooms based on selected building (using building name for now)
   const selectedBuildingName = MOCK_BUILDINGS.find(b => b.id === selectedBuilding)?.name;
   const availableRooms = displayRooms.filter(r => 
     selectedBuildingName ? r.building === selectedBuildingName : true
   );
-
-  // Reset selections when parent changes
-  const handleCampusChange = (campusId: string) => {
-    setSelectedCampus(campusId);
-    setSelectedBuilding('');
-    setSelectedRoomId('');
-  };
 
   const handleBuildingChange = (buildingId: string) => {
     setSelectedBuilding(buildingId);
@@ -262,34 +247,10 @@ const RoomBookingPage: React.FC = () => {
 
           {/* Room Selection */}
           <div className="px-6 py-4 border-b border-gray-200 space-y-4">
-            {/* Campus Selection */}
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide flex items-center gap-2">
-                <span className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 text-xs font-bold">1</span>
-                Select Campus
-              </label>
-              <div className="relative">
-                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-orange-500 pointer-events-none z-10" />
-                <select
-                  value={selectedCampus}
-                  onChange={(e) => handleCampusChange(e.target.value)}
-                  className="block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-orange-400 focus:ring-2 focus:ring-orange-100 text-sm py-3 pl-11 pr-4 bg-white hover:border-orange-300 transition-all appearance-none cursor-pointer font-medium"
-                  style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em' }}
-                >
-                  <option value="" className="text-gray-500">Choose a campus...</option>
-                  {MOCK_CAMPUSES.map(campus => (
-                    <option key={campus.id} value={campus.id} className="font-medium">
-                      {campus.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
             {/* Building Selection */}
             <div>
               <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide flex items-center gap-2">
-                <span className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 text-xs font-bold">2</span>
+                <span className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 text-xs font-bold">1</span>
                 Select Building
               </label>
               <div className="relative">
@@ -297,8 +258,7 @@ const RoomBookingPage: React.FC = () => {
                 <select
                   value={selectedBuilding}
                   onChange={(e) => handleBuildingChange(e.target.value)}
-                  disabled={!selectedCampus}
-                  className="block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-orange-400 focus:ring-2 focus:ring-orange-100 text-sm py-3 pl-11 pr-4 bg-white hover:border-orange-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:hover:border-gray-300 transition-all appearance-none cursor-pointer font-medium"
+                  className="block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-orange-400 focus:ring-2 focus:ring-orange-100 text-sm py-3 pl-11 pr-4 bg-white hover:border-orange-300 transition-all appearance-none cursor-pointer font-medium"
                   style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em' }}
                 >
                   <option value="" className="text-gray-500">Choose a building...</option>
@@ -314,7 +274,7 @@ const RoomBookingPage: React.FC = () => {
             {/* Lab Room Selection */}
             <div>
               <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide flex items-center gap-2">
-                <span className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 text-xs font-bold">3</span>
+                <span className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 text-xs font-bold">2</span>
                 Select Lab Room
               </label>
               
