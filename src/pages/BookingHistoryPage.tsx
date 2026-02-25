@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
-import { Calendar, Clock, Search, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, Search, CheckCircle, XCircle, AlertCircle, LayoutGrid, List } from 'lucide-react';
 import { useBookingHistory } from '../features/booking/hooks/useBookingHistory';
 import { useBookingStats } from '../features/booking/hooks/useBookingStats';
 import { BookingDetailsModal } from '../features/booking';
 import type { BookingStatus, Booking } from '../features/booking/types';
 
 // Mock data - Remove when API is ready
+// Testing different time periods: Week (±7 days), Month (±30 days), Semester (±120 days)
 const MOCK_BOOKINGS: Booking[] = [
+  // ===== WEEK DATA (within 7 days) =====
   {
     id: 'BK001',
     roomId: '1',
     roomName: 'Lab 501',
     buildingName: 'Alpha Building',
-    date: '2026-02-15',
+    date: '2026-02-24', // Today
     startTime: '08:00',
     endTime: '10:30',
     status: 'Approved' as BookingStatus,
@@ -24,7 +26,7 @@ const MOCK_BOOKINGS: Booking[] = [
     roomId: '2',
     roomName: 'Lab 502',
     buildingName: 'Alpha Building',
-    date: '2026-02-18',
+    date: '2026-02-25', // Tomorrow
     startTime: '13:00',
     endTime: '15:30',
     status: 'PendingApproval' as BookingStatus,
@@ -36,7 +38,7 @@ const MOCK_BOOKINGS: Booking[] = [
     roomId: '3',
     roomName: 'Lab 301',
     buildingName: 'Beta Building',
-    date: '2026-02-20',
+    date: '2026-02-26',
     startTime: '09:00',
     endTime: '11:30',
     status: 'Approved' as BookingStatus,
@@ -48,7 +50,7 @@ const MOCK_BOOKINGS: Booking[] = [
     roomId: '4',
     roomName: 'Lab 403',
     buildingName: 'Beta Building',
-    date: '2026-02-12',
+    date: '2026-02-23', // Yesterday
     startTime: '14:00',
     endTime: '16:30',
     status: 'Draft' as BookingStatus,
@@ -60,7 +62,7 @@ const MOCK_BOOKINGS: Booking[] = [
     roomId: '5',
     roomName: 'Lab 601',
     buildingName: 'Gamma Building',
-    date: '2026-02-10',
+    date: '2026-02-22',
     startTime: '10:00',
     endTime: '12:00',
     status: 'Cancelled' as BookingStatus,
@@ -72,19 +74,21 @@ const MOCK_BOOKINGS: Booking[] = [
     roomId: '1',
     roomName: 'Lab 501',
     buildingName: 'Alpha Building',
-    date: '2026-02-22',
+    date: '2026-02-27',
     startTime: '15:00',
     endTime: '17:30',
     status: 'Approved' as BookingStatus,
     purpose: 'Network Security Presentation',
     userName: 'Nguyen Van A',
   },
+
+  // ===== MONTH DATA (within 30 days but outside week) =====
   {
     id: 'BK007',
     roomId: '6',
     roomName: 'Lab 205',
     buildingName: 'Beta Building',
-    date: '2026-02-08',
+    date: '2026-02-10', // 14 days ago
     startTime: '08:30',
     endTime: '11:00',
     status: 'Rejected' as BookingStatus,
@@ -96,7 +100,7 @@ const MOCK_BOOKINGS: Booking[] = [
     roomId: '7',
     roomName: 'Lab 304',
     buildingName: 'Gamma Building',
-    date: '2026-02-25',
+    date: '2026-03-08', // 12 days from now
     startTime: '13:30',
     endTime: '16:00',
     status: 'PendingApproval' as BookingStatus,
@@ -108,7 +112,7 @@ const MOCK_BOOKINGS: Booking[] = [
     roomId: '2',
     roomName: 'Lab 502',
     buildingName: 'Alpha Building',
-    date: '2026-02-05',
+    date: '2026-02-05', // 19 days ago
     startTime: '09:00',
     endTime: '11:30',
     status: 'Approved' as BookingStatus,
@@ -120,7 +124,7 @@ const MOCK_BOOKINGS: Booking[] = [
     roomId: '8',
     roomName: 'Lab 701',
     buildingName: 'Gamma Building',
-    date: '2026-02-28',
+    date: '2026-03-15', // 19 days from now
     startTime: '14:00',
     endTime: '16:30',
     status: 'Approved' as BookingStatus,
@@ -132,7 +136,7 @@ const MOCK_BOOKINGS: Booking[] = [
     roomId: '3',
     roomName: 'Lab 301',
     buildingName: 'Beta Building',
-    date: '2026-02-16',
+    date: '2026-01-30', // 25 days ago
     startTime: '10:30',
     endTime: '13:00',
     status: 'PendingApproval' as BookingStatus,
@@ -144,11 +148,87 @@ const MOCK_BOOKINGS: Booking[] = [
     roomId: '9',
     roomName: 'Lab 402',
     buildingName: 'Beta Building',
-    date: '2026-02-07',
+    date: '2026-03-20', // 24 days from now
     startTime: '15:30',
     endTime: '18:00',
     status: 'Cancelled' as BookingStatus,
     purpose: 'Game Development Workshop',
+    userName: 'Nguyen Van A',
+  },
+
+  // ===== SEMESTER DATA (within 120 days but outside month) =====
+  {
+    id: 'BK013',
+    roomId: '10',
+    roomName: 'Lab 801',
+    buildingName: 'Delta Building',
+    date: '2025-12-15', // ~70 days ago
+    startTime: '09:00',
+    endTime: '11:30',
+    status: 'Approved' as BookingStatus,
+    purpose: 'End of Year Project Presentation',
+    userName: 'Nguyen Van A',
+  },
+  {
+    id: 'BK014',
+    roomId: '11',
+    roomName: 'Lab 603',
+    buildingName: 'Gamma Building',
+    date: '2026-05-20', // ~85 days from now
+    startTime: '14:00',
+    endTime: '16:30',
+    status: 'PendingApproval' as BookingStatus,
+    purpose: 'Final Exam Preparation',
+    userName: 'Nguyen Van A',
+  },
+  {
+    id: 'BK015',
+    roomId: '12',
+    roomName: 'Lab 404',
+    buildingName: 'Beta Building',
+    date: '2025-11-20', // ~95 days ago
+    startTime: '10:00',
+    endTime: '12:00',
+    status: 'Approved' as BookingStatus,
+    purpose: 'Semester Opening Workshop',
+    userName: 'Nguyen Van A',
+  },
+  {
+    id: 'BK016',
+    roomId: '13',
+    roomName: 'Lab 702',
+    buildingName: 'Gamma Building',
+    date: '2026-06-10', // ~106 days from now
+    status: 'Draft' as BookingStatus,
+    startTime: '08:00',
+    endTime: '10:30',
+    purpose: 'Summer Course Registration',
+    userName: 'Nguyen Van A',
+  },
+
+  // ===== ALL (outside semester) =====
+  {
+    id: 'BK017',
+    roomId: '14',
+    roomName: 'Lab 901',
+    buildingName: 'Delta Building',
+    date: '2025-09-01', // ~175 days ago
+    startTime: '13:00',
+    endTime: '15:30',
+    status: 'Approved' as BookingStatus,
+    purpose: 'Academic Year Kick-off',
+    userName: 'Nguyen Van A',
+  },
+  {
+    id: 'BK018',
+    roomId: '15',
+    roomName: 'Lab 505',
+    buildingName: 'Alpha Building',
+    date: '2026-08-15', // ~172 days from now
+    startTime: '09:00',
+    endTime: '11:30',
+    status: 'Cancelled' as BookingStatus,
+    purpose: 'Next Year Preparation',
     userName: 'Nguyen Van A',
   },
 ];
@@ -164,6 +244,7 @@ const BookingHistoryPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
   const handleViewDetails = (booking: Booking) => {
     setSelectedBooking(booking);
@@ -187,25 +268,67 @@ const BookingHistoryPage: React.FC = () => {
   const bookings = bookingsData?.data ?? MOCK_BOOKINGS;
   const stats = statsData?.data;
 
-  // Calculate stats from mock data
-  const mockStats = {
-    totalAccepted: MOCK_BOOKINGS.filter(b => b.status === 'Approved').length,
-    totalPending: MOCK_BOOKINGS.filter(b => b.status === 'PendingApproval' || b.status === 'Draft').length,
-    totalRejected: MOCK_BOOKINGS.filter(b => b.status === 'Rejected').length,
-    upcomingBookings: MOCK_BOOKINGS.filter(b => 
-      b.status === 'Approved' && new Date(b.date) > new Date()
-    ).length,
-  };
-
-  const displayStats = stats ?? mockStats;
+  // Pagination settings
+  const ITEMS_PER_PAGE = 9;
 
   // Filter bookings
   const filteredBookings = bookings.filter(booking => {
     const matchesSearch = booking.roomName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          booking.buildingName.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || booking.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    
+    // Date range filter
+    const bookingDate = new Date(booking.date);
+    const today = new Date();
+    let matchesDateRange = true;
+
+    if (dateRange === 'week') {
+      const weekAgo = new Date(today);
+      weekAgo.setDate(today.getDate() - 7);
+      const weekFromNow = new Date(today);
+      weekFromNow.setDate(today.getDate() + 7);
+      matchesDateRange = bookingDate >= weekAgo && bookingDate <= weekFromNow;
+    } else if (dateRange === 'month') {
+      const monthAgo = new Date(today);
+      monthAgo.setMonth(today.getMonth() - 1);
+      const monthFromNow = new Date(today);
+      monthFromNow.setMonth(today.getMonth() + 1);
+      matchesDateRange = bookingDate >= monthAgo && bookingDate <= monthFromNow;
+    } else if (dateRange === 'semester') {
+      // Assuming semester is ~4 months (120 days)
+      const semesterAgo = new Date(today);
+      semesterAgo.setDate(today.getDate() - 120);
+      const semesterFromNow = new Date(today);
+      semesterFromNow.setDate(today.getDate() + 120);
+      matchesDateRange = bookingDate >= semesterAgo && bookingDate <= semesterFromNow;
+    }
+    // dateRange === 'all' means no filter
+
+    return matchesSearch && matchesStatus && matchesDateRange;
   });
+
+  // Calculate dynamic stats from filtered bookings
+  const dynamicStats = {
+    totalAccepted: filteredBookings.filter(b => b.status === 'Approved').length,
+    totalPending: filteredBookings.filter(b => b.status === 'PendingApproval' || b.status === 'Draft').length,
+    totalRejected: filteredBookings.filter(b => b.status === 'Rejected').length,
+    upcomingBookings: filteredBookings.filter(b => 
+      b.status === 'Approved' && new Date(b.date) > new Date()
+    ).length,
+  };
+
+  const displayStats = stats ?? dynamicStats;
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredBookings.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedBookings = filteredBookings.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, dateRange]);
 
   const getStatusBadge = (status: BookingStatus) => {
     const statusConfig = {
@@ -316,16 +439,44 @@ const BookingHistoryPage: React.FC = () => {
 
         {/* Filters & Search */}
         <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm space-y-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by room or building name..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:border-orange-400 focus:ring-2 focus:ring-orange-100 text-sm transition-all"
-            />
+          {/* Search & View Toggle */}
+          <div className="flex gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by room or building name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:border-orange-400 focus:ring-2 focus:ring-orange-100 text-sm transition-all"
+              />
+            </div>
+            
+            {/* View Toggle */}
+            <div className="flex gap-2 bg-gray-100 p-1.5 rounded-lg">
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded-md transition-all ${
+                  viewMode === 'list'
+                    ? 'bg-white text-orange-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+                title="List View"
+              >
+                <List className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded-md transition-all ${
+                  viewMode === 'grid'
+                    ? 'bg-white text-orange-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+                title="Grid View"
+              >
+                <LayoutGrid className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           <div className="flex flex-col lg:flex-row gap-4">
@@ -454,10 +605,10 @@ const BookingHistoryPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Bookings List */}
-        <div className="space-y-4">
+        {/* Bookings List/Grid */}
+        <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-4'}>
           {isLoading && !bookingsData && bookings.length === 0 ? (
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm col-span-full">
               <div className="flex items-center justify-center py-16">
                 <div className="text-center">
                   <div className="w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin mx-auto mb-4"></div>
@@ -466,7 +617,7 @@ const BookingHistoryPage: React.FC = () => {
               </div>
             </div>
           ) : filteredBookings.length === 0 ? (
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm col-span-full">
               <div className="flex items-center justify-center py-16">
                 <div className="text-center">
                   <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -475,9 +626,10 @@ const BookingHistoryPage: React.FC = () => {
                 </div>
               </div>
             </div>
-          ) : (
+          ) : viewMode === 'list' ? (
+            // LIST VIEW
             <>
-              {filteredBookings.map((booking) => (
+              {paginatedBookings.map((booking) => (
                 <div 
                   key={booking.id} 
                   className={`bg-white rounded-xl border-2 shadow-sm hover:shadow-md transition-all group ${
@@ -574,6 +726,102 @@ const BookingHistoryPage: React.FC = () => {
                 </div>
               ))}
             </>
+          ) : (
+            // GRID VIEW
+            <>
+              {paginatedBookings.map((booking) => (
+                <div 
+                  key={booking.id} 
+                  className={`bg-white rounded-xl border-2 shadow-sm hover:shadow-md transition-all group flex flex-col h-full ${
+                    booking.status === 'Approved' ? 'border-green-200 hover:border-green-300' :
+                    booking.status === 'PendingApproval' ? 'border-yellow-200 hover:border-yellow-300' :
+                    booking.status === 'Draft' ? 'border-amber-200 hover:border-amber-300' :
+                    booking.status === 'Cancelled' ? 'border-gray-200 hover:border-gray-300' :
+                    'border-red-200 hover:border-red-300'
+                  }`}
+                >
+                  {/* Color header */}
+                  <div className={`h-2 rounded-t-xl ${
+                    booking.status === 'Approved' ? 'bg-gradient-to-r from-green-400 to-green-600' :
+                    booking.status === 'PendingApproval' ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' :
+                    booking.status === 'Draft' ? 'bg-gradient-to-r from-amber-400 to-amber-600' :
+                    booking.status === 'Cancelled' ? 'bg-gradient-to-r from-gray-400 to-gray-600' :
+                    'bg-gradient-to-r from-red-400 to-red-600'
+                  }`}></div>
+
+                  <div className="p-4 flex-1 flex flex-col">
+                    {/* Title & Status */}
+                    <div className="mb-3">
+                      <h3 className="text-lg font-bold text-gray-900 mb-2 truncate">
+                        {booking.roomName}
+                      </h3>
+                      <p className="text-sm text-gray-600 font-medium mb-2 truncate">
+                        {booking.buildingName}
+                      </p>
+                      {getStatusBadge(booking.status)}
+                    </div>
+
+                    {/* Date & Time - Compact */}
+                    <div className="space-y-2 mb-3">
+                      <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${
+                        booking.status === 'Approved' ? 'bg-green-50' :
+                        booking.status === 'PendingApproval' ? 'bg-yellow-50' :
+                        booking.status === 'Draft' ? 'bg-amber-50' :
+                        booking.status === 'Cancelled' ? 'bg-gray-50' :
+                        'bg-red-50'
+                      }`}>
+                        <Calendar className="w-4 h-4 text-gray-600 flex-shrink-0" />
+                        <span className="text-xs font-medium text-gray-900 truncate">
+                          {new Date(booking.date).toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}
+                        </span>
+                      </div>
+                      
+                      <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${
+                        booking.status === 'Approved' ? 'bg-green-50' :
+                        booking.status === 'PendingApproval' ? 'bg-yellow-50' :
+                        booking.status === 'Draft' ? 'bg-amber-50' :
+                        booking.status === 'Cancelled' ? 'bg-gray-50' :
+                        'bg-red-50'
+                      }`}>
+                        <Clock className="w-4 h-4 text-gray-600 flex-shrink-0" />
+                        <span className="text-xs font-medium text-gray-900">
+                          {booking.startTime} - {booking.endTime}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Purpose - Truncated */}
+                    {booking.purpose && (
+                      <div className="mb-3 p-2.5 bg-gray-50 rounded-lg border border-gray-200 flex-1">
+                        <p className="text-xs text-gray-700 line-clamp-2">
+                          <span className="font-semibold text-gray-900">Purpose: </span>
+                          {booking.purpose}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex flex-col gap-2 mt-auto">
+                      <button 
+                        onClick={() => handleViewDetails(booking)}
+                        className="w-full px-3 py-2 text-sm font-medium text-gray-700 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm"
+                      >
+                        View Details
+                      </button>
+                      {(booking.status === 'PendingApproval' || booking.status === 'Draft') && (
+                        <button className="w-full px-3 py-2 text-sm font-medium text-red-700 bg-red-50 border-2 border-red-300 rounded-lg hover:bg-red-100 hover:border-red-400 transition-all shadow-sm">
+                          Cancel
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </>
           )}
         </div>
 
@@ -581,8 +829,8 @@ const BookingHistoryPage: React.FC = () => {
         {filteredBookings.length > 0 && (
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white rounded-xl border-2 border-gray-200 px-6 py-4 shadow-sm">
             <p className="text-sm text-gray-700">
-              Showing <span className="font-bold text-gray-900">{(currentPage - 1) * 10 + 1}</span> to{' '}
-              <span className="font-bold text-gray-900">{Math.min(currentPage * 10, filteredBookings.length)}</span> of{' '}
+              Showing <span className="font-bold text-gray-900">{startIndex + 1}</span> to{' '}
+              <span className="font-bold text-gray-900">{Math.min(endIndex, filteredBookings.length)}</span> of{' '}
               <span className="font-bold text-orange-600">{filteredBookings.length}</span> bookings
             </p>
             
@@ -596,7 +844,7 @@ const BookingHistoryPage: React.FC = () => {
               </button>
               
               <div className="hidden sm:flex items-center gap-1">
-                {Array.from({ length: Math.min(5, Math.ceil(filteredBookings.length / 10)) }, (_, i) => i + 1).map((page) => (
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => i + 1).map((page) => (
                   <button
                     key={page}
                     onClick={() => setCurrentPage(page)}
@@ -613,7 +861,7 @@ const BookingHistoryPage: React.FC = () => {
               
               <button
                 onClick={() => setCurrentPage(p => p + 1)}
-                disabled={currentPage * 10 >= filteredBookings.length}
+                disabled={currentPage >= totalPages}
                 className="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
               >
                 Next →
