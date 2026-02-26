@@ -44,25 +44,6 @@ const toInput = (iso: string) => {
 
 const fromInput = (v: string) => new Date(v).toISOString();
 
-function computeInitialTimes(
-  schedule?: Schedule | null,
-  initial?: { start: string; end: string } | null,
-) {
-  const startIso =
-    schedule?.StartTime ?? initial?.start ?? new Date().toISOString();
-
-  const endIso =
-    schedule?.EndTime ??
-    initial?.end ??
-    (() => {
-      const d = new Date(startIso);
-      d.setMinutes(d.getMinutes() + 60);
-      return d.toISOString();
-    })();
-
-  return { startIso, endIso };
-}
-
 const typeLabels: Record<ScheduleType, string> = {
   OLD_SLOT: "Old Slot",
   NEW_SLOT: "New Slot",
@@ -85,7 +66,6 @@ export default function ScheduleEditModal({
   open,
   mode,
   schedule,
-  initial,
   onClose,
   onCreate,
   onUpdate,
@@ -96,27 +76,25 @@ export default function ScheduleEditModal({
     [mode],
   );
 
-  const { startIso, endIso } = useMemo(
-    () => computeInitialTimes(schedule, initial),
-    [schedule, initial],
+  const [roomId, setRoomId] = useState<number | "">(
+    () => schedule?.LabRoomId ?? "",
   );
-
-  const [roomId, setRoomId] = useState<number>(
-    () => schedule?.LabRoomId ?? 101,
+  const [start, setStart] = useState<string>(() =>
+    schedule ? toInput(schedule.StartTime) : "",
   );
-  const [start, setStart] = useState<string>(() => toInput(startIso));
-  const [end, setEnd] = useState<string>(() => toInput(endIso));
-  const [type, setType] = useState<ScheduleType>(
-    () => (schedule?.ScheduleType as ScheduleType) ?? "NEW_SLOT",
+  const [end, setEnd] = useState<string>(() =>
+    schedule ? toInput(schedule.EndTime) : "",
   );
-  const [status, setStatus] = useState<ScheduleStatus>(
-    () => (schedule?.ScheduleStatus as ScheduleStatus) ?? "APPROVED",
+  const [type, setType] = useState<ScheduleType | "">(
+    () => (schedule?.ScheduleType as ScheduleType) ?? "",
+  );
+  const [status, setStatus] = useState<ScheduleStatus | "">(
+    () => (schedule?.ScheduleStatus as ScheduleStatus) ?? "",
   );
 
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // ESC to close
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -126,7 +104,6 @@ export default function ScheduleEditModal({
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open, onClose]);
 
-  // Lock scroll
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
@@ -139,12 +116,17 @@ export default function ScheduleEditModal({
   if (!open) return null;
 
   const submit = async () => {
+    if (!roomId || !start || !end || !type || !status) {
+      alert("Please fill in all fields before submitting.");
+      return;
+    }
+
     const payload = {
-      LabRoomId: roomId,
+      LabRoomId: Number(roomId),
       StartTime: fromInput(start),
       EndTime: fromInput(end),
-      ScheduleType: type,
-      ScheduleStatus: status,
+      ScheduleType: type as ScheduleType,
+      ScheduleStatus: status as ScheduleStatus,
     };
 
     setSaving(true);
@@ -254,22 +236,29 @@ export default function ScheduleEditModal({
             </div>
           </div>
 
-          {/* Body */}
           <div className="p-6">
             <div className="space-y-5">
-              {/* Room ID */}
               <FormField label="Lab Room" icon="🚪">
-                <input
-                  type="number"
+                <select
                   value={roomId}
-                  onChange={(e) => setRoomId(Number(e.target.value))}
-                  min={1}
+                  onChange={(e) =>
+                    setRoomId(e.target.value ? Number(e.target.value) : "")
+                  }
                   className="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:focus:border-blue-400"
-                  placeholder="Enter room number"
-                />
+                >
+                  <option value="">Select a room</option>
+                  <option value="101">Room 101</option>
+                  <option value="102">Room 102</option>
+                  <option value="103">Room 103</option>
+                  <option value="201">Room 201</option>
+                  <option value="202">Room 202</option>
+                  <option value="203">Room 203</option>
+                  <option value="301">Room 301</option>
+                  <option value="302">Room 302</option>
+                  <option value="303">Room 303</option>
+                </select>
               </FormField>
 
-              {/* Date/Time Grid */}
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <FormField label="Start Time" icon="🕐">
                   <input
@@ -290,7 +279,6 @@ export default function ScheduleEditModal({
                 </FormField>
               </div>
 
-              {/* Type & Status Grid */}
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <FormField label="Schedule Type" icon="🏷️">
                   <select
@@ -298,6 +286,7 @@ export default function ScheduleEditModal({
                     onChange={(e) => setType(e.target.value as ScheduleType)}
                     className="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:focus:border-blue-400"
                   >
+                    <option value="">Select type</option>
                     {Object.entries(typeLabels).map(([value, label]) => (
                       <option key={value} value={value}>
                         {label}
@@ -314,66 +303,70 @@ export default function ScheduleEditModal({
                     }
                     className="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:focus:border-blue-400"
                   >
+                    <option value="">Select status</option>
                     {Object.entries(statusLabels).map(([value, label]) => (
                       <option key={value} value={value}>
                         {label}
                       </option>
                     ))}
                   </select>
-                  <div className="mt-2">
-                    <span
-                      className={`inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-2.5 py-1 text-xs font-semibold dark:bg-gray-800 ${statusColors[status]}`}
-                    >
+                  {status && (
+                    <div className="mt-2">
                       <span
-                        className={`h-1.5 w-1.5 rounded-full ${
-                          status === "APPROVED"
-                            ? "bg-emerald-500"
-                            : status === "PENDING"
-                              ? "bg-amber-500"
-                              : "bg-red-500"
-                        }`}
-                      />
-                      {statusLabels[status]}
-                    </span>
-                  </div>
+                        className={`inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-2.5 py-1 text-xs font-semibold dark:bg-gray-800 ${statusColors[status as ScheduleStatus]}`}
+                      >
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            status === "APPROVED"
+                              ? "bg-emerald-500"
+                              : status === "PENDING"
+                                ? "bg-amber-500"
+                                : "bg-red-500"
+                          }`}
+                        />
+                        {statusLabels[status as ScheduleStatus]}
+                      </span>
+                    </div>
+                  )}
                 </FormField>
               </div>
 
-              {/* Duration Info */}
-              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
-                <div className="flex items-start gap-3">
-                  <svg
-                    className="h-5 w-5 flex-shrink-0 text-blue-600 dark:text-blue-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  <div className="flex-1">
-                    <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-200">
-                      Schedule Duration
-                    </h4>
-                    <p className="mt-1 text-sm text-blue-800 dark:text-blue-300">
-                      {(() => {
-                        const s = new Date(fromInput(start));
-                        const e = new Date(fromInput(end));
-                        const diff = e.getTime() - s.getTime();
-                        const hours = Math.floor(diff / (1000 * 60 * 60));
-                        const mins = Math.floor(
-                          (diff % (1000 * 60 * 60)) / (1000 * 60),
-                        );
-                        return `${hours}h ${mins}m`;
-                      })()}
-                    </p>
+              {start && end && (
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
+                  <div className="flex items-start gap-3">
+                    <svg
+                      className="h-5 w-5 flex-shrink-0 text-blue-600 dark:text-blue-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    <div className="flex-1">
+                      <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-200">
+                        Schedule Duration
+                      </h4>
+                      <p className="mt-1 text-sm text-blue-800 dark:text-blue-300">
+                        {(() => {
+                          const s = new Date(fromInput(start));
+                          const e = new Date(fromInput(end));
+                          const diff = e.getTime() - s.getTime();
+                          const hours = Math.floor(diff / (1000 * 60 * 60));
+                          const mins = Math.floor(
+                            (diff % (1000 * 60 * 60)) / (1000 * 60),
+                          );
+                          return `${hours}h ${mins}m`;
+                        })()}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 
@@ -446,7 +439,15 @@ export default function ScheduleEditModal({
                 <button
                   type="button"
                   onClick={submit}
-                  disabled={saving || deleting}
+                  disabled={
+                    saving ||
+                    deleting ||
+                    !roomId ||
+                    !start ||
+                    !end ||
+                    !type ||
+                    !status
+                  }
                   className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {saving ? (

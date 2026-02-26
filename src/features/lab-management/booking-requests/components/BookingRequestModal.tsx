@@ -204,8 +204,8 @@ export default function BookingRequestModal({
                       mono
                     />
                     <InfoRow
-                      label="Purpose Type"
-                      value={String(booking.PurposeTypeId)}
+                      label="Purpose Name"
+                      value={booking.PurposeTypeName}
                     />
                     <InfoRow
                       label="Booking Type"

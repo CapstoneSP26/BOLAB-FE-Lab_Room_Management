@@ -149,7 +149,6 @@ export default function BookingRequestModal({
             </div>
           </div>
 
-          {/* Body */}
           <div className="p-8">
             {loading ? (
               <Skeleton />
@@ -204,8 +203,8 @@ export default function BookingRequestModal({
                       mono
                     />
                     <InfoRow
-                      label="Purpose Type"
-                      value={String(booking.PurposeTypeId)}
+                      label="Purpose Name"
+                      value={booking.PurposeTypeName}
                     />
                     <InfoRow
                       label="Booking Type"
@@ -213,7 +212,6 @@ export default function BookingRequestModal({
                     />
                   </InfoCard>
 
-                  {/* Recurrence */}
                   <InfoCard title="Recurrence">
                     <InfoRow
                       label="Weekly Recurring"
@@ -233,7 +231,6 @@ export default function BookingRequestModal({
                   </InfoCard>
                 </div>
 
-                {/* Reason */}
                 <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800/50">
                   <div className="border-b border-gray-200 bg-gray-50 px-6 py-3 dark:border-gray-700 dark:bg-gray-800">
                     <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -251,7 +248,6 @@ export default function BookingRequestModal({
                   </div>
                 </div>
 
-                {/* Audit Trail */}
                 <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800/50">
                   <div className="border-b border-gray-200 bg-gray-50 px-6 py-3 dark:border-gray-700 dark:bg-gray-800">
                     <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">

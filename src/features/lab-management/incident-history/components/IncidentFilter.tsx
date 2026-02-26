@@ -16,7 +16,6 @@ type Props = {
 
   roomOptions: number[];
 
-  // optional: clear all filters
   onClear?: () => void;
 };
 

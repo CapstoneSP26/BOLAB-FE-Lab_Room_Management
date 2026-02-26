@@ -1,4 +1,4 @@
-import { addDays, toYmd } from "../../features/lab-management/calendar/date";
+import { addDays, toYmd } from "../../features/calendar/date";
 
 export type ScheduleType = "OLD_SLOT" | "NEW_SLOT" | "OUT_SLOT" | (string & {});
 export type ScheduleStatus =
@@ -14,7 +14,7 @@ export type Schedule = {
 
   ScheduleType: ScheduleType;
   ScheduleStatus: ScheduleStatus;
-
+  BuildingName: string;
   StartTime: string;
   EndTime: string;
 
@@ -47,6 +47,7 @@ function seedSchedules(): Schedule[] {
       LabRoomId: 101,
       ScheduleType: "OLD_SLOT",
       ScheduleStatus: "PENDING",
+      BuildingName: "Building A",
       StartTime: `${d0}T09:00`,
       EndTime: `${d0}T10:30`,
       CreatedAt: nowIso,
@@ -63,6 +64,7 @@ function seedSchedules(): Schedule[] {
       LabRoomId: 202,
       ScheduleType: "NEW_SLOT",
       ScheduleStatus: "APPROVED",
+      BuildingName: "Building B",
       StartTime: `${d1}T10:30`,
       EndTime: `${d1}T11:30`,
       CreatedAt: nowIso,
@@ -79,6 +81,7 @@ function seedSchedules(): Schedule[] {
       LabRoomId: 101,
       ScheduleType: "OUT_SLOT",
       ScheduleStatus: "PENDING",
+      BuildingName: "Building A",
       StartTime: `${d0}T13:00`,
       EndTime: `${d0}T14:30`,
       CreatedAt: nowIso,
@@ -153,6 +156,7 @@ export const labSchedulerService = {
     LabRoomId: number;
     StartTime: string;
     EndTime: string;
+    BuildingName: string;
     ScheduleType: ScheduleType;
     ScheduleStatus: ScheduleStatus;
   }): Promise<Schedule> {
@@ -168,6 +172,7 @@ export const labSchedulerService = {
       EndTime: data.EndTime,
       ScheduleType: data.ScheduleType,
       ScheduleStatus: data.ScheduleStatus,
+      BuildingName: data.BuildingName,
       CreatedAt: nowIso,
       UpdatedAt: nowIso,
       CreatedBy: "system",
@@ -189,6 +194,7 @@ export const labSchedulerService = {
       StartTime: string;
       EndTime: string;
       ScheduleType: ScheduleType;
+      BuildingName: string;
       ScheduleStatus: ScheduleStatus;
     },
   ): Promise<Schedule> {

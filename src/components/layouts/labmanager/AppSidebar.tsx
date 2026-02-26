@@ -102,19 +102,13 @@ const AppSidebar: React.FC = () => {
             {
               icon: IncidentHistoryIcon,
               name: "Incident Resolution History",
-              path: p("/incident-resolution-history"),
+              path: p("/incident-history"),
             },
 
             {
               icon: CalenderIcon,
               name: "Room Schedule",
-              subItems: [
-                { name: "View Room Schedule", path: p("/room-schedule") },
-                {
-                  name: "Semester Schedule Import",
-                  path: p("/room-schedule/import"),
-                },
-              ],
+              path: p("/lab-scheduler"),
             },
 
             {
@@ -142,7 +136,6 @@ const AppSidebar: React.FC = () => {
       ];
     }
 
-    // ===== LAB_MANAGER MENU (menu cũ của bạn) =====
     return [
       {
         title: "Menu",

@@ -112,7 +112,7 @@ export default function BookingTable({
                   </td>
 
                   <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
-                    {b.PurposeTypeId}
+                    {b.PurposeTypeName}
                   </td>
 
                   <td className="px-4 py-4">

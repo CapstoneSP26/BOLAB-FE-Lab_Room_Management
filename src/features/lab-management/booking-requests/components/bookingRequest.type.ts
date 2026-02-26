@@ -8,9 +8,9 @@ export type BookingRequest = {
   StartTime: string;
   EndTime: string;
   group_size: number;
-  PurposeTypeId: number;
+  PurposeTypeName: string;
   Reason: string;
-  BookingStatus: ApprovalStatus; // pending/approved/rejected
+  BookingStatus: ApprovalStatus;
   CreatedAt: string;
   UpdatedAt?: string | null;
   CreatedBy: string;

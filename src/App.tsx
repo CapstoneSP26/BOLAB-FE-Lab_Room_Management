@@ -1,8 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Suspense } from "react";
 import { appRoutes } from "./config/routes";
-// import AuthLayout from '@/layouts/AuthLayout';
-// import MainLayout from '@/layouts/MainLayout';
 import ManagerLayout from "./components/layouts/labmanager/ManagerLayout";
 
 const isLoggedIn = () => Boolean(localStorage.getItem("token"));

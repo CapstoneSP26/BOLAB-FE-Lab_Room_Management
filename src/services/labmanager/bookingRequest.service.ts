@@ -1,6 +1,6 @@
 import type { Schedule } from "./labScheduler.service";
 import { labSchedulerService } from "./labScheduler.service";
-import { addDays, toYmd } from "../../features/lab-management/calendar/date";
+import { addDays, toYmd } from "../../features/calendar/date";
 
 export type BookingStatus = "PENDING" | "APPROVED" | "REJECTED" | (string & {});
 
@@ -10,9 +10,9 @@ export type Booking = {
   BookedByUserId: string;
   StartTime: string;
   EndTime: string;
-
+  BuildingName: string;
   group_size: number;
-  PurposeTypeId: number;
+  PurposeTypeName: string;
   Reason: string;
 
   BookingStatus: BookingStatus;
@@ -27,7 +27,7 @@ export type Booking = {
   RecurringUntil?: string | null;
 };
 
-const KEY = "lab_bookings_v3";
+const KEY = "lab_bookings_v5";
 
 function sleep(ms = 150) {
   return new Promise((r) => setTimeout(r, ms));
@@ -46,8 +46,9 @@ function seedBookings(): Booking[] {
       BookedByUserId: "user-001",
       StartTime: `${d0}T09:00`,
       EndTime: `${d0}T10:30`,
+      BuildingName: "Building A",
       group_size: 5,
-      PurposeTypeId: 1,
+      PurposeTypeName: "Lab practice",
       Reason: "Lab practice",
       BookingStatus: "PENDING",
       BookingType: "NORMAL",
@@ -64,8 +65,9 @@ function seedBookings(): Booking[] {
       BookedByUserId: "user-002",
       StartTime: `${d1}T10:30`,
       EndTime: `${d1}T11:30`,
+      BuildingName: "Building B",
       group_size: 12,
-      PurposeTypeId: 2,
+      PurposeTypeName: "Seminar",
       Reason: "Seminar",
       BookingStatus: "APPROVED",
       BookingType: "NORMAL",

@@ -84,7 +84,7 @@ export default function HistoryBookingFeature() {
           String(b.LabRoomId),
           b.BookedByUserId,
           b.Reason,
-          String(b.PurposeTypeId),
+          b.PurposeTypeName,
           String(b.BookingStatus),
         ]
           .join(" ")

@@ -58,7 +58,7 @@ export default function PendingBookingFeature() {
           String(b.LabRoomId),
           b.BookedByUserId,
           b.Reason,
-          String(b.PurposeTypeId),
+          b.PurposeTypeName,
         ]
           .join(" ")
           .toLowerCase();
