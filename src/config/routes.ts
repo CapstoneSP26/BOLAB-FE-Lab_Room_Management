@@ -1,15 +1,13 @@
-import { lazy, type LazyExoticComponent } from "react";
-
+import { lazy, type LazyExoticComponent, type ComponentType } from "react";
 export type LayoutKey = "auth" | "labmanager";
 
 export interface AppRoute {
   path: string;
-  element: LazyExoticComponent<React.ComponentType>;
+  element: LazyExoticComponent<ComponentType<any>>;
   isPrivate: boolean;
   layout: LayoutKey;
 }
 
-const LoginPage = lazy(() => import("../pages/LoginPage.tsx"));
 const ManagerDashboard = lazy(
   () => import("../pages/labmanager/ManagerDashboard"),
 );
@@ -34,6 +32,12 @@ const ReportDetailPage = lazy(
 const IncidentHistoryPage = lazy(
   () => import("../pages/labmanager/IncidentHistoryPage.tsx"),
 );
+const LoginPage = lazy(() => import("../pages/LoginPage"));
+const HomePage = lazy(() => import("../pages/HomePage"));
+const BuildingDetail = lazy(() => import("../pages/BuildingDetail"));
+const RoomBookingPage = lazy(() => import("../pages/RoomBookingPage"));
+const BookingHistoryPage = lazy(() => import("../pages/BookingHistoryPage"));
+
 export const appRoutes: AppRoute[] = [
   {
     path: "/login",
@@ -88,5 +92,30 @@ export const appRoutes: AppRoute[] = [
     element: IncidentHistoryPage,
     isPrivate: false,
     layout: "labmanager",
+  },
+
+  {
+    path: "/",
+    element: HomePage,
+    isPrivate: false,
+    layout: "main",
+  },
+  {
+    path: "/building/:id",
+    element: BuildingDetail,
+    isPrivate: false,
+    layout: "main",
+  },
+  {
+    path: "/book-room",
+    element: RoomBookingPage,
+    isPrivate: true,
+    layout: "main",
+  },
+  {
+    path: "/my-bookings",
+    element: BookingHistoryPage,
+    isPrivate: true,
+    layout: "main",
   },
 ];
