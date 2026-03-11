@@ -6,6 +6,8 @@ import { BookingCalendar } from './BookingCalendar';
 import { useUpcomingBookings } from '../hooks/useUpcomingBookings';
 import { useBookingStats } from '../hooks/useBookingStats';
 import { useRecentRequests } from '../hooks/useRecentRequests';
+import { RecentActivity } from '../../../components/RecentActivity';
+import type { Activity } from '../../../components/RecentActivity';
 
 export const BookingDashboard: React.FC = () => {
   // Fetch data using hooks
@@ -112,6 +114,38 @@ export const BookingDashboard: React.FC = () => {
   const upcomingBookings = upcomingData?.data || mockUpcomingBookings;
   const recentRequests = requestsData?.data || mockRecentRequests;
 
+  // Mock recent activities
+  const recentActivities: Activity[] = [
+    {
+      id: '1',
+      type: 'booking',
+      title: 'Đặt phòng Lab A-101',
+      description: 'Đã đặt phòng cho ngày 25/03/2026',
+      timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 minutes ago
+    },
+    {
+      id: '2',
+      type: 'booking_approved',
+      title: 'Booking được chấp nhận',
+      description: 'Lab G-203 - Web Development Workshop',
+      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+    },
+    {
+      id: '3',
+      type: 'qr_generated',
+      title: 'Tạo mã QR điểm danh',
+      description: 'Lab A-101 - 12 sinh viên đã điểm danh',
+      timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), // 4 hours ago
+    },
+    {
+      id: '4',
+      type: 'report_sent',
+      title: 'Gửi báo cáo vấn đề',
+      description: 'Thiết bị hỏng - Lab D-305',
+      timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
+    },
+  ];
+
   return (
     <div className="w-full h-full flex gap-6 px-6 py-8 overflow-y-auto custom-scrollbar">
       {/* Main Content Area - Left & Center */}
@@ -154,33 +188,41 @@ export const BookingDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Sidebar - Recent Requests */}
+      {/* Sidebar - Recent Requests & Activities */}
       <div className="w-96 space-y-4 animate-fade-in flex-shrink-0" style={{ animationDelay: '0.2s' }}>
-        <div className="flex items-center justify-between">
-            <h3 className="text-white font-bold text-xl flex items-center drop-shadow-md">
-              <FileText className="h-6 w-6 mr-2 text-orange-400 drop-shadow-md" />
-            Recent Requests
-          </h3>
-          <span className="text-white/80 text-sm">
-            {recentRequests.length}
-          </span>
+        {/* Recent Requests */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white font-bold text-xl flex items-center drop-shadow-md">
+                <FileText className="h-6 w-6 mr-2 text-orange-400 drop-shadow-md" />
+              Recent Requests
+            </h3>
+            <span className="text-white/80 text-sm">
+              {recentRequests.length}
+            </span>
+          </div>
+          
+          <div className="space-y-3 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
+            {requestsLoading ? (
+              <div className="flex justify-center items-center h-32">
+                <Loader2 className="h-6 w-6 animate-spin text-white" />
+              </div>
+            ) : recentRequests.length > 0 ? (
+              recentRequests.map((request) => (
+                <RecentRequestCard key={request.id} request={request} />
+              ))
+            ) : (
+              <div className="text-center py-12 text-white/60">
+                <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No recent requests</p>
+              </div>
+            )}
+          </div>
         </div>
-        
-        <div className="space-y-3 max-h-[calc(100vh-220px)] overflow-y-auto pr-2 custom-scrollbar">
-          {requestsLoading ? (
-            <div className="flex justify-center items-center h-32">
-              <Loader2 className="h-6 w-6 animate-spin text-white" />
-            </div>
-          ) : recentRequests.length > 0 ? (
-            recentRequests.map((request) => (
-              <RecentRequestCard key={request.id} request={request} />
-            ))
-          ) : (
-            <div className="text-center py-12 text-white/60">
-              <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No recent requests</p>
-            </div>
-          )}
+
+        {/* Recent Activities */}
+        <div className="mt-6">
+          <RecentActivity activities={recentActivities} maxItems={5} />
         </div>
       </div>
     </div>

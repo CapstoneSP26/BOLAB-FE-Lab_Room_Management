@@ -12,6 +12,11 @@ const HomePage = lazy(() => import('../pages/HomePage'));
 const BuildingDetail = lazy(() => import('../pages/BuildingDetail'));
 const RoomBookingPage = lazy(() => import('../pages/RoomBookingPage'));
 const BookingHistoryPage = lazy(() => import('../pages/BookingHistoryPage'));
+const AttendanceManagementPage = lazy(() => import('../pages/AttendanceManagementPage'));
+const QRDisplayPage = lazy(() => import('../pages/QRDisplayPage'));
+const ScanAttendancePage = lazy(() => import('../pages/ScanAttendancePage'));
+const ManualAttendancePage = lazy(() => import('../pages/ManualAttendancePage'));
+const ProfilePage = lazy(() => import('../pages/ProfilePage'));
 
 export const appRoutes: AppRoute[] = [
   {
@@ -41,6 +46,36 @@ export const appRoutes: AppRoute[] = [
   {
     path: '/my-bookings',
     element: BookingHistoryPage,
+    isPrivate: true,
+    layout: 'main',
+  },
+  {
+    path: '/attendance',
+    element: AttendanceManagementPage,
+    isPrivate: true,
+    layout: 'main',
+  },
+  {
+    path: '/qr-display/:sessionId',
+    element: QRDisplayPage,
+    isPrivate: true,
+    layout: 'auth', // No header/footer for fullscreen display
+  },
+  {
+    path: '/scan-attendance/:sessionId',
+    element: ScanAttendancePage,
+    isPrivate: false, // Public - students can access without login
+    layout: 'auth', // Clean layout for scanning
+  },
+  {
+    path: '/attendance/manual/:sessionId',
+    element: ManualAttendancePage,
+    isPrivate: true, // Lecturer only
+    layout: 'main', // With header/footer
+  },
+  {
+    path: '/profile',
+    element: ProfilePage,
     isPrivate: true,
     layout: 'main',
   },
