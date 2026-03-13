@@ -4,6 +4,8 @@ import { useBookingHistory } from '../features/booking/hooks/useBookingHistory';
 import { useBookingStats } from '../features/booking/hooks/useBookingStats';
 import { BookingDetailsModal } from '../features/booking';
 import type { BookingStatus, Booking } from '../features/booking/types';
+import { SkeletonStatsCard } from '../components/Skeleton';
+import { AnimatedCounter } from '../components/AnimatedCounter';
 
 // Mock data - Remove when API is ready
 // Testing different time periods: Week (±7 days), Month (±30 days), Semester (±120 days)
@@ -371,9 +373,9 @@ const BookingHistoryPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
+      <div className="bg-white/80 backdrop-blur-sm border-b border-blue-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-5">
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
             <Calendar className="w-7 h-7 text-orange-600" />
@@ -387,12 +389,22 @@ const BookingHistoryPage: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+        {isLoading && !statsData ? (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <SkeletonStatsCard />
+            <SkeletonStatsCard />
+            <SkeletonStatsCard />
+            <SkeletonStatsCard />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-100 p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 font-medium">Approved</p>
-                <p className="text-3xl font-bold text-green-600 mt-1">{displayStats.totalAccepted}</p>
+                <p className="text-sm text-green-700 font-medium">Approved</p>
+                <p className="text-3xl font-bold text-green-600 mt-1">
+                  <AnimatedCounter value={displayStats.totalAccepted || 0} />
+                </p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <CheckCircle className="w-6 h-6 text-green-600" />
@@ -400,11 +412,13 @@ const BookingHistoryPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+          <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl border border-amber-100 p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 font-medium">Pending</p>
-                <p className="text-3xl font-bold text-yellow-600 mt-1">{displayStats.totalPending}</p>
+                <p className="text-sm text-amber-700 font-medium">Pending</p>
+                <p className="text-3xl font-bold text-amber-600 mt-1">
+                  <AnimatedCounter value={displayStats.totalPending || 0} />
+                </p>
               </div>
               <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
                 <AlertCircle className="w-6 h-6 text-yellow-600" />
@@ -412,11 +426,13 @@ const BookingHistoryPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+          <div className="bg-gradient-to-br from-red-50 to-rose-50 rounded-xl border border-red-100 p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 font-medium">Rejected</p>
-                <p className="text-3xl font-bold text-red-600 mt-1">{displayStats.totalRejected}</p>
+                <p className="text-sm text-red-700 font-medium">Rejected</p>
+                <p className="text-3xl font-bold text-red-600 mt-1">
+                  <AnimatedCounter value={displayStats.totalRejected || 0} />
+                </p>
               </div>
               <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
                 <XCircle className="w-6 h-6 text-red-600" />
@@ -424,18 +440,21 @@ const BookingHistoryPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100 p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 font-medium">Upcoming</p>
-                <p className="text-3xl font-bold text-blue-600 mt-1">{displayStats.upcomingBookings}</p>
+                <p className="text-3xl font-bold text-blue-600 mt-1">
+                  <AnimatedCounter value={displayStats.upcomingBookings} />
+                </p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <Calendar className="w-6 h-6 text-blue-600" />
               </div>
             </div>
           </div>
-        </div>
+          </div>
+        )}
 
         {/* Filters & Search */}
         <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm space-y-4">
@@ -642,9 +661,9 @@ const BookingHistoryPage: React.FC = () => {
                 >
                   <div className="p-5">
                     <div className="flex items-start justify-between gap-4 mb-4">
-                      <div className="flex items-start gap-4">
+                      <div className="flex items-start gap-3">
                         {/* Color-coded sidebar */}
-                        <div className={`w-1 h-20 rounded-full flex-shrink-0 ${
+                        <div className={`w-1 h-16 rounded-full flex-shrink-0 ${
                           booking.status === 'Approved' ? 'bg-gradient-to-b from-green-400 to-green-600' :
                           booking.status === 'PendingApproval' ? 'bg-gradient-to-b from-yellow-400 to-yellow-600' :
                           booking.status === 'Draft' ? 'bg-gradient-to-b from-amber-400 to-amber-600' :
@@ -654,13 +673,13 @@ const BookingHistoryPage: React.FC = () => {
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2">
-                            <h3 className="text-lg font-bold text-gray-900">
+                            <h3 className="text-lg font-bold text-gray-900 truncate">
                               {booking.roomName}
                             </h3>
                             {getStatusBadge(booking.status)}
                           </div>
                           
-                          <p className="text-sm text-gray-600 font-medium mb-3">
+                          <p className="text-sm text-gray-600 font-medium mb-3 truncate">
                             {booking.buildingName}
                           </p>
 

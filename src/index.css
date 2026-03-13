@@ -1,5 +1,22 @@
 @import "tailwindcss";
 
+@layer components {
+  .auth-input {
+    @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900
+      placeholder:text-slate-400 outline-none
+      focus:border-sky-300 focus:ring-4 focus:ring-emerald-200/70;
+  }
+
+  /* Nút chính màu CAM FPT */
+  .primary-btn {
+    @apply w-full rounded-xl py-3 font-extrabold text-white
+      bg-orange-500 hover:bg-orange-600
+      disabled:opacity-60 disabled:cursor-not-allowed transition;
+  }
+
+  .social-btn {
+    @apply w-full rounded-xl border border-slate-200 bg-white py-3 font-bold text-slate-800
+      hover:bg-sky-50 transition flex items-center justify-center gap-2;
 /* Enable class-based dark mode for Tailwind v4 */
 @custom-variant dark (&:where(.dark, .dark *));
 body {
@@ -33,6 +50,75 @@ body {
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(251, 146, 60, 0.7);
+  }
+
+  /* Modal Scrollbar - Purple theme */
+  .modal-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+  .modal-scrollbar::-webkit-scrollbar-track {
+    background: rgb(243 232 255); /* purple-100 */
+    border-radius: 10px;
+  }
+  .modal-scrollbar::-webkit-scrollbar-thumb {
+    background: rgb(192 132 252); /* purple-400 */
+    border-radius: 10px;
+  }
+  .modal-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgb(168 85 247); /* purple-500 */
+  }
+
+  /* Toast Animation */
+  @keyframes slide-in-right {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  .animate-slide-in-right {
+    animation: slide-in-right 0.3s ease-out;
+  }
+
+  /* Badge Pulse Animation */
+  @keyframes badge-pulse {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.8;
+      transform: scale(1.1);
+    }
+  }
+
+  .animate-badge-pulse {
+    animation: badge-pulse 2s ease-in-out infinite;
+  }
+
+  /* Skeleton Loading Animation */
+  @keyframes skeleton-loading {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  .animate-skeleton {
+    background: linear-gradient(
+      90deg,
+      #f0f0f0 25%,
+      #e0e0e0 50%,
+      #f0f0f0 75%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
   }
 
   /* 3D Card Carousel Styles */
