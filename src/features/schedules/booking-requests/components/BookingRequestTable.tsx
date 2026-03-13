@@ -1,4 +1,4 @@
-import type { Booking } from "../../../../services/labmanager/bookingRequest.service";
+import type { Booking } from "../../api/bookingRequestApi";
 
 function badgeClass(status: unknown) {
   const s = String(status ?? "").toUpperCase();

@@ -4,8 +4,8 @@ import BookingRequestReviewModal from "../booking-requests/components/BookingReq
 import HistoryBookingTable from "./components/HistoryBookingTable";
 import HistoryBookingFilter from "./components/HistoryBookingFilter";
 
-import { bookingRequestsService } from "../../../services/labmanager/bookingRequest.service";
-import type { Booking } from "../../../services/labmanager/bookingRequest.service";
+import { bookingRequestsService } from "../api/bookingRequestApi";
+import type { Booking } from "../api/bookingRequestApi";
 
 type HistoryStatus = "ALL" | "APPROVED" | "REJECTED";
 const norm = (s: unknown) => String(s ?? "").toUpperCase();

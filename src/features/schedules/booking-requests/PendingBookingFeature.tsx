@@ -4,8 +4,8 @@ import BookingRequestReviewModal from "../booking-requests/components/BookingReq
 import BookingFilters from "../booking-requests/components/BookingRequestFilter";
 import BookingTable from "./components/BookingRequestTable";
 
-import { bookingRequestsService } from "../../../services/labmanager/bookingRequest.service";
-import type { Booking } from "../../../services/labmanager/bookingRequest.service";
+import { bookingRequestsService } from "../api/bookingRequestApi";
+import type { Booking } from "../api/bookingRequestApi";
 
 type SortKey = "Old_slot" | "New_slot" | "Out_slot";
 

@@ -1,5 +1,5 @@
 import PageBreadcrumb from "../../components/common/PageBreadcrumb";
-import LabCalendar from "../../features/calendar/LabCalendar";
+import LabCalendar from "../../features/calendar/components/LabCalendar";
 
 export default function LabSchedulerPage() {
   const currentPageTitle = "Calendar";

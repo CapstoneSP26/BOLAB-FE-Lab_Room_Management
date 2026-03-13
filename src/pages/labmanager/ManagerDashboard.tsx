@@ -1,7 +1,7 @@
-import DashboardMetrics from "../../features/lab-management/dashboard/components/DashboardMetrics";
-import MonthlyBookings from "../../features/lab-management/dashboard/components/MonthlyBookings";
-import CheckinComplianceToday from "../../features/lab-management/dashboard/components/CheckinComplianceToday";
-import StatisticsChart from "../../features/lab-management/dashboard/components/StatisticsChart";
+import DashboardMetrics from "../../features/dashboard/components/DashboardMetrics";
+import MonthlyBookings from "../../features/dashboard/components/MonthlyBookings";
+import CheckinComplianceToday from "../../features/dashboard/components/CheckinComplianceToday";
+import StatisticsChart from "../../features/dashboard/components/StatisticsChart";
 
 export default function ManagerDashboard() {
   return (

@@ -2,8 +2,8 @@ import { useMemo, useState, useEffect } from "react";
 import type {
   Schedule,
   ScheduleType,
-} from "../../../../services/labmanager/labScheduler.service";
-import type { ScheduleStatus } from "../../../../services/labmanager/scheduleBooking.service";
+} from "../../../calendar/api/labSchedulerApi";
+import type { ScheduleStatus } from "../../../calendar/api/scheduleBookingApi";
 
 type Props = {
   open: boolean;
@@ -14,6 +14,7 @@ type Props = {
   onClose: () => void;
   onCreate: (data: {
     LabRoomId: number;
+    BuildingName: string;
     StartTime: string;
     EndTime: string;
     ScheduleType: ScheduleType;
@@ -24,6 +25,7 @@ type Props = {
     id: string,
     data: {
       LabRoomId: number;
+      BuildingName: string;
       StartTime: string;
       EndTime: string;
       ScheduleType: ScheduleType;
@@ -44,6 +46,13 @@ const toInput = (iso: string) => {
 
 const fromInput = (v: string) => new Date(v).toISOString();
 
+const getBuildingFromRoom = (roomId: number): string => {
+  if (roomId >= 100 && roomId < 200) return "Building A";
+  if (roomId >= 200 && roomId < 300) return "Building B";
+  if (roomId >= 300 && roomId < 400) return "Building C";
+  return "Other";
+};
+
 const typeLabels: Record<ScheduleType, string> = {
   OLD_SLOT: "Old Slot",
   NEW_SLOT: "New Slot",
@@ -62,7 +71,7 @@ const statusColors: Record<ScheduleStatus, string> = {
   REJECTED: "text-red-600 dark:text-red-400",
 };
 
-export default function ScheduleEditModal({
+export default function BookingEditModal({
   open,
   mode,
   schedule,
@@ -95,6 +104,11 @@ export default function ScheduleEditModal({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  const buildingName = useMemo(() => {
+    if (!roomId) return "";
+    return getBuildingFromRoom(Number(roomId));
+  }, [roomId]);
+
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -123,6 +137,7 @@ export default function ScheduleEditModal({
 
     const payload = {
       LabRoomId: Number(roomId),
+      BuildingName: buildingName,
       StartTime: fromInput(start),
       EndTime: fromInput(end),
       ScheduleType: type as ScheduleType,

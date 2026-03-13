@@ -5,7 +5,7 @@ import {
   IncidentHistoryIcon,
   ListBookingRequest,
   ListIcon,
-} from "../../icon";
+} from "../icon";
 import type React from "react";
 
 type IconProps = React.SVGProps<SVGSVGElement> & { size?: number };
