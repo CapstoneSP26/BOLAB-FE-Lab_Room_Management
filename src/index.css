@@ -1,31 +1,32 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
 
 @layer components {
   .auth-input {
-    @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900
-      placeholder:text-slate-400 outline-none
-      focus:border-sky-300 focus:ring-4 focus:ring-emerald-200/70;
+    @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none focus:border-sky-300 focus:ring-4 focus:ring-emerald-200/70;
   }
 
   /* Nút chính màu CAM FPT */
   .primary-btn {
-    @apply w-full rounded-xl py-3 font-extrabold text-white
-      bg-orange-500 hover:bg-orange-600
-      disabled:opacity-60 disabled:cursor-not-allowed transition;
+    @apply w-full rounded-xl py-3 font-extrabold text-white bg-orange-500 hover:bg-orange-600 disabled:opacity-60 disabled:cursor-not-allowed transition;
   }
 
   .social-btn {
-    @apply w-full rounded-xl border border-slate-200 bg-white py-3 font-bold text-slate-800
-      hover:bg-sky-50 transition flex items-center justify-center gap-2;
-/* Enable class-based dark mode for Tailwind v4 */
-@custom-variant dark (&:where(.dark, .dark *));
-body {
-  background-color: rgb(248 250 252);
-  color: rgb(15 23 42);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  margin: 0;
-  padding: 0;
+    @apply w-full rounded-xl border border-slate-200 bg-white py-3 font-bold text-slate-800 hover:bg-sky-50 transition flex items-center justify-center gap-2;
+    /* Enable class-based dark mode for Tailwind v4 */
+
+    body {
+      background-color: rgb(248 250 252);
+      color: rgb(15 23 42);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      margin: 0;
+      padding: 0;
+    }
+
+
+  }
 }
 
 @layer components {
@@ -40,14 +41,17 @@ body {
     width: 6px;
     height: 6px;
   }
+
   .custom-scrollbar::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 10px;
   }
+
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background: rgba(251, 146, 60, 0.5);
     border-radius: 10px;
   }
+
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(251, 146, 60, 0.7);
   }
@@ -56,16 +60,22 @@ body {
   .modal-scrollbar::-webkit-scrollbar {
     width: 8px;
   }
+
   .modal-scrollbar::-webkit-scrollbar-track {
-    background: rgb(243 232 255); /* purple-100 */
+    background: rgb(243 232 255);
+    /* purple-100 */
     border-radius: 10px;
   }
+
   .modal-scrollbar::-webkit-scrollbar-thumb {
-    background: rgb(192 132 252); /* purple-400 */
+    background: rgb(192 132 252);
+    /* purple-400 */
     border-radius: 10px;
   }
+
   .modal-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgb(168 85 247); /* purple-500 */
+    background: rgb(168 85 247);
+    /* purple-500 */
   }
 
   /* Toast Animation */
@@ -74,6 +84,7 @@ body {
       transform: translateX(100%);
       opacity: 0;
     }
+
     to {
       transform: translateX(0);
       opacity: 1;
@@ -86,10 +97,13 @@ body {
 
   /* Badge Pulse Animation */
   @keyframes badge-pulse {
-    0%, 100% {
+
+    0%,
+    100% {
       opacity: 1;
       transform: scale(1);
     }
+
     50% {
       opacity: 0.8;
       transform: scale(1.1);
@@ -105,18 +119,17 @@ body {
     0% {
       background-position: 200% 0;
     }
+
     100% {
       background-position: -200% 0;
     }
   }
 
   .animate-skeleton {
-    background: linear-gradient(
-      90deg,
-      #f0f0f0 25%,
-      #e0e0e0 50%,
-      #f0f0f0 75%
-    );
+    background: linear-gradient(90deg,
+        #f0f0f0 25%,
+        #e0e0e0 50%,
+        #f0f0f0 75%);
     background-size: 200% 100%;
     animation: skeleton-loading 1.5s ease-in-out infinite;
   }
@@ -145,44 +158,38 @@ body {
   /* Scientific Pattern Background */
   .pattern-dna {
     background-image:
-      repeating-linear-gradient(
-        90deg,
+      repeating-linear-gradient(90deg,
         transparent,
         transparent 50px,
         rgba(0, 0, 0, 0.02) 50px,
-        rgba(0, 0, 0, 0.02) 51px
-      ),
-      repeating-linear-gradient(
-        0deg,
+        rgba(0, 0, 0, 0.02) 51px),
+      repeating-linear-gradient(0deg,
         transparent,
         transparent 50px,
         rgba(0, 0, 0, 0.02) 50px,
-        rgba(0, 0, 0, 0.02) 51px
-      );
+        rgba(0, 0, 0, 0.02) 51px);
   }
 
   .pattern-circuit {
     background-image:
-      radial-gradient(
-        circle at 25px 25px,
+      radial-gradient(circle at 25px 25px,
         rgba(0, 0, 0, 0.03) 2%,
-        transparent 0%
-      ),
-      radial-gradient(
-        circle at 75px 75px,
+        transparent 0%),
+      radial-gradient(circle at 75px 75px,
         rgba(0, 0, 0, 0.03) 2%,
-        transparent 0%
-      );
+        transparent 0%);
     background-size: 100px 100px;
   }
 }
 
 @layer utilities {
+
   /* Shimmer Animation */
   @keyframes shimmer {
     0% {
       background-position: -1000px 0;
     }
+
     100% {
       background-position: 1000px 0;
     }
@@ -195,10 +202,12 @@ body {
 
   /* Floating Animation */
   @keyframes float {
+
     0%,
     100% {
       transform: translateY(0px);
     }
+
     50% {
       transform: translateY(-20px);
     }
@@ -214,6 +223,7 @@ body {
       opacity: 0;
       transform: translateY(10px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -230,6 +240,7 @@ body {
       opacity: 0;
       transform: scale(0.95);
     }
+
     to {
       opacity: 1;
       transform: scale(1);
@@ -246,6 +257,7 @@ body {
       opacity: 0;
       transform: translateX(100%);
     }
+
     to {
       opacity: 1;
       transform: translateX(0);
@@ -258,10 +270,12 @@ body {
 
   /* Glow Pulse */
   @keyframes glow-pulse {
+
     0%,
     100% {
       box-shadow: 0 0 20px rgba(251, 146, 60, 0.3);
     }
+
     50% {
       box-shadow:
         0 0 40px rgba(251, 146, 60, 0.6),
@@ -279,6 +293,7 @@ body {
       opacity: 0;
       transform: translateY(50px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -291,10 +306,12 @@ body {
 
   /* Text Gradient Animation */
   @keyframes gradient-shift {
+
     0%,
     100% {
       background-position: 0% 50%;
     }
+
     50% {
       background-position: 100% 50%;
     }
@@ -324,6 +341,7 @@ body {
       opacity: 0;
       transform: translateY(20px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -336,12 +354,14 @@ body {
 
   /* Glow Pulse Animation */
   @keyframes glow-pulse {
+
     0%,
     100% {
       box-shadow:
         0 0 15px rgba(249, 115, 22, 0.4),
         0 0 30px rgba(249, 115, 22, 0.2);
     }
+
     50% {
       box-shadow:
         0 0 25px rgba(249, 115, 22, 0.6),
