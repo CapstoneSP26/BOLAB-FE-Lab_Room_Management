@@ -1,3 +1,8 @@
+import { lazy, type LazyExoticComponent, type ComponentType } from 'react';
+
+export interface AppRoute {
+  path: string;
+  element: LazyExoticComponent<ComponentType>;
 import { lazy, type LazyExoticComponent, type ComponentType } from "react";
 export type LayoutKey = "auth" | "labmanager";
 
@@ -8,6 +13,7 @@ export interface AppRoute {
   layout: LayoutKey;
 }
 
+const LoginPage = lazy(() => import("../pages/LoginPage"));
 const ManagerDashboard = lazy(
   () => import("../pages/labmanager/ManagerDashboard"),
 );
