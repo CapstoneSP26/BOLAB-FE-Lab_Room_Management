@@ -7,13 +7,23 @@ import { QuickActionFAB } from './components/QuickActionFAB';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LoadingFallback } from './components/LoadingFallback';
 import { AuthLayout, MainLayout } from './layouts';
+import ManagerLayout from './components/layouts/labmanager/ManagerLayout';
 
 export default function App() {
   const toasts = useToastStore((state) => state.toasts);
   const removeToast = useToastStore((state) => state.removeToast);
 
-  const getLayout = (layout: 'auth' | 'main') => {
-    return layout === 'main' ? MainLayout : AuthLayout;
+  const getLayout = (layout: 'auth' | 'main' | 'labmanager') => {
+    switch (layout) {
+      case 'auth':
+        return AuthLayout;
+      case 'main':
+        return MainLayout;
+      case 'labmanager':
+        return ManagerLayout;
+      default:
+        return MainLayout;
+    }
   };
 
   return (
