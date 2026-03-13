@@ -84,21 +84,6 @@ export const BookingCalendar: React.FC<BookingCalendarProps> = ({ bookings }) =>
     return bookingsByDate.get(date.toDateString()) || [];
   };
 
-  const getStatusColor = (status: Booking['status']) => {
-    switch (status) {
-      case 'confirmed':
-        return 'bg-green-500';
-      case 'pending':
-        return 'bg-yellow-500';
-      case 'cancelled':
-        return 'bg-red-500';
-      case 'completed':
-        return 'bg-blue-500';
-      default:
-        return 'bg-gray-500';
-    }
-  };
-
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
@@ -234,7 +219,7 @@ export const BookingCalendar: React.FC<BookingCalendarProps> = ({ bookings }) =>
                     <div className="text-white/70 text-sm mb-4">
                       {selectedDateBookings.length} booking{selectedDateBookings.length > 1 ? 's' : ''} scheduled
                     </div>
-                    {selectedDateBookings.map((booking, index) => (
+                    {selectedDateBookings.map((booking) => (
                       <div
                         key={booking.id}
                         className="bg-white/15 backdrop-blur-md rounded-xl p-4 border border-white/30 hover:bg-white/20 hover:border-orange-500/60 hover:shadow-lg transition-all group"

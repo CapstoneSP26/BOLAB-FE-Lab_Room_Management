@@ -1,24 +1,36 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 interface FPTLogoProps {
   className?: string;
-  showText?: boolean;
 }
 
-export const FPTLogo: React.FC<FPTLogoProps> = ({ className = '', showText = true }) => {
+export const FPTLogo: React.FC<FPTLogoProps> = ({ className = '' }) => {
   return (
-    <div className={`flex items-center gap-3 ${className}`}>
-      {/* FPT Logo Icon */}
+    <Link 
+      to="/" 
+      className={`flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity ${className}`}
+    >
+      {/* FPT Education Logo */}
       <div className="relative">
+        <img 
+          src="https://upload.wikimedia.org/wikipedia/commons/6/68/Logo_FPT_Education.png"
+          alt="FPT Education Logo"
+          className="h-16 w-auto object-contain"
+          onError={(e) => {
+            // Fallback to text if image fails to load
+            e.currentTarget.style.display = 'none';
+            const fallback = e.currentTarget.nextElementSibling;
+            if (fallback) fallback.classList.remove('hidden');
+          }}
+        />
+        {/* Fallback SVG Logo (hidden by default) */}
         <svg 
           viewBox="0 0 100 100" 
-          className="h-10 w-10"
+          className="h-16 w-16 hidden"
           xmlns="http://www.w3.org/2000/svg"
         >
-          {/* Orange Circle Background */}
           <circle cx="50" cy="50" r="48" fill="#FF6600" />
-          
-          {/* White FPT Text */}
           <text
             x="50"
             y="62"
@@ -32,15 +44,7 @@ export const FPTLogo: React.FC<FPTLogoProps> = ({ className = '', showText = tru
           </text>
         </svg>
       </div>
-      
-      {/* Text */}
-      {showText && (
-        <div className="flex flex-col">
-          <span className="text-xl font-bold text-white leading-tight drop-shadow-lg">FPT University</span>
-          <span className="text-xs text-white/90 drop-shadow-lg">Lab Management</span>
-        </div>
-      )}
-    </div>
+    </Link>
   );
 };
 

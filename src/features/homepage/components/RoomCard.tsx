@@ -1,6 +1,8 @@
 import React from 'react';
 import { Users, Wifi, Monitor, MoreVertical, Clock } from 'lucide-react';
 import { Button } from '../../../components/Button';
+import { RoomStatusBadge } from '../../../components/RoomStatusBadge';
+import type { RoomStatus } from '../../../components/RoomStatusBadge';
 
 interface RoomCardProps {
   name: string;
@@ -12,20 +14,19 @@ interface RoomCardProps {
 }
 
 const RoomCard: React.FC<RoomCardProps> = ({ name, capacity, status, nextAvailable, image, features }) => {
-  const statusStyles = {
-    Available: 'bg-green-100 text-green-700 border-green-200',
-    Occupied: 'bg-red-100 text-red-700 border-red-200',
-    Maintenance: 'bg-orange-100 text-orange-700 border-orange-200',
-  };
+  // Map status to RoomStatusBadge format
+  const roomStatus: RoomStatus = status === 'Available' ? 'available' : status === 'Occupied' ? 'occupied' : 'maintenance';
 
   return (
     <div className="bg-white rounded-xl overflow-hidden shadow-card border border-gray-100 hover:shadow-card-hover transition-all duration-300 flex flex-col">
       <div className="relative h-40">
         <img src={image} alt={name} className="w-full h-full object-cover" />
         <div className="absolute top-3 right-3">
-          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${statusStyles[status]} shadow-sm backdrop-blur-md bg-opacity-90`}>
-            {status}
-          </span>
+          <RoomStatusBadge 
+            status={roomStatus} 
+            pulse={status === 'Available'}
+            className="shadow-lg backdrop-blur-md bg-opacity-90"
+          />
         </div>
         <div className="absolute bottom-3 left-3 flex gap-2">
             {features.includes('wifi') && (
