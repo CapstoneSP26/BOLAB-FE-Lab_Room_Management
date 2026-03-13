@@ -3,7 +3,7 @@
  * API integration layer for feedback and report operations
  */
 
-import axiosInstance from '../../../config/axios';
+import axiosInstance from '../../../api/axios';
 import type {
   CreateReportRequest,
   CreateReportResponse,

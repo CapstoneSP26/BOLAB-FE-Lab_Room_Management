@@ -1,4 +1,4 @@
-import axiosInstance from '../../../config/axios';
+import axiosInstance from '../../../api/axios';
 import type {
   GetLabRoomsRequest,
   GetLabRoomsResponse,

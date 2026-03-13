@@ -70,7 +70,7 @@ export const BookingDashboard: React.FC = () => {
       startTime: '08:00',
       endTime: '10:00',
       date: new Date(Date.now() + 86400000).toISOString(),
-      status: 'PendingApproval' as const,
+      status: 'pending' as const,
     },
     {
       id: 2,

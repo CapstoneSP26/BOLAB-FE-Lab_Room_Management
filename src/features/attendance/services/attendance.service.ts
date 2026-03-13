@@ -3,7 +3,7 @@
  * BOLAB-30: API calls for QR code attendance
  */
 
-import axiosInstance from '../../../config/axios';
+import axiosInstance from '../../../api/axios';
 import type {
   CreateQRSessionRequest,
   CreateQRSessionResponse,
