@@ -1,5 +1,5 @@
 import PageBreadcrumb from "../../components/common/PageBreadcrumb";
-import ReportListFeature from "../../features/lab-management/reports/ReportListFeature";
+import ReportListFeature from "../../features/reports/ReportListFeature";
 
 export default function ReportListPage() {
   return (

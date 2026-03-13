@@ -1,5 +1,5 @@
 import { lazy, type LazyExoticComponent, type ComponentType } from "react";
-export type LayoutKey = "auth" | "labmanager";
+export type LayoutKey = "auth" | "labmanager" | "main";
 
 export interface AppRoute {
   path: string;

@@ -1,18 +1,18 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getLabRooms,
   getStudentGroups,
   getAvailableSlots,
   createBooking,
   getMyBookings,
-} from '../services/room-booking.service';
+} from "../api/room-bookingApi";
 import type {
   GetLabRoomsRequest,
   GetStudentGroupsRequest,
   GetAvailableSlotsRequest,
   CreateBookingRequest,
   GetMyBookingsRequest,
-} from '../types';
+} from "../types";
 
 /**
  * ===== BUSINESS LOGIC LAYER =====
@@ -23,10 +23,10 @@ import type {
  */
 
 export const QUERY_KEYS = {
-  LAB_ROOMS: 'lab-rooms',
-  STUDENT_GROUPS: 'student-groups',
-  AVAILABLE_SLOTS: 'available-slots',
-  MY_BOOKINGS: 'my-bookings',
+  LAB_ROOMS: "lab-rooms",
+  STUDENT_GROUPS: "student-groups",
+  AVAILABLE_SLOTS: "available-slots",
+  MY_BOOKINGS: "my-bookings",
 } as const;
 
 // ===== QUERIES =====
@@ -130,7 +130,7 @@ export const useCreateBooking = (options: UseCreateBookingOptions = {}) => {
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.MY_BOOKINGS] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.AVAILABLE_SLOTS] });
-      
+
       options.onSuccess?.(data);
     },
     onError: options.onError,

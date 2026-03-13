@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import type { Booking } from "../../../../services/labmanager/bookingRequest.service";
+import type { Booking } from "../../api/bookingRequestApi";
 
 type Props = {
   open: boolean;
