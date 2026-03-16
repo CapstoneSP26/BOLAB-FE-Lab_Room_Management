@@ -4,7 +4,7 @@
  */
 
 import { create } from 'zustand';
-import type { ToastType } from '../components/Toast';
+import type { ToastType } from '../../../components/ui/Toast';
 
 interface ToastItem {
   id: string;

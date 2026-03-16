@@ -21,7 +21,7 @@ export const UpcomingBookingCard: React.FC<UpcomingBookingCardProps> = ({
         return 'bg-red-500/20 text-red-300 border-red-500/50';
       case 'Rejected':
         return 'bg-red-500/20 text-red-300 border-red-500/50';
-      case 'Draft':
+      case 'All':
         return 'bg-gray-500/20 text-gray-300 border-gray-500/50';
       default:
         return 'bg-gray-500/20 text-gray-300 border-gray-500/50';

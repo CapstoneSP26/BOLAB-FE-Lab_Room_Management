@@ -1,7 +1,7 @@
 import type { PropsWithChildren } from 'react';
 
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+import Header from '../components/common/Header';
+import Footer from '../components/common/Footer';
 
 export default function MainLayout({ children }: PropsWithChildren) {
   return (

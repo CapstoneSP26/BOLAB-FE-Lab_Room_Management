@@ -25,9 +25,10 @@ import {
   AlertTriangle,
   AlertCircle,
 } from 'lucide-react';
-import { useQRSession } from '../features/attendance/hooks/useQRSession';
-import { MOCK_QR_SESSION } from '../features/attendance/mocks/attendance.mock';
-import type { AttendanceStatus } from '../features/attendance/types';
+import { useQRSession } from '../../features/attendance/hooks/useQRSession';
+import { MOCK_QR_SESSION } from '../../features/attendance/mocks/attendance.mock';
+import type { AttendanceStatus } from '../../features/attendance/types';
+import { useToast } from '../../hooks/useToast';
 
 // Mock student data - will be replaced with real Student Group API
 interface Student {
@@ -72,6 +73,7 @@ const MOCK_STUDENTS: Student[] = [
 ];
 
 export default function ManualAttendancePage() {
+  const appAlert = useToast();
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
 
@@ -177,7 +179,7 @@ export default function ManualAttendancePage() {
   // Show confirmation modal
   const handleSave = () => {
     if (!isEditable) {
-      alert('⚠️ Cannot save: Attendance can only be updated on the same day as the session.');
+      appAlert.warning('Cannot save', 'Attendance can only be updated on the same day as the session.');
       return;
     }
     setShowConfirmModal(true);
@@ -198,7 +200,7 @@ export default function ManualAttendancePage() {
     });
 
     setIsSaving(false);
-    alert('✅ Attendance saved successfully!');
+    appAlert.success('Attendance saved', 'Attendance saved successfully!');
     // In real app: navigate back or show success toast
   };
 
