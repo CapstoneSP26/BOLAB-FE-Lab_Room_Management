@@ -6,8 +6,8 @@ import { BookingCalendar } from './BookingCalendar';
 import { useUpcomingBookings } from '../hooks/useUpcomingBookings';
 import { useBookingStats } from '../hooks/useBookingStats';
 import { useRecentRequests } from '../hooks/useRecentRequests';
-import { RecentActivity } from '../../../components/RecentActivity';
-import type { Activity } from '../../../components/RecentActivity';
+import { RecentActivity } from '../../../components/common/RecentActivity';
+import type { Activity } from '../../../components/common/RecentActivity';
 
 export const BookingDashboard: React.FC = () => {
   // Fetch data using hooks

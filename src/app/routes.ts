@@ -10,13 +10,13 @@ export interface AppRoute {
 const LoginPage = lazy(() => import('../pages/LoginPage'));
 const HomePage = lazy(() => import('../pages/HomePage'));
 const BuildingDetail = lazy(() => import('../pages/BuildingDetail'));
-const RoomBookingPage = lazy(() => import('../pages/RoomBookingPage'));
-const BookingHistoryPage = lazy(() => import('../pages/BookingHistoryPage'));
-const AttendanceManagementPage = lazy(() => import('../pages/AttendanceManagementPage'));
-const QRDisplayPage = lazy(() => import('../pages/QRDisplayPage'));
-const ScanAttendancePage = lazy(() => import('../pages/ScanAttendancePage'));
-const ManualAttendancePage = lazy(() => import('../pages/ManualAttendancePage'));
-const ProfilePage = lazy(() => import('../pages/ProfilePage'));
+const RoomBookingPage = lazy(() => import('../pages/lecturer/RoomBookingPage'));
+const BookingHistoryPage = lazy(() => import('../pages/lecturer/BookingHistoryPage'));
+const AttendanceManagementPage = lazy(() => import('../pages/lecturer/AttendanceManagementPage'));
+const QRDisplayPage = lazy(() => import('../pages/lecturer/QRDisplayPage'));
+const ScanAttendancePage = lazy(() => import('../pages/lecturer/ScanAttendancePage'));
+const ManualAttendancePage = lazy(() => import('../pages/lecturer/ManualAttendancePage'));
+const ProfilePage = lazy(() => import('../pages/lecturer/ProfilePage'));
 
 
 const ManagerDashboard = lazy(

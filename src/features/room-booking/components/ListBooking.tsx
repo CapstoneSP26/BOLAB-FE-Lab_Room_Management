@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Repeat, Users, Info } from 'lucide-react';
-import { Button } from '../../../components/Button';
-import { Input } from '../../../components/Input';
+import { Button } from '../../../components/ui/Button';
+import { Input } from '../../../components/ui/Input';
 import { AvailableSlotList } from './AvailableSlotList';
 import type { LabRoom, StudentGroup, TimeSlot } from '../types';
 

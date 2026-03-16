@@ -5,7 +5,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { useRooms } from '../features/homepage';
+import { useRooms } from '../../features/homepage';
 import {
   ImageUploadArea,
   ReasonSelector,
@@ -13,9 +13,9 @@ import {
   useCreateReport,
   type ReportReason,
   type ImagePreview,
-} from '../features/feedback-report';
-import type { Report, CreateReportResponse } from '../features/feedback-report/types';
-import { useToast } from '../hooks/useToast';
+} from '../../features/feedback-report';
+import type { Report, CreateReportResponse } from '../../features/feedback-report/types';
+import { useToast } from '../../hooks/useToast';
 
 interface SendReportModalProps {
   isOpen: boolean;

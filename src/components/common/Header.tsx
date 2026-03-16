@@ -3,11 +3,11 @@ import { useLocation, Link } from 'react-router-dom';
 import { QrCode, Calendar, BookOpen } from 'lucide-react';
 import NotificationDropdown from './NotificationDropdown';
 import ProfileMenu from './ProfileMenu';
-import { FPTLogo } from './FPTLogo';
-import { Badge } from './Badge';
-import { Breadcrumb } from './Breadcrumb';
-import { ActiveSessionIndicator } from './ActiveSessionIndicator';
-import { useActiveSession } from '../context/ActiveSessionContext';
+import { FPTLogo } from '../icon/FPTLogo';
+import { Badge } from '../ui/Badge';
+import { Breadcrumb } from '../ui/Breadcrumb';
+import { ActiveSessionIndicator } from '../ui/ActiveSessionIndicator';
+import { useActiveSession } from '../../context/ActiveSessionContext';
 
 const Header: React.FC = () => {
   const location = useLocation();

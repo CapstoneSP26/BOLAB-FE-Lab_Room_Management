@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Clock, Repeat, Users, Info } from 'lucide-react';
-import { Button } from '../../../components/Button';
-import { Input } from '../../../components/Input';
+import { Button } from '../../../components/ui/Button';
+import { Input } from '../../../components/ui/Input';
 import type { LabRoom, StudentGroup, TimeSlot } from '../types';
 import { formatDate } from '../../../utils/formatDate';
 

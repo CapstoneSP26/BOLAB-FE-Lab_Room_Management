@@ -1,6 +1,6 @@
 /**
  * Attendance Management Page - BOLAB-30
- * Lecturer's page to generate QR codes and manage attendance
+ * Lecturer's page to manage attendance and active QR sessions
  */
 
 import { useState, useEffect } from 'react';
@@ -25,25 +25,25 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 import {
   useLecturerBookings,
-  useCreateQRSession,
   useQRSession,
   useRefreshQRToken,
   useEndQRSession,
   useAttendanceList,
   useExportAttendance,
   type BookingWithQR,
-} from '../features/attendance';
-import { MOCK_LECTURER_BOOKINGS, MOCK_QR_SESSION } from '../features/attendance/mocks/attendance.mock';
-import { useActiveSession } from '../context/ActiveSessionContext';
+} from '../../features/attendance';
+import { MOCK_LECTURER_BOOKINGS, MOCK_QR_SESSION } from '../../features/attendance/mocks/attendance.mock';
+import { useActiveSession } from '../../context/ActiveSessionContext';
+import { useToast } from '../../hooks/useToast';
 
 export default function AttendanceManagementPage() {
+  const appAlert = useToast();
   // Global context for active session (shared with Header)
   const { activeSession, setActiveSession } = useActiveSession();
   
   // Queries & Mutations
   const { data: bookingsData, isLoading: bookingsLoading } = useLecturerBookings();
   const navigate = useNavigate();
-  const createQRMutation = useCreateQRSession();
   const refreshTokenMutation = useRefreshQRToken();
   const endSessionMutation = useEndQRSession({
     onSuccess: () => {
@@ -57,7 +57,6 @@ export default function AttendanceManagementPage() {
   const exportMutation = useExportAttendance();
 
   // State
-  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'upcoming' | 'past' | 'all'>('upcoming');
   const [showQRModal, setShowQRModal] = useState(false);
@@ -99,60 +98,6 @@ export default function AttendanceManagementPage() {
 
     return true;
   });
-
-  // Handle create QR session
-  const handleCreateQR = async (bookingId: string) => {
-    setSelectedBookingId(bookingId);
-    
-    try {
-      // Mock mode: Simulate QR session creation
-      if (!bookingsData?.data) {
-        // Find the booking to get room details
-        const booking = bookings.find((b) => b.bookingId === bookingId);
-        if (!booking) return;
-        
-        // Create mock QR session
-        const mockNewSession = {
-          id: 'qr-session-' + Date.now(),
-          bookingId: bookingId,
-          roomName: booking.roomName,
-          roomCode: booking.roomCode,
-          buildingName: booking.buildingName,
-          date: booking.date,
-          startTime: booking.startTime,
-          endTime: booking.endTime,
-          lecturerName: 'Nguyễn Văn A',
-          lecturerId: 'lecturer-001',
-          qrToken: 'QR_TOKEN_' + Date.now(),
-          qrExpiry: new Date(Date.now() + 5 * 60 * 1000).toISOString(), // 5 minutes
-          createdAt: new Date().toISOString(),
-          isActive: true,
-          totalStudents: 30,
-          presentCount: 0,
-          absentCount: 30,
-          lateCount: 0,
-        };
-        
-        setActiveSession(mockNewSession);
-        setShowQRModal(true);
-        console.log('✅ QR Session created! (Mock mode)');
-        return;
-      }
-
-      // Real API mode
-      const result = await createQRMutation.mutateAsync({
-        bookingId,
-        expiryMinutes: 5, // 5 minutes expiry
-      });
-      
-      if (result.success) {
-        setActiveSession(result.data); // Update global context
-        setShowQRModal(true);
-      }
-    } catch (error) {
-      console.error('Failed to create QR session:', error);
-    }
-  };
 
   // Handle refresh QR token
   const handleRefreshQR = async () => {
@@ -292,7 +237,7 @@ export default function AttendanceManagementPage() {
             <div>
               <h1 className="text-3xl font-bold text-slate-900">Attendance Management</h1>
               <p className="text-slate-600 mt-1">
-                Generate QR codes and track student attendance
+                Track student attendance and manage active QR sessions
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -550,11 +495,6 @@ export default function AttendanceManagementPage() {
               <BookingCard
                 key={booking.bookingId}
                 booking={booking}
-                onCreateQR={handleCreateQR}
-                isCreating={
-                  createQRMutation.isPending &&
-                  selectedBookingId === booking.bookingId
-                }
               />
             ))
           )}
@@ -612,7 +552,7 @@ export default function AttendanceManagementPage() {
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(scanUrl);
-                    alert('✅ Link copied! Open in new tab or send to phone.');
+                    appAlert.success('Link copied', 'Open in new tab or send to phone.');
                   }}
                   className="text-sm text-blue-600 hover:text-blue-700 font-semibold hover:underline"
                 >
@@ -640,11 +580,9 @@ export default function AttendanceManagementPage() {
  */
 interface BookingCardProps {
   booking: BookingWithQR;
-  onCreateQR: (bookingId: string) => void;
-  isCreating: boolean;
 }
 
-function BookingCard({ booking, onCreateQR, isCreating }: BookingCardProps) {
+function BookingCard({ booking }: BookingCardProps) {
   const navigate = useNavigate();
 
   const statusColors: Record<BookingWithQR['status'], string> = {
@@ -715,16 +653,11 @@ function BookingCard({ booking, onCreateQR, isCreating }: BookingCardProps) {
             </button>
           ) : booking.isUpcoming && booking.status === 'Approved' ? (
             <button
-              onClick={() => onCreateQR(booking.bookingId)}
-              disabled={isCreating}
-              className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-4 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-sm hover:shadow-md flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              disabled
+              className="bg-slate-100 text-slate-500 px-4 py-2.5 rounded-xl font-semibold text-sm cursor-not-allowed border border-slate-200 whitespace-nowrap flex items-center gap-2"
             >
-              {isCreating ? (
-                <RefreshCw className="w-4 h-4 animate-spin" />
-              ) : (
-                <QrCode className="w-4 h-4" />
-              )}
-              <span>Generate QR</span>
+              <Clock className="w-4 h-4" />
+              <span>Available at class start</span>
             </button>
           ) : (
             <button
