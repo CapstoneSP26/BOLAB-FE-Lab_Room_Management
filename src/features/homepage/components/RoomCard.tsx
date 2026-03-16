@@ -1,8 +1,8 @@
 import React from 'react';
 import { Users, Wifi, Monitor, MoreVertical, Clock } from 'lucide-react';
-import { Button } from '../../../components/Button';
-import { RoomStatusBadge } from '../../../components/RoomStatusBadge';
-import type { RoomStatus } from '../../../components/RoomStatusBadge';
+import { Button } from '../../../components/ui/Button';
+import { RoomStatusBadge } from '../../../components/ui/RoomStatusBadge';
+import type { RoomStatus } from '../../../components/ui/RoomStatusBadge';
 
 interface RoomCardProps {
   name: string;

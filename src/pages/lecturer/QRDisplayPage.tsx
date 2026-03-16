@@ -8,11 +8,13 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { Clock, MapPin, Calendar, RefreshCw, CheckCircle2, AlertTriangle, Home } from 'lucide-react';
-import { useQRSession, useAttendanceList } from '../features/attendance';
-import { MOCK_QR_SESSION, MOCK_STUDENT_ATTENDANCE } from '../features/attendance/mocks/attendance.mock';
-import { useActiveSession } from '../context/ActiveSessionContext';
+import { useQRSession, useAttendanceList } from '../../features/attendance';
+import { MOCK_QR_SESSION, MOCK_STUDENT_ATTENDANCE } from '../../features/attendance/mocks/attendance.mock';
+import { useActiveSession } from '../../context/ActiveSessionContext';
+import { useToast } from '../../hooks/useToast';
 
 export default function QRDisplayPage() {
+  const appAlert = useToast();
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
   const { activeSession } = useActiveSession();
@@ -236,7 +238,7 @@ export default function QRDisplayPage() {
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(scanUrl);
-                      alert('✅ Link copied! Paste in browser or send to phone.');
+                      appAlert.success('Link copied', 'Paste in browser or send to phone.');
                     }}
                     className="text-sm text-blue-600 hover:text-blue-700 font-semibold hover:underline"
                   >
