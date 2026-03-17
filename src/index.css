@@ -12,18 +12,6 @@
   }
 
   .social-btn {
-    @apply w-full rounded-xl border border-slate-200 bg-white py-3 font-bold text-slate-800
-      hover:bg-sky-50 transition flex items-center justify-center gap-2;
-    /* Enable class-based dark mode for Tailwind v4 */
-    @custom-variant dark (&:where(.dark, .dark *));
-    body {
-      background-color: rgb(248 250 252);
-      color: rgb(15 23 42);
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      margin: 0;
-      padding: 0;
-    }
     @apply w-full rounded-xl border border-slate-200 bg-white py-3 font-bold text-slate-800 hover:bg-sky-50 transition flex items-center justify-center gap-2;
     /* Enable class-based dark mode for Tailwind v4 */
 
@@ -38,29 +26,14 @@
   }
 }
 
-    @layer components {
-      .glass-panel {
-        background: rgba(255, 255, 255, 0.7);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-      }
+@layer components {
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
 
-      .custom-scrollbar::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 10px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: rgba(251, 146, 60, 0.5);
-        border-radius: 10px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: rgba(251, 146, 60, 0.7);
-      }
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -80,21 +53,6 @@
     background: rgba(251, 146, 60, 0.7);
   }
 
-      /* Modal Scrollbar - Purple theme */
-      .modal-scrollbar::-webkit-scrollbar {
-        width: 8px;
-      }
-      .modal-scrollbar::-webkit-scrollbar-track {
-        background: rgb(243 232 255); /* purple-100 */
-        border-radius: 10px;
-      }
-      .modal-scrollbar::-webkit-scrollbar-thumb {
-        background: rgb(192 132 252); /* purple-400 */
-        border-radius: 10px;
-      }
-      .modal-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: rgb(168 85 247); /* purple-500 */
-      }
   /* Modal Scrollbar - Purple theme */
   .modal-scrollbar::-webkit-scrollbar {
     width: 8px;
@@ -117,17 +75,6 @@
     /* purple-500 */
   }
 
-      /* Toast Animation */
-      @keyframes slide-in-right {
-        from {
-          transform: translateX(100%);
-          opacity: 0;
-        }
-        to {
-          transform: translateX(0);
-          opacity: 1;
-        }
-      }
   /* Toast Animation */
   @keyframes slide-in-right {
     from {
@@ -141,25 +88,12 @@
     }
   }
 
-      .animate-slide-in-right {
-        animation: slide-in-right 0.3s ease-out;
-      }
+  .animate-slide-in-right {
+    animation: slide-in-right 0.3s ease-out;
+  }
 
-      /* Badge Pulse Animation */
-      @keyframes badge-pulse {
-        0%,
-        100% {
-          opacity: 1;
-          transform: scale(1);
-        }
-        50% {
-          opacity: 0.8;
-          transform: scale(1.1);
-        }
-      }
   /* Badge Pulse Animation */
   @keyframes badge-pulse {
-
     0%,
     100% {
       opacity: 1;
@@ -172,19 +106,10 @@
     }
   }
 
-      .animate-badge-pulse {
-        animation: badge-pulse 2s ease-in-out infinite;
-      }
+  .animate-badge-pulse {
+    animation: badge-pulse 2s ease-in-out infinite;
+  }
 
-      /* Skeleton Loading Animation */
-      @keyframes skeleton-loading {
-        0% {
-          background-position: 200% 0;
-        }
-        100% {
-          background-position: -200% 0;
-        }
-      }
   /* Skeleton Loading Animation */
   @keyframes skeleton-loading {
     0% {
@@ -196,118 +121,69 @@
     }
   }
 
-      .animate-skeleton {
-        background: linear-gradient(
-          90deg,
-          #f0f0f0 25%,
-          #e0e0e0 50%,
-          #f0f0f0 75%
-        );
-        background-size: 200% 100%;
-        animation: skeleton-loading 1.5s ease-in-out infinite;
-      }
   .animate-skeleton {
-    background: linear-gradient(90deg,
-        #f0f0f0 25%,
-        #e0e0e0 50%,
-        #f0f0f0 75%);
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
     background-size: 200% 100%;
     animation: skeleton-loading 1.5s ease-in-out infinite;
   }
 
-      /* 3D Card Carousel Styles */
-      .carousel-3d-container {
-        perspective: 2000px;
-        perspective-origin: 50% 50%;
-      }
+  /* 3D Card Carousel Styles */
+  .carousel-3d-container {
+    perspective: 2000px;
+    perspective-origin: 50% 50%;
+  }
 
-      /* Glassmorphism Effect */
-      .glassmorphism {
-        background: rgba(255, 255, 255, 0.4);
-        backdrop-filter: blur(20px) saturate(180%);
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
-        border: 1px solid rgba(255, 255, 255, 0.5);
-      }
+  /* Glassmorphism Effect */
+  .glassmorphism {
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+  }
 
-      .glassmorphism-dark {
-        background: rgba(0, 0, 0, 0.3);
-        backdrop-filter: blur(20px) saturate(180%);
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-      }
+  .glassmorphism-dark {
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
 
-      /* Scientific Pattern Background */
-      .pattern-dna {
-        background-image:
-          repeating-linear-gradient(
-            90deg,
-            transparent,
-            transparent 50px,
-            rgba(0, 0, 0, 0.02) 50px,
-            rgba(0, 0, 0, 0.02) 51px
-          ),
-          repeating-linear-gradient(
-            0deg,
-            transparent,
-            transparent 50px,
-            rgba(0, 0, 0, 0.02) 50px,
-            rgba(0, 0, 0, 0.02) 51px
-          );
-      }
   /* Scientific Pattern Background */
   .pattern-dna {
     background-image:
-      repeating-linear-gradient(90deg,
+      repeating-linear-gradient(
+        90deg,
         transparent,
         transparent 50px,
         rgba(0, 0, 0, 0.02) 50px,
-        rgba(0, 0, 0, 0.02) 51px),
-      repeating-linear-gradient(0deg,
+        rgba(0, 0, 0, 0.02) 51px
+      ),
+      repeating-linear-gradient(
+        0deg,
         transparent,
         transparent 50px,
         rgba(0, 0, 0, 0.02) 50px,
-        rgba(0, 0, 0, 0.02) 51px);
+        rgba(0, 0, 0, 0.02) 51px
+      );
   }
 
-      .pattern-circuit {
-        background-image:
-          radial-gradient(
-            circle at 25px 25px,
-            rgba(0, 0, 0, 0.03) 2%,
-            transparent 0%
-          ),
-          radial-gradient(
-            circle at 75px 75px,
-            rgba(0, 0, 0, 0.03) 2%,
-            transparent 0%
-          );
-        background-size: 100px 100px;
-      }
-    }
   .pattern-circuit {
     background-image:
-      radial-gradient(circle at 25px 25px,
+      radial-gradient(
+        circle at 25px 25px,
         rgba(0, 0, 0, 0.03) 2%,
-        transparent 0%),
-      radial-gradient(circle at 75px 75px,
+        transparent 0%
+      ),
+      radial-gradient(
+        circle at 75px 75px,
         rgba(0, 0, 0, 0.03) 2%,
-        transparent 0%);
+        transparent 0%
+      );
     background-size: 100px 100px;
   }
 }
 
-    @layer utilities {
-      /* Shimmer Animation */
-      @keyframes shimmer {
-        0% {
-          background-position: -1000px 0;
-        }
-        100% {
-          background-position: 1000px 0;
-        }
-      }
 @layer utilities {
-
   /* Shimmer Animation */
   @keyframes shimmer {
     0% {
@@ -319,24 +195,13 @@
     }
   }
 
-      .animate-shimmer {
-        animation: shimmer 3s infinite linear;
-        background-size: 1000px 100%;
-      }
+  .animate-shimmer {
+    animation: shimmer 3s infinite linear;
+    background-size: 1000px 100%;
+  }
 
-      /* Floating Animation */
-      @keyframes float {
-        0%,
-        100% {
-          transform: translateY(0px);
-        }
-        50% {
-          transform: translateY(-20px);
-        }
-      }
   /* Floating Animation */
   @keyframes float {
-
     0%,
     100% {
       transform: translateY(0px);
@@ -347,21 +212,10 @@
     }
   }
 
-      .animate-float {
-        animation: float 6s ease-in-out infinite;
-      }
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
 
-      /* Fade In Animation */
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
   /* Fade In Animation */
   @keyframes fadeIn {
     from {
@@ -375,21 +229,10 @@
     }
   }
 
-      .animate-fade-in {
-        animation: fadeIn 0.3s ease-out;
-      }
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
 
-      /* Scale In Animation */
-      @keyframes scaleIn {
-        from {
-          opacity: 0;
-          transform: scale(0.95);
-        }
-        to {
-          opacity: 1;
-          transform: scale(1);
-        }
-      }
   /* Scale In Animation */
   @keyframes scaleIn {
     from {
@@ -403,21 +246,10 @@
     }
   }
 
-      .animate-scale-in {
-        animation: scaleIn 0.2s ease-out;
-      }
+  .animate-scale-in {
+    animation: scaleIn 0.2s ease-out;
+  }
 
-      /* Slide In Right Animation */
-      @keyframes slideInRight {
-        from {
-          opacity: 0;
-          transform: translateX(100%);
-        }
-        to {
-          opacity: 1;
-          transform: translateX(0);
-        }
-      }
   /* Slide In Right Animation */
   @keyframes slideInRight {
     from {
@@ -431,25 +263,12 @@
     }
   }
 
-      .animate-slide-in-right {
-        animation: slideInRight 0.3s ease-out;
-      }
+  .animate-slide-in-right {
+    animation: slideInRight 0.3s ease-out;
+  }
 
-      /* Glow Pulse */
-      @keyframes glow-pulse {
-        0%,
-        100% {
-          box-shadow: 0 0 20px rgba(251, 146, 60, 0.3);
-        }
-        50% {
-          box-shadow:
-            0 0 40px rgba(251, 146, 60, 0.6),
-            0 0 60px rgba(251, 146, 60, 0.4);
-        }
-      }
   /* Glow Pulse */
   @keyframes glow-pulse {
-
     0%,
     100% {
       box-shadow: 0 0 20px rgba(251, 146, 60, 0.3);
@@ -462,21 +281,10 @@
     }
   }
 
-      .animate-glow-pulse {
-        animation: glow-pulse 2s ease-in-out infinite;
-      }
+  .animate-glow-pulse {
+    animation: glow-pulse 2s ease-in-out infinite;
+  }
 
-      /* Slide In From Bottom */
-      @keyframes slide-in-bottom {
-        from {
-          opacity: 0;
-          transform: translateY(50px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
   /* Slide In From Bottom */
   @keyframes slide-in-bottom {
     from {
@@ -490,23 +298,12 @@
     }
   }
 
-      .animate-slide-in-bottom {
-        animation: slide-in-bottom 0.6s ease-out forwards;
-      }
+  .animate-slide-in-bottom {
+    animation: slide-in-bottom 0.6s ease-out forwards;
+  }
 
-      /* Text Gradient Animation */
-      @keyframes gradient-shift {
-        0%,
-        100% {
-          background-position: 0% 50%;
-        }
-        50% {
-          background-position: 100% 50%;
-        }
-      }
   /* Text Gradient Animation */
   @keyframes gradient-shift {
-
     0%,
     100% {
       background-position: 0% 50%;
@@ -517,35 +314,24 @@
     }
   }
 
-      .animate-gradient-text {
-        background-size: 200% auto;
-        animation: gradient-shift 3s ease infinite;
-      }
+  .animate-gradient-text {
+    background-size: 200% auto;
+    animation: gradient-shift 3s ease infinite;
+  }
 
-      /* 3D Perspective Utilities */
-      .perspective-2000 {
-        perspective: 2000px;
-      }
+  /* 3D Perspective Utilities */
+  .perspective-2000 {
+    perspective: 2000px;
+  }
 
-      .preserve-3d {
-        transform-style: preserve-3d;
-      }
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
 
-      .backface-hidden {
-        backface-visibility: hidden;
-      }
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
 
-      /* Fade In Animation */
-      @keyframes fade-in {
-        from {
-          opacity: 0;
-          transform: translateY(20px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
   /* Fade In Animation */
   @keyframes fade-in {
     from {
@@ -559,13 +345,12 @@
     }
   }
 
-      .animate-fade-in {
-        animation: fade-in 0.6s ease-out forwards;
-      }
+  .animate-fade-in {
+    animation: fade-in 0.6s ease-out forwards;
+  }
 
   /* Glow Pulse Animation */
   @keyframes glow-pulse {
-
     0%,
     100% {
       box-shadow:
@@ -580,9 +365,7 @@
     }
   }
 
-      .animate-glow-pulse {
-        animation: glow-pulse 2s ease-in-out infinite;
-      }
-    }
+  .animate-glow-pulse {
+    animation: glow-pulse 2s ease-in-out infinite;
   }
 }
