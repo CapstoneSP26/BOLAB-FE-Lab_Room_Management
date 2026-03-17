@@ -1,6 +1,6 @@
 import React from 'react';
 import { CheckCircle2, Calendar, Clock, Repeat, Users, ArrowRight } from 'lucide-react';
-import { Button } from '../../../components/Button';
+import { Button } from '../../../components/ui/Button';
 import type { BookingSummary } from '../types';
 import { formatDate } from '../../../utils/formatDate';
 
@@ -25,7 +25,7 @@ export const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> =
   if (!isOpen || !bookingSummary) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/30 backdrop-blur-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-transparent transition-opacity backdrop-blur-sm">
       <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full overflow-hidden animate-fade-in">
         {/* Success Header */}
         <div className="bg-gradient-to-r from-green-500 to-emerald-600 px-4 py-4 text-center">

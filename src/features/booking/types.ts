@@ -13,7 +13,7 @@ export interface Booking {
   userName?: string;
 }
 
-export type BookingStatus = 'Draft' | 'PendingApproval' | 'Approved' | 'Rejected' | 'Cancelled';
+export type BookingStatus = 'All' | 'PendingApproval' | 'Approved' | 'Rejected' | 'Cancelled';
 
 export interface BookingRequest {
   id: string | number;

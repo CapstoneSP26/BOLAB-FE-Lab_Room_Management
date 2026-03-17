@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar as CalendarIcon, List, Building2, Loader2, Info } from 'lucide-react';
-import { WeeklyCalendarGrid } from '../features/room-booking/components/WeeklyCalendarGrid';
-import { BookingConfirmPanel } from '../features/room-booking/components/BookingConfirmPanel';
-import { AvailableSlotList } from '../features/room-booking/components/AvailableSlotList';
-import { BookingConfirmationModal } from '../features/room-booking/components/BookingConfirmationModal';
+import { WeeklyCalendarGrid } from '../../features/room-booking/components/WeeklyCalendarGrid';
+import { BookingConfirmPanel } from '../../features/room-booking/components/BookingConfirmPanel';
+import { AvailableSlotList } from '../../features/room-booking/components/AvailableSlotList';
+import { BookingConfirmationModal } from '../../features/room-booking/components/BookingConfirmationModal';
 import {
   useLabRooms,
   useStudentGroups,
   useAvailableSlots,
   useCreateBooking,
-} from '../features/room-booking/hooks/useRoomBooking';
-import type { BookingSummary } from '../features/room-booking/types';
+} from '../../features/room-booking/hooks/useRoomBooking';
+import { useToast } from '../../hooks/useToast';
+import type { BookingSummary } from '../../features/room-booking/types';
 
 type BookingView = 'calendar' | 'list';
 
@@ -28,6 +29,7 @@ interface PendingBooking {
  */
 const RoomBookingPage: React.FC = () => {
   const navigate = useNavigate();
+  const appAlert = useToast();
   const [activeView, setActiveView] = useState<BookingView>('calendar');
   const [selectedBuilding, setSelectedBuilding] = useState<string>('');
   const [selectedRoomId, setSelectedRoomId] = useState<string>('');
@@ -62,7 +64,7 @@ const RoomBookingPage: React.FC = () => {
     },
     onError: (error) => {
       console.error('Booking failed:', error);
-      alert('Failed to submit booking request. Please try again.');
+      appAlert.error('Booking failed', 'Failed to submit booking request. Please try again.');
     },
   });
 

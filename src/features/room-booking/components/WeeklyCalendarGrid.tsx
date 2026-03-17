@@ -515,7 +515,7 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
                         data-slot-index={timeSlotIndex}
                         className={`h-20 border-b border-r border-gray-300 relative transition-all ${
                           isPast
-                            ? 'bg-gray-100/50 cursor-not-allowed opacity-60'
+                            ? 'bg-gray-200 cursor-not-allowed opacity-80'
                             : inSelection && conflict
                             ? 'bg-red-50 border-red-200 cursor-pointer'
                             : inSelection
@@ -608,7 +608,7 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
                         onClick={() => handleOldSlotClick(dayIndex, slot.slotNumber)}
                         className={`h-32 border-b border-r border-gray-300 relative transition-all ${
                           isPast
-                            ? 'bg-gray-100/50 cursor-not-allowed opacity-60'
+                            ? 'bg-gray-200 cursor-not-allowed opacity-80'
                             : existingSlot
                             ? existingSlot.status === 'Booked'
                               ? 'bg-indigo-100 cursor-not-allowed border-l-4 border-l-indigo-400'
@@ -618,7 +618,7 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
                       >
                         {isPast ? (
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="text-gray-400 font-medium text-sm">Past</div>
+                            <div className="text-gray-600 font-semibold text-sm">Past</div>
                           </div>
                         ) : existingSlot ? (
                           <div className="absolute inset-0 flex flex-col items-center justify-center p-3">
