@@ -332,7 +332,6 @@ layer(base);
   @apply border-brand-500 bg-brand-500;
 }
 
-/* third-party libraries CSS */
 .apexcharts-legend-text {
   @apply !text-gray-700 dark:!text-gray-400;
 }
