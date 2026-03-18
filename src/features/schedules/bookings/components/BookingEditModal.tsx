@@ -4,6 +4,7 @@ import type {
   ScheduleType,
 } from "../../../calendar/api/labSchedulerApi";
 import type { ScheduleStatus } from "../../../calendar/api/scheduleBookingApi";
+import { useToast } from "../../../../hooks/useToast";
 
 type Props = {
   open: boolean;
@@ -80,6 +81,7 @@ export default function BookingEditModal({
   onUpdate,
   onDelete,
 }: Props) {
+  const appAlert = useToast();
   const title = useMemo(
     () => (mode === "create" ? "Create New Schedule" : "Edit Schedule"),
     [mode],
@@ -131,7 +133,7 @@ export default function BookingEditModal({
 
   const submit = async () => {
     if (!roomId || !start || !end || !type || !status) {
-      alert("Please fill in all fields before submitting.");
+      appAlert.warning("Missing information", "Please fill in all fields before submitting.");
       return;
     }
 
