@@ -48,7 +48,7 @@ export function ActivityItem({
               {activity.roomName}
             </span>
             <span className="rounded-lg bg-white px-2 py-1 font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-400">
-              {activity.building}
+              {activity.buildingName}
             </span>
           </div>
 
