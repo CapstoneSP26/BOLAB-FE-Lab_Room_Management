@@ -17,10 +17,15 @@ Frontend:
 └── ⏳ API calls mock data (localStorage) hoặc placeholder
 
 Backend:
-├── ❌ No API endpoints implemented yet
-├── ❌ No database/entities
-├── 🔄 BACKEND_IMPLEMENTATION_GUIDE.md (for attendance only)
-└── ❌ Not integrated with FE
+├── ✅ 4 APIs Now Implemented!
+│   ├── GET /api/dashboard/stats ✅
+│   ├── GET /api/dashboard/pending-requests ✅
+│   ├── GET /api/incidents/unresolved ✅
+│   └── GET /api/users/me ✅
+├── 🔄 CQRS Pattern with MediatR
+├── 🔄 Clean Architecture
+├── 🔄 Authorization [Authorize] applied
+└── 📋 See BE_API_INTEGRATION_GUIDE.md for FE integration
 ```
 
 ---
@@ -132,34 +137,37 @@ Backend has: "NotYet" | "Present" | "Absent" (missing "Late")
 - Services: Various hooks with mock data
 - Pages: `HomePage.tsx`, `ManagerDashboard.tsx`
 
-**Backend Status:** ❌ **NOT STARTED**
+**Backend Status:** ✅ **READY - INTEGRATE NOW!**
+- GET /api/dashboard/stats ✅ Ready for connection
+- See [BE_API_INTEGRATION_GUIDE.md](./BE_API_INTEGRATION_GUIDE.md) for code
 
 **Needed Endpoints:**
 ```
-❌ GET /api/stats
-❌ GET /api/rooms
-❌ GET /api/buildings
+✅ GET /api/dashboard/stats [READY - Use this!]
+✅ GET /api/dashboard/pending-requests [READY - Use this!]
+❌ GET /api/rooms (still needed)
+❌ GET /api/buildings (still needed)
 ```
 
 ---
 
-### 6. LAB MANAGER FEATURES 🔄
+### 6. LAB MANAGER FEATURES 🔄 → ✅ READY
 
 **Frontend Status:** ✅ **STRUCTURE READY**
 - Layout: `ManagerLayout.tsx`
 - Pages: 9 pages for different management features
 - Services: Profile service (mock)
 
-**Backend Status:** ❌ **NOT STARTED**
+**Backend Status:** ✅ **READY - 3 of 5 ENDPOINTS IMPLEMENTED!**
+- ✅ GET /api/users/me (User Profile)
+- ✅ GET /api/dashboard/pending-requests (Pending Approvals)
+- ✅ GET /api/incidents/unresolved (Incident List)
+- ❌ POST /api/booking-requests/:id/approve (Approve/Reject)
+- ❌ GET /api/schedules (Lab Schedules)
 
-**Needed Endpoints:**
-```
-❌ GET /api/users/me (user profile)
-❌ GET /api/schedules
-❌ GET /api/booking-requests/pending
-❌ POST /api/booking-requests/:id/approve
-❌ GET /api/incidents
-```
+**Next Steps:**
+1. Connect to existing 3 endpoints immediately
+2. Wait for: Approve/Reject and Schedules endpoints
 
 ---
 
@@ -170,7 +178,9 @@ Backend has: "NotYet" | "Present" | "Absent" (missing "Late")
 - Service: `labSchedulerApi.ts` (mock from localStorage)
 - Feature: `calendar/` folder
 
-**Backend Status:** ❌ **NOT STARTED**
+**Backend Status:** 🔄 **IN PROGRESS**
+- ❌ GET /api/schedules (not yet)
+- ✅ GET /api/dashboard/pending-requests (use this for now)
 
 **Needed Endpoints:**
 ```
@@ -179,7 +189,41 @@ Backend has: "NotYet" | "Present" | "Absent" (missing "Late")
 
 ---
 
-## 🎯 PRIORITY ORDER FOR BACKEND IMPLEMENTATION
+## � NEW! 4 Backend APIs Ready to Integrate
+
+**Status**: ✅ **LIVE** - March 18, 2026
+
+### Quick Integration Guide
+
+1. **Dashboard Stats** → `GET /api/dashboard/stats`
+   - 📊 KPI metrics (bookings, incidents, rooms, users)
+   - Use in: `ManagerDashboard`, `DashboardMetrics`
+   - [See Integration Guide](./BE_API_INTEGRATION_GUIDE.md#1️⃣-dashboard-stats-integration)
+
+2. **Pending Booking Requests** → `GET /api/dashboard/pending-requests`
+   - 📋 Bookings awaiting approval
+   - Use in: `BookingRequestsPendingPage`
+   - [See Integration Guide](./BE_API_INTEGRATION_GUIDE.md#2️⃣-pending-booking-requests-integration)
+
+3. **Unresolved Incidents** → `GET /api/incidents/unresolved`
+   - ⚠️ Open incident reports
+   - Use in: `IncidentHistoryPage`
+   - [See Integration Guide](./BE_API_INTEGRATION_GUIDE.md#3️⃣-unresolved-incidents-integration)
+
+4. **User Profile** → `GET /api/users/me`
+   - 👤 Current user information
+   - Use in: `UserProfilePage`, Header
+   - [See Integration Guide](./BE_API_INTEGRATION_GUIDE.md#4️⃣-user-profile-integration)
+
+**All require:** `Authorization: Bearer {token}` header
+
+**Implementation Priority:**
+1. User Profile (blocking auth)
+2. Dashboard Stats (main landing page)
+3. Pending Requests (lab manager feature)
+4. Unresolved Incidents (lab manager feature)
+
+See [BE_API_INTEGRATION_GUIDE.md](./BE_API_INTEGRATION_GUIDE.md) for detailed code samples!
 
 ### Phase 1: Foundations (Week 1)
 1. **Authentication** ← BLOCKER
@@ -364,11 +408,30 @@ Before connecting FE to BE:
 | Metric | Status |
 |--------|--------|
 | Frontend Services Ready | 100% ✅ |
-| Backend Implementation | 0% ❌ |
+| Backend Implementation | **10%** (4 APIs ready) ✅ |
 | Types Defined | 100% ✅ |
 | UI Components Done | ~80% 🟡 |
-| Integration Ready | 0% ❌ |
-| Overall Readiness | ~35% |
+| Integration with Phase 1 | **0%** (Ready to start) 🔄 |
+| Overall Readiness | **~45%** ⬆️ |
+
+---
+
+## ✨ Latest Progress (March 18, 2026)
+
+**4 New Backend APIs Implemented:**
+```
+✅ GET /api/dashboard/stats
+✅ GET /api/dashboard/pending-requests  
+✅ GET /api/incidents/unresolved
+✅ GET /api/users/me
+```
+
+**What's Next:**
+1. 🚀 FE integrates these 4 APIs (This week!)
+2. 🔄 BE implements remaining endpoints
+3. 🎯 Attendance integration (already has guide)
+4. 📅 Booking requests approval/rejection
+5. 📋 Lab scheduling endpoints
 
 ---
 

@@ -5,12 +5,14 @@ import type { ApexOptions } from "apexcharts";
 import DropdownMenu, {
   type DropdownMenuItem,
 } from "../../../components/common/DropdownMenu";
+import type { DashboardStatsDto } from "../services/dashboardService";
 
 type MonthlyTargetProps = {
   value?: number; // default 75.55
+  stats?: DashboardStatsDto;
 };
 
-export default function MonthlyTarget({ value = 75.55 }: MonthlyTargetProps) {
+export default function MonthlyTarget({ value = 75.55, stats }: MonthlyTargetProps) {
   const menuItems: DropdownMenuItem[] = useMemo(
     () => [
       { label: "View More", onClick: () => console.log("View More clicked") },
@@ -19,7 +21,8 @@ export default function MonthlyTarget({ value = 75.55 }: MonthlyTargetProps) {
     [],
   );
 
-  const series = useMemo(() => [value], [value]);
+  const complianceValue = stats?.checkinCompliancePercentage ?? value;
+  const series = useMemo(() => [complianceValue], [complianceValue]);
 
   const options: ApexOptions = useMemo(
     () => ({

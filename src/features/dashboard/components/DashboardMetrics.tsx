@@ -2,8 +2,13 @@ import { useMemo } from "react";
 import DropdownMenu, {
   type DropdownMenuItem,
 } from "../../../components/common/DropdownMenu";
+import type { DashboardStatsDto } from "../services/dashboardService";
 
-export default function DashboardMetrics() {
+interface DashboardMetricsProps {
+  stats?: DashboardStatsDto;
+}
+
+export default function DashboardMetrics({ stats }: DashboardMetricsProps) {
   const menuItems: DropdownMenuItem[] = useMemo(
     () => [
       { label: "View More", onClick: () => console.log("View More clicked") },
@@ -30,11 +35,25 @@ export default function DashboardMetrics() {
     </svg>
   );
 
+  // Calculate percentage change for pending bookings
+  const pendingPercentage = stats?.totalBookings 
+    ? ((stats.pendingBookings / stats.totalBookings) * 100).toFixed(2)
+    : "0.00";
+
+  // Calculate percentage for approved bookings
+  const approvedPercentage = stats?.totalBookings
+    ? ((stats.approvedBookings / stats.totalBookings) * 100).toFixed(2)
+    : "0.00";
+
+  // Calculate room availability
+  const availabilityPercentage = stats?.totalRooms
+    ? ((stats.availableRooms / stats.totalRooms) * 100).toFixed(2)
+    : "0.00";
+
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6">
-      {/* Card 1 */}
+      {/* Card 1: Pending Bookings */}
       <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
-        {/* header row: icon + dropdown */}
         <div className="flex items-start justify-between">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800">
             <svg
@@ -66,7 +85,7 @@ export default function DashboardMetrics() {
               Pending Booking Request
             </span>
             <h4 className="mt-2 text-title-sm font-bold text-gray-800 dark:text-white/90">
-              20
+              {stats?.pendingBookings ?? 0}
             </h4>
           </div>
 
@@ -85,12 +104,12 @@ export default function DashboardMetrics() {
                 d="M5.56462 1.62393C5.70193 1.47072 5.90135 1.37432 6.12329 1.37432C6.1236 1.37432 6.12391 1.37432 6.12422 1.37432C6.31631 1.37415 6.50845 1.44731 6.65505 1.59381L9.65514 4.5918C9.94814 4.88459 9.94831 5.35947 9.65552 5.65246C9.36273 5.94546 8.88785 5.94562 8.59486 5.65283L6.87329 3.93247L6.87329 10.125C6.87329 10.5392 6.53751 10.875 6.12329 10.875C5.70908 10.875 5.37329 10.5392 5.37329 10.125L5.37329 3.93578L3.65516 5.65282C3.36218 5.94562 2.8873 5.94547 2.5945 5.65248C2.3017 5.35949 2.30185 4.88462 2.59484 4.59182L5.56462 1.62393Z"
               />
             </svg>
-            11.01%
+            {pendingPercentage}%
           </span>
         </div>
       </div>
 
-      {/* Card 2 */}
+      {/* Card 2: Approved Bookings */}
       <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
         <div className="flex items-start justify-between">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800">
@@ -105,7 +124,7 @@ export default function DashboardMetrics() {
               <path
                 fillRule="evenodd"
                 clipRule="evenodd"
-                d="M11.665 3.75621C11.8762 3.65064 12.1247 3.65064 12.3358 3.75621L18.7807 6.97856L12.3358 10.2009C12.1247 10.3065 11.8762 10.3065 11.665 10.2009L5.22014 6.97856L11.665 3.75621ZM4.29297 8.19203V16.0946C4.29297 16.3787 4.45347 16.6384 4.70757 16.7654L11.25 20.0366V11.6513C11.1631 11.6205 11.0777 11.5843 10.9942 11.5426L4.29297 8.19203ZM12.75 20.037L19.2933 16.7654C19.5474 16.6384 19.7079 16.3787 19.7079 16.0946V8.19202L13.0066 11.5426C12.9229 11.5844 12.8372 11.6208 12.75 11.6516V20.037ZM13.0066 2.41456C12.3732 2.09786 11.6277 2.09786 10.9942 2.41456L4.03676 5.89319C3.27449 6.27432 2.79297 7.05342 2.79297 7.90566V16.0946C2.79297 16.9469 3.27448 17.726 4.03676 18.1071L10.9942 21.5857L11.3296 20.9149L10.9942 21.5857C11.6277 21.9024 12.3732 21.9024 13.0066 21.5857L19.9641 18.1071C20.7264 17.726 21.2079 16.9469 21.2079 16.0946V7.90566C21.2079 7.05342 20.7264 6.27432 19.9641 5.89319L13.0066 2.41456Z"
+                d="M9.66667 4C9.29848 4 9 4.29848 9 4.66667V6H4.66667C4.29848 6 4 6.29848 4 6.66667V19.3333C4 19.7015 4.29848 20 4.66667 20H19.3333C19.7015 20 20 19.7015 20 19.3333V6.66667C20 6.29848 19.7015 6 19.3333 6H15V4.66667C15 4.29848 14.7015 4 14.3333 4H9.66667ZM13 6V5.33333H11V6H13ZM5.33333 7.33333H18.6667V19H5.33333V7.33333Z"
               />
             </svg>
           </div>
@@ -120,14 +139,14 @@ export default function DashboardMetrics() {
         <div className="mt-5 flex items-end justify-between">
           <div>
             <span className="text-sm text-gray-500 dark:text-gray-400">
-              Incidents
+              Approved Bookings
             </span>
             <h4 className="mt-2 text-title-sm font-bold text-gray-800 dark:text-white/90">
-              5
+              {stats?.approvedBookings ?? 0}
             </h4>
           </div>
 
-          <span className="flex items-center gap-1 rounded-full bg-error-50 py-0.5 pl-2 pr-2.5 text-sm font-medium text-error-600 dark:bg-error-500/15 dark:text-error-500">
+          <span className="flex items-center gap-1 rounded-full bg-success-50 py-0.5 pl-2 pr-2.5 text-sm font-medium text-success-600 dark:bg-success-500/15 dark:text-success-500">
             <svg
               className="fill-current"
               width="12"
@@ -139,10 +158,110 @@ export default function DashboardMetrics() {
               <path
                 fillRule="evenodd"
                 clipRule="evenodd"
-                d="M5.31462 10.3761C5.45194 10.5293 5.65136 10.6257 5.87329 10.6257C5.8736 10.6257 5.8739 10.6257 5.87421 10.6257C6.0663 10.6259 6.25845 10.5527 6.40505 10.4062L9.40514 7.4082C9.69814 7.11541 9.69831 6.64054 9.40552 6.34754C9.11273 6.05454 8.63785 6.05438 8.34486 6.34717L6.62329 8.06753L6.62329 1.875C6.62329 1.46079 6.28751 1.125 5.87329 1.125C5.45908 1.125 5.12329 1.46079 5.12329 1.875L5.12329 8.06422L3.40516 6.34719C3.11218 6.05439 2.6373 6.05454 2.3445 6.34752C2.0517 6.64051 2.05185 7.11538 2.34484 7.40818L5.31462 10.3761Z"
+                d="M5.56462 1.62393C5.70193 1.47072 5.90135 1.37432 6.12329 1.37432C6.1236 1.37432 6.12391 1.37432 6.12422 1.37432C6.31631 1.37415 6.50845 1.44731 6.65505 1.59381L9.65514 4.5918C9.94814 4.88459 9.94831 5.35947 9.65552 5.65246C9.36273 5.94546 8.88785 5.94562 8.59486 5.65283L6.87329 3.93247L6.87329 10.125C6.87329 10.5392 6.53751 10.875 6.12329 10.875C5.70908 10.875 5.37329 10.5392 5.37329 10.125L5.37329 3.93578L3.65516 5.65282C3.36218 5.94562 2.8873 5.94547 2.5945 5.65248C2.3017 5.35949 2.30185 4.88462 2.59484 4.59182L5.56462 1.62393Z"
               />
             </svg>
-            9.05%
+            {approvedPercentage}%
+          </span>
+        </div>
+      </div>
+
+      {/* Card 3: Available Rooms */}
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
+        <div className="flex items-start justify-between">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800">
+            <svg
+              className="fill-gray-800 dark:fill-white/90"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M3 3C2.44772 3 2 3.44772 2 4V20C2 20.5523 2.44772 21 3 21H21C21.5523 21 22 20.5523 22 20V4C22 3.44772 21.5523 3 21 3H3ZM4 5H20V19H4V5Z"
+              />
+            </svg>
+          </div>
+
+          <DropdownMenu
+            menuItems={menuItems}
+            icon={moreIcon}
+            buttonClassName="rounded-lg p-1 hover:bg-gray-100 dark:hover:bg-gray-800"
+          />
+        </div>
+
+        <div className="mt-5 flex items-end justify-between">
+          <div>
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              Available Rooms
+            </span>
+            <h4 className="mt-2 text-title-sm font-bold text-gray-800 dark:text-white/90">
+              {stats?.availableRooms ?? 0} / {stats?.totalRooms ?? 0}
+            </h4>
+          </div>
+
+          <span className="flex items-center gap-1 rounded-full bg-info-50 py-0.5 pl-2 pr-2.5 text-sm font-medium text-info-600 dark:bg-info-500/15 dark:text-info-500">
+            {availabilityPercentage}%
+          </span>
+        </div>
+      </div>
+
+      {/* Card 4: Unresolved Incidents */}
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
+        <div className="flex items-start justify-between">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800">
+            <svg
+              className="fill-gray-800 dark:fill-white/90"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM13 11H11V13H13V11ZM13 7H11V9H13V7Z"
+              />
+            </svg>
+          </div>
+
+          <DropdownMenu
+            menuItems={menuItems}
+            icon={moreIcon}
+            buttonClassName="rounded-lg p-1 hover:bg-gray-100 dark:hover:bg-gray-800"
+          />
+        </div>
+
+        <div className="mt-5 flex items-end justify-between">
+          <div>
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              Unresolved Incidents
+            </span>
+            <h4 className="mt-2 text-title-sm font-bold text-gray-800 dark:text-white/90">
+              {stats?.unresolvedIncidents ?? 0}
+            </h4>
+          </div>
+
+          <span className="flex items-center gap-1 rounded-full bg-warning-50 py-0.5 pl-2 pr-2.5 text-sm font-medium text-warning-600 dark:bg-warning-500/15 dark:text-warning-500">
+            <svg
+              className="fill-current"
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M6 1L7.06 3.94H10.24L7.59 5.56L8.66 8.5L6 6.88L3.34 8.5L4.41 5.56L1.76 3.94H4.94L6 1Z"
+              />
+            </svg>
+            {stats?.totalIncidents ?? 0}
           </span>
         </div>
       </div>
