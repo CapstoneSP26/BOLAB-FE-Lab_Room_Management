@@ -2,23 +2,24 @@ import axios, {
   AxiosError,
   type AxiosInstance,
   type InternalAxiosRequestConfig,
-} from 'axios';
+} from "axios";
 
 import {
   clearAuth,
   getAccessToken,
   getRefreshToken,
   saveAccessToken,
-} from '../utils/storage';
+} from "../utils/storage";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+console.log("VITE_API_BASE_URL =", API_BASE_URL);
 
 const axiosInstance: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
   timeout: 15000,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
@@ -26,13 +27,16 @@ axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = getAccessToken();
 
+    console.log("Request baseURL:", config.baseURL);
+    console.log("Request url:", config.url);
+    console.log("Full request:", `${config.baseURL}${config.url}`);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
 
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 let isRefreshing = false;
@@ -80,13 +84,16 @@ axiosInstance.interceptors.response.use(
         const refreshToken = getRefreshToken();
         if (!refreshToken) {
           clearAuth();
-          window.location.href = '/login';
+          window.location.href = "/login";
           return Promise.reject(error);
         }
 
-        const response = await axios.post(`${API_BASE_URL}/auth/refresh-token`, {
-          refreshToken,
-        });
+        const response = await axios.post(
+          `${API_BASE_URL}/auth/refresh-token`,
+          {
+            refreshToken,
+          },
+        );
 
         const newAccessToken = response.data.accessToken;
         saveAccessToken(newAccessToken);
@@ -98,7 +105,7 @@ axiosInstance.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError as AxiosError, null);
         clearAuth();
-        window.location.href = '/login';
+        window.location.href = "/login";
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
@@ -106,7 +113,7 @@ axiosInstance.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default axiosInstance;

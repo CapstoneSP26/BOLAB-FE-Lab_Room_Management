@@ -4,16 +4,17 @@ import type {
   EventClickArg,
   EventInput,
 } from "@fullcalendar/core";
+import type { DateClickArg } from "@fullcalendar/interaction";
 
 import type {
   Schedule,
   ScheduleType,
-} from "../../calendar/api/labSchedulerApi";
-import { labSchedulerService } from "../../calendar/api/labSchedulerApi";
+  ScheduleStatus,
+} from "../../calendar/type";
+import { labSchedulerApi } from "../../calendar/api/labSchedulerApi";
 
 import { getRole } from "../../../utils/role";
-import type { ScheduleStatus } from "../../calendar/api/scheduleBookingApi";
-import type { DateClickArg } from "@fullcalendar/interaction";
+
 type Mode = "create" | "edit";
 
 type Payload = {
@@ -32,22 +33,18 @@ export function useScheduleData() {
   const [loading, setLoading] = useState(true);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
 
-  // modal state
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<Mode>("create");
   const [selected, setSelected] = useState<Schedule | null>(null);
   const [initial, setInitial] = useState<{ start: string; end: string } | null>(
     null,
   );
+
   const onDateClick = useCallback(
     (arg: DateClickArg) => {
       if (!isAdmin) return;
 
-      // Month view: arg.dateStr thường là YYYY-MM-DD
-      // Week/Day view: arg.date là Date đầy đủ giờ
       const start = arg.date instanceof Date ? arg.date : new Date(arg.dateStr);
-
-      // default duration 60 phút
       const end = new Date(start);
       end.setMinutes(end.getMinutes() + 60);
 
@@ -58,6 +55,7 @@ export function useScheduleData() {
     },
     [isAdmin],
   );
+
   const close = useCallback(() => {
     setOpen(false);
     setSelected(null);
@@ -67,8 +65,8 @@ export function useScheduleData() {
   const reload = useCallback(async () => {
     setLoading(true);
     try {
-      const sch = await labSchedulerService.listSchedules();
-      setSchedules(sch);
+      const sch = await labSchedulerApi.list();
+      setSchedules(sch ?? []);
     } finally {
       setLoading(false);
     }
@@ -78,9 +76,8 @@ export function useScheduleData() {
     reload();
   }, [reload]);
 
-  // map to calendar events
   const events = useMemo<EventInput[]>(() => {
-    return schedules.map((s) => ({
+    return (schedules ?? []).map((s) => ({
       id: s.Id,
       title: `Room ${s.LabRoomId}`,
       start: s.StartTime,
@@ -89,29 +86,23 @@ export function useScheduleData() {
     }));
   }, [schedules]);
 
-  // Admin select slot => create
   const onSelect = useCallback(
     (arg: DateSelectArg) => {
       if (!isAdmin) return;
 
-      // ✅ bỏ selection highlight
       arg.view.calendar.unselect();
 
       setMode("create");
       setSelected(null);
-
-      // ✅ dùng ISO từ Date object cho chắc (timezone / format ổn định hơn startStr)
       setInitial({
         start: arg.start.toISOString(),
         end: arg.end.toISOString(),
       });
-
       setOpen(true);
     },
     [isAdmin],
   );
 
-  // Admin click event => edit
   const onEventClick = useCallback(
     (arg: EventClickArg) => {
       if (!isAdmin) return;
@@ -127,29 +118,19 @@ export function useScheduleData() {
     [isAdmin],
   );
 
-  const create = useCallback(
-    async (payload: Payload) => {
-      await labSchedulerService.createSchedule(payload);
-      await reload();
-    },
-    [reload],
-  );
+  // Tạm để no-op vì API hiện tại không còn create/update/delete
+  const create = useCallback(async (payload: Payload) => {
+    void payload;
+  }, []);
 
-  const update = useCallback(
-    async (id: string, payload: Payload) => {
-      await labSchedulerService.updateSchedule(id, payload);
-      await reload();
-    },
-    [reload],
-  );
+  const update = useCallback(async (id: string, payload: Payload) => {
+    void id;
+    void payload;
+  }, []);
 
-  const remove = useCallback(
-    async (id: string) => {
-      await labSchedulerService.deleteSchedule(id);
-      await reload();
-    },
-    [reload],
-  );
+  const remove = useCallback(async (id: string) => {
+    void id;
+  }, []);
 
   return {
     role,
