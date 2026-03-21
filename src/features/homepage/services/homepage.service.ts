@@ -40,14 +40,16 @@ export const getRooms = async (
 export const getBuildings = async (
   params: GetBuildingsRequest = {}
 ): Promise<GetBuildingsResponse> => {
-  const response = await axiosInstance.get<any[]>(
+  const response = await axiosInstance.get<any>(
     HOMEPAGE_API.BUILDINGS,
     { params }
   );
-  // Wrap array response vào object với data field
+  // Backend có thể trả về array trực tiếp hoặc wrapped { data: [...] }
+  const rawData = response.data;
+  const buildingsArray = Array.isArray(rawData) ? rawData : (rawData?.data ?? []);
   return {
-    data: response.data,
-    total: response.data.length,
+    data: buildingsArray,
+    total: buildingsArray.length,
   };
 };
 

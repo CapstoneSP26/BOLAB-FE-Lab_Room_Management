@@ -20,8 +20,10 @@ const HomePage: React.FC<HomePageProps> = () => {
   const { data: buildingsData, isLoading: buildingsLoading } = useBuildings();
 
   // Nếu có dữ liệu từ API, map sang format để hiển thị
-  const mappedBuildings = buildingsData?.data 
-    ? buildingsData.data.map((building: any) => ({
+  // buildingsData = { data: GetBuildingsResponse } from React Query
+  const buildingsList = buildingsData?.data ?? [];
+  const mappedBuildings = Array.isArray(buildingsList) 
+    ? buildingsList.map((building: any) => ({
         id: building.id?.toString() || building.buildingName,
         name: building.buildingName || building.name,
         description: building.description || '',
