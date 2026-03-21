@@ -1,4 +1,4 @@
-import type { Incident } from "../api/incidentHistoryApi";
+import type { Incident } from "../type";
 
 const norm = (v: unknown) => String(v ?? "").toUpperCase();
 

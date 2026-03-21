@@ -1,7 +1,10 @@
 import { useCallback, useMemo, useState } from "react";
 import BookingRequestModal from "../booking-requests/components/BookingRequestReviewModal";
-import { bookingRequestsService } from "../api/bookingRequestApi";
-import type { Booking } from "../api/bookingRequestApi";
+import {
+  getBookingRequestByScheduleId,
+  updateBookingRequestStatus,
+} from "../api/bookingRequestApi";
+import type { Booking } from "../type";
 import type { EventClickArg } from "@fullcalendar/core";
 
 type Role = "ADMIN" | "LAB_MANAGER" | "LECTURER" | "STUDENT";
@@ -37,9 +40,8 @@ export function useLabManagerBookingModal() {
       setLoadingDetail(true);
 
       try {
-        const booking =
-          await bookingRequestsService.getByScheduleId(scheduleId);
-        setSelectedBooking(booking);
+        const response = await getBookingRequestByScheduleId(scheduleId);
+        setSelectedBooking(response.data);
       } finally {
         setLoadingDetail(false);
       }
@@ -50,9 +52,11 @@ export function useLabManagerBookingModal() {
   const approve = useCallback(
     async (bookingId: string) => {
       if (!selectedScheduleId) return null;
-      const updated = await bookingRequestsService.approve(bookingId);
+      const response = await updateBookingRequestStatus(bookingId, {
+        status: "APPROVED",
+      });
       closeModal();
-      return { scheduleId: selectedScheduleId, booking: updated };
+      return { scheduleId: selectedScheduleId, booking: response.data };
     },
     [selectedScheduleId, closeModal],
   );
@@ -60,9 +64,13 @@ export function useLabManagerBookingModal() {
   const reject = useCallback(
     async (bookingId: string) => {
       if (!selectedScheduleId) return null;
-      const updated = await bookingRequestsService.reject(bookingId);
+
+      const response = await updateBookingRequestStatus(bookingId, {
+        status: "REJECTED",
+      });
+
       closeModal();
-      return { scheduleId: selectedScheduleId, booking: updated };
+      return { scheduleId: selectedScheduleId, booking: response.data };
     },
     [selectedScheduleId, closeModal],
   );

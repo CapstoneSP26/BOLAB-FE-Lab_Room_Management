@@ -1,4 +1,4 @@
-import type { Booking } from "../../api/bookingRequestApi";
+import type { Booking } from "../../type";
 
 function badgeClass(status: string) {
   const s = status.toUpperCase();
