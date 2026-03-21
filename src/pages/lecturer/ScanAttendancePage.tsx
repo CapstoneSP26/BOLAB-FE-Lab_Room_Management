@@ -8,10 +8,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router';
 import { CheckCircle, XCircle, Loader2, Camera, SwitchCamera } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
-import { useQRSession } from '../features/attendance/hooks/useQRSession';
-import { useMarkAttendance } from '../features/attendance/hooks/useAttendance';
-import { MOCK_QR_SESSION } from '../features/attendance/mocks/attendance.mock';
-import { useToast } from '../hooks/useToast';
+import { useQRSession } from '../../features/attendance/hooks/useQRSession';
+import { useMarkAttendance } from '../../features/attendance/hooks/useAttendance';
+import { MOCK_QR_SESSION } from '../../features/attendance/mocks/attendance.mock';
+import { useToast } from '../../hooks/useToast';
 
 type ScanState = 'idle' | 'requesting-camera' | 'scanning' | 'processing' | 'success' | 'error' | 'no-camera';
 type CameraFacing = 'front' | 'back';

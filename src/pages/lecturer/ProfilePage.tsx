@@ -12,10 +12,12 @@ import {
   ChevronRight, Check, AlertCircle
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { AnimatedCounter } from '../components/AnimatedCounter';
-import { RecentActivity, type Activity } from '../components/RecentActivity';
+import { AnimatedCounter } from '../../components/ui/AnimatedCounter';
+import { RecentActivity, type Activity } from '../../components/common/RecentActivity';
+import { useToast } from '../../hooks/useToast';
 
 export default function ProfilePage() {
+  const appAlert = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
@@ -128,7 +130,7 @@ export default function ProfilePage() {
   };
 
   const handleExportProfile = () => {
-    alert('📄 Export to PDF - Coming soon!');
+    appAlert.info('Export to PDF', 'Coming soon!');
   };
 
   const handleShareProfile = () => {

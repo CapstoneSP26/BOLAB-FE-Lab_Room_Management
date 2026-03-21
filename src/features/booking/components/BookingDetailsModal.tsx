@@ -20,12 +20,12 @@ export const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
 
   const getStatusConfig = (status: BookingStatus) => {
     const configs = {
-      Draft: {
+      All: {
         icon: AlertCircle,
         bgColor: 'bg-amber-100',
         textColor: 'text-amber-700',
         borderColor: 'border-amber-300',
-        label: 'Draft'
+        label: 'All'
       },
       PendingApproval: {
         icon: AlertCircle,

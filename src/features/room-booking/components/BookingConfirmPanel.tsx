@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Calendar, Users, CheckCircle2, AlertCircle } from 'lucide-react';
-import { Button } from '../../../components/Button';
+import { Button } from '../../../components/ui/Button';
 import type { StudentGroup } from '../types';
 import { formatDate } from '../../../utils/formatDate';
 
@@ -76,7 +76,7 @@ export const BookingConfirmPanel: React.FC<BookingConfirmPanelProps> = ({
     <>
       {/* Overlay */}
       <div
-        className="fixed inset-0 bg-white bg-opacity-20 z-[100] transition-opacity backdrop-blur-md"
+        className="fixed inset-0 bg-transparent z-[100] transition-opacity backdrop-blur-sm"
         onClick={onClose}
       />
 
