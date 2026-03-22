@@ -153,10 +153,10 @@ const RoomBookingPage: React.FC = () => {
 
   // All buildings are available (campus is pre-determined for lecturer)
   const availableBuildings = MOCK_BUILDINGS;
-  
+
   // Filter rooms based on selected building (using building name for now)
   const selectedBuildingName = MOCK_BUILDINGS.find(b => b.id === selectedBuilding)?.name;
-  const availableRooms = displayRooms.filter(r => 
+  const availableRooms = displayRooms.filter(r =>
     selectedBuildingName ? r.building === selectedBuildingName : true
   );
 
@@ -192,8 +192,8 @@ const RoomBookingPage: React.FC = () => {
         repeatWeekly: data.repeatWeekly,
         weeklyUntil: data.repeatWeekly && data.repeatWeeksCount
           ? new Date(new Date(pendingBooking.date).getTime() + data.repeatWeeksCount * 7 * 24 * 60 * 60 * 1000)
-              .toISOString()
-              .split('T')[0]
+            .toISOString()
+            .split('T')[0]
           : undefined,
         groupId: data.groupId,
       },
@@ -203,7 +203,7 @@ const RoomBookingPage: React.FC = () => {
   // Handle book selected slots from List View
   const handleBookSelectedSlots = () => {
     if (selectedSlotIds.length === 0) return;
-    
+
     const firstSlot = displaySlots.find(s => s.id === selectedSlotIds[0]);
     if (!firstSlot) return;
 
@@ -279,7 +279,7 @@ const RoomBookingPage: React.FC = () => {
                 <span className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 text-xs font-bold">2</span>
                 Select Lab Room
               </label>
-              
+
               {roomsLoading ? (
                 <div className="flex items-center gap-3 text-gray-600 bg-gray-50 rounded-lg p-4 border-2 border-gray-300">
                   <Loader2 className="w-5 h-5 animate-spin text-orange-500" />
@@ -308,33 +308,33 @@ const RoomBookingPage: React.FC = () => {
 
             {selectedRoom && (
               <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-              <div className="flex items-center gap-2 mb-3">
-                <Building2 className="w-5 h-5 text-orange-600" />
-                <h3 className="font-bold text-gray-900 text-sm">{selectedRoom.name}</h3>
-              </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Building:</span>
-                  <span className="text-gray-900 font-medium">{selectedRoom.building}</span>
+                <div className="flex items-center gap-2 mb-3">
+                  <Building2 className="w-5 h-5 text-orange-600" />
+                  <h3 className="font-bold text-gray-900 text-sm">{selectedRoom.name}</h3>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Capacity:</span>
-                  <span className="text-orange-600 font-semibold">{selectedRoom.capacity} students</span>
-                </div>
-                {selectedRoom.features && selectedRoom.features.length > 0 && (
-                  <div className="pt-2 border-t border-orange-200">
-                    <span className="text-gray-600 block mb-1.5 text-xs">Features:</span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {selectedRoom.features.map((feature, idx) => (
-                        <span key={idx} className="px-2 py-0.5 bg-white text-gray-700 rounded text-xs border border-gray-200">
-                          {feature}
-                        </span>
-                      ))}
-                    </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Building:</span>
+                    <span className="text-gray-900 font-medium">{selectedRoom.building}</span>
                   </div>
-                )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Capacity:</span>
+                    <span className="text-orange-600 font-semibold">{selectedRoom.capacity} students</span>
+                  </div>
+                  {selectedRoom.features && selectedRoom.features.length > 0 && (
+                    <div className="pt-2 border-t border-orange-200">
+                      <span className="text-gray-600 block mb-1.5 text-xs">Features:</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {selectedRoom.features.map((feature, idx) => (
+                          <span key={idx} className="px-2 py-0.5 bg-white text-gray-700 rounded text-xs border border-gray-200">
+                            {feature}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
             )}
           </div>
 
@@ -344,22 +344,20 @@ const RoomBookingPage: React.FC = () => {
             <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
               <button
                 onClick={() => setActiveView('calendar')}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all text-sm font-medium ${
-                  activeView === 'calendar'
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all text-sm font-medium ${activeView === 'calendar'
                     ? 'bg-white text-orange-600 shadow-sm border border-orange-200'
                     : 'text-gray-600 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 <CalendarIcon className="w-4 h-4" />
                 <span>Calendar</span>
               </button>
               <button
                 onClick={() => setActiveView('list')}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all text-sm font-medium ${
-                  activeView === 'list'
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all text-sm font-medium ${activeView === 'list'
                     ? 'bg-white text-orange-600 shadow-sm border border-orange-200'
                     : 'text-gray-600 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 <List className="w-4 h-4" />
                 <span>List</span>
@@ -415,32 +413,32 @@ const RoomBookingPage: React.FC = () => {
               </div>
             </div>
           ) : activeView === 'calendar' ? (
-          <WeeklyCalendarGrid
-            selectedRoomId={selectedRoomId}
-            existingBookings={displaySlots}
-            onCreateBooking={handleCalendarDragComplete}
-            weekOffset={weekOffset}
-            onWeekChange={setWeekOffset}
-          />
-        ) : (
-          <div className="flex-1 overflow-auto p-8 bg-gradient-to-b from-white to-gray-50">
-            <div className="max-w-6xl mx-auto">
-              <AvailableSlotList
-                slots={displaySlots}
-                selectedSlotIds={selectedSlotIds}
-                onSelectSlot={(slotId) => {
-                  setSelectedSlotIds(prev =>
-                    prev.includes(slotId)
-                      ? prev.filter(id => id !== slotId)
-                      : [...prev, slotId]
-                  );
-                }}
-                onBookSelected={handleBookSelectedSlots}
-                multiSelect={true}
-                loading={slotsLoading}
-              />
+            <WeeklyCalendarGrid
+              selectedRoomId={selectedRoomId}
+              existingBookings={displaySlots}
+              onCreateBooking={handleCalendarDragComplete}
+              weekOffset={weekOffset}
+              onWeekChange={setWeekOffset}
+            />
+          ) : (
+            <div className="flex-1 overflow-auto p-8 bg-gradient-to-b from-white to-gray-50">
+              <div className="max-w-6xl mx-auto">
+                <AvailableSlotList
+                  slots={displaySlots}
+                  selectedSlotIds={selectedSlotIds}
+                  onSelectSlot={(slotId) => {
+                    setSelectedSlotIds(prev =>
+                      prev.includes(slotId)
+                        ? prev.filter(id => id !== slotId)
+                        : [...prev, slotId]
+                    );
+                  }}
+                  onBookSelected={handleBookSelectedSlots}
+                  multiSelect={true}
+                  loading={slotsLoading}
+                />
+              </div>
             </div>
-          </div>
           )}
         </div>
       </div>
