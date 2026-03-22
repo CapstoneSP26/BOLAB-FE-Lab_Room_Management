@@ -17,7 +17,7 @@ type Activity = {
   type: ActivityType;
   roomId: number;
   roomName: string;
-  building: string;
+  buildingName: string;
   userName: string;
   userRole: string;
   timestamp: string;
@@ -38,7 +38,7 @@ const mockActivities: Activity[] = [
     type: "BOOKING_CREATED",
     roomId: 101,
     roomName: "Room 101",
-    building: "Building A",
+    buildingName: "Building A",
     userName: "John Doe",
     userRole: "STUDENT",
     timestamp: "2024-03-04T10:30:00Z",
@@ -53,7 +53,7 @@ const mockActivities: Activity[] = [
     type: "BOOKING_APPROVED",
     roomId: 101,
     roomName: "Room 101",
-    building: "Building A",
+    buildingName: "Building A",
     userName: "Dr. Smith",
     userRole: "LAB_MANAGER",
     timestamp: "2024-03-04T10:45:00Z",
@@ -68,7 +68,7 @@ const mockActivities: Activity[] = [
     type: "SCHEDULE_CREATED",
     roomId: 102,
     roomName: "Room 102",
-    building: "Building A",
+    buildingName: "Building A",
     userName: "Admin",
     userRole: "ADMIN",
     timestamp: "2024-03-04T09:15:00Z",
@@ -83,7 +83,7 @@ const mockActivities: Activity[] = [
     type: "BOOKING_REJECTED",
     roomId: 201,
     roomName: "Room 201",
-    building: "Building B",
+    buildingName: "Building B",
     userName: "Dr. Johnson",
     userRole: "LAB_MANAGER",
     timestamp: "2024-03-04T08:20:00Z",
@@ -99,7 +99,7 @@ const mockActivities: Activity[] = [
     type: "ROOM_MAINTENANCE",
     roomId: 201,
     roomName: "Room 201",
-    building: "Building B",
+    buildingName: "Building B",
     userName: "Maintenance Team",
     userRole: "ADMIN",
     timestamp: "2024-03-03T16:00:00Z",
@@ -110,7 +110,7 @@ const mockActivities: Activity[] = [
     type: "BOOKING_CANCELLED",
     roomId: 103,
     roomName: "Room 103",
-    building: "Building A",
+    buildingName: "Building A",
     userName: "Jane Smith",
     userRole: "TEACHER",
     timestamp: "2024-03-03T14:30:00Z",
@@ -124,7 +124,7 @@ const mockActivities: Activity[] = [
     type: "SCHEDULE_UPDATED",
     roomId: 102,
     roomName: "Room 102",
-    building: "Building A",
+    buildingName: "Building A",
     userName: "Admin",
     userRole: "ADMIN",
     timestamp: "2024-03-03T11:00:00Z",
@@ -139,7 +139,7 @@ const mockActivities: Activity[] = [
     type: "ROOM_INSPECTION",
     roomId: 301,
     roomName: "Room 301",
-    building: "Building C",
+    buildingName: "Building C",
     userName: "Inspector",
     userRole: "ADMIN",
     timestamp: "2024-03-02T13:00:00Z",
@@ -226,14 +226,8 @@ export default function LabRoomActivity() {
 
   const uniqueBuildings = useMemo(() => {
     const buildings = new Set<string>();
-    activities.forEach((a) => buildings.add(a.building));
+    activities.forEach((a) => buildings.add(a.buildingName));
     return Array.from(buildings).sort();
-  }, [activities]);
-
-  const uniqueRoles = useMemo(() => {
-    const roles = new Set<string>();
-    activities.forEach((a) => roles.add(a.userRole));
-    return Array.from(roles).sort();
   }, [activities]);
 
   // Apply filters
@@ -247,7 +241,7 @@ export default function LabRoomActivity() {
       // Building filter
       if (
         selectedBuilding !== "ALL" &&
-        activity.building !== selectedBuilding
+        activity.buildingName !== selectedBuilding
       ) {
         return false;
       }
@@ -634,7 +628,7 @@ function ActivityItem({
               {activity.roomName}
             </span>
             <span className="rounded-lg bg-white px-2 py-1 font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-400">
-              {activity.building}
+              {activity.buildingName}
             </span>
           </div>
 

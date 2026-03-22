@@ -11,48 +11,30 @@ interface HomePageProps {
   onLogout?: () => void;
 }
 
-// Mock data tạm thời cho buildings (sẽ xóa khi có API thật)
-const MOCK_BUILDINGS = [
-  {
-    id: 'Alpha',
-    name: 'Building Alpha',
-    description: 'Engineering & High-Tech Labs',
-    roomCount: 32,
-    image: 'https://daihoc.fpt.edu.vn/wp-content/uploads/2021/05/20210512_giaiwa1.jpeg',
-    color: 'bg-gradient-to-br from-orange-500 to-red-500',
-  },
-  {
-    id: 'Gamma',
-    name: 'Building Gamma',
-    description: 'Multipurpose Area & Content Creation',
-    roomCount: 28,
-    image: 'https://vinaconex25.com.vn/wp-content/uploads/2020/06/2.jpg',
-    color: 'bg-gradient-to-br from-blue-600 to-indigo-600',
-  },
-  {
-    id: 'Delta',
-    name: 'Building Delta',
-    description: 'Research & Innovation Center',
-    roomCount: 24,
-    image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=1200',
-    color: 'bg-gradient-to-br from-purple-600 to-pink-600',
-  },
-];
-
 // Renamed to HomePage and set default props
 const HomePage: React.FC<HomePageProps> = () => {
   const navigate = useNavigate();
   const [activeView, setActiveView] = useState<'buildings' | 'bookings'>('bookings');
 
-  // Fetch data using hooks (fallback to mock data when API not available)
+  // Fetch data using hooks
   const { data: buildingsData, isLoading: buildingsLoading } = useBuildings();
 
-  // Use mock data if API fails or no data
-  const buildings = buildingsData?.data || MOCK_BUILDINGS;
-
-  const handleSelectBuilding = (buildingId: string) => {
-    // Navigate to building detail page
-    navigate(`/building/${buildingId}`);
+  // Nếu có dữ liệu từ API, map sang format để hiển thị
+  // buildingsData = { data: GetBuildingsResponse } from React Query
+  const buildingsList = buildingsData?.data ?? [];
+  const mappedBuildings = Array.isArray(buildingsList) 
+    ? buildingsList.map((building: any) => ({
+        id: building.id?.toString() || building.buildingName,
+        name: building.buildingName || building.name,
+        description: building.description || '',
+        roomCount: building.roomCount || 0,
+        image: building.buildingImageUrl || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=400',
+        color: 'bg-gradient-to-br from-gray-600 to-gray-700',
+      }))
+    : [];
+  const handleSelectBuilding = (buildingName: string) => {
+    // Navigate to building detail page using buildingName
+    navigate(`/building/${encodeURIComponent(buildingName)}`);
   };
 
   return (
@@ -96,7 +78,7 @@ const HomePage: React.FC<HomePageProps> = () => {
           </div>
         ) : (
           <BuildingCarousel3D
-            buildings={buildings}
+            buildings={mappedBuildings}
             onSelectBuilding={handleSelectBuilding}
           />
         )}

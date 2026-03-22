@@ -27,7 +27,7 @@ export default function LoginPage() {
   };
 
   const LoginGoogle = () => {
-    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/auth/login/google?returnUrl=${import.meta.env.VITE_FE_BASE_URL}`;
+    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/login/google?returnUrl=${import.meta.env.VITE_FE_BASE_URL}`;
   }
 
   return (
