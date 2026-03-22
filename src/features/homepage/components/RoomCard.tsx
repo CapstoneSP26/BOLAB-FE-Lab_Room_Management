@@ -1,6 +1,5 @@
 import React from 'react';
 import { Users, Wifi, Monitor, MoreVertical, Clock } from 'lucide-react';
-import { Button } from '../../../components/ui/Button';
 import { RoomStatusBadge } from '../../../components/ui/RoomStatusBadge';
 import type { RoomStatus } from '../../../components/ui/RoomStatusBadge';
 
@@ -11,16 +10,38 @@ interface RoomCardProps {
   nextAvailable: string;
   image: string;
   features: string[];
+  onActionClick?: () => void;
 }
 
-const RoomCard: React.FC<RoomCardProps> = ({ name, capacity, status, nextAvailable, image, features }) => {
+const RoomCard: React.FC<RoomCardProps> = ({
+  name,
+  capacity,
+  status,
+  nextAvailable,
+  image,
+  features,
+  onActionClick,
+}) => {
   // Map status to RoomStatusBadge format
   const roomStatus: RoomStatus = status === 'Available' ? 'available' : status === 'Occupied' ? 'occupied' : 'maintenance';
+  const cardToneClass =
+    status === 'Available'
+      ? 'border-emerald-200 hover:border-emerald-300 hover:shadow-emerald-100/80'
+      : status === 'Occupied'
+      ? 'border-rose-200 hover:border-rose-300 hover:shadow-rose-100/80'
+      : 'border-amber-200 hover:border-amber-300 hover:shadow-amber-100/80';
 
   return (
-    <div className="bg-white rounded-xl overflow-hidden shadow-card border border-gray-100 hover:shadow-card-hover transition-all duration-300 flex flex-col">
+    <div
+      onClick={onActionClick}
+      className={`group bg-white rounded-xl overflow-hidden shadow-card border hover:shadow-card-hover transition-all duration-300 hover:-translate-y-1 flex flex-col ${cardToneClass} ${
+        onActionClick ? 'cursor-pointer' : ''
+      }`}
+    >
       <div className="relative h-40">
-        <img src={image} alt={name} className="w-full h-full object-cover" />
+        <img src={image} alt={name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />
+        <div className="absolute -left-16 top-0 h-full w-24 bg-white/20 blur-xl rotate-12 transition-transform duration-700 group-hover:translate-x-80" />
         <div className="absolute top-3 right-3">
           <RoomStatusBadge 
             status={roomStatus} 
@@ -47,7 +68,10 @@ const RoomCard: React.FC<RoomCardProps> = ({ name, capacity, status, nextAvailab
               <span>Max {capacity} people</span>
             </div>
           </div>
-          <button className="text-gray-400 hover:text-gray-600">
+          <button
+            className="text-gray-400 hover:text-gray-600 cursor-pointer"
+            onClick={(event) => event.stopPropagation()}
+          >
             <MoreVertical className="h-4 w-4" />
           </button>
         </div>
@@ -57,12 +81,6 @@ const RoomCard: React.FC<RoomCardProps> = ({ name, capacity, status, nextAvailab
              <Clock className="h-3 w-3 mr-1.5 text-brand-500" />
              <span>Next: {nextAvailable}</span>
            </div>
-        </div>
-
-        <div className="mt-auto">
-            <Button variant={status === 'Available' ? 'primary' : 'outline'} fullWidth size="sm" disabled={status !== 'Available'}>
-                {status === 'Available' ? 'Book Now' : 'View Schedule'}
-            </Button>
         </div>
       </div>
     </div>

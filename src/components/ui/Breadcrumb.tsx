@@ -16,13 +16,28 @@ interface BreadcrumbItem {
 const routeNames: Record<string, string> = {
   '': 'Home',
   'book-room': 'Book Room',
+  'lab-room': 'Lab Room',
   'my-bookings': 'My Bookings',
+  'notifications': 'Notifications',
   'attendance': 'Attendance',
   'building': 'Building',
   'qr-display': 'QR Display',
   'scan-attendance': 'Scan Attendance',
   'manual': 'Manual Entry',
   'profile': 'Profile',
+};
+
+const dynamicDetailLabelByParent: Record<string, string> = {
+  building: 'Building Details',
+  'lab-room': 'Room Details',
+  'student-groups': 'Group Details',
+};
+
+const hiddenSessionParents = new Set(['qr-display', 'scan-attendance', 'manual']);
+
+const isLikelyDynamicId = (segment: string): boolean => {
+  // Matches numeric IDs, UUID-like IDs, and slug IDs such as "qr-session-001".
+  return /^\d+$/.test(segment) || /^[a-z0-9]+(?:-[a-z0-9]+)+$/i.test(segment);
 };
 
 export const Breadcrumb: React.FC = () => {
@@ -42,8 +57,22 @@ export const Breadcrumb: React.FC = () => {
   ];
 
   let currentPath = '';
-  pathSegments.forEach((segment) => {
+  pathSegments.forEach((segment, index) => {
     currentPath += `/${segment}`;
+
+    const parentSegment = pathSegments[index - 1];
+    if (parentSegment && isLikelyDynamicId(segment)) {
+      if (hiddenSessionParents.has(parentSegment)) {
+        return;
+      }
+
+      const detailLabel = dynamicDetailLabelByParent[parentSegment];
+      if (detailLabel) {
+        breadcrumbs.push({ label: detailLabel, path: currentPath });
+        return;
+      }
+    }
+
     const label = routeNames[segment] || segment;
     breadcrumbs.push({ label, path: currentPath });
   });

@@ -43,8 +43,8 @@ export const BuildingCarousel3D: React.FC<BuildingCarousel3DProps> = ({ building
     const isActive = position === 0;
     
     if (isActive) {
-      // Center card - navigate to building detail
-      onSelectBuilding(buildings[index].id);
+      // Center card - navigate to building detail using name, not id
+      onSelectBuilding(buildings[index].name);
     } else if (position === 1 || (position === totalCards - 1 && activeIndex === 0)) {
       // Right card - go next
       handleNext();

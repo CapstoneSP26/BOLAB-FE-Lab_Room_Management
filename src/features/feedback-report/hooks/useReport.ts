@@ -6,6 +6,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createReport,
+  getReportReasons,
   getMyReports,
   getReportDetail,
 } from '../services/report.service';
@@ -13,10 +14,12 @@ import type {
   CreateReportRequest,
   GetMyReportsRequest,
   GetReportDetailRequest,
+  ReportReasonOption,
 } from '../types';
 
 // Query keys for cache management
 export const QUERY_KEYS = {
+  REPORT_REASONS: 'report-reasons',
   MY_REPORTS: 'my-reports',
   REPORT_DETAIL: 'report-detail',
 } as const;
@@ -60,6 +63,21 @@ export const useReportDetail = (options: UseReportDetailOptions) => {
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     enabled: enabled && !!params.reportId,
+  });
+};
+
+/**
+ * Hook to get report reasons list
+ */
+export const useReportReasons = () => {
+  return useQuery<ReportReasonOption[]>({
+    queryKey: [QUERY_KEYS.REPORT_REASONS],
+    queryFn: async () => {
+      const response = await getReportReasons();
+      return response.data;
+    },
+    staleTime: 10 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
   });
 };
 

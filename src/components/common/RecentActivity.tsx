@@ -109,10 +109,7 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({
                 </p>
               </div>
 
-              {/* Timeline line */}
-              {index < displayedActivities.length - 1 && (
-                <div className="absolute left-[2.25rem] top-[3.5rem] w-0.5 h-8 bg-gray-200" />
-              )}
+              {/* Timeline line - removed for cleaner UI */}
             </div>
           );
         })}

@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import type { Incident } from "../api/incidentHistoryApi";
+import type { Incident } from "../type";
 
 type Props = {
   open: boolean;

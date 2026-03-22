@@ -9,20 +9,21 @@ import type {
   CalendarOptions,
 } from "@fullcalendar/core";
 
-import { labSchedulerService } from "../api/labSchedulerApi";
-import type { Schedule } from "../api/labSchedulerApi";
+import { labSchedulerApi } from "../api/labSchedulerApi";
+import type { Schedule } from "../type";
 
-import type { Booking } from "../../schedules/api/bookingRequestApi";
-import { bookingRequestsService } from "../../schedules/api/bookingRequestApi";
+import type { Booking } from "../../schedules/type";
+import {
+  getBookingRequests,
+  getBookingRequestHistory,
+} from "../../schedules/api/bookingRequestApi";
 
 import { norm, statusClass, statusDot } from "../../../utils/status";
 
 import { useScheduleData } from "../../schedules/hooks/useBookingData";
-
 import { useLabManagerBookingModal } from "../../schedules/hooks/useLabManagerBookingModal";
 
 import BookingEditModal from "../../schedules/bookings/components/BookingEditModal";
-
 import CsvImportModal from "./CSVImportModal";
 
 type ExtProps = {
@@ -50,7 +51,6 @@ export default function LabCalendar() {
   const bookingModal = useLabManagerBookingModal();
   const [csvOpen, setCsvOpen] = useState(false);
 
-  // Filter states
   const [selectedRoom, setSelectedRoom] = useState<number | "ALL">("ALL");
   const [selectedBuilding, setSelectedBuilding] = useState<string>("ALL");
   const [selectedTimeRange, setSelectedTimeRange] = useState<string>("ALL");
@@ -60,17 +60,22 @@ export default function LabCalendar() {
   const reload = useCallback(async () => {
     setLoading(true);
     try {
-      const sch = await labSchedulerService.listSchedules();
-      setSchedules(sch);
+      const sch = await labSchedulerApi.list();
+      setSchedules(sch ?? []);
 
-      const [pending, history] = await Promise.all([
-        bookingRequestsService.listPending(),
-        bookingRequestsService.listHistory(),
+      const [pendingResponse, historyResponse] = await Promise.all([
+        getBookingRequests({ status: "PENDING" }),
+        getBookingRequestHistory(),
       ]);
-      const all = [...pending, ...history];
+
+      const all = [
+        ...(pendingResponse?.data ?? []),
+        ...(historyResponse?.data ?? []),
+      ];
 
       const map: Record<string, Booking> = {};
-      for (const s of sch) {
+
+      for (const s of sch ?? []) {
         const b =
           all.find((x) => x.Id === s.Id) ??
           all.find(
@@ -79,8 +84,12 @@ export default function LabCalendar() {
               x.StartTime === s.StartTime &&
               x.EndTime === s.EndTime,
           );
-        if (b) map[s.Id] = b;
+
+        if (b) {
+          map[s.Id] = b;
+        }
       }
+
       setBookingByScheduleId(map);
     } finally {
       setLoading(false);
@@ -91,7 +100,6 @@ export default function LabCalendar() {
     reload();
   }, [reload]);
 
-  // Inject FullCalendar styles dynamically - NO SEPARATE CSS FILE NEEDED
   useEffect(() => {
     const styleId = "fullcalendar-custom-styles";
     if (document.getElementById(styleId)) return;
@@ -111,13 +119,15 @@ export default function LabCalendar() {
 
   const availableRooms = useMemo(() => {
     const roomSet = new Set<number>();
-    schedules.forEach((s) => roomSet.add(s.LabRoomId));
+    (schedules ?? []).forEach((s) => roomSet.add(s.LabRoomId));
     return Array.from(roomSet).sort((a, b) => a - b);
   }, [schedules]);
 
   const availableBuildings = useMemo(() => {
     const buildingSet = new Set<string>();
-    schedules.forEach((s) => buildingSet.add(getBuildingFromRoom(s.LabRoomId)));
+    (schedules ?? []).forEach((s) =>
+      buildingSet.add(getBuildingFromRoom(s.LabRoomId)),
+    );
     return Array.from(buildingSet).sort();
   }, [schedules]);
 
@@ -152,7 +162,7 @@ export default function LabCalendar() {
   };
 
   const eventInputs = useMemo<EventInput[]>(() => {
-    return schedules.map((s) => {
+    return (schedules ?? []).map((s) => {
       const linkedBooking = bookingByScheduleId[s.Id];
       const status = linkedBooking?.BookingStatus ?? s.ScheduleStatus;
 
@@ -181,10 +191,13 @@ export default function LabCalendar() {
         if (building !== selectedBuilding) return false;
       }
 
-      if (selectedRoom !== "ALL" && ext.schedule.LabRoomId !== selectedRoom)
+      if (selectedRoom !== "ALL" && ext.schedule.LabRoomId !== selectedRoom) {
         return false;
-      if (!isInTimeRange(ext.schedule.StartTime, selectedTimeRange))
+      }
+
+      if (!isInTimeRange(ext.schedule.StartTime, selectedTimeRange)) {
         return false;
+      }
 
       if (selectedStatus !== "ALL") {
         const eventStatus = norm(ext.status);
@@ -226,26 +239,19 @@ export default function LabCalendar() {
         center: "title",
         right: "dayGridMonth,timeGridWeek,timeGridDay",
       },
-
       eventDisplay: "block",
       dayMaxEventRows: 3,
       moreLinkText: "more",
-
       events: filteredEventInputs,
-
       dateClick: schedule.isAdmin ? onDateClick : undefined,
-
       selectable: schedule.isAdmin,
       select: schedule.isAdmin ? onSelect : undefined,
-
       eventClick: (arg) => {
         if (isLabManager) return onBookingEventClick(arg);
         if (schedule.isAdmin) return onEventClick(arg);
       },
-
       height: "auto",
       expandRows: true,
-
       eventContent: (arg: EventContentArg) => {
         const ext = arg.event.extendedProps as ExtProps | undefined;
         const status = ext?.status;
@@ -255,7 +261,9 @@ export default function LabCalendar() {
 
         const start = arg.event.start;
         const time = start
-          ? `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`
+          ? `${String(start.getHours()).padStart(2, "0")}:${String(
+              start.getMinutes(),
+            ).padStart(2, "0")}`
           : "";
 
         const room = arg.event.title;
@@ -353,7 +361,6 @@ export default function LabCalendar() {
       <div className="border-b border-gray-200 bg-gray-50 px-4 py-4 dark:border-gray-700 dark:bg-gray-800/50">
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center gap-3">
-            {/* Building Filter */}
             <div className="flex items-center gap-2">
               <label className="flex items-center gap-2 text-xs font-semibold text-gray-600 dark:text-gray-400">
                 <svg
@@ -385,7 +392,6 @@ export default function LabCalendar() {
               </select>
             </div>
 
-            {/* Room Filter */}
             <div className="flex items-center gap-2">
               <label className="flex items-center gap-2 text-xs font-semibold text-gray-600 dark:text-gray-400">
                 <svg
@@ -421,7 +427,6 @@ export default function LabCalendar() {
               </select>
             </div>
 
-            {/* Time Filter */}
             <div className="flex items-center gap-2">
               <label className="flex items-center gap-2 text-xs font-semibold text-gray-600 dark:text-gray-400">
                 <svg
@@ -452,7 +457,6 @@ export default function LabCalendar() {
               </select>
             </div>
 
-            {/* Status Filter */}
             <div className="flex items-center gap-2">
               <label className="flex items-center gap-2 text-xs font-semibold text-gray-600 dark:text-gray-400">
                 <svg
@@ -483,7 +487,6 @@ export default function LabCalendar() {
               </select>
             </div>
 
-            {/* Type Filter */}
             <div className="flex items-center gap-2">
               <label className="flex items-center gap-2 text-xs font-semibold text-gray-600 dark:text-gray-400">
                 <svg
@@ -567,7 +570,7 @@ export default function LabCalendar() {
 
       {loading ? (
         <div className="p-6">Loading...</div>
-      ) : schedules.length === 0 ? (
+      ) : (schedules ?? []).length === 0 ? (
         <div className="p-6">No schedules found</div>
       ) : (
         <div className="p-4">
@@ -588,6 +591,7 @@ export default function LabCalendar() {
           )}
         </div>
       )}
+
       <CsvImportModal
         open={csvOpen}
         onClose={() => setCsvOpen(false)}

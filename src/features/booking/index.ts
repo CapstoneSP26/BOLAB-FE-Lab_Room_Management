@@ -7,6 +7,7 @@ export type {
   BookingRequest,
   BookingStats,
   BookingStatus,
+  BookingStatusFilter,
   RequestStatus,
 } from './types';
 

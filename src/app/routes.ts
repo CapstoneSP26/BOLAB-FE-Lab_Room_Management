@@ -11,12 +11,16 @@ const LoginPage = lazy(() => import('../pages/LoginPage'));
 const HomePage = lazy(() => import('../pages/HomePage'));
 const BuildingDetail = lazy(() => import('../pages/BuildingDetail'));
 const RoomBookingPage = lazy(() => import('../pages/lecturer/RoomBookingPage'));
+const LabRoomDetailsPage = lazy(() => import('../pages/lecturer/LabRoomDetailsPage'));
 const BookingHistoryPage = lazy(() => import('../pages/lecturer/BookingHistoryPage'));
+const NotificationsPage = lazy(() => import('../pages/lecturer/NotificationsPage'));
 const AttendanceManagementPage = lazy(() => import('../pages/lecturer/AttendanceManagementPage'));
 const QRDisplayPage = lazy(() => import('../pages/lecturer/QRDisplayPage'));
 const ScanAttendancePage = lazy(() => import('../pages/lecturer/ScanAttendancePage'));
 const ManualAttendancePage = lazy(() => import('../pages/lecturer/ManualAttendancePage'));
 const ProfilePage = lazy(() => import('../pages/lecturer/ProfilePage'));
+const StudentGroupsPage = lazy(() => import('../pages/lecturer/StudentGroupsPage'));
+const GroupOverviewPage = lazy(() => import('../pages/lecturer/GroupOverviewPage'));
 
 
 const ManagerDashboard = lazy(
@@ -70,8 +74,20 @@ export const appRoutes: AppRoute[] = [
     layout: 'main',
   },
   {
+    path: '/lab-room/:roomId',
+    element: LabRoomDetailsPage,
+    isPrivate: true,
+    layout: 'main',
+  },
+  {
     path: '/my-bookings',
     element: BookingHistoryPage,
+    isPrivate: true,
+    layout: 'main',
+  },
+  {
+    path: '/notifications',
+    element: NotificationsPage,
     isPrivate: true,
     layout: 'main',
   },
@@ -102,6 +118,18 @@ export const appRoutes: AppRoute[] = [
   {
     path: '/profile',
     element: ProfilePage,
+    isPrivate: true,
+    layout: 'main',
+  },
+  {
+    path: '/student-groups',
+    element: StudentGroupsPage,
+    isPrivate: true,
+    layout: 'main',
+  },
+  {
+    path: '/student-groups/:groupId',
+    element: GroupOverviewPage,
     isPrivate: true,
     layout: 'main',
   },

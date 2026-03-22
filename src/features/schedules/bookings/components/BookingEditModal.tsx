@@ -2,8 +2,8 @@ import { useMemo, useState, useEffect } from "react";
 import type {
   Schedule,
   ScheduleType,
-} from "../../../calendar/api/labSchedulerApi";
-import type { ScheduleStatus } from "../../../calendar/api/scheduleBookingApi";
+  ScheduleStatus,
+} from "../../../calendar/type";
 import { useToast } from "../../../../hooks/useToast";
 
 type Props = {
@@ -129,11 +129,24 @@ export default function BookingEditModal({
     };
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+
+    setRoomId(schedule?.LabRoomId ?? "");
+    setStart(schedule ? toInput(schedule.StartTime) : "");
+    setEnd(schedule ? toInput(schedule.EndTime) : "");
+    setType((schedule?.ScheduleType as ScheduleType) ?? "");
+    setStatus((schedule?.ScheduleStatus as ScheduleStatus) ?? "");
+  }, [open, schedule]);
+
   if (!open) return null;
 
   const submit = async () => {
     if (!roomId || !start || !end || !type || !status) {
-      appAlert.warning("Missing information", "Please fill in all fields before submitting.");
+      appAlert.warning(
+        "Missing information",
+        "Please fill in all fields before submitting.",
+      );
       return;
     }
 
@@ -158,6 +171,7 @@ export default function BookingEditModal({
 
   const remove = async () => {
     if (!schedule) return;
+
     const ok = window.confirm(
       "Are you sure you want to delete this schedule? This action cannot be undone.",
     );
@@ -179,13 +193,10 @@ export default function BookingEditModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200" />
+      <div className="absolute inset-0 animate-in fade-in bg-black/40 backdrop-blur-sm duration-200" />
 
-      {/* Modal */}
       <div className="relative w-full max-w-2xl">
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900 animate-in fade-in zoom-in-95 duration-200">
-          {/* Header */}
+        <div className="animate-in fade-in zoom-in-95 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl duration-200 dark:border-gray-700 dark:bg-gray-900">
           <div className="border-b border-gray-200 bg-white px-6 py-5 dark:border-gray-700 dark:bg-gray-900">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -387,7 +398,6 @@ export default function BookingEditModal({
             </div>
           </div>
 
-          {/* Footer */}
           <div className="border-t border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-700 dark:bg-gray-800/50">
             <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
               <div>
@@ -398,47 +408,7 @@ export default function BookingEditModal({
                     disabled={deleting || saving}
                     className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-red-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {deleting ? (
-                      <>
-                        <svg
-                          className="h-4 w-4 animate-spin"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          />
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          />
-                        </svg>
-                        Deleting...
-                      </>
-                    ) : (
-                      <>
-                        <svg
-                          className="h-4 w-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                          />
-                        </svg>
-                        Delete Schedule
-                      </>
-                    )}
+                    {deleting ? "Deleting..." : "Delete Schedule"}
                   </button>
                 )}
               </div>
@@ -467,47 +437,13 @@ export default function BookingEditModal({
                   }
                   className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {saving ? (
-                    <>
-                      <svg
-                        className="h-4 w-4 animate-spin"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        />
-                      </svg>
-                      {mode === "create" ? "Creating..." : "Saving..."}
-                    </>
-                  ) : (
-                    <>
-                      <svg
-                        className="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      {mode === "create" ? "Create Schedule" : "Save Changes"}
-                    </>
-                  )}
+                  {saving
+                    ? mode === "create"
+                      ? "Creating..."
+                      : "Saving..."
+                    : mode === "create"
+                      ? "Create Schedule"
+                      : "Save Changes"}
                 </button>
               </div>
             </div>
@@ -518,7 +454,6 @@ export default function BookingEditModal({
   );
 }
 
-// Helper Component
 function FormField({
   label,
   icon,

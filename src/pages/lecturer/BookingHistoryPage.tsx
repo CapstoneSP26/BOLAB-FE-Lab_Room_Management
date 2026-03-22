@@ -3,7 +3,7 @@ import { Calendar, Clock, Search, CheckCircle, XCircle, AlertCircle, LayoutGrid,
 import { useBookingHistory } from '../../features/booking/hooks/useBookingHistory';
 import { useBookingStats } from '../../features/booking/hooks/useBookingStats';
 import { BookingDetailsModal } from '../../features/booking';
-import type { BookingStatus, Booking } from '../../features/booking/types';
+import type { BookingStatus, Booking, BookingStatusFilter } from '../../features/booking/types';
 import { SkeletonStatsCard } from '../../components/ui/Skeleton';
 import { AnimatedCounter } from '../../components/ui/AnimatedCounter';
 
@@ -55,7 +55,7 @@ const MOCK_BOOKINGS: Booking[] = [
     date: '2026-02-23', // Yesterday
     startTime: '14:00',
     endTime: '16:30',
-    status: 'All' as BookingStatus,
+    status: 'PendingApproval' as BookingStatus,
     purpose: 'Web Development Team Meeting',
     userName: 'Nguyen Van A',
   },
@@ -201,7 +201,7 @@ const MOCK_BOOKINGS: Booking[] = [
     roomName: 'Lab 702',
     buildingName: 'Gamma Building',
     date: '2026-06-10', // ~106 days from now
-    status: 'All' as BookingStatus,
+    status: 'PendingApproval' as BookingStatus,
     startTime: '08:00',
     endTime: '10:30',
     purpose: 'Summer Course Registration',
@@ -241,7 +241,7 @@ const MOCK_BOOKINGS: Booking[] = [
  */
 const BookingHistoryPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<BookingStatus | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<BookingStatusFilter>('all');
   const [dateRange, setDateRange] = useState<'week' | 'month' | 'semester' | 'all'>('month');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
@@ -312,7 +312,7 @@ const BookingHistoryPage: React.FC = () => {
   // Calculate dynamic stats from filtered bookings
   const dynamicStats = {
     totalAccepted: filteredBookings.filter(b => b.status === 'Approved').length,
-    totalPending: filteredBookings.filter(b => b.status === 'PendingApproval' || b.status === 'All').length,
+    totalPending: filteredBookings.filter(b => b.status === 'PendingApproval').length,
     totalRejected: filteredBookings.filter(b => b.status === 'Rejected').length,
     upcomingBookings: filteredBookings.filter(b => 
       b.status === 'Approved' && new Date(b.date) > new Date()
@@ -505,6 +505,7 @@ const BookingHistoryPage: React.FC = () => {
                 Filter by Status
               </label>
               <div className="flex flex-wrap gap-2">
+                {/* Show all bookings without status filter */}
                 <button
                   onClick={() => setStatusFilter('all')}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
@@ -513,18 +514,7 @@ const BookingHistoryPage: React.FC = () => {
                       : 'bg-gray-50 text-gray-600 border-2 border-transparent hover:border-gray-200 hover:bg-gray-100'
                   }`}
                 >
-                  All Status
-                </button>
-                <button
-                  onClick={() => setStatusFilter('All')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
-                    statusFilter === 'All'
-                      ? 'bg-amber-100 text-amber-700 border-2 border-amber-300 shadow-sm'
-                      : 'bg-gray-50 text-gray-600 border-2 border-transparent hover:border-gray-200 hover:bg-gray-100'
-                  }`}
-                >
-                  <AlertCircle className="w-4 h-4" />
-                  All
+                  View All
                 </button>
                 <button
                   onClick={() => setStatusFilter('PendingApproval')}

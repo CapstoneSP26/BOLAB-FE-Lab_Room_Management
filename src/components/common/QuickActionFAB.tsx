@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Plus, Calendar, FileText, QrCode, X } from 'lucide-react';
 import { SendReportModal } from './SendReportModal';
 
@@ -13,6 +13,15 @@ export const QuickActionFAB: React.FC = () => {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const fabRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const hiddenPaths = ['/login'];
+  const isLabManagerPage = location.pathname.startsWith('/labmanager');
+  const isHiddenPath = hiddenPaths.includes(location.pathname);
+
+  if (isLabManagerPage || isHiddenPath) {
+    return null;
+  }
 
   // Close when clicking outside
   useEffect(() => {
