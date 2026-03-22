@@ -138,6 +138,17 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
 
   const currentBuilding = building;
 
+  const handleOpenRoomDetails = (room: (typeof MOCK_ROOMS)[number]) => {
+    navigate(`/lab-room/${room.id}`, {
+      state: {
+        room: {
+          ...room,
+          id: String(room.id),
+        },
+      },
+    });
+  };
+
   return (
     <div className="min-h-screen relative overflow-hidden">
       {/* Animated Background matching building image */}
@@ -203,9 +214,11 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
 
         {/* Room List */}
         <main className="flex-1 px-6 lg:px-20 pb-20 -mt-12">
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-7xl mx-auto relative">
+            <div className="pointer-events-none absolute -top-10 -left-10 h-44 w-44 rounded-full bg-orange-300/25 blur-3xl animate-pulse" />
+            <div className="pointer-events-none absolute top-20 -right-10 h-56 w-56 rounded-full bg-cyan-200/25 blur-3xl animate-pulse" style={{ animationDelay: '0.5s' }} />
             {/* Glassmorphism Container */}
-            <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl p-10 border border-white/50">
+            <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl p-10 border border-white/50 animate-fade-in">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
                   <h2 className="text-3xl font-black text-gray-900 flex items-center gap-3">
@@ -255,12 +268,12 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
                   paginatedRooms.map((room, idx) => (
                     <div 
                       key={room.id} 
-                      className={`transition-all duration-300 animate-in fade-in ${
+                      className={`transition-all duration-300 animate-fade-in ${
                         viewMode === 'grid' 
-                          ? 'hover:scale-[1.02] slide-in-from-right' 
-                          : 'hover:shadow-xl hover:bg-gray-50 rounded-2xl p-4'
+                          ? 'hover:scale-[1.02]' 
+                          : 'rounded-2xl p-4 border border-transparent hover:border-orange-100 hover:shadow-xl hover:bg-gradient-to-r hover:from-orange-50/50 hover:to-white hover:-translate-y-0.5'
                       }`}
-                      style={{animationDelay: `${idx * 100}ms`, animationDuration: '500ms'}}
+                      style={{ animationDelay: `${idx * 70}ms`, animationDuration: '500ms' }}
                     >
                       {viewMode === 'grid' ? (
                         <RoomCard 
@@ -270,13 +283,17 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
                           image={room.image}
                           nextAvailable={room.nextAvailable || "14:00 PM"}
                           features={room.features || ['wifi', 'screen']}
+                          onActionClick={() => handleOpenRoomDetails(room)}
                         />
                       ) : (
-                        <div className="flex gap-6 items-center">
+                        <div
+                          className="flex gap-6 items-center cursor-pointer"
+                          onClick={() => handleOpenRoomDetails(room)}
+                        >
                           <img 
                             src={room.image} 
                             alt={room.name} 
-                            className="w-32 h-32 object-cover rounded-xl"
+                            className="w-32 h-32 object-cover rounded-xl transition-transform duration-300 hover:scale-105"
                           />
                           <div className="flex-1">
                             <h3 className="text-xl font-bold text-gray-900 mb-2">{room.name}</h3>
@@ -299,6 +316,15 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
                           <div className="text-right">
                             <p className="text-sm text-gray-500 mb-2">Rảnh lúc</p>
                             <p className="text-lg font-bold text-brand-600">{room.nextAvailable}</p>
+                            <button
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleOpenRoomDetails(room);
+                              }}
+                              className="mt-3 px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold cursor-pointer transition-all duration-200 hover:scale-105"
+                            >
+                              View Details
+                            </button>
                           </div>
                         </div>
                       )}

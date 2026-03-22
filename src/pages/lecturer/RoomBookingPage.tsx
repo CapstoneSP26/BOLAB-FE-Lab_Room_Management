@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Calendar as CalendarIcon, List, Building2, Loader2, Info } from 'lucide-react';
 import { WeeklyCalendarGrid } from '../../features/room-booking/components/WeeklyCalendarGrid';
 import { BookingConfirmPanel } from '../../features/room-booking/components/BookingConfirmPanel';
@@ -11,6 +11,12 @@ import {
   useAvailableSlots,
   useCreateBooking,
 } from '../../features/room-booking/hooks/useRoomBooking';
+import {
+  MOCK_BOOKING_BUILDINGS,
+  MOCK_BOOKING_ROOMS,
+  MOCK_STUDENT_GROUPS,
+  getMockSlotsByRoomAndRange,
+} from '../../features/room-booking/mocks/roomBookingMockData';
 import { useToast } from '../../hooks/useToast';
 import type { BookingSummary } from '../../features/room-booking/types';
 
@@ -29,6 +35,8 @@ interface PendingBooking {
  */
 const RoomBookingPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const roomIdParam = searchParams.get('roomId');
   const appAlert = useToast();
   const [activeView, setActiveView] = useState<BookingView>('calendar');
   const [selectedBuilding, setSelectedBuilding] = useState<string>('');
@@ -72,90 +80,43 @@ const RoomBookingPage: React.FC = () => {
   const groups = groupsData?.groups ?? [];
   const slots = slotsData?.slots ?? [];
 
-  // Mock data for development - Remove when API is ready
-  // Note: Campus is pre-determined for each lecturer
-  const MOCK_BUILDINGS = [
-    { id: 'alpha', name: 'Alpha Building' },
-    { id: 'beta', name: 'Beta Building' },
-    { id: 'gamma', name: 'Gamma Building' },
-  ];
-
-  const MOCK_ROOMS = [
-    {
-      id: '1',
-      name: 'Lab 501',
-      building: 'Alpha Building',
-      buildingId: 'alpha',
-      capacity: 40,
-      features: ['Computers', 'Projector', 'Whiteboard'],
-      image: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=400',
-    },
-    {
-      id: '2',
-      name: 'Lab 502',
-      building: 'Alpha Building',
-      buildingId: 'alpha',
-      capacity: 35,
-      features: ['Computers', 'Smart Board'],
-    },
-    {
-      id: '3',
-      name: 'Lab 601',
-      building: 'Beta Building',
-      buildingId: 'beta',
-      capacity: 30,
-      features: ['Computers', 'Projector'],
-    },
-  ];
-
-  const MOCK_GROUPS = [
-    {
-      id: 'g1',
-      name: 'SE1801',
-      courseCode: 'PRN231',
-      studentCount: 35,
-    },
-    {
-      id: 'g2',
-      name: 'SE1802',
-      courseCode: 'SWP391',
-      studentCount: 30,
-    },
-  ];
-
-  const MOCK_SLOTS = [
-    {
-      id: 's1',
-      roomId: '1',
-      date: new Date().toISOString().split('T')[0],
-      startTime: '08:00',
-      endTime: '10:00',
-      status: 'Available' as const,
-    },
-    {
-      id: 's2',
-      roomId: '1',
-      date: new Date().toISOString().split('T')[0],
-      startTime: '10:00',
-      endTime: '12:00',
-      status: 'Booked' as const,
-      bookedBy: 'Dr. Nguyen Van A',
-      groupName: 'SE1803',
-    },
-  ];
-
   // Use mock data as fallback
-  const displayRooms = rooms.length > 0 ? rooms : MOCK_ROOMS;
-  const displayGroups = groups.length > 0 ? groups : MOCK_GROUPS;
-  const displaySlots = selectedRoomId && slots.length > 0 ? slots : MOCK_SLOTS;
+  const displayRooms = rooms.length > 0 ? rooms : MOCK_BOOKING_ROOMS;
+  const displayGroups = groups.length > 0 ? groups : MOCK_STUDENT_GROUPS;
+  const mockSlotsForSelectedRoom = selectedRoomId
+    ? getMockSlotsByRoomAndRange(selectedRoomId, dateRange.startDate, dateRange.endDate)
+    : [];
+  const displaySlots = selectedRoomId
+    ? slots.length > 0
+      ? slots
+      : mockSlotsForSelectedRoom
+    : [];
 
   const selectedRoom = displayRooms.find(r => r.id === selectedRoomId) ?? null;
 
+  useEffect(() => {
+    if (!roomIdParam) {
+      return;
+    }
+
+    const matchedRoom = displayRooms.find((room) => room.id === roomIdParam);
+    if (!matchedRoom) {
+      return;
+    }
+
+    setSelectedRoomId(matchedRoom.id);
+
+    const matchedBuilding = MOCK_BOOKING_BUILDINGS.find((building) => building.name === matchedRoom.building);
+    if (matchedBuilding) {
+      setSelectedBuilding(matchedBuilding.id);
+    }
+  }, [roomIdParam, displayRooms]);
+
   // All buildings are available (campus is pre-determined for lecturer)
-  const availableBuildings = MOCK_BUILDINGS;
+  const availableBuildings = MOCK_BOOKING_BUILDINGS;
   
   // Filter rooms based on selected building (using building name for now)
-  const selectedBuildingName = MOCK_BUILDINGS.find(b => b.id === selectedBuilding)?.name;
+  const selectedBuildingName = MOCK_BOOKING_BUILDINGS.find(b => b.id === selectedBuilding)?.name;
   const availableRooms = displayRooms.filter(r => 
     selectedBuildingName ? r.building === selectedBuildingName : true
   );

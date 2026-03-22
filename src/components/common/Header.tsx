@@ -42,17 +42,11 @@ const Header: React.FC = () => {
     <>
     <header className={`w-full h-16 relative flex items-center justify-between px-6 sticky top-0 z-[100] ${
       isHomePage 
-        ? 'bg-transparent' 
+        ? 'bg-[#fffaf0] shadow-md border-b border-orange-100' 
         : 'bg-white shadow-md border-b border-gray-200'
     }`}>
-      {/* Border Bottom (only for transparent background) */}
-      {isHomePage && (
-        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-      )}
-      
       {/* Content */}
-      <div className={`relative z-10 flex items-center ${isHomePage ? 'text-white' : 'text-gray-900'}`} 
-           style={isHomePage ? { textShadow: '0 2px 4px rgba(0,0,0,0.3)' } : {}}>
+      <div className="relative z-10 flex items-center text-gray-900">
         <FPTLogo />
       </div>
       
@@ -70,13 +64,12 @@ const Header: React.FC = () => {
               className={`relative flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
                 isHomePage
                   ? isActive
-                    ? 'bg-white/20 text-white backdrop-blur-sm'
-                    : 'text-white/80 hover:text-white hover:bg-white/10'
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                   : isActive
                   ? 'bg-blue-50 text-blue-600'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
-              style={isHomePage ? { textShadow: '0 1px 2px rgba(0,0,0,0.2)' } : {}}
             >
               <Icon className="w-4 h-4" />
               <span className="text-sm">{item.label}</span>
@@ -95,13 +88,12 @@ const Header: React.FC = () => {
       {/* Right Side: Active Sessions, Notifications & Profile */}
       <div className="flex items-center gap-3 relative z-10">
         {!isHomePage && <ActiveSessionIndicator sessions={activeSessions} />}
-        <div className={`flex items-center gap-4 ${isHomePage ? 'text-white' : 'text-gray-900'}`}
-             style={isHomePage ? { textShadow: '0 2px 4px rgba(0,0,0,0.3)' } : {}}>
-          <NotificationDropdown isHomePage={isHomePage} />
+        <div className="flex items-center gap-4 text-gray-900">
+          <NotificationDropdown isHomePage={false} />
           <ProfileMenu 
             userName="Lecturer A"
             userRole="Lecturer"
-            isHomePage={isHomePage}
+            isHomePage={false}
           />
         </div>
       </div>

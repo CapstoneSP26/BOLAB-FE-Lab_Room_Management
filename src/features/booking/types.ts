@@ -11,9 +11,14 @@ export interface Booking {
   status: BookingStatus;
   purpose?: string;
   userName?: string;
+  lecturerName?: string;
+  scheduleType?: string;
+  studentCount?: number;
+  bookingSource?: 'AO_BOOK' | 'LECTURER_BOOK';
 }
 
 export type BookingStatus = 'All' | 'PendingApproval' | 'Approved' | 'Rejected' | 'Cancelled';
+export type BookingStatusFilter = BookingStatus | 'all';
 
 export interface BookingRequest {
   id: string | number;
@@ -60,7 +65,7 @@ export interface GetRecentRequestsRequest {
 export interface GetBookingHistoryRequest {
   page?: number;
   limit?: number;
-  status?: BookingStatus | 'all';
+  status?: BookingStatusFilter;
   startDate?: string;
   endDate?: string;
 }

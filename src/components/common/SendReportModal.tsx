@@ -3,14 +3,16 @@
  * Modal for lecturers to send lab room reports with images
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { X } from 'lucide-react';
-import { useRooms } from '../../features/homepage';
+import { useBuildings, useRooms, type Building, type Room } from '../../features/homepage';
 import {
+  FALLBACK_REPORT_REASONS,
   ImageUploadArea,
   ReasonSelector,
   ReportSuccessModal,
   useCreateReport,
+  useReportReasons,
   type ReportReason,
   type ImagePreview,
 } from '../../features/feedback-report';
@@ -25,6 +27,7 @@ interface SendReportModalProps {
 export const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClose }) => {
   const toast = useToast();
   // Form state
+  const [selectedBuildingId, setSelectedBuildingId] = useState('');
   const [selectedRoomId, setSelectedRoomId] = useState('');
   const [reason, setReason] = useState<ReportReason | ''>('');
   const [description, setDescription] = useState('');
@@ -36,7 +39,9 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClos
   const [submittedReport, setSubmittedReport] = useState<Report | null>(null);
 
   // Fetch rooms for dropdown
+  const { data: buildingsData, isLoading: buildingsLoading } = useBuildings({});
   const { data: roomsData, isLoading: roomsLoading } = useRooms({});
+  const { data: reasonsData, isLoading: reasonsLoading } = useReportReasons();
 
   // Create report mutation
   const createReportMutation = useCreateReport({
@@ -60,6 +65,7 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClos
   });
 
   const resetForm = () => {
+    setSelectedBuildingId('');
     setSelectedRoomId('');
     setReason('');
     setDescription('');
@@ -99,6 +105,10 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClos
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
+    if (!selectedBuildingId) {
+      newErrors.building = 'Vui lòng chọn tòa nhà';
+    }
+
     if (!selectedRoomId) {
       newErrors.room = 'Vui lòng chọn phòng';
     }
@@ -133,7 +143,50 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClos
     });
   };
 
+  const buildings = buildingsData?.data || [];
+  const selectedBuilding = useMemo(
+    () => buildings.find((item: Building) => String(item.id) === selectedBuildingId),
+    [buildings, selectedBuildingId]
+  );
+
   const rooms = roomsData?.data || [];
+  const filteredRooms = useMemo(() => {
+    if (!selectedBuilding) {
+      return [];
+    }
+
+    const selectedBuildingName = selectedBuilding.name.toLowerCase();
+    const selectedBuildingIdNormalized = String(selectedBuilding.id).toLowerCase();
+
+    return rooms.filter((room: Room) => {
+      const roomBuilding = String(room.building).toLowerCase();
+      return (
+        roomBuilding === selectedBuildingName ||
+        roomBuilding === selectedBuildingIdNormalized ||
+        roomBuilding.includes(selectedBuildingName)
+      );
+    });
+  }, [rooms, selectedBuilding]);
+
+  useEffect(() => {
+    if (!selectedRoomId) {
+      return;
+    }
+
+    const roomExists = filteredRooms.some(
+      (room: Room) => String(room.id) === selectedRoomId
+    );
+
+    if (!roomExists) {
+      setSelectedRoomId('');
+    }
+  }, [filteredRooms, selectedRoomId]);
+
+  const reasonOptions =
+    reasonsData && reasonsData.length > 0
+      ? reasonsData
+      : FALLBACK_REPORT_REASONS;
+
   const isSubmitting = createReportMutation.isPending;
 
   if (!isOpen) return null;
@@ -173,6 +226,49 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClos
           <div className="flex-1 overflow-y-auto overflow-x-hidden modal-scrollbar">
             {/* Form */}
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            {/* Building Selection */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Chọn tòa nhà <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={selectedBuildingId}
+                onChange={(e) => {
+                  setSelectedBuildingId(e.target.value);
+                  setSelectedRoomId('');
+                  setErrors((prev) => ({ ...prev, building: '', room: '' }));
+                }}
+                disabled={buildingsLoading || isSubmitting}
+                className={`
+                  w-full px-4 py-3 rounded-lg border
+                  bg-white text-gray-900
+                  focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent
+                  disabled:bg-gray-100 disabled:cursor-not-allowed
+                  transition-all duration-200
+                  ${errors.building ? 'border-red-500' : 'border-gray-300'}
+                `}
+              >
+                <option value="">-- Chọn tòa nhà --</option>
+                {buildings.map((building: Building) => (
+                  <option key={building.id} value={building.id}>
+                    {building.name}
+                  </option>
+                ))}
+              </select>
+              {errors.building && (
+                <p className="text-sm text-red-500 flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  {errors.building}
+                </p>
+              )}
+            </div>
+
             {/* Room Selection */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
@@ -184,7 +280,7 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClos
                   setSelectedRoomId(e.target.value);
                   setErrors((prev) => ({ ...prev, room: '' }));
                 }}
-                disabled={roomsLoading || isSubmitting}
+                disabled={roomsLoading || isSubmitting || !selectedBuildingId}
                 className={`
                   w-full px-4 py-3 rounded-lg border
                   bg-white text-gray-900
@@ -194,8 +290,10 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClos
                   ${errors.room ? 'border-red-500' : 'border-gray-300'}
                 `}
               >
-                <option value="">-- Chọn phòng --</option>
-                {rooms.map((room: any) => (
+                <option value="">
+                  {selectedBuildingId ? '-- Chọn phòng --' : '-- Chọn tòa nhà trước --'}
+                </option>
+                {filteredRooms.map((room: Room) => (
                   <option key={room.id} value={room.id}>
                     {room.name} - {room.building}
                   </option>
@@ -222,6 +320,8 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClos
                 setReason(newReason);
                 setErrors((prev) => ({ ...prev, reason: '' }));
               }}
+              reasons={reasonOptions}
+              isLoading={reasonsLoading && reasonOptions.length === 0}
               disabled={isSubmitting}
               error={errors.reason}
             />

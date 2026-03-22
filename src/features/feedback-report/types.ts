@@ -10,17 +10,12 @@
 /**
  * Report reason options
  */
-export type ReportReason =
-  | 'equipment_damaged'
-  | 'equipment_missing'
-  | 'cleanliness_issue'
-  | 'air_conditioning_problem'
-  | 'lighting_problem'
-  | 'furniture_damaged'
-  | 'network_issue'
-  | 'projector_problem'
-  | 'door_lock_issue'
-  | 'other';
+export type ReportReason = string;
+
+export interface ReportReasonOption {
+  value: string;
+  label: string;
+}
 
 /**
  * Report reason display labels
@@ -37,6 +32,10 @@ export const REPORT_REASON_LABELS: Record<ReportReason, string> = {
   door_lock_issue: 'Khóa cửa hỏng',
   other: 'Khác',
 };
+
+export const FALLBACK_REPORT_REASONS: ReportReasonOption[] = Object.entries(
+  REPORT_REASON_LABELS
+).map(([value, label]) => ({ value, label }));
 
 /**
  * Report status
@@ -81,6 +80,14 @@ export interface CreateReportRequest {
   reason: ReportReason;
   description: string;
   images?: File[]; // Files to upload
+}
+
+/**
+ * Get report reasons response
+ */
+export interface GetReportReasonsResponse {
+  success: boolean;
+  data: ReportReasonOption[];
 }
 
 /**

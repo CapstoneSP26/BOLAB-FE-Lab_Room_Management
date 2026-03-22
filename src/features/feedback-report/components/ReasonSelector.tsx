@@ -4,11 +4,13 @@
  */
 
 import React from 'react';
-import { REPORT_REASON_LABELS, type ReportReason } from '../types';
+import type { ReportReason, ReportReasonOption } from '../types';
 
 interface ReasonSelectorProps {
   value: ReportReason | '';
   onChange: (reason: ReportReason) => void;
+  reasons: ReportReasonOption[];
+  isLoading?: boolean;
   disabled?: boolean;
   error?: string;
 }
@@ -16,11 +18,11 @@ interface ReasonSelectorProps {
 export const ReasonSelector: React.FC<ReasonSelectorProps> = ({
   value,
   onChange,
+  reasons,
+  isLoading = false,
   disabled = false,
   error,
 }) => {
-  const reasons = Object.entries(REPORT_REASON_LABELS) as [ReportReason, string][];
-
   return (
     <div className="space-y-2">
       <label className="block text-sm font-medium text-gray-700">
@@ -30,7 +32,7 @@ export const ReasonSelector: React.FC<ReasonSelectorProps> = ({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as ReportReason)}
-        disabled={disabled}
+        disabled={disabled || isLoading}
         className={`
           w-full px-4 py-3 rounded-lg border
           bg-white text-gray-900
@@ -40,10 +42,12 @@ export const ReasonSelector: React.FC<ReasonSelectorProps> = ({
           ${error ? 'border-red-500' : 'border-gray-300'}
         `}
       >
-        <option value="">-- Chọn lý do --</option>
-        {reasons.map(([key, label]) => (
-          <option key={key} value={key}>
-            {label}
+        <option value="">
+          {isLoading ? '-- Đang tải lý do --' : '-- Chọn lý do --'}
+        </option>
+        {reasons.map((reasonOption) => (
+          <option key={reasonOption.value} value={reasonOption.value}>
+            {reasonOption.label}
           </option>
         ))}
       </select>
