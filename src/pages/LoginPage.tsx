@@ -26,6 +26,10 @@ export default function LoginPage() {
     console.log("LOGIN", form);
   };
 
+  const LoginGoogle = () => {
+    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/auth/login/google?returnUrl=${import.meta.env.VITE_FE_BASE_URL}`;
+  }
+
   return (
     <AuthLayout
       title="Sign in"
@@ -84,7 +88,7 @@ export default function LoginPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <button type="button" className="social-btn">
+          <button type="button" className="social-btn" onClick={LoginGoogle}>
             <span className="font-black">G</span> Google
           </button>
           <button type="button" className="social-btn">
