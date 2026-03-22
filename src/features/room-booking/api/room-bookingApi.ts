@@ -26,6 +26,8 @@ const ROOM_BOOKING_API = {
   AVAILABLE_SLOTS: '/api/available-slots',
   CREATE_BOOKING: '/api/bookings',
   MY_BOOKINGS: '/api/bookings/my-bookings',
+  BOOKING: '/api/bookings',
+  SCHEDULE: '/api/schedules',
 };
 
 /**
@@ -92,3 +94,4 @@ export const getMyBookings = async (
   );
   return response.data;
 };
+
