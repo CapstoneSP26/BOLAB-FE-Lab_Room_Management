@@ -16,7 +16,10 @@ export const mockDashboardStats: DashboardStatsDto = {
   busiestHourOfDay: 14,
   monthlyBookings: [168, 385, 201, 298, 187, 195, 291, 110, 215, 390, 280, 112],
   monthlyIncidents: [5, 3, 8, 4, 6, 7, 9, 5, 4, 6, 8, 7],
-  checkinCompliancePercentage: 85.5,
+  approvedBookingsToday: 12,
+  checkedInBookingsToday: 9,
+  noCheckInBookingsToday: 3,
+  checkInCompliancePercentage: 75,
 };
 
 export const mockPendingRequests: PendingRequestDto[] = [
