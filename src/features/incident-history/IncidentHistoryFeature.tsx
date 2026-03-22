@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import type { Incident } from "./api/incidentHistoryApi";
-import { incidentHistoryService } from "./api/incidentHistoryApi";
+import { useMemo, useState } from "react";
+import type { Incident } from "./type";
+import { useIncidentHistory } from "./hook/useIncidentHistory";
 import IncidentFilters, {
   type IncidentSortKey,
   type IncidentStatusFilter,
@@ -9,8 +9,7 @@ import IncidentHistoryTable from "./components/IncidentHistoryTable";
 import IncidentModal from "./components/IncidentModal";
 
 export default function IncidentHistoryFeature() {
-  const [loading, setLoading] = useState(true);
-  const [items, setItems] = useState<Incident[]>([]);
+  const { loading, items } = useIncidentHistory();
 
   const [q, setQ] = useState("");
   const [roomId, setRoomId] = useState<number | "ALL">("ALL");
@@ -25,29 +24,15 @@ export default function IncidentHistoryFeature() {
     setSelected(null);
   };
 
-  const reload = async () => {
-    setLoading(true);
-    try {
-      const data = await incidentHistoryService.list();
-      setItems(data);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    reload();
-  }, []);
-
   const roomOptions = useMemo(() => {
     const set = new Set<number>();
-    items.forEach((x) => set.add(x.LabRoomId));
+    (items ?? []).forEach((x) => set.add(x.LabRoomId));
     return Array.from(set).sort((a, b) => a - b);
   }, [items]);
 
   const rows = useMemo(() => {
     const normalizedQ = q.trim().toLowerCase();
-    let arr = [...items];
+    let arr = [...(items ?? [])];
 
     if (roomId !== "ALL") arr = arr.filter((x) => x.LabRoomId === roomId);
 
@@ -70,6 +55,7 @@ export default function IncidentHistoryFeature() {
         ]
           .join(" ")
           .toLowerCase();
+
         return hay.includes(normalizedQ);
       });
     }
