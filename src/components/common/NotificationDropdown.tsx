@@ -1,13 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-
-interface Notification {
-  id: number;
-  title: string;
-  message: string;
-  time: string;
-  isRead: boolean;
-  type: 'info' | 'warning' | 'success' | 'error';
-}
+import { useNavigate } from 'react-router-dom';
+import { useNotificationStore, type NotificationType } from '../../hooks/useNotifications';
 
 interface NotificationDropdownProps {
   isHomePage?: boolean;
@@ -16,42 +9,11 @@ interface NotificationDropdownProps {
 const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isHomePage = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
-  // Sample notifications
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: 1,
-      title: 'New Booking Request',
-      message: 'Lab A-101 has a new booking request for tomorrow.',
-      time: '5 minutes ago',
-      isRead: false,
-      type: 'info'
-    },
-    {
-      id: 2,
-      title: 'Equipment Maintenance',
-      message: 'Scheduled maintenance for equipment in Lab B-202.',
-      time: '1 hour ago',
-      isRead: false,
-      type: 'warning'
-    },
-    {
-      id: 3,
-      title: 'Booking Approved',
-      message: 'Your booking for Lab C-303 has been approved.',
-      time: '2 hours ago',
-      isRead: false,
-      type: 'success'
-    },
-    {
-      id: 4,
-      title: 'System Update',
-      message: 'System will be updated tonight at 11 PM.',
-      time: '1 day ago',
-      isRead: true,
-      type: 'info'
-    }
-  ]);
+  const notifications = useNotificationStore((state) => state.notifications);
+  const markAsRead = useNotificationStore((state) => state.markAsRead);
+  const markAllAsRead = useNotificationStore((state) => state.markAllAsRead);
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
@@ -72,17 +34,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isHomePage 
     };
   }, [isOpen]);
 
-  const handleMarkAsRead = (id: number) => {
-    setNotifications(notifications.map(n => 
-      n.id === id ? { ...n, isRead: true } : n
-    ));
-  };
-
-  const handleMarkAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, isRead: true })));
-  };
-
-  const getTypeColor = (type: string) => {
+  const getTypeColor = (type: NotificationType) => {
     switch (type) {
       case 'info': return 'bg-blue-100 text-blue-600';
       case 'warning': return 'bg-yellow-100 text-yellow-600';
@@ -139,7 +91,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isHomePage 
             <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
             {unreadCount > 0 && (
               <button 
-                onClick={handleMarkAllAsRead}
+                onClick={markAllAsRead}
                 className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -166,7 +118,11 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isHomePage 
                   className={`p-4 hover:bg-gray-50 cursor-pointer transition-all ${
                     !notification.isRead ? 'bg-blue-50/50 hover:bg-blue-50' : ''
                   }`}
-                  onClick={() => handleMarkAsRead(notification.id)}
+                  onClick={() => {
+                    markAsRead(notification.id);
+                    setIsOpen(false);
+                    navigate(notification.relatedPath ?? '/notifications');
+                  }}
                 >
                   <div className="flex items-start gap-3">
                     <div className={`flex-shrink-0 mt-1 p-2 rounded-full ${getTypeColor(notification.type)}`}>
@@ -196,7 +152,13 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isHomePage 
 
           {/* Footer */}
           <div className="p-3 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-white">
-            <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors">
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                navigate('/notifications');
+              }}
+              className="w-full cursor-pointer flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+            >
               <span>View all notifications</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />

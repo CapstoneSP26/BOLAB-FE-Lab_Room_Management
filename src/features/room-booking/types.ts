@@ -26,10 +26,15 @@ export interface TimeSlot {
   startTime: string; // HH:mm format
   endTime: string; // HH:mm format
   status: SlotStatus;
+  userName?: string;
   bookedBy?: string;
   groupName?: string;
   slotType?: BookingMode; // OldSlot (fixed slots) or OutSlot (flexible booking)
   slotNumber?: number; // For OldSlot: slot 1, slot 2, etc.
+  lecturerName?: string;
+  scheduleType?: string;
+  studentCount?: number;
+  bookingSource?: 'AO_BOOK' | 'LECTURER_BOOK';
 }
 
 export interface BookingRequest {

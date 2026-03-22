@@ -93,6 +93,41 @@ export const AvailableSlotList: React.FC<AvailableSlotListProps> = ({
     }
   };
 
+  const getSlotSource = (slot: TimeSlot): 'AO_BOOK' | 'LECTURER_BOOK' => {
+    if (slot.bookingSource) {
+      return slot.bookingSource;
+    }
+
+    const scheduleType = slot.scheduleType?.toLowerCase() || '';
+    if (scheduleType.includes('ao')) {
+      return 'AO_BOOK';
+    }
+
+    return 'LECTURER_BOOK';
+  };
+
+  const isSlotActive = (slot: TimeSlot): boolean => {
+    if (slot.status !== 'Booked') {
+      return false;
+    }
+
+    const [startHour, startMinute] = slot.startTime.split(':').map(Number);
+    const [endHour, endMinute] = slot.endTime.split(':').map(Number);
+
+    const startDate = new Date(slot.date);
+    const endDate = new Date(slot.date);
+    startDate.setHours(startHour, startMinute, 0, 0);
+    endDate.setHours(endHour, endMinute, 0, 0);
+
+    // Handle overnight schedules (e.g. 23:00 - 01:00).
+    if (endDate <= startDate) {
+      endDate.setDate(endDate.getDate() + 1);
+    }
+
+    const now = new Date();
+    return now >= startDate && now <= endDate;
+  };
+
   const isSlotSelectable = (slot: TimeSlot) => slot.status === 'Available';
   const isSlotSelected = (slotId: string) => selectedSlotIds.includes(slotId);
 
@@ -231,6 +266,8 @@ export const AvailableSlotList: React.FC<AvailableSlotListProps> = ({
           const selectable = isSlotSelectable(slot);
           const selected = isSlotSelected(slot.id);
           const config = getStatusConfig(slot.status);
+          const active = isSlotActive(slot);
+          const source = getSlotSource(slot);
 
           return (
             <div
@@ -258,6 +295,13 @@ export const AvailableSlotList: React.FC<AvailableSlotListProps> = ({
                   {config.icon}
                   <span>{slot.status}</span>
                 </div>
+                {active && (
+                  <div className="mt-1 flex justify-end">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500 text-white shadow-md">
+                      Active
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Selection Indicator - Center checkmark */}
@@ -306,6 +350,9 @@ export const AvailableSlotList: React.FC<AvailableSlotListProps> = ({
                         {slot.bookedBy}
                         {slot.groupName && <span className="text-gray-600"> • {slot.groupName}</span>}
                       </p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {source === 'AO_BOOK' ? 'AO Book' : 'Lecturer Book'}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -335,7 +382,7 @@ export const AvailableSlotList: React.FC<AvailableSlotListProps> = ({
               </div>
               <button
                 onClick={onBookSelected}
-                className="px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center gap-2 whitespace-nowrap"
+                className="cursor-pointer px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center gap-2 whitespace-nowrap"
               >
                 <Calendar className="w-5 h-5" />
                 Book Now

@@ -55,6 +55,7 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
     startTime: '',
     endTime: '',
   });
+  const [selectedBooking, setSelectedBooking] = useState<TimeSlot | null>(null);
 
   const gridRef = useRef<HTMLDivElement>(null);
   const CELL_HEIGHT = 80; // 80px per hour slot
@@ -131,6 +132,124 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
           booking.endTime > timeSlot
       ) || null
     );
+  };
+
+  const getBookingSource = (booking: TimeSlot): 'AO_BOOK' | 'LECTURER_BOOK' => {
+    if (booking.bookingSource) {
+      return booking.bookingSource;
+    }
+
+    const scheduleType = booking.scheduleType?.toLowerCase() || '';
+    if (scheduleType.includes('ao')) {
+      return 'AO_BOOK';
+    }
+
+    return 'LECTURER_BOOK';
+  };
+
+  const getSourceConfig = (booking: TimeSlot) => {
+    const source = getBookingSource(booking);
+
+    if (source === 'AO_BOOK') {
+      return {
+        label: 'Academic Office Book',
+        badgeClass: 'bg-sky-100 text-sky-800',
+      };
+    }
+
+    return {
+      label: 'Lecturer Book',
+      badgeClass: 'bg-violet-100 text-violet-800',
+    };
+  };
+
+  const getStatusConfig = (booking: TimeSlot) => {
+    if (booking.status === 'Pending') {
+      return {
+        label: 'Pending',
+        badgeClass: 'bg-amber-100 text-amber-800',
+      };
+    }
+
+    if (booking.status === 'Available') {
+      return {
+        label: 'Available',
+        badgeClass: 'bg-emerald-100 text-emerald-800',
+      };
+    }
+
+    if (booking.status === 'Maintenance') {
+      return {
+        label: 'Maintenance',
+        badgeClass: 'bg-slate-200 text-slate-700',
+      };
+    }
+
+    // Booked status follows the same source color palette used on cards.
+    const sourceConfig = getSourceConfig(booking);
+    return {
+      label: 'Booked',
+      badgeClass: sourceConfig.badgeClass,
+    };
+  };
+
+  const timeToMinutes = (time: string): number => {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  const getBookingBlockMetrics = (
+    booking: TimeSlot,
+    timeSlot: string
+  ): { top: number; height: number } | null => {
+    const slotStart = timeToMinutes(timeSlot);
+    const slotEnd = slotStart + 60;
+
+    const bookingStart = timeToMinutes(booking.startTime);
+    let bookingEnd = timeToMinutes(booking.endTime);
+
+    if (bookingEnd <= bookingStart) {
+      bookingEnd += 24 * 60;
+    }
+
+    const isStartCell = bookingStart >= slotStart && bookingStart < slotEnd;
+    if (!isStartCell) {
+      return null;
+    }
+
+    const topOffset = ((bookingStart - slotStart) / 60) * CELL_HEIGHT + 4;
+    const blockHeight = ((bookingEnd - bookingStart) / 60) * CELL_HEIGHT - 8;
+
+    return {
+      top: topOffset,
+      height: Math.max(blockHeight, 24),
+    };
+  };
+
+  const getBookerName = (booking: TimeSlot): string => {
+    return booking.userName || booking.bookedBy || booking.lecturerName || 'N/A';
+  };
+
+  const isSlotActive = (booking: TimeSlot): boolean => {
+    if (booking.status !== 'Booked') {
+      return false;
+    }
+
+    const [startHour, startMinute] = booking.startTime.split(':').map(Number);
+    const [endHour, endMinute] = booking.endTime.split(':').map(Number);
+
+    const startDate = new Date(booking.date);
+    const endDate = new Date(booking.date);
+    startDate.setHours(startHour, startMinute, 0, 0);
+    endDate.setHours(endHour, endMinute, 0, 0);
+
+    // Handle overnight schedules (e.g. 23:00 - 01:00).
+    if (endDate <= startDate) {
+      endDate.setDate(endDate.getDate() + 1);
+    }
+
+    const now = new Date();
+    return now >= startDate && now <= endDate;
   };
 
   // Check if cell is in drag selection
@@ -215,8 +334,11 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
     const existingBooking = existingBookings.find(
       (b) => b.date === date && b.slotNumber === slotNumber && b.slotType === 'OldSlot'
     );
-    
-    if (existingBooking) return; // Slot already booked
+
+    if (existingBooking) {
+      setSelectedBooking(existingBooking);
+      return;
+    }
 
     // Calculate time based on slot number (each slot = 2.5 hours starting from 7:00)
     const startMinutes = (slotNumber - 1) * 150; // 150 minutes = 2.5 hours
@@ -504,6 +626,10 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
                   {/* Day cells */}
                   {weekDays.map((_date, dayIndex) => {
                     const booking = hasBooking(dayIndex, time);
+                    const bookingBlockMetrics =
+                      booking && booking.status !== 'Available'
+                        ? getBookingBlockMetrics(booking, time)
+                        : null;
                     const inSelection = isInDragSelection(dayIndex, timeSlotIndex);
                     const isDraggingThisColumn = dragState.isActive && dragState.dayIndex === dayIndex;
                     const isPast = isPastSlot(dayIndex, time);
@@ -520,27 +646,43 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
                             ? 'bg-red-50 border-red-200 cursor-pointer'
                             : inSelection
                             ? 'bg-blue-50 border-blue-200 cursor-pointer'
-                            : booking
-                            ? booking.status === 'Available'
-                              ? 'bg-white hover:bg-gray-50 hover:shadow-sm cursor-pointer'
-                              : booking.status === 'Pending'
-                              ? 'bg-amber-50 cursor-pointer'
-                              : 'bg-indigo-50 cursor-pointer'
                             : 'bg-white hover:bg-gray-50 hover:shadow-sm cursor-pointer'
                         }`}
                         onMouseDown={(e) => handleMouseDown(e, dayIndex, timeSlotIndex)}
                       >
                         {/* Existing booking block */}
-                        {booking && booking.status !== 'Available' && (
+                        {booking && booking.status !== 'Available' && bookingBlockMetrics && (
                           <div
-                            className={`absolute inset-0 mx-1 my-1 rounded-lg px-3 py-2 text-xs font-medium border-l-4 ${
+                            className={`absolute left-1 right-1 rounded-lg px-3 py-2 text-xs font-medium border-l-4 z-30 ${
                               booking.status === 'Booked'
-                                ? 'bg-indigo-100 text-indigo-900 border-indigo-400'
+                                ? getBookingSource(booking) === 'AO_BOOK'
+                                  ? 'bg-sky-100 text-sky-900 border-sky-400'
+                                  : 'bg-violet-100 text-violet-900 border-violet-400'
                                 : 'bg-amber-100 text-amber-900 border-amber-400 border-dashed'
                             }`}
+                            style={{
+                              top: `${bookingBlockMetrics.top}px`,
+                              height: `${bookingBlockMetrics.height}px`,
+                            }}
                             title={`${booking.bookedBy || 'Booked'} - ${booking.groupName || ''}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedBooking(booking);
+                            }}
                           >
-                            <div className="truncate font-semibold">{booking.groupName || 'Booked'}</div>
+                            <div className="flex items-center justify-between gap-1 mb-1">
+                              <span className="truncate font-semibold">{booking.groupName || 'Booked'}</span>
+                              {booking.status === 'Booked' && isSlotActive(booking) && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500 text-white">
+                                  Active
+                                </span>
+                              )}
+                            </div>
+                            {booking.status === 'Booked' && (
+                              <div className="text-[10px] opacity-80 truncate">
+                                {getBookingSource(booking) === 'AO_BOOK' ? 'AO Book' : 'Lecturer Book'}
+                              </div>
+                            )}
                           </div>
                         )}
 
@@ -611,8 +753,10 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
                             ? 'bg-gray-200 cursor-not-allowed opacity-80'
                             : existingSlot
                             ? existingSlot.status === 'Booked'
-                              ? 'bg-indigo-100 cursor-not-allowed border-l-4 border-l-indigo-400'
-                              : 'bg-amber-100 cursor-not-allowed border-l-4 border-l-amber-400 border-dashed'
+                              ? getBookingSource(existingSlot) === 'AO_BOOK'
+                                ? 'bg-sky-100 cursor-pointer border-l-4 border-l-sky-400'
+                                : 'bg-violet-100 cursor-pointer border-l-4 border-l-violet-400'
+                              : 'bg-amber-100 cursor-pointer border-l-4 border-l-amber-400 border-dashed'
                             : 'bg-white hover:bg-gray-50 hover:shadow-sm cursor-pointer'
                         }`}
                       >
@@ -623,15 +767,35 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
                         ) : existingSlot ? (
                           <div className="absolute inset-0 flex flex-col items-center justify-center p-3">
                             <div className={`font-semibold text-sm truncate w-full text-center ${
-                              existingSlot.status === 'Booked' ? 'text-indigo-900' : 'text-amber-900'
+                              existingSlot.status === 'Booked'
+                                ? getBookingSource(existingSlot) === 'AO_BOOK'
+                                  ? 'text-sky-900'
+                                  : 'text-violet-900'
+                                : 'text-amber-900'
                             }`}>
                               {existingSlot.groupName || 'Booked'}
                             </div>
                             <div className={`text-xs mt-1 ${
-                              existingSlot.status === 'Booked' ? 'text-indigo-700' : 'text-amber-700'
+                              existingSlot.status === 'Booked'
+                                ? getBookingSource(existingSlot) === 'AO_BOOK'
+                                  ? 'text-sky-700'
+                                  : 'text-violet-700'
+                                : 'text-amber-700'
                             }`}>
                               {existingSlot.startTime} - {existingSlot.endTime}
                             </div>
+                            {existingSlot.status === 'Booked' && (
+                              <div className="mt-1 flex items-center gap-1">
+                                <span className="text-[10px] font-semibold text-gray-700">
+                                  {getBookingSource(existingSlot) === 'AO_BOOK' ? 'AO Book' : 'Lecturer Book'}
+                                </span>
+                                {isSlotActive(existingSlot) && (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500 text-white">
+                                    Active
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
@@ -756,6 +920,71 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
                 Apply Settings
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Booking Detail Modal */}
+      {selectedBooking && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/55 backdrop-blur-sm"
+            onClick={() => setSelectedBooking(null)}
+          />
+          <div className="relative w-full max-w-md rounded-xl border border-white/20 bg-slate-900/95 text-white shadow-2xl">
+            {(() => {
+              const sourceConfig = getSourceConfig(selectedBooking);
+              const statusConfig = getStatusConfig(selectedBooking);
+
+              return (
+                <>
+            <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+              <h4 className="text-lg font-bold">Schedule Details</h4>
+              <button
+                onClick={() => setSelectedBooking(null)}
+                className="rounded-md p-1.5 text-white/80 hover:bg-white/10 hover:text-white"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-3 px-5 py-4 text-sm">
+              <div className="rounded-lg bg-white/10 px-3 py-2">
+                <p className="text-white/60">Group / Class</p>
+                <p className="font-semibold">{selectedBooking.groupName || 'N/A'}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-lg bg-white/10 px-3 py-2">
+                  <p className="text-white/60">Time</p>
+                  <p className="font-semibold">{selectedBooking.startTime} - {selectedBooking.endTime}</p>
+                </div>
+                <div className="rounded-lg bg-white/10 px-3 py-2">
+                  <p className="text-white/60">Status</p>
+                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${statusConfig.badgeClass}`}>
+                    {statusConfig.label}
+                  </span>
+                </div>
+                <div className="rounded-lg bg-white/10 px-3 py-2">
+                  <p className="text-white/60">User</p>
+                  <p className="font-semibold">{getBookerName(selectedBooking)}</p>
+                </div>
+                <div className="rounded-lg bg-white/10 px-3 py-2">
+                  <p className="text-white/60">Student Count</p>
+                  <p className="font-semibold">{selectedBooking.studentCount ?? 0}</p>
+                </div>
+              </div>
+              <div className="rounded-lg bg-white/10 px-3 py-2">
+                <p className="text-white/60">Schedule Type</p>
+                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${sourceConfig.badgeClass}`}>
+                  {sourceConfig.label}
+                </span>
+              </div>
+            </div>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}

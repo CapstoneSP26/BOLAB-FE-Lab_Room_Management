@@ -4,6 +4,10 @@ import type { User } from '../types';
 import { useBuildingContext } from '../context/BuildingContext';
 // import Sidebar removed
 import RoomCard from '../features/homepage/components/RoomCard';
+import {
+  MOCK_BUILDING_DETAIL_BUILDINGS as MOCK_BUILDINGS,
+  MOCK_BUILDING_DETAIL_ROOMS as MOCK_ROOMS,
+} from '../features/room-booking/mocks/roomBookingMockData';
 import { 
   Search, 
   ChevronLeft, 
@@ -18,48 +22,6 @@ interface BuildingDetailProps {
   user?: User;
   onLogout?: () => void;
 }
-
-// Sample data consistent with building selection logic
-const MOCK_ROOMS = [
-  // Building Alpha - Engineering & High-Tech Labs
-  { id: 1, name: "Quantum Lab A", building: "Alpha", capacity: 12, status: "Available", image: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=400", features: ['wifi', 'screen'], nextAvailable: "14:00 PM" },
-  { id: 2, name: "AI Innovation Hub", building: "Alpha", capacity: 25, status: "Occupied", image: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&q=80&w=400", features: ['wifi', 'screen'], nextAvailable: "16:00 PM" },
-  { id: 5, name: "Neural Networks Lab", building: "Alpha", capacity: 20, status: "Available", image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=400", features: ['wifi', 'screen'], nextAvailable: "Now" },
-  { id: 6, name: "Cyber Security Center", building: "Alpha", capacity: 18, status: "Available", image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=400", features: ['wifi', 'screen'], nextAvailable: "Now" },
-  { id: 7, name: "IoT Workshop", building: "Alpha", capacity: 16, status: "Occupied", image: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=400", features: ['wifi', 'screen'], nextAvailable: "15:30 PM" },
-  { id: 8, name: "Data Science Lab", building: "Alpha", capacity: 22, status: "Available", image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=400", features: ['wifi', 'screen'], nextAvailable: "Now" },
-  { id: 13, name: "Test Lab", building: "Alpha", capacity: 22, status: "Available", image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=400", features: ['wifi', 'screen'], nextAvailable: "Now" },
-  // Building Gamma - Multipurpose Area & Content Creation
-  { id: 3, name: "Robotics Center", building: "Gamma", capacity: 30, status: "Available", image: "https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?auto=format&fit=crop&q=80&w=400", features: ['wifi', 'screen'], nextAvailable: "13:00 PM" },
-  { id: 4, name: "Digital Arts Studio", building: "Gamma", capacity: 15, status: "Maintenance", image: "https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&q=80&w=400", features: ['wifi'], nextAvailable: "Tomorrow" },
-  { id: 9, name: "3D Printing Lab", building: "Gamma", capacity: 14, status: "Available", image: "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&q=80&w=400", features: ['wifi', 'screen'], nextAvailable: "Now" },
-  { id: 10, name: "VR/AR Studio", building: "Gamma", capacity: 12, status: "Occupied", image: "https://images.unsplash.com/photo-1622979135225-d2ba269cf1ac?auto=format&fit=crop&q=80&w=400", features: ['wifi', 'screen'], nextAvailable: "17:00 PM" },
-  
-  // Building Delta - Research & Innovation Center
-  { id: 11, name: "Blockchain Lab", building: "Delta", capacity: 20, status: "Available", image: "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?auto=format&fit=crop&q=80&w=400", features: ['wifi', 'screen'], nextAvailable: "Now" },
-  { id: 12, name: "Quantum Computing", building: "Delta", capacity: 8, status: "Occupied", image: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&q=80&w=400", features: ['wifi', 'screen'], nextAvailable: "18:00 PM" },
-];
-
-const MOCK_BUILDINGS = [
-  {
-    id: 'Alpha',
-    name: 'Building Alpha',
-    description: 'Engineering & High-Tech Labs',
-    image: 'https://daihoc.fpt.edu.vn/wp-content/uploads/2021/05/20210512_giaiwa1.jpeg',
-  },
-  {
-    id: 'Gamma',
-    name: 'Building Gamma',
-    description: 'Multipurpose Area & Content Creation',
-    image: 'https://vinaconex25.com.vn/wp-content/uploads/2020/06/2.jpg',
-  },
-  {
-    id: 'Delta',
-    name: 'Building Delta',
-    description: 'Research & Innovation Center',
-    image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=1200',
-  },
-];
 
 const BuildingDetail: React.FC<BuildingDetailProps> = () => {
   const { id } = useParams<{ id: string }>();
@@ -102,6 +64,17 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
 
   const currentBuilding = MOCK_BUILDINGS.find(b => b.id === id);
 
+  const handleOpenRoomDetails = (room: (typeof MOCK_ROOMS)[number]) => {
+    navigate(`/lab-room/${room.id}`, {
+      state: {
+        room: {
+          ...room,
+          id: String(room.id),
+        },
+      },
+    });
+  };
+
   return (
     <div className="min-h-screen relative overflow-hidden">
       {/* Animated Background matching building image */}
@@ -135,10 +108,14 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
             <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
               <div>
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="px-4 py-2 rounded-full bg-gradient-to-r from-brand-500 to-brand-600 text-[10px] font-black uppercase tracking-[0.2em] shadow-lg">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500 text-white text-[11px] font-black uppercase tracking-[0.14em] border-2 border-emerald-300 shadow-[0_8px_22px_rgba(16,185,129,0.45)]">
+                    <span className="relative inline-flex h-2.5 w-2.5">
+                      <span className="absolute inline-flex h-full w-full rounded-full bg-white/70 animate-ping"></span>
+                      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white"></span>
+                    </span>
                     Active Building
                   </div>
-                  <div className="flex items-center gap-1.5 text-gray-300 text-sm font-medium bg-white/5 px-3 py-1.5 rounded-full backdrop-blur-sm">
+                  <div className="flex items-center gap-1.5 text-white text-sm font-semibold bg-black/35 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/20 shadow-md">
                     <MapPin className="h-3.5 w-3.5" /> FPT University Da Nang
                   </div>
                 </div>
@@ -166,18 +143,24 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
 
         {/* Room List */}
         <main className="flex-1 px-6 lg:px-20 pb-20 -mt-12">
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-7xl mx-auto relative">
+            <div className="pointer-events-none absolute -top-10 -left-10 h-44 w-44 rounded-full bg-orange-300/25 blur-3xl animate-pulse" />
+            <div className="pointer-events-none absolute top-20 -right-10 h-56 w-56 rounded-full bg-cyan-200/25 blur-3xl animate-pulse" style={{ animationDelay: '0.5s' }} />
             {/* Glassmorphism Container */}
-            <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl p-10 border border-white/50">
+            <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl p-10 border border-white/50 animate-fade-in">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
                   <h2 className="text-3xl font-black text-gray-900 flex items-center gap-3">
                     <Building2 className="h-8 w-8 text-brand-600" />
                     Resource List
                   </h2>
-                  <span className="px-3 py-1 bg-brand-100 text-brand-700 rounded-full text-sm font-bold">
-                    {filteredRooms.length} rooms
-                  </span>
+                  <div className="inline-flex items-center gap-2.5 rounded-xl border border-slate-300 bg-slate-100 px-4 py-2 shadow-sm">
+                    <span className="inline-flex h-2.5 w-2.5 rounded-full bg-slate-500"></span>
+                    <span className="text-xs font-bold uppercase tracking-wide text-slate-600">Total Rooms</span>
+                    <span className="text-lg font-black text-slate-800 leading-none">
+                      {filteredRooms.length}
+                    </span>
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <button 
@@ -218,12 +201,12 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
                   paginatedRooms.map((room, idx) => (
                     <div 
                       key={room.id} 
-                      className={`transition-all duration-300 animate-in fade-in ${
+                      className={`transition-all duration-300 animate-fade-in ${
                         viewMode === 'grid' 
-                          ? 'hover:scale-[1.02] slide-in-from-right' 
-                          : 'hover:shadow-xl hover:bg-gray-50 rounded-2xl p-4'
+                          ? 'hover:scale-[1.02]' 
+                          : 'rounded-2xl p-4 border border-transparent hover:border-orange-100 hover:shadow-xl hover:bg-gradient-to-r hover:from-orange-50/50 hover:to-white hover:-translate-y-0.5'
                       }`}
-                      style={{animationDelay: `${idx * 100}ms`, animationDuration: '500ms'}}
+                      style={{ animationDelay: `${idx * 70}ms`, animationDuration: '500ms' }}
                     >
                       {viewMode === 'grid' ? (
                         <RoomCard 
@@ -233,13 +216,17 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
                           image={room.image}
                           nextAvailable={room.nextAvailable || "14:00 PM"}
                           features={room.features || ['wifi', 'screen']}
+                          onActionClick={() => handleOpenRoomDetails(room)}
                         />
                       ) : (
-                        <div className="flex gap-6 items-center">
+                        <div
+                          className="flex gap-6 items-center cursor-pointer"
+                          onClick={() => handleOpenRoomDetails(room)}
+                        >
                           <img 
                             src={room.image} 
                             alt={room.name} 
-                            className="w-32 h-32 object-cover rounded-xl"
+                            className="w-32 h-32 object-cover rounded-xl transition-transform duration-300 hover:scale-105"
                           />
                           <div className="flex-1">
                             <h3 className="text-xl font-bold text-gray-900 mb-2">{room.name}</h3>
@@ -262,6 +249,15 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
                           <div className="text-right">
                             <p className="text-sm text-gray-500 mb-2">Next Available</p>
                             <p className="text-lg font-bold text-brand-600">{room.nextAvailable}</p>
+                            <button
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleOpenRoomDetails(room);
+                              }}
+                              className="mt-3 px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold cursor-pointer transition-all duration-200 hover:scale-105"
+                            >
+                              View Details
+                            </button>
                           </div>
                         </div>
                       )}
