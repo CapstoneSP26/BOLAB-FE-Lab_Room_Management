@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import Chart from "react-apexcharts";
 import type { ApexOptions } from "apexcharts";
+import type { DashboardStatsDto } from "../services/dashboardService";
+import { mockDashboardStats } from "../mocks/dashboardMocks";
 
 type OptionValue = "optionOne" | "optionTwo" | "optionThree";
 
@@ -15,21 +17,28 @@ type Series = {
   data: number[];
 };
 
-export default function StatisticsCard() {
+interface StatisticsChartProps {
+  stats?: DashboardStatsDto;
+}
+
+export default function StatisticsCard({ stats }: StatisticsChartProps) {
   const [selected, setSelected] = useState<OptionValue>("optionOne");
+
+  // Check if using real data or fallback
+  const isUsingFallbackData = !stats?.monthlyBookings || !stats?.monthlyIncidents;
 
   const series: Series[] = useMemo(
     () => [
       {
-        name: "Sales",
-        data: [180, 190, 170, 160, 175, 165, 170, 205, 230, 210, 240, 235],
+        name: "Bookings",
+        data: stats?.monthlyBookings || mockDashboardStats.monthlyBookings,
       },
       {
-        name: "Revenue",
-        data: [40, 30, 50, 40, 55, 40, 70, 100, 110, 120, 150, 140],
+        name: "Incidents",
+        data: stats?.monthlyIncidents || mockDashboardStats.monthlyIncidents,
       },
     ],
-    [],
+    [stats?.monthlyBookings, stats?.monthlyIncidents],
   );
 
   const chartOptions: ApexOptions = useMemo(
@@ -108,8 +117,11 @@ export default function StatisticsCard() {
           </h3>
           <p className="mt-1 text-gray-500 text-theme-sm dark:text-gray-400">
             Target you’ve set for each month
-          </p>
-        </div>
+          </p>          {isUsingFallbackData && (
+            <div className="mt-3 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
+              📊 Showing sample data. Backend API needs to implement monthly breakdown.
+            </div>
+          )}        </div>
 
         <div className="relative">
           <div className="inline-flex items-center gap-0.5 rounded-lg bg-gray-100 p-0.5 dark:bg-gray-900">

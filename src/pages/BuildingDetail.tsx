@@ -2,12 +2,8 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { User } from '../types';
 import { useBuildingContext } from '../context/BuildingContext';
-// import Sidebar removed
 import RoomCard from '../features/homepage/components/RoomCard';
-import {
-  MOCK_BUILDING_DETAIL_BUILDINGS as MOCK_BUILDINGS,
-  MOCK_BUILDING_DETAIL_ROOMS as MOCK_ROOMS,
-} from '../features/room-booking/mocks/roomBookingMockData';
+import { getBuildingByName, type BuildingResponse } from '../api/building';
 import { 
   Search, 
   ChevronLeft, 
@@ -15,7 +11,9 @@ import {
   Building2,
   LayoutGrid,
   List,
-  ChevronRight
+  ChevronRight,
+  AlertCircle,
+  Loader
 } from 'lucide-react';
 
 interface BuildingDetailProps {
@@ -23,23 +21,66 @@ interface BuildingDetailProps {
   onLogout?: () => void;
 }
 
+// Sample data consistent with building selection logic
+const MOCK_ROOMS = [
+  // Building Alpha - Engineering & High-Tech Labs
+  { id: 1, name: "Quantum Lab A", building: "Alpha", capacity: 12, status: "Available", image: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=400", features: ['wifi', 'screen'], nextAvailable: "14:00 PM" },
+  { id: 2, name: "AI Innovation Hub", building: "Alpha", capacity: 25, status: "Occupied", image: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&q=80&w=400", features: ['wifi', 'screen'], nextAvailable: "16:00 PM" },
+  { id: 5, name: "Neural Networks Lab", building: "Alpha", capacity: 20, status: "Available", image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=400", features: ['wifi', 'screen'], nextAvailable: "Now" },
+  { id: 6, name: "Cyber Security Center", building: "Alpha", capacity: 18, status: "Available", image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=400", features: ['wifi', 'screen'], nextAvailable: "Now" },
+  { id: 7, name: "IoT Workshop", building: "Alpha", capacity: 16, status: "Occupied", image: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=400", features: ['wifi', 'screen'], nextAvailable: "15:30 PM" },
+  { id: 8, name: "Data Science Lab", building: "Alpha", capacity: 22, status: "Available", image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=400", features: ['wifi', 'screen'], nextAvailable: "Now" },
+  { id: 13, name: "Test Lab", building: "Alpha", capacity: 22, status: "Available", image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=400", features: ['wifi', 'screen'], nextAvailable: "Now" },
+  // Building Gamma - Multipurpose Area & Content Creation
+  { id: 3, name: "Robotics Center", building: "Gamma", capacity: 30, status: "Available", image: "https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?auto=format&fit=crop&q=80&w=400", features: ['wifi', 'screen'], nextAvailable: "13:00 PM" },
+  { id: 4, name: "Digital Arts Studio", building: "Gamma", capacity: 15, status: "Maintenance", image: "https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&q=80&w=400", features: ['wifi'], nextAvailable: "Tomorrow" },
+  { id: 9, name: "3D Printing Lab", building: "Gamma", capacity: 14, status: "Available", image: "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&q=80&w=400", features: ['wifi', 'screen'], nextAvailable: "Now" },
+  { id: 10, name: "VR/AR Studio", building: "Gamma", capacity: 12, status: "Occupied", image: "https://images.unsplash.com/photo-1622979135225-d2ba269cf1ac?auto=format&fit=crop&q=80&w=400", features: ['wifi', 'screen'], nextAvailable: "17:00 PM" },
+  
+  // Building Delta - Research & Innovation Center
+  { id: 11, name: "Blockchain Lab", building: "Delta", capacity: 20, status: "Available", image: "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?auto=format&fit=crop&q=80&w=400", features: ['wifi', 'screen'], nextAvailable: "Now" },
+  { id: 12, name: "Quantum Computing", building: "Delta", capacity: 8, status: "Occupied", image: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&q=80&w=400", features: ['wifi', 'screen'], nextAvailable: "18:00 PM" },
+];
+
 const BuildingDetail: React.FC<BuildingDetailProps> = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [building, setBuilding] = useState<BuildingResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
   const { setActiveBuildingImage } = useBuildingContext();
 
-  // Update building image when building is selected
+  // Fetch building data từ backend
   useEffect(() => {
-    if (id) {
-      const building = MOCK_BUILDINGS.find(b => b.id === id);
-      if (building) {
-        setActiveBuildingImage(building.image);
+    const fetchBuilding = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        if (id) {
+          // Decode URL parameter in case it's encoded
+          const buildingName = decodeURIComponent(id);
+          const data = await getBuildingByName(buildingName);
+          setBuilding(data);
+          // Update context với hình ảnh tòa nhà
+          setActiveBuildingImage(data.buildingImageUrl);
+        }
+      } catch (err) {
+        setError(
+          err instanceof Error 
+            ? err.message 
+            : `Không thể tải thông tin tòa nhà "${id}"`
+        );
+        console.error('Error fetching building:', err);
+      } finally {
+        setLoading(false);
       }
-    }
+    };
+
+    fetchBuilding();
   }, [id, setActiveBuildingImage]);
 
   // Filter rooms based on selected building and search keyword
@@ -62,7 +103,40 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
     setCurrentPage(1);
   }, [searchQuery]);
 
-  const currentBuilding = MOCK_BUILDINGS.find(b => b.id === id);
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-brand-50 to-brand-100 flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="h-12 w-12 text-brand-600 animate-spin mx-auto mb-4" />
+          <p className="text-lg text-gray-700">Đang tải thông tin tòa nhà...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error || !building) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md">
+          <div className="flex items-center gap-3 mb-4">
+            <AlertCircle className="h-8 w-8 text-red-600" />
+            <h2 className="text-2xl font-bold text-gray-900">Lỗi</h2>
+          </div>
+          <p className="text-gray-700 mb-6">{error || `Tòa nhà "${id}" không tồn tại`}</p>
+          <button 
+            onClick={() => navigate('/')}
+            className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-xl transition-colors"
+          >
+            Quay lại trang chủ
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const currentBuilding = building;
 
   const handleOpenRoomDetails = (room: (typeof MOCK_ROOMS)[number]) => {
     navigate(`/lab-room/${room.id}`, {
@@ -82,7 +156,7 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
         <div 
           className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
           style={{ 
-            backgroundImage: currentBuilding ? `url(${currentBuilding.image})` : 'none',
+            backgroundImage: `url(${currentBuilding.buildingImageUrl})`,
             filter: 'blur(15px) brightness(0.8)',
           }}
         />
@@ -102,28 +176,25 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
               className="flex items-center gap-2 text-gray-300 hover:text-white mb-10 transition-colors group px-4 py-2 rounded-lg hover:bg-white/10"
             >
               <ChevronLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" /> 
-              <span className="font-medium">Back to Overview</span>
+              <span className="font-medium">Quay lại tổng quan</span>
             </button>
             
             <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
               <div>
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500 text-white text-[11px] font-black uppercase tracking-[0.14em] border-2 border-emerald-300 shadow-[0_8px_22px_rgba(16,185,129,0.45)]">
-                    <span className="relative inline-flex h-2.5 w-2.5">
-                      <span className="absolute inline-flex h-full w-full rounded-full bg-white/70 animate-ping"></span>
-                      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white"></span>
-                    </span>
-                    Active Building
+                  <div className="px-4 py-2 rounded-full bg-gradient-to-r from-brand-500 to-brand-600 text-[10px] font-black uppercase tracking-[0.2em] shadow-lg">
+                    Tòa nhà đang chọn
                   </div>
-                  <div className="flex items-center gap-1.5 text-white text-sm font-semibold bg-black/35 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/20 shadow-md">
-                    <MapPin className="h-3.5 w-3.5" /> FPT University Da Nang
+                  <div className="flex items-center gap-1.5 text-gray-300 text-sm font-medium bg-white/5 px-3 py-1.5 rounded-full backdrop-blur-sm">
+                    <MapPin className="h-3.5 w-3.5" /> 
+                    {currentBuilding.campusName || 'FPT University Da Nang'}
                   </div>
                 </div>
                 <h1 className="text-7xl font-black tracking-tighter mb-2 bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
-                  {currentBuilding?.name || `Building ${id}`}
+                  {currentBuilding.buildingName}
                 </h1>
                 <p className="text-gray-300 text-lg">
-                  {currentBuilding?.description || 'Smart room management and booking'}
+                  {currentBuilding.description}
                 </p>
               </div>
               
@@ -131,7 +202,7 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
                 <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input 
                   type="text"
-                  placeholder="Search room name, ID, or equipment..."
+                  placeholder="Tìm kiếm tên phòng, ID hoặc thiết bị..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-white/10 border border-white/20 rounded-2xl py-5 pl-14 pr-6 text-lg placeholder:text-gray-400 focus:bg-white focus:text-black focus:ring-4 focus:ring-brand-500/30 focus:border-brand-500 transition-all outline-none backdrop-blur-md shadow-xl text-white"
@@ -152,15 +223,11 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
                 <div className="flex items-center gap-3">
                   <h2 className="text-3xl font-black text-gray-900 flex items-center gap-3">
                     <Building2 className="h-8 w-8 text-brand-600" />
-                    Resource List
+                    Danh sách phòng
                   </h2>
-                  <div className="inline-flex items-center gap-2.5 rounded-xl border border-slate-300 bg-slate-100 px-4 py-2 shadow-sm">
-                    <span className="inline-flex h-2.5 w-2.5 rounded-full bg-slate-500"></span>
-                    <span className="text-xs font-bold uppercase tracking-wide text-slate-600">Total Rooms</span>
-                    <span className="text-lg font-black text-slate-800 leading-none">
-                      {filteredRooms.length}
-                    </span>
-                  </div>
+                  <span className="px-3 py-1 bg-brand-100 text-brand-700 rounded-full text-sm font-bold">
+                    {filteredRooms.length} phòng
+                  </span>
                 </div>
                 <div className="flex gap-2">
                   <button 
@@ -194,8 +261,8 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
                 {filteredRooms.length === 0 ? (
                   <div className={`${viewMode === 'grid' ? 'col-span-3' : ''} flex flex-col items-center justify-center py-20 text-gray-500`}>
                     <Building2 className="h-16 w-16 mb-4 text-gray-300" />
-                    <p className="text-lg font-medium">No rooms found</p>
-                    <p className="text-sm">Try adjusting your search criteria</p>
+                    <p className="text-lg font-medium">Không tìm thấy phòng</p>
+                    <p className="text-sm">Hãy thử điều chỉnh tiêu chí tìm kiếm</p>
                   </div>
                 ) : (
                   paginatedRooms.map((room, idx) => (
@@ -233,7 +300,7 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
                             <div className="flex gap-4 text-sm text-gray-600">
                               <span className="flex items-center gap-1">
                                 <Building2 className="h-4 w-4" />
-                                Capacity: {room.capacity}
+                                Sức chứa: {room.capacity}
                               </span>
                               <span className={`px-3 py-1 rounded-full font-medium ${
                                 room.status === 'Available' 
@@ -242,12 +309,12 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
                                   ? 'bg-red-100 text-red-700' 
                                   : 'bg-yellow-100 text-yellow-700'
                               }`}>
-                                {room.status}
+                                {room.status === 'Available' ? 'Trống' : room.status === 'Occupied' ? 'Đang sử dụng' : 'Bảo trì'}
                               </span>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-sm text-gray-500 mb-2">Next Available</p>
+                            <p className="text-sm text-gray-500 mb-2">Rảnh lúc</p>
                             <p className="text-lg font-bold text-brand-600">{room.nextAvailable}</p>
                             <button
                               onClick={(event) => {
@@ -270,7 +337,7 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
               {filteredRooms.length > itemsPerPage && (
                 <div className="flex items-center justify-between mt-8 pt-8 border-t border-gray-200">
                   <p className="text-sm text-gray-600">
-                    Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredRooms.length)} of {filteredRooms.length} rooms
+                    Hiển thị {((currentPage - 1) * itemsPerPage) + 1} đến {Math.min(currentPage * itemsPerPage, filteredRooms.length)} trong {filteredRooms.length} phòng
                   </p>
                   <div className="flex gap-2">
                     <button
@@ -279,7 +346,7 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
                       className="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                     >
                       <ChevronLeft className="h-4 w-4" />
-                      Previous
+                      Trước
                     </button>
                     <div className="flex gap-1">
                       {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
@@ -301,7 +368,7 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
                       disabled={currentPage === totalPages}
                       className="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                     >
-                      Next
+                      Sau
                       <ChevronRight className="h-4 w-4" />
                     </button>
                   </div>

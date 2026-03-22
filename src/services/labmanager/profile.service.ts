@@ -17,7 +17,7 @@ const STORAGE_KEY = "profile_v1";
 
 const USE_MOCK = true;
 
-const API_URL = import.meta.env.VITE_API_URL as string | undefined;
+const API_URL = import.meta.env.VITE_API_BASE_URL as string | undefined;
 
 function sleep(ms = 200) {
   return new Promise((r) => setTimeout(r, ms));
@@ -63,7 +63,7 @@ const defaultProfile: Profile = normalizeProfile({
 });
 
 async function http<T>(path: string, init?: RequestInit): Promise<T> {
-  if (!API_URL) throw new Error("Missing VITE_API_URL");
+  if (!API_URL) throw new Error("Missing VITE_API_BASE_URL");
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
     headers: {

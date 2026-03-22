@@ -1,183 +1,82 @@
-import type { Schedule } from "../../calendar/api/labSchedulerApi";
-import { labSchedulerService } from "../../calendar/api/labSchedulerApi";
-import { addDays, toYmd } from "../../calendar/hooks/date";
+import axiosInstance from "../../../api/axios";
+import type {
+  GetBookingRequestsRequest,
+  GetBookingRequestsResponse,
+  GetBookingHistoryRequest,
+  GetBookingHistoryResponse,
+  GetBookingByIdResponse,
+  GetBookingByScheduleIdResponse,
+  UpdateBookingStatusRequest,
+  UpdateBookingStatusResponse,
+} from "../type";
 
-export type BookingStatus = "PENDING" | "APPROVED" | "REJECTED" | (string & {});
+/**
+ * ===== DATA ACCESS LAYER =====
+ * Rules:
+ * - Chỉ dùng axiosInstance
+ * - Phải định nghĩa TypeScript Interface cho cả Request và Response
+ * - Không được catch error (để UI hoặc React Query xử lý)
+ */
 
-export type Booking = {
-  Id: string;
-  LabRoomId: number;
-  BookedByUserId: string;
-  StartTime: string;
-  EndTime: string;
-  BuildingName: string;
-  group_size: number;
-  PurposeTypeName: string;
-  Reason: string;
-
-  BookingStatus: BookingStatus;
-  BookingType?: string | null;
-
-  CreatedAt: string;
-  UpdatedAt: string;
-  CreatedBy: string;
-  UpdatedBy: string;
-
-  IsWeeklyRecurring: boolean;
-  RecurringUntil?: string | null;
+const BOOKING_REQUEST_API = {
+  LIST: "/api/booking-requests", // GET ?status=PENDING...
+  HISTORY: "/api/booking-requests/history", // GET
+  BY_ID: (id: string) => `/api/booking-requests/${id}`, // GET
+  BY_SCHEDULE: (scheduleId: string) =>
+    `/api/booking-requests/by-schedule/${scheduleId}`, // GET
+  UPDATE_STATUS: (id: string) => `/api/booking-requests/${id}/status`, // PATCH { status }
 };
 
-const KEY = "lab_bookings_v5";
-
-function sleep(ms = 150) {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
-function seedBookings(): Booking[] {
-  const now = new Date();
-  const d0 = toYmd(now);
-  const d1 = toYmd(addDays(now, 1));
-  const nowIso = new Date().toISOString();
-
-  return [
-    {
-      Id: "b1",
-      LabRoomId: 101,
-      BookedByUserId: "user-001",
-      StartTime: `${d0}T09:00`,
-      EndTime: `${d0}T10:30`,
-      BuildingName: "Building A",
-      group_size: 5,
-      PurposeTypeName: "Lab practice",
-      Reason: "Lab practice",
-      BookingStatus: "PENDING",
-      BookingType: "NORMAL",
-      CreatedAt: nowIso,
-      UpdatedAt: nowIso,
-      CreatedBy: "user-001",
-      UpdatedBy: "user-001",
-      IsWeeklyRecurring: false,
-      RecurringUntil: null,
-    },
-    {
-      Id: "b2",
-      LabRoomId: 202,
-      BookedByUserId: "user-002",
-      StartTime: `${d1}T10:30`,
-      EndTime: `${d1}T11:30`,
-      BuildingName: "Building B",
-      group_size: 12,
-      PurposeTypeName: "Seminar",
-      Reason: "Seminar",
-      BookingStatus: "APPROVED",
-      BookingType: "NORMAL",
-      CreatedAt: nowIso,
-      UpdatedAt: nowIso,
-      CreatedBy: "user-002",
-      UpdatedBy: "user-002",
-      IsWeeklyRecurring: true,
-      RecurringUntil: `${toYmd(addDays(now, 28))}T00:00`,
-    },
-  ];
-}
-
-function readStorage(): Booking[] {
-  const raw = localStorage.getItem(KEY);
-  if (!raw) {
-    const s = seedBookings();
-    localStorage.setItem(KEY, JSON.stringify(s));
-    return s;
-  }
-  try {
-    return JSON.parse(raw) as Booking[];
-  } catch {
-    const s = seedBookings();
-    localStorage.setItem(KEY, JSON.stringify(s));
-    return s;
-  }
-}
-
-function writeStorage(items: Booking[]) {
-  localStorage.setItem(KEY, JSON.stringify(items));
-}
-
-const norm = (v: unknown) => String(v ?? "").toUpperCase();
-
-function matchBookingForSchedule(
-  bookings: Booking[],
-  s: Schedule,
-): Booking | null {
-  const byId = bookings.find((b) => b.Id === s.Id);
-  if (byId) return byId;
-
-  const bySlot = bookings.find(
-    (b) =>
-      b.LabRoomId === s.LabRoomId &&
-      b.StartTime === s.StartTime &&
-      b.EndTime === s.EndTime,
+/** List booking requests (lọc theo status PENDING/APPROVED/REJECTED nếu backend hỗ trợ) */
+export const getBookingRequests = async (
+  params: GetBookingRequestsRequest = {},
+): Promise<GetBookingRequestsResponse> => {
+  const response = await axiosInstance.get<GetBookingRequestsResponse>(
+    BOOKING_REQUEST_API.LIST,
+    { params },
   );
-  return bySlot ?? null;
-}
+  return response.data;
+};
 
-export const bookingRequestsService = {
-  async listPending(): Promise<Booking[]> {
-    await sleep();
-    return readStorage().filter((b) => norm(b.BookingStatus) === "PENDING");
-  },
+/** History (thường APPROVED + REJECTED) */
+export const getBookingRequestHistory = async (
+  params: GetBookingHistoryRequest = {},
+): Promise<GetBookingHistoryResponse> => {
+  const response = await axiosInstance.get<GetBookingHistoryResponse>(
+    BOOKING_REQUEST_API.HISTORY,
+    { params },
+  );
+  return response.data;
+};
 
-  async listHistory(): Promise<Booking[]> {
-    await sleep();
-    return readStorage().filter((b) => {
-      const st = norm(b.BookingStatus);
-      return st === "APPROVED" || st === "REJECTED";
-    });
-  },
+/** Get by booking id */
+export const getBookingRequestById = async (
+  id: string,
+): Promise<GetBookingByIdResponse> => {
+  const response = await axiosInstance.get<GetBookingByIdResponse>(
+    BOOKING_REQUEST_API.BY_ID(id),
+  );
+  return response.data;
+};
 
-  async getById(id: string): Promise<Booking> {
-    await sleep();
-    const items = readStorage();
-    const found = items.find((b) => b.Id === id);
-    if (!found) throw new Error("Booking not found");
-    return found;
-  },
+/** Get booking by scheduleId (cho modal click schedule) */
+export const getBookingRequestByScheduleId = async (
+  scheduleId: string,
+): Promise<GetBookingByScheduleIdResponse> => {
+  const response = await axiosInstance.get<GetBookingByScheduleIdResponse>(
+    BOOKING_REQUEST_API.BY_SCHEDULE(scheduleId),
+  );
+  return response.data;
+};
 
-  async getByScheduleId(scheduleId: string): Promise<Booking | null> {
-    await sleep();
-    const [schedules, bookings] = await Promise.all([
-      labSchedulerService.listSchedules(),
-      Promise.resolve(readStorage()),
-    ]);
-
-    const sch = schedules.find((x) => x.Id === scheduleId);
-    if (!sch) return null;
-
-    return matchBookingForSchedule(bookings, sch);
-  },
-
-  async updateBookingStatus(
-    id: string,
-    status: BookingStatus,
-  ): Promise<Booking> {
-    await sleep();
-    const items = readStorage();
-    const idx = items.findIndex((b) => b.Id === id);
-    if (idx < 0) throw new Error("Booking not found");
-
-    const next: Booking = {
-      ...items[idx],
-      BookingStatus: status,
-      UpdatedAt: new Date().toISOString(),
-    };
-    items[idx] = next;
-    writeStorage(items);
-    return next;
-  },
-
-  async approve(id: string): Promise<Booking> {
-    return this.updateBookingStatus(id, "APPROVED");
-  },
-
-  async reject(id: string): Promise<Booking> {
-    return this.updateBookingStatus(id, "REJECTED");
-  },
+/** Update status (approve/reject) */
+export const updateBookingRequestStatus = async (
+  id: string,
+  body: UpdateBookingStatusRequest,
+): Promise<UpdateBookingStatusResponse> => {
+  const response = await axiosInstance.patch<UpdateBookingStatusResponse>(
+    BOOKING_REQUEST_API.UPDATE_STATUS(id),
+    body,
+  );
+  return response.data;
 };

@@ -4,10 +4,21 @@ import BookingRequestReviewModal from "../booking-requests/components/BookingReq
 import BookingFilters from "../booking-requests/components/BookingRequestFilter";
 import BookingTable from "./components/BookingRequestTable";
 
-import { bookingRequestsService } from "../api/bookingRequestApi";
-import type { Booking } from "../api/bookingRequestApi";
+import {
+  getBookingRequests,
+  updateBookingRequestStatus,
+} from "../api/bookingRequestApi";
+import type { Booking } from "../type";
 
 type SortKey = "Old_slot" | "New_slot" | "Out_slot";
+
+// Helper function to get building from room ID
+const getBuildingFromRoom = (roomId: number): string => {
+  if (roomId >= 100 && roomId < 200) return "Building A";
+  if (roomId >= 200 && roomId < 300) return "Building B";
+  if (roomId >= 300 && roomId < 400) return "Building C";
+  return "Other";
+};
 
 export default function PendingBookingFeature() {
   const [loading, setLoading] = useState(true);
@@ -15,8 +26,8 @@ export default function PendingBookingFeature() {
 
   const [q, setQ] = useState("");
   const [roomId, setRoomId] = useState<number | "ALL">("ALL");
+  const [building, setBuilding] = useState<string>("ALL");
   const [sort, setSort] = useState<SortKey>("Old_slot");
-
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<Booking | null>(null);
 
@@ -28,8 +39,8 @@ export default function PendingBookingFeature() {
   const reload = async () => {
     setLoading(true);
     try {
-      const data = await bookingRequestsService.listPending();
-      setItems(data);
+      const data = await getBookingRequests({ status: "PENDING" });
+      setItems(Array.isArray(data?.data) ? data.data : []);
     } finally {
       setLoading(false);
     }
@@ -41,16 +52,40 @@ export default function PendingBookingFeature() {
 
   const roomOptions = useMemo(() => {
     const set = new Set<number>();
-    items.forEach((b) => set.add(b.LabRoomId));
+    (items ?? []).forEach((b) => set.add(b.LabRoomId));
     return Array.from(set).sort((a, b) => a - b);
   }, [items]);
+
+  // NEW: Calculate building options from rooms
+  const buildingOptions = useMemo(() => {
+    const buildings = new Set<string>();
+    roomOptions.forEach((room) => {
+      const buildingName = getBuildingFromRoom(room);
+      if (buildingName !== "Other") {
+        buildings.add(buildingName);
+      }
+    });
+    return Array.from(buildings).sort();
+  }, [roomOptions]);
 
   const rows = useMemo(() => {
     const normalizedQ = q.trim().toLowerCase();
     let arr = [...items];
 
-    if (roomId !== "ALL") arr = arr.filter((b) => b.LabRoomId === roomId);
+    // Building filter
+    if (building !== "ALL") {
+      arr = arr.filter((b) => {
+        const itemBuilding = getBuildingFromRoom(b.LabRoomId);
+        return itemBuilding === building;
+      });
+    }
 
+    // Room filter
+    if (roomId !== "ALL") {
+      arr = arr.filter((b) => b.LabRoomId === roomId);
+    }
+
+    // Search filter
     if (normalizedQ) {
       arr = arr.filter((b) => {
         const hay = [
@@ -66,6 +101,7 @@ export default function PendingBookingFeature() {
       });
     }
 
+    // Sort
     if (sort === "Old_slot") {
       arr.sort((a, b) => (b.CreatedAt ?? "").localeCompare(a.CreatedAt ?? ""));
     } else if (sort === "New_slot") {
@@ -75,12 +111,12 @@ export default function PendingBookingFeature() {
     }
 
     return arr;
-  }, [items, q, roomId, sort]);
+  }, [items, q, building, roomId, sort]);
 
   const approve = async (id: string) => {
     const ok = window.confirm("Approve this booking?");
     if (!ok) return;
-    await bookingRequestsService.approve(id);
+    await updateBookingRequestStatus(id, { status: "APPROVED" });
     setItems((prev) => prev.filter((x) => x.Id !== id));
     closeModal();
   };
@@ -88,7 +124,7 @@ export default function PendingBookingFeature() {
   const reject = async (id: string) => {
     const ok = window.confirm("Reject this booking?");
     if (!ok) return;
-    await bookingRequestsService.reject(id);
+    await updateBookingRequestStatus(id, { status: "REJECTED" });
     setItems((prev) => prev.filter((x) => x.Id !== id));
     closeModal();
   };
@@ -230,8 +266,8 @@ export default function PendingBookingFeature() {
             color="green"
           />
           <QuickStat
-            label="Search Active"
-            value={q.trim() ? "Yes" : "No"}
+            label="Buildings"
+            value={buildingOptions.length}
             icon={
               <svg
                 className="h-5 w-5"
@@ -243,7 +279,7 @@ export default function PendingBookingFeature() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
                 />
               </svg>
             }
@@ -277,9 +313,12 @@ export default function PendingBookingFeature() {
           onQ={setQ}
           roomId={roomId}
           onRoomId={setRoomId}
+          building={building}
+          onBuilding={setBuilding}
           sort={sort}
           onSort={setSort}
           roomOptions={roomOptions}
+          buildingOptions={buildingOptions}
         />
       </div>
 
@@ -372,7 +411,8 @@ export default function PendingBookingFeature() {
             <ul className="mt-2 space-y-1 text-sm text-blue-800 dark:text-blue-300">
               <li>• Click on any row to view detailed information</li>
               <li>
-                • Use filters to narrow down results by room or sort order
+                • Use filters to narrow down results by building, room or sort
+                order
               </li>
               <li>• Approve or reject requests directly from the table</li>
             </ul>

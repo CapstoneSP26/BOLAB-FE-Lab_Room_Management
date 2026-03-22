@@ -16,9 +16,9 @@ import type {
  */
 
 const HOMEPAGE_API = {
-  ROOMS: '/api/rooms',
-  BUILDINGS: '/api/buildings',
-  STATS: '/api/stats',
+  ROOMS: '/rooms',
+  BUILDINGS: '/buildings',
+  STATS: '/stats',
 };
 
 /**
@@ -40,11 +40,17 @@ export const getRooms = async (
 export const getBuildings = async (
   params: GetBuildingsRequest = {}
 ): Promise<GetBuildingsResponse> => {
-  const response = await axiosInstance.get<GetBuildingsResponse>(
+  const response = await axiosInstance.get<any>(
     HOMEPAGE_API.BUILDINGS,
     { params }
   );
-  return response.data;
+  // Backend có thể trả về array trực tiếp hoặc wrapped { data: [...] }
+  const rawData = response.data;
+  const buildingsArray = Array.isArray(rawData) ? rawData : (rawData?.data ?? []);
+  return {
+    data: buildingsArray,
+    total: buildingsArray.length,
+  };
 };
 
 /**
