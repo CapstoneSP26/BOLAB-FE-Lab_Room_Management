@@ -1,4 +1,4 @@
-import { useDashboardStats, useUnresolvedIncidents } from "../../features/dashboard/hooks/useDashboard";
+import { useDashboardStats } from "../../features/dashboard/hooks/useDashboard";
 import DashboardMetrics from "../../features/dashboard/components/DashboardMetrics";
 import MonthlyBookings from "../../features/dashboard/components/MonthlyBookings";
 import CheckinComplianceToday from "../../features/dashboard/components/CheckinComplianceToday";

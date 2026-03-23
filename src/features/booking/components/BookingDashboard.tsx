@@ -196,7 +196,7 @@ export const BookingDashboard: React.FC = () => {
               {upcomingBookings.length} bookings
             </span>
           </div>
-          
+
           {upcomingLoading ? (
             <div className="flex justify-center items-center h-96">
               <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
@@ -220,15 +220,15 @@ export const BookingDashboard: React.FC = () => {
             Approval Queue
           </p>
           <div className="flex items-center justify-between mb-4">
-              <h3 className="text-slate-900 font-bold text-xl flex items-center">
-                <FileText className="h-6 w-6 mr-2 text-emerald-500" />
+            <h3 className="text-slate-900 font-bold text-xl flex items-center">
+              <FileText className="h-6 w-6 mr-2 text-emerald-500" />
               Recent Requests
             </h3>
             <span className="text-slate-600 text-sm">
               {recentRequests.length}
             </span>
           </div>
-          
+
           <div className="space-y-3 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
             {requestsLoading ? (
               <div className="flex justify-center items-center h-32">

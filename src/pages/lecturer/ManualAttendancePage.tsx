@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { useQRSession } from '../../features/attendance/hooks/useQRSession';
 import { MOCK_QR_SESSION } from '../../features/attendance/mocks/attendance.mock';
-import type { AttendanceStatus } from '../../features/attendance/types';
+import type { AttendanceStatus } from '../../features/attendance/types/attendace.type';
 import { useToast } from '../../hooks/useToast';
 
 // Mock student data - will be replaced with real Student Group API
@@ -189,7 +189,7 @@ export default function ManualAttendancePage() {
   const confirmAndSave = async () => {
     setShowConfirmModal(false);
     setIsSaving(true);
-    
+
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1500));
 
@@ -262,13 +262,12 @@ export default function ManualAttendancePage() {
             <button
               onClick={handleSave}
               disabled={isSaving || stats.unmarked === stats.total || !isEditable}
-              className={`flex items-center gap-2 text-white px-6 py-2.5 rounded-xl font-semibold shadow-md transition-all ${
-                !isEditable
+              className={`flex items-center gap-2 text-white px-6 py-2.5 rounded-xl font-semibold shadow-md transition-all ${!isEditable
                   ? 'bg-slate-400 cursor-not-allowed'
                   : isSaving || stats.unmarked === stats.total
-                  ? 'bg-slate-300 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg'
-              }`}
+                    ? 'bg-slate-300 cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg'
+                }`}
             >
               {!isEditable ? (
                 <>
@@ -428,11 +427,10 @@ export default function ManualAttendancePage() {
               <button
                 onClick={markAllPresent}
                 disabled={!isEditable}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-colors ${
-                  isEditable
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-colors ${isEditable
                     ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700'
                     : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                }`}
+                  }`}
               >
                 <CheckCheck className="w-4 h-4" />
                 <span>All Present</span>
@@ -440,11 +438,10 @@ export default function ManualAttendancePage() {
               <button
                 onClick={markAllAbsent}
                 disabled={!isEditable}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-colors ${
-                  isEditable
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-colors ${isEditable
                     ? 'bg-red-100 hover:bg-red-200 text-red-700'
                     : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                }`}
+                  }`}
               >
                 <UserX className="w-4 h-4" />
                 <span>All Absent</span>
@@ -452,11 +449,10 @@ export default function ManualAttendancePage() {
               <button
                 onClick={clearAll}
                 disabled={!isEditable}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-colors ${
-                  isEditable
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-colors ${isEditable
                     ? 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                     : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                }`}
+                  }`}
               >
                 <RotateCcw className="w-4 h-4" />
                 <span>Clear</span>
@@ -521,13 +517,12 @@ export default function ManualAttendancePage() {
                       <button
                         onClick={() => handleStatusChange(student.id, 'present')}
                         disabled={!isEditable}
-                        className={`flex items-center gap-1.5 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                          !isEditable
+                        className={`flex items-center gap-1.5 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${!isEditable
                             ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                             : status === 'present'
-                            ? 'bg-emerald-600 text-white shadow-md'
-                            : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
-                        }`}
+                              ? 'bg-emerald-600 text-white shadow-md'
+                              : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
+                          }`}
                       >
                         <CheckCircle className="w-4 h-4" />
                         <span>Present</span>
@@ -536,13 +531,12 @@ export default function ManualAttendancePage() {
                       <button
                         onClick={() => handleStatusChange(student.id, 'late')}
                         disabled={!isEditable}
-                        className={`flex items-center gap-1.5 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                          !isEditable
+                        className={`flex items-center gap-1.5 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${!isEditable
                             ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                             : status === 'late'
-                            ? 'bg-amber-600 text-white shadow-md'
-                            : 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200'
-                        }`}
+                              ? 'bg-amber-600 text-white shadow-md'
+                              : 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200'
+                          }`}
                       >
                         <Clock className="w-4 h-4" />
                         <span>Late</span>
@@ -551,13 +545,12 @@ export default function ManualAttendancePage() {
                       <button
                         onClick={() => handleStatusChange(student.id, 'absent')}
                         disabled={!isEditable}
-                        className={`flex items-center gap-1.5 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                          !isEditable
+                        className={`flex items-center gap-1.5 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${!isEditable
                             ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                             : status === 'absent'
-                            ? 'bg-red-600 text-white shadow-md'
-                            : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
-                        }`}
+                              ? 'bg-red-600 text-white shadow-md'
+                              : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
+                          }`}
                       >
                         <XCircle className="w-4 h-4" />
                         <span>Absent</span>
@@ -665,7 +658,7 @@ export default function ManualAttendancePage() {
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
                     <p className="text-sm text-amber-800">
-                      <strong>{stats.unmarked}</strong> sinh viên chưa được điểm danh. 
+                      <strong>{stats.unmarked}</strong> sinh viên chưa được điểm danh.
                       Bạn có chắc muốn nộp?
                     </p>
                   </div>

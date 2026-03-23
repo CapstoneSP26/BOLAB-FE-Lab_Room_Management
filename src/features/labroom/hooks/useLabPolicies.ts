@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { labApi } from "../api/labApi";
-import type { PolicyType } from "../types/policy.types";
+import type { PolicyType } from "../types/policy.type";
 
 export const useLabPolicies = (labRoomId?: number) => {
   return useQuery({

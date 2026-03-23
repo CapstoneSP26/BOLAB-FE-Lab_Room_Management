@@ -1,6 +1,6 @@
 import React from 'react';
 import { TrendingUp, Clock, CheckCircle } from 'lucide-react';
-import type { BookingStats } from '../types';
+import type { BookingStats } from '../types/booking.type';
 
 interface BookingStatsCardProps {
   stats: BookingStats;
@@ -43,7 +43,7 @@ export const BookingStatsCard: React.FC<BookingStatsCardProps> = ({ stats }) => 
         <TrendingUp className="h-5 w-5 mr-2 text-amber-600" />
         Booking Statistics
       </h3>
-      
+
       <div className="grid grid-cols-3 gap-4">
         {statItems.map((item, index) => {
           const Icon = item.icon;

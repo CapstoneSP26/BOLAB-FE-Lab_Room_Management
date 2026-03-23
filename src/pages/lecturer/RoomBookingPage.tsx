@@ -1,24 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Calendar as CalendarIcon, List, Building2, Loader2, Info } from 'lucide-react';
-import { WeeklyCalendarGrid } from '../../features/room-booking/components/WeeklyCalendarGrid';
-import { BookingConfirmPanel } from '../../features/room-booking/components/BookingConfirmPanel';
-import { AvailableSlotList } from '../../features/room-booking/components/AvailableSlotList';
-import { BookingConfirmationModal } from '../../features/room-booking/components/BookingConfirmationModal';
+import { WeeklyCalendarGrid } from '../../features/calendar/components/WeeklyCalendarGrid';
+import { BookingConfirmPanel } from '../../features/booking/components/BookingConfirmPanel';
+import { AvailableSlotList } from '../../features/booking/components/AvailableSlotList';
+import { BookingConfirmationModal } from '../../features/booking/components/BookingConfirmationModal';
 import {
   useLabRooms,
   useStudentGroups,
   useAvailableSlots,
   useCreateBooking,
-} from '../../features/room-booking/hooks/useRoomBooking';
+} from '../../features/booking/hooks/useRoomBooking';
 import {
   MOCK_BOOKING_BUILDINGS,
   MOCK_BOOKING_ROOMS,
   MOCK_STUDENT_GROUPS,
   getMockSlotsByRoomAndRange,
-} from '../../features/room-booking/mocks/roomBookingMockData';
+} from '../../features/booking/mocks/roomBookingMockData';
 import { useToast } from '../../hooks/useToast';
-import type { BookingSummary } from '../../features/room-booking/types';
+import type { BookingSummary } from '../../features/booking/types/booking.type';
 
 type BookingView = 'calendar' | 'list';
 
@@ -114,10 +114,10 @@ const RoomBookingPage: React.FC = () => {
 
   // All buildings are available (campus is pre-determined for lecturer)
   const availableBuildings = MOCK_BOOKING_BUILDINGS;
-  
+
   // Filter rooms based on selected building (using building name for now)
   const selectedBuildingName = MOCK_BOOKING_BUILDINGS.find(b => b.id === selectedBuilding)?.name;
-  const availableRooms = displayRooms.filter(r => 
+  const availableRooms = displayRooms.filter(r =>
     selectedBuildingName ? r.building === selectedBuildingName : true
   );
 
@@ -306,8 +306,8 @@ const RoomBookingPage: React.FC = () => {
               <button
                 onClick={() => setActiveView('calendar')}
                 className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all text-sm font-medium ${activeView === 'calendar'
-                    ? 'bg-white text-orange-600 shadow-sm border border-orange-200'
-                    : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-white text-orange-600 shadow-sm border border-orange-200'
+                  : 'text-gray-600 hover:text-gray-900'
                   }`}
               >
                 <CalendarIcon className="w-4 h-4" />
@@ -316,8 +316,8 @@ const RoomBookingPage: React.FC = () => {
               <button
                 onClick={() => setActiveView('list')}
                 className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all text-sm font-medium ${activeView === 'list'
-                    ? 'bg-white text-orange-600 shadow-sm border border-orange-200'
-                    : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-white text-orange-600 shadow-sm border border-orange-200'
+                  : 'text-gray-600 hover:text-gray-900'
                   }`}
               >
                 <List className="w-4 h-4" />

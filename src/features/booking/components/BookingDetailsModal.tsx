@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, Calendar, Clock, FileText, MapPin, User, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
-import type { Booking, BookingStatus } from '../types';
+import type { Booking, BookingStatus } from '../types/booking.type';
 
 interface BookingDetailsModalProps {
   isOpen: boolean;

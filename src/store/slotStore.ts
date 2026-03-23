@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { SlotType, SlotFrame } from "../types/slot.types";
+import type { SlotType, SlotFrame } from "../features/slot/types/slot.types";
 
 interface SlotState {
   slotTypes: SlotType[];

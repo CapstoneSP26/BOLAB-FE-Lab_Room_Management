@@ -1,1 +1,1 @@
-export * from "./types/policy.types";
+export * from "./types/policy.type";

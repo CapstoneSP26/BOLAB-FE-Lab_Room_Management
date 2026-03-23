@@ -7,7 +7,6 @@ import { mapBookingToEvent, mapScheduleToEvent } from "../utils/eventMapper";
 export const useCalendarEvents = (params: UseCalendarEventProps) => {
   // 1. Gọi song song 2 Query
   const bookingsQuery = useBookings({
-    requestedBy: (params.calendarMode === 'PERSONAL' || params.calendarMode === 'LAB_SPECIFIC') ? 'currentUser' : undefined,
     fromDate: params.startDate,
     toDate: params.endDate,
     labRoomId: params.labRoomId,
@@ -20,7 +19,6 @@ export const useCalendarEvents = (params: UseCalendarEventProps) => {
     fromDate: params.startDate,
     toDate: params.endDate,
     labRoomId: params.labRoomId,
-    lecturerId: (params.calendarMode === 'PERSONAL') ? 'currentUser' : undefined // Nếu PERSONAL thì chỉ lấy lịch của giảng viên hiện tại
   });
 
   // 4. Hợp nhất và Chuyển đổi dữ liệu (Data Transformation)

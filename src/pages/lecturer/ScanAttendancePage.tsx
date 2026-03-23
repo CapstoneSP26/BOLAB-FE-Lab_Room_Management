@@ -56,10 +56,10 @@ export default function ScanAttendancePage() {
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
-      
+
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
-      
+
       if (type === 'success') {
         // Success sound - ascending beeps
         oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
@@ -69,10 +69,10 @@ export default function ScanAttendancePage() {
         oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
         oscillator.frequency.linearRampToValueAtTime(200, audioContext.currentTime + 0.2);
       }
-      
+
       gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
       gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-      
+
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.2);
     } catch (error) {
@@ -87,7 +87,7 @@ export default function ScanAttendancePage() {
     const timer = setTimeout(() => {
       startScanning();
     }, 100);
-    
+
     return () => {
       clearTimeout(timer);
       stopScanning();
@@ -128,7 +128,7 @@ export default function ScanAttendancePage() {
         element = document.getElementById('qr-reader');
         retries++;
       }
-      
+
       if (!element) {
         console.error('qr-reader element not found in DOM after retries');
         setScanState('no-camera');
@@ -143,7 +143,7 @@ export default function ScanAttendancePage() {
       // Get available cameras
       const cameras = await Html5Qrcode.getCameras();
       console.log(`📷 Detected ${cameras?.length || 0} camera(s):`, cameras);
-      
+
       if (!cameras || cameras.length === 0) {
         setScanState('no-camera');
         setErrorMessage('No camera detected on this device.');
@@ -154,25 +154,25 @@ export default function ScanAttendancePage() {
 
       // Select camera based on facing mode
       let selectedCameraId: string;
-      
+
       if (facing === 'back') {
         // Try to find back camera (environment-facing)
-        const backCamera = cameras.find(cam => 
-          cam.label.toLowerCase().includes('back') || 
+        const backCamera = cameras.find(cam =>
+          cam.label.toLowerCase().includes('back') ||
           cam.label.toLowerCase().includes('rear') ||
           cam.label.toLowerCase().includes('environment')
         );
         selectedCameraId = backCamera?.id || cameras[0].id;
       } else {
         // Try to find front camera (user-facing)
-        const frontCamera = cameras.find(cam => 
-          cam.label.toLowerCase().includes('front') || 
+        const frontCamera = cameras.find(cam =>
+          cam.label.toLowerCase().includes('front') ||
           cam.label.toLowerCase().includes('user') ||
           cam.label.toLowerCase().includes('face')
         );
         selectedCameraId = frontCamera?.id || (cameras.length > 1 ? cameras[1].id : cameras[0].id);
       }
-      
+
       console.log(`🎬 Starting scanner with camera: ${selectedCameraId}`);
       await scanner.start(
         selectedCameraId,
@@ -188,7 +188,7 @@ export default function ScanAttendancePage() {
       isScanning.current = true;
       setScanState('scanning');
       console.log('✅ Scanner started successfully! Ready to scan QR codes...');
-      
+
       // Notify user that camera is ready
       toast.success('Camera Ready', 'Position QR code within the frame', 3000);
 
@@ -231,7 +231,7 @@ export default function ScanAttendancePage() {
     // Toggle facing mode
     const newFacing: CameraFacing = cameraFacing === 'back' ? 'front' : 'back';
     setCameraFacing(newFacing);
-    
+
     // Show notification
     toast.info('Switching Camera', `Activating ${newFacing} camera...`, 2000);
 
@@ -265,21 +265,21 @@ export default function ScanAttendancePage() {
     console.log(`🎯 QR Code detected after ${scanAttempts.current} attempts!`);
     console.log('📱 Decoded text:', decodedText);
     console.log('📊 Current scan state:', scanState);
-    
+
     // Provide immediate feedback
     provideFeedback('success');
     toast.info('QR Code Detected', 'Processing attendance...', 2000);
-    
+
     // Update UI with detection
     setLastDetection(`✅ QR DETECTED! (${decodedText.substring(0, 50)}...)`);
     scanAttempts.current = 0; // Reset counter
     setScanCount(0);
     setScannedData(decodedText);
-    
+
     // Stop scanner
     await stopScanning();
     console.log('⏹️ Scanner stopped');
-    
+
     // Process attendance
     console.log('⏳ Starting attendance marking...');
     await markAttendance(decodedText);
@@ -311,12 +311,12 @@ export default function ScanAttendancePage() {
 
     try {
       console.log('🔍 Parsing QR code:', qrCodeData);
-      
+
       // Parse QR code data (should contain sessionId and token)
       const url = new URL(qrCodeData);
       console.log('📍 URL pathname:', url.pathname);
       console.log('🔑 URL params:', url.searchParams.toString());
-      
+
       const pathParts = url.pathname.split('/');
       const scannedSessionId = pathParts[pathParts.length - 1];
       const scannedToken = url.searchParams.get('token');
@@ -353,14 +353,14 @@ export default function ScanAttendancePage() {
     } catch (error) {
       console.error('❌ Error marking attendance:', error);
       setScanState('error');
-      
+
       // Determine specific error message
       let errorTitle = 'Attendance Failed';
       let errorMsg = 'Failed to mark attendance. Please try again.';
-      
+
       if (error instanceof Error) {
         const errMsg = error.message.toLowerCase();
-        
+
         if (errMsg.includes('invalid') || errMsg.includes('format')) {
           errorTitle = 'Invalid QR Code';
           errorMsg = 'This QR code is not valid. Please scan the correct QR code displayed by your lecturer.';
@@ -380,10 +380,10 @@ export default function ScanAttendancePage() {
           errorMsg = error.message;
         }
       }
-      
+
       setErrorMessage(errorMsg);
       console.error('💥 Error details:', errorMsg);
-      
+
       // Show error toast with specific message
       toast.error(errorTitle, errorMsg, 6000);
       provideFeedback('error');
@@ -425,7 +425,7 @@ export default function ScanAttendancePage() {
             </div>
             <h2 className="text-xl font-bold text-slate-900 text-center mb-2">Camera Not Available</h2>
             <p className="text-slate-600 text-center mb-6">{errorMessage}</p>
-            
+
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
               <p className="text-sm font-semibold text-amber-900 mb-2">Troubleshooting:</p>
               <ul className="text-sm text-amber-800 space-y-1">
@@ -457,7 +457,7 @@ export default function ScanAttendancePage() {
             </div>
             <h2 className="text-2xl font-bold text-slate-900 text-center mb-2">Attendance Marked!</h2>
             <p className="text-slate-600 text-center mb-6">Your attendance has been recorded successfully</p>
-            
+
             <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-slate-600">Room:</span>
@@ -517,8 +517,8 @@ export default function ScanAttendancePage() {
               {scanState === 'requesting-camera' ? 'Starting Camera...' : 'Processing...'}
             </p>
             <p className="text-sm text-slate-500 mt-2">
-              {scanState === 'requesting-camera' 
-                ? 'Please allow camera access if prompted' 
+              {scanState === 'requesting-camera'
+                ? 'Please allow camera access if prompted'
                 : 'Marking your attendance'}
             </p>
           </div>
@@ -549,7 +549,7 @@ export default function ScanAttendancePage() {
               <div className="relative bg-black rounded-3xl shadow-2xl overflow-hidden border-4 border-blue-500/20" style={{ minHeight: '480px' }}>
                 {/* QR Scanner element - Html5Qrcode injects video here */}
                 <div id="qr-reader" style={{ width: '100%', minHeight: '480px', borderRadius: '1.5rem' }}></div>
-                
+
                 {/* Scanner overlay corners - larger and more prominent */}
                 <div className="absolute inset-0 pointer-events-none z-10">
                   {/* Top left corner */}
@@ -560,7 +560,7 @@ export default function ScanAttendancePage() {
                   <div className="absolute bottom-8 left-8 w-16 h-16 border-b-[6px] border-l-[6px] border-blue-400 rounded-bl-2xl"></div>
                   {/* Bottom right corner */}
                   <div className="absolute bottom-8 right-8 w-16 h-16 border-b-[6px] border-r-[6px] border-blue-400 rounded-br-2xl"></div>
-                  
+
                   {/* Center scanning area indicator - matches qrbox size (350x350) */}
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="w-[350px] h-[350px] border-2 border-green-400/50 rounded-2xl animate-pulse"></div>
@@ -648,7 +648,7 @@ export default function ScanAttendancePage() {
               {/* Test Buttons - For development */}
               <div className="mt-4 space-y-3">
                 <p className="text-xs text-slate-300 font-semibold text-center mb-2">🧪 Test Scenarios (Development Only)</p>
-                
+
                 <div className="grid grid-cols-2 gap-3">
                   {/* Test Success */}
                   <button

@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Suspense } from 'react';
-import { appRoutes } from './app/routes';
+import { appRoutes } from './app/router/routes';
 import { ToastContainer } from './components/ui/ToastContainer';
 import { useToastStore } from './hooks/useToast';
 import { QuickActionFAB } from './components/common/QuickActionFAB';

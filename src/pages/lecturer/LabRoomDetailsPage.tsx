@@ -11,13 +11,13 @@ import {
   Wrench,
   Loader2,
 } from 'lucide-react';
-import { useLabRooms, useAvailableSlots } from '../../features/room-booking/hooks/useRoomBooking';
+import { useLabRooms, useAvailableSlots } from '../../features/booking/hooks/useRoomBooking';
 import {
   getMockRoomById,
   getMockSlotsByRoomAndRange,
-} from '../../features/room-booking/mocks/roomBookingMockData';
-import type { TimeSlot } from '../../features/room-booking/types';
+} from '../../features/booking/mocks/roomBookingMockData';
 import { formatDate } from '../../utils/formatDate';
+import type { TimeSlot } from '../../features/slot/types/slot.types';
 
 interface BuildingRoomState {
   id: string | number;
@@ -64,34 +64,34 @@ const LabRoomDetailsPage: React.FC = () => {
   const fallbackRoomRaw = getMockRoomById(roomId);
   const fallbackRoom: BuildingRoomState | null = fallbackRoomRaw
     ? {
-        id: fallbackRoomRaw.id,
-        name: fallbackRoomRaw.name,
-        building: fallbackRoomRaw.buildingName,
-        capacity: fallbackRoomRaw.capacity,
-        status: fallbackRoomRaw.status,
-        image: fallbackRoomRaw.image,
-        images: fallbackRoomRaw.images,
-        features: fallbackRoomRaw.features,
-        nextAvailable: fallbackRoomRaw.nextAvailable,
-      }
+      id: fallbackRoomRaw.id,
+      name: fallbackRoomRaw.name,
+      building: fallbackRoomRaw.buildingName,
+      capacity: fallbackRoomRaw.capacity,
+      status: fallbackRoomRaw.status,
+      image: fallbackRoomRaw.image,
+      images: fallbackRoomRaw.images,
+      features: fallbackRoomRaw.features,
+      nextAvailable: fallbackRoomRaw.nextAvailable,
+    }
     : null;
 
   const resolvedRoom = state.room
     ? {
-        ...state.room,
-        id: String(state.room.id),
-      }
+      ...state.room,
+      id: String(state.room.id),
+    }
     : apiRoom
       ? {
-          id: apiRoom.id,
-          name: apiRoom.name,
-          building: apiRoom.building,
-          capacity: apiRoom.capacity,
-          status: 'Available' as const,
-          image: apiRoom.image ?? 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1200',
-          features: apiRoom.features,
-          nextAvailable: 'Now',
-        }
+        id: apiRoom.id,
+        name: apiRoom.name,
+        building: apiRoom.building,
+        capacity: apiRoom.capacity,
+        status: 'Available' as const,
+        image: apiRoom.image ?? 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1200',
+        features: apiRoom.features,
+        nextAvailable: 'Now',
+      }
       : fallbackRoom;
 
   const galleryImages = useMemo(() => {
@@ -133,21 +133,21 @@ const LabRoomDetailsPage: React.FC = () => {
   const statusTone =
     resolvedRoom?.status === 'Available'
       ? {
-          labelClass: 'text-emerald-700',
-          chipClass: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-          subTextClass: 'text-emerald-700/80',
-        }
+        labelClass: 'text-emerald-700',
+        chipClass: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+        subTextClass: 'text-emerald-700/80',
+      }
       : resolvedRoom?.status === 'Occupied'
         ? {
-            labelClass: 'text-rose-700',
-            chipClass: 'bg-rose-100 text-rose-800 border-rose-200',
-            subTextClass: 'text-rose-700/80',
-          }
+          labelClass: 'text-rose-700',
+          chipClass: 'bg-rose-100 text-rose-800 border-rose-200',
+          subTextClass: 'text-rose-700/80',
+        }
         : {
-            labelClass: 'text-amber-700',
-            chipClass: 'bg-amber-100 text-amber-800 border-amber-200',
-            subTextClass: 'text-amber-700/80',
-          };
+          labelClass: 'text-amber-700',
+          chipClass: 'bg-amber-100 text-amber-800 border-amber-200',
+          subTextClass: 'text-amber-700/80',
+        };
 
   if (roomsLoading && !resolvedRoom) {
     return (
@@ -236,11 +236,10 @@ const LabRoomDetailsPage: React.FC = () => {
                   <button
                     key={`${image}-${index}`}
                     onClick={() => setActiveGalleryIndex(index)}
-                    className={`rounded-lg overflow-hidden border-2 transition-all ${
-                      activeGalleryIndex === index
-                        ? 'border-orange-500 ring-2 ring-orange-200'
-                        : 'border-gray-200 hover:border-orange-300 hover:scale-[1.03]'
-                    }`}
+                    className={`rounded-lg overflow-hidden border-2 transition-all ${activeGalleryIndex === index
+                      ? 'border-orange-500 ring-2 ring-orange-200'
+                      : 'border-gray-200 hover:border-orange-300 hover:scale-[1.03]'
+                      }`}
                     title={`Open photo ${index + 1}`}
                   >
                     <img

@@ -4,16 +4,11 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  getAttendanceList,
-  markAttendance,
-  getLecturerBookings,
-  exportAttendance,
-} from '../services/attendance.service';
 import type {
   MarkAttendanceRequest,
   ExportAttendanceRequest,
-} from '../types';
+} from '../types/attendace.type';
+import { attendanceApi } from '../api/attendanceApi';
 
 /**
  * Query keys
@@ -29,7 +24,7 @@ export const ATTENDANCE_KEYS = {
 export const useAttendanceList = (sessionId: string | null, enablePolling = false) => {
   return useQuery({
     queryKey: ATTENDANCE_KEYS.ATTENDANCE_LIST(sessionId || ''),
-    queryFn: () => getAttendanceList({ sessionId: sessionId! }),
+    queryFn: () => attendanceApi.getAttendanceList({ sessionId: sessionId! }),
     enabled: !!sessionId,
     staleTime: enablePolling ? 0 : 10 * 1000,
     refetchInterval: enablePolling ? 3 * 1000 : false, // Poll every 3 seconds for real-time updates
@@ -43,7 +38,7 @@ export const useMarkAttendance = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (request: MarkAttendanceRequest) => markAttendance(request),
+    mutationFn: (request: MarkAttendanceRequest) => attendanceApi.markAttendance(request),
     onSuccess: () => {
       // Invalidate all attendance lists to refresh counts
       queryClient.invalidateQueries({ queryKey: ['attendance-list'] });
@@ -57,7 +52,7 @@ export const useMarkAttendance = () => {
 export const useLecturerBookings = () => {
   return useQuery({
     queryKey: [ATTENDANCE_KEYS.LECTURER_BOOKINGS],
-    queryFn: () => getLecturerBookings(),
+    queryFn: () => attendanceApi.getLecturerBookings(),
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 };
@@ -68,10 +63,10 @@ export const useLecturerBookings = () => {
 export const useExportAttendance = () => {
   return useMutation({
     mutationFn: async (request: ExportAttendanceRequest) => {
-      const blob = await exportAttendance(request);
-      
+      const blob = await attendanceApi.exportAttendance(request);
+
       // Create download link
-      const url = window.URL.createObjectURL(blob);
+      const url = window.URL.createObjectURL(new Blob());
       const link = document.createElement('a');
       link.href = url;
       link.download = `attendance_${request.sessionId}.${request.format}`;
@@ -79,7 +74,7 @@ export const useExportAttendance = () => {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      
+
       return blob;
     },
   });

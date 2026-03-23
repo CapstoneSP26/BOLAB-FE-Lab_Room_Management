@@ -1,15 +1,14 @@
 import React from 'react';
 import { Clock, Calendar, User } from 'lucide-react';
-import type { BookingRequest } from '../types';
-
+import type { BookingRequest } from '../types/booking.type';
 interface RecentRequestCardProps {
   request: BookingRequest;
   onClick?: () => void;
 }
 
-export const RecentRequestCard: React.FC<RecentRequestCardProps> = ({ 
-  request, 
-  onClick 
+export const RecentRequestCard: React.FC<RecentRequestCardProps> = ({
+  request,
+  onClick
 }) => {
   const getStatusColor = (status: BookingRequest['status']) => {
     switch (status) {
@@ -57,7 +56,7 @@ export const RecentRequestCard: React.FC<RecentRequestCardProps> = ({
   return (
     <div
       onClick={onClick}
-            className={`group relative bg-emerald-50 rounded-lg p-4 border border-emerald-200 border-l-4 ${getCardAccent(request.status)}
+      className={`group relative bg-emerald-50 rounded-lg p-4 border border-emerald-200 border-l-4 ${getCardAccent(request.status)}
               hover:border-orange-300 hover:bg-white transition-all duration-300 cursor-pointer hover:shadow-md`}
     >
       {/* Header */}

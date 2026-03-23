@@ -1,6 +1,6 @@
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import type { GetSchedulesParams } from '../types/schedule.api';
-import { scheduleApi } from '../api/schedule.api';
+import type { GetSchedulesParams } from '../types/schedule.type';
+import { scheduleApi } from '../api/scheduleApi';
 
 export const useSchedules = (params: GetSchedulesParams, enabled: boolean = true) => {
   return useQuery({

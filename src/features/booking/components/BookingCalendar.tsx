@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
-import type { Booking } from '../types';
+import type { Booking } from '../types/booking.type';
 
 interface BookingCalendarProps {
   bookings: Booking[];
@@ -14,31 +14,31 @@ export const BookingCalendar: React.FC<BookingCalendarProps> = ({ bookings }) =>
   const calendarDays = useMemo(() => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
-    
+
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
     const startingDayOfWeek = firstDay.getDay();
-    
+
     const days: (Date | null)[] = [];
-    
+
     // Add empty cells for days before month starts
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(null);
     }
-    
+
     // Add days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       days.push(new Date(year, month, day));
     }
-    
+
     return days;
   }, [currentDate]);
 
   // Group bookings by date
   const bookingsByDate = useMemo(() => {
     const grouped = new Map<string, Booking[]>();
-    
+
     bookings.forEach(booking => {
       const dateKey = new Date(booking.date).toDateString();
       if (!grouped.has(dateKey)) {
@@ -46,7 +46,7 @@ export const BookingCalendar: React.FC<BookingCalendarProps> = ({ bookings }) =>
       }
       grouped.get(dateKey)!.push(booking);
     });
-    
+
     return grouped;
   }, [bookings]);
 
@@ -221,7 +221,7 @@ export const BookingCalendar: React.FC<BookingCalendarProps> = ({ bookings }) =>
           {calendarDays.map((date, index) => {
             const dayBookings = getBookingsForDate(date);
             const hasBookings = dayBookings.length > 0;
-            
+
             return (
               <div
                 key={index}
@@ -275,11 +275,11 @@ export const BookingCalendar: React.FC<BookingCalendarProps> = ({ bookings }) =>
       {selectedDate && (
         <>
           {/* Backdrop */}
-          <div 
+          <div
             className="fixed inset-0 bg-black/30 z-50 animate-fade-in"
             onClick={() => setSelectedDate(null)}
           />
-          
+
           {/* Modal */}
           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-2xl max-h-[80vh] animate-slide-in-bottom">
             <div className="bg-slate-50 rounded-2xl border border-slate-300 shadow-xl overflow-hidden">
@@ -287,9 +287,9 @@ export const BookingCalendar: React.FC<BookingCalendarProps> = ({ bookings }) =>
               <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
                 <h3 className="text-xl font-bold text-slate-900 flex items-center">
                   <CalendarIcon className="h-6 w-6 mr-3 text-amber-500" />
-                  {selectedDate.toLocaleDateString('en-US', { 
+                  {selectedDate.toLocaleDateString('en-US', {
                     weekday: 'long',
-                    month: 'long', 
+                    month: 'long',
                     day: 'numeric',
                     year: 'numeric'
                   })}

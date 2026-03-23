@@ -6,7 +6,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Plus, Calendar, FileText, QrCode, X } from 'lucide-react';
-import { SendReportModal } from './SendReportModal';
+import { SendReportModal } from '../../features/reports/components/SendReportModal';
 
 export const QuickActionFAB: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -74,9 +74,8 @@ export const QuickActionFAB: React.FC = () => {
     <div ref={fabRef} className="fixed bottom-6 right-6 z-[9998]">
       {/* Action Items */}
       <div
-        className={`absolute bottom-16 right-0 flex flex-col gap-3 transition-all duration-300 ${
-          isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
-        }`}
+        className={`absolute bottom-16 right-0 flex flex-col gap-3 transition-all duration-300 ${isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
+          }`}
       >
         {actions.map((item, index) => {
           const Icon = item.icon;
@@ -127,9 +126,9 @@ export const QuickActionFAB: React.FC = () => {
       </button>
 
       {/* Send Report Modal */}
-      <SendReportModal 
-        isOpen={isReportModalOpen} 
-        onClose={() => setIsReportModalOpen(false)} 
+      <SendReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
       />
     </div>
   );

@@ -1,5 +1,5 @@
 import React from 'react';
-import type { SlotType } from '../../../types/slot.types';
+import type { SlotType } from '../../slot/types/slot.types';
 import type { CalendarEvent } from '../types/calendar.type';
 import { getPositionStyle } from '../utils/calendar-math.util';
 

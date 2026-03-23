@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { AuthLayout } from "./AuthLayout";
+import {AuthLayout} from "./AuthLayout";
 
 type Form = { email: string; password: string };
 
@@ -25,6 +25,10 @@ export default function LoginPage() {
     // TODO: gọi API login (bạn có axios.ts sẵn)
     console.log("LOGIN", form);
   };
+
+  const LoginGoogle = () => {
+    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/login/google?returnUrl=${import.meta.env.VITE_FE_BASE_URL}`;
+  }
 
   return (
     <AuthLayout
@@ -84,7 +88,7 @@ export default function LoginPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <button type="button" className="social-btn">
+          <button type="button" className="social-btn" onClick={LoginGoogle}>
             <span className="font-black">G</span> Google
           </button>
           <button type="button" className="social-btn">

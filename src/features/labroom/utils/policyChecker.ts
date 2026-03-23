@@ -7,7 +7,7 @@ import {
   parse,
   isValid
 } from 'date-fns';
-import type { PolicyType, PolicyValidationResult } from '../types/policy.types';
+import type { PolicyType, PolicyValidationResult } from '../types/policy.type';
 
 /**
  * Kiểm tra các quy định của phòng Lab trước khi cho phép tạo Booking

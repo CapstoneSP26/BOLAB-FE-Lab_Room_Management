@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
-import { useStudentGroups, useGroupStudents, useAddStudentToGroup, useRemoveStudentFromGroup } from '../../features/student-groups/hooks/useStudentGroups';
-import GroupStats from '../../features/student-groups/components/GroupStats';
-import GroupStudentsTable from '../../features/student-groups/components/GroupStudentsTable';
-import GroupStudentsModal from '../../features/student-groups/components/GroupStudentsModal';
+import { useStudentGroups, useGroupStudents, useAddStudentToGroup, useRemoveStudentFromGroup } from '../../features/groups/hooks/useStudentGroups';
+import GroupStats from '../../features/groups/components/GroupStats';
+import GroupStudentsTable from '../../features/groups/components/GroupStudentsTable';
+import GroupStudentsModal from '../../features/groups/components/GroupStudentsModal';
 import { useToast } from '../../hooks/useToast';
 
 const GroupOverviewPage: React.FC = () => {

@@ -3,15 +3,18 @@
 
 // Types
 export type {
+  BookingDto,
+  GetBookingsParams,
   Booking,
   BookingRequest,
   BookingStats,
   BookingStatus,
   BookingStatusFilter,
   RequestStatus,
-} from './types';
+} from './types/booking.type';
 
 // Hooks
+export { useBookings } from './hooks/useBooking';
 export { useUpcomingBookings } from './hooks/useUpcomingBookings';
 export { useBookingStats } from './hooks/useBookingStats';
 export { useRecentRequests } from './hooks/useRecentRequests';

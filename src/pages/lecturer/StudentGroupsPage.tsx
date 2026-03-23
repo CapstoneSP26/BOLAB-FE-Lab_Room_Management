@@ -1,11 +1,11 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UsersRound } from 'lucide-react';
-import { useStudentGroups, useCreateStudentGroup } from '../../features/student-groups/hooks/useStudentGroups';
-import GroupSearchFilter from '../../features/student-groups/components/GroupSearchFilter';
-import GroupsGridCard from '../../features/student-groups/components/GroupsGridCard';
-import CreateGroupModal from '../../features/student-groups/components/CreateGroupModal';
-import type { GroupFilterState } from '../../features/student-groups/types';
+import { useStudentGroups, useCreateStudentGroup } from '../../features/groups/hooks/useStudentGroups';
+import GroupSearchFilter from '../../features/groups/components/GroupSearchFilter';
+import GroupsGridCard from '../../features/groups/components/GroupsGridCard';
+import CreateGroupModal from '../../features/groups/components/CreateGroupModal';
+import type { GroupFilterState } from '../../features/groups/types/types';
 import { useToast } from '../../hooks/useToast';
 
 const StudentGroupsPage: React.FC = () => {
