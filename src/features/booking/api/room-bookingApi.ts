@@ -17,13 +17,13 @@ import type {
  */
 
 const ROOM_BOOKING_API = {
-  LAB_ROOMS: '/api/lab-rooms',
-  STUDENT_GROUPS: '/api/student-groups',
-  AVAILABLE_SLOTS: '/api/available-slots',
-  CREATE_BOOKING: '/api/bookings',
-  MY_BOOKINGS: '/api/bookings/my-bookings',
-  BOOKING: '/api/bookings',
-  SCHEDULE: '/api/schedules',
+  LAB_ROOMS: '/lab-rooms',
+  STUDENT_GROUPS: '/student-groups',
+  AVAILABLE_SLOTS: '/available-slots',
+  CREATE_BOOKING: '/bookings',
+  MY_BOOKINGS: '/bookings/my-bookings',
+  BOOKING: '/bookings',
+  SCHEDULE: '/schedules',
 };
 
 /**

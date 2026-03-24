@@ -19,14 +19,14 @@ import type {
  * API endpoints
  */
 const ATTENDANCE_API = {
-  CREATE_QR_SESSION: '/api/attendance/qr-session',
-  GET_QR_SESSION: (sessionId: string) => `/api/attendance/qr-session/${sessionId}`,
-  REFRESH_QR_TOKEN: '/api/attendance/qr-session/refresh',
-  END_QR_SESSION: (sessionId: string) => `/api/attendance/qr-session/${sessionId}/end`,
-  GET_ATTENDANCE_LIST: (sessionId: string) => `/api/attendance/session/${sessionId}/students`,
-  MARK_ATTENDANCE: '/api/attendance/mark',
-  GET_LECTURER_BOOKINGS: '/api/attendance/lecturer-bookings',
-  EXPORT_ATTENDANCE: (sessionId: string) => `/api/attendance/session/${sessionId}/export`,
+  CREATE_QR_SESSION: '/attendance/qr-session',
+  GET_QR_SESSION: (sessionId: string) => `/attendance/qr-session/${sessionId}`,
+  REFRESH_QR_TOKEN: '/attendance/qr-session/refresh',
+  END_QR_SESSION: (sessionId: string) => `/attendance/qr-session/${sessionId}/end`,
+  GET_ATTENDANCE_LIST: (sessionId: string) => `/attendance/session/${sessionId}/students`,
+  MARK_ATTENDANCE: '/attendance/mark',
+  GET_LECTURER_BOOKINGS: '/attendance/lecturer-bookings',
+  EXPORT_ATTENDANCE: (sessionId: string) => `/attendance/session/${sessionId}/export`,
 } as const;
 
 export const attendanceApi = {

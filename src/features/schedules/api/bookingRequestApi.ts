@@ -19,12 +19,12 @@ import type {
  */
 
 const BOOKING_REQUEST_API = {
-  LIST: "/api/booking-requests", // GET ?status=PENDING...
-  HISTORY: "/api/booking-requests/history", // GET
-  BY_ID: (id: string) => `/api/booking-requests/${id}`, // GET
+  LIST: "/booking-requests", // GET ?status=PENDING...
+  HISTORY: "/booking-requests/history", // GET
+  BY_ID: (id: string) => `/booking-requests/${id}`, // GET
   BY_SCHEDULE: (scheduleId: string) =>
-    `/api/booking-requests/by-schedule/${scheduleId}`, // GET
-  UPDATE_STATUS: (id: string) => `/api/booking-requests/${id}/status`, // PATCH { status }
+    `/booking-requests/by-schedule/${scheduleId}`, // GET
+  UPDATE_STATUS: (id: string) => `/booking-requests/${id}/status`, // PATCH { status }
 };
 
 /** List booking requests (lọc theo status PENDING/APPROVED/REJECTED nếu backend hỗ trợ) */
