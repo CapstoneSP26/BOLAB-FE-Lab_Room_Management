@@ -7,6 +7,7 @@ import { FPTLogo } from '../icon/FPTLogo';
 import { Badge } from '../ui/Badge';
 import { Breadcrumb } from '../ui/Breadcrumb';
 import { ActiveSessionIndicator } from '../ui/ActiveSessionIndicator';
+import { ActionLoadingBar } from '../ui/ActionLoadingBar';
 import { useActiveSession } from '../../context/ActiveSessionContext';
 
 const Header: React.FC = () => {
@@ -45,6 +46,7 @@ const Header: React.FC = () => {
         ? 'bg-[#fffaf0] shadow-md border-b border-orange-100' 
         : 'bg-white shadow-md border-b border-gray-200'
     }`}>
+      <ActionLoadingBar />
       {/* Content */}
       <div className="relative z-10 flex items-center text-gray-900">
         <FPTLogo />
