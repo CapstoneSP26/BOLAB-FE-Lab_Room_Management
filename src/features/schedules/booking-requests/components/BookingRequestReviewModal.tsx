@@ -10,32 +10,47 @@ type Props = {
   onReject: (id: string) => void;
 };
 
-const norm = (s: unknown) => String(s ?? "").toUpperCase();
+const norm = (s: unknown) => String(s ?? "").trim();
 
 function isPendingStatus(status: unknown) {
-  return norm(status) === "PENDING";
+  return norm(status) === "PendingApproval";
 }
 
 function statusMeta(status: unknown) {
   const s = norm(status);
-  if (s === "PENDING")
+
+  if (s === "PendingApproval") {
     return {
-      label: "Pending",
+      label: "Pending Approval",
       cls: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
       dot: "bg-amber-500",
     };
-  if (s === "REJECTED")
+  }
+
+  if (s === "Draft") {
+    return {
+      label: "Draft",
+      cls: "bg-slate-50 text-slate-700 dark:bg-slate-500/10 dark:text-slate-400",
+      dot: "bg-slate-500",
+    };
+  }
+
+  if (s === "REJECTED") {
     return {
       label: "Rejected",
       cls: "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400",
       dot: "bg-red-500",
     };
-  if (s === "APPROVED")
+  }
+
+  if (s === "APPROVED") {
     return {
       label: "Approved",
       cls: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
       dot: "bg-emerald-500",
     };
+  }
+
   return {
     label: s || "Unknown",
     cls: "bg-gray-50 text-gray-700 dark:bg-gray-500/10 dark:text-gray-400",
@@ -53,11 +68,9 @@ function fmtDateTime(v?: string) {
   });
 }
 
-function fmtDate(v?: string) {
-  if (!v) return "-";
-  const d = new Date(v);
-  if (Number.isNaN(d.getTime())) return v;
-  return d.toLocaleDateString("en-US", { dateStyle: "medium" });
+function recurrenceLabel(recur?: number) {
+  if (!recur || recur <= 0) return "No";
+  return `Yes (${recur})`;
 }
 
 export default function BookingRequestModal({
@@ -68,21 +81,23 @@ export default function BookingRequestModal({
   onApprove,
   onReject,
 }: Props) {
-  // ESC close
   useEffect(() => {
     if (!open) return;
+
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
+
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open, onClose]);
 
-  // lock scroll
   useEffect(() => {
     if (!open) return;
+
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+
     return () => {
       document.body.style.overflow = prev;
     };
@@ -104,13 +119,10 @@ export default function BookingRequestModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200" />
 
-      {/* Panel */}
       <div className="relative w-full max-w-5xl">
         <div className="no-scrollbar max-h-[90vh] overflow-y-auto rounded-2xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900 animate-in fade-in zoom-in-95 duration-200">
-          {/* Header */}
           <div className="sticky top-0 z-10 border-b border-gray-200 bg-white/95 px-8 py-6 backdrop-blur-xl dark:border-gray-700 dark:bg-gray-900/95">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
@@ -176,11 +188,13 @@ export default function BookingRequestModal({
               </div>
             ) : (
               <div className="space-y-6">
-                {/* Main Info Grid */}
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                  {/* Room & Schedule */}
                   <InfoCard title="Location & Time">
                     <InfoRow label="Room" value={`Room ${booking.LabRoomId}`} />
+                    <InfoRow
+                      label="Building"
+                      value={booking.BuildingName || "-"}
+                    />
                     <InfoRow
                       label="Start Time"
                       value={fmtDateTime(booking.StartTime)}
@@ -190,12 +204,11 @@ export default function BookingRequestModal({
                       value={fmtDateTime(booking.EndTime)}
                     />
                     <InfoRow
-                      label="Group Size"
-                      value={String(booking.group_size)}
+                      label="Student Count"
+                      value={String(booking.StudentCount)}
                     />
                   </InfoCard>
 
-                  {/* User Info */}
                   <InfoCard title="Requester">
                     <InfoRow
                       label="User ID"
@@ -210,24 +223,23 @@ export default function BookingRequestModal({
                       label="Booking Type"
                       value={booking.BookingType || "-"}
                     />
+                    <InfoRow label="Status" value={booking.BookingStatus} />
                   </InfoCard>
 
                   <InfoCard title="Recurrence">
                     <InfoRow
-                      label="Weekly Recurring"
-                      value={booking.IsWeeklyRecurring ? "Yes" : "No"}
-                      highlight={booking.IsWeeklyRecurring}
+                      label="Recur"
+                      value={recurrenceLabel(booking.Recur)}
+                      highlight={(booking.Recur ?? 0) > 0}
                     />
-                    {booking.IsWeeklyRecurring && (
-                      <InfoRow
-                        label="Recurring Until"
-                        value={
-                          booking.RecurringUntil
-                            ? fmtDate(booking.RecurringUntil)
-                            : "No end date"
-                        }
-                      />
-                    )}
+                    <InfoRow
+                      label="Created By"
+                      value={booking.CreatedBy || "-"}
+                    />
+                    <InfoRow
+                      label="Updated By"
+                      value={booking.UpdatedBy || "-"}
+                    />
                   </InfoCard>
                 </div>
 
@@ -268,14 +280,13 @@ export default function BookingRequestModal({
                   </div>
                 </div>
 
-                {/* Action Buttons */}
                 <div className="flex flex-col-reverse gap-3 rounded-xl border border-gray-200 bg-gray-50 p-5 dark:border-gray-700 dark:bg-gray-800/30 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex-1">
                     {!pending && (
                       <p className="text-sm text-gray-600 dark:text-gray-400">
                         Actions are only available for{" "}
                         <span className="font-semibold text-amber-600 dark:text-amber-400">
-                          PENDING
+                          PendingApproval
                         </span>{" "}
                         status bookings.
                       </p>
@@ -320,7 +331,6 @@ export default function BookingRequestModal({
   );
 }
 
-// Helper Components
 function InfoCard({
   title,
   children,

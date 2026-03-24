@@ -108,7 +108,7 @@ export default function BookingTable({
                   </td>
 
                   <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
-                    {b.group_size}
+                    {b.StudentCount}
                   </td>
 
                   <td className="px-4 py-4 text-gray-700 dark:text-gray-300">

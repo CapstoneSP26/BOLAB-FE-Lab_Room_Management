@@ -39,7 +39,7 @@ export default function PendingBookingFeature() {
   const reload = async () => {
     setLoading(true);
     try {
-      const data = await getBookingRequests({ status: "PENDING" });
+      const data = await getBookingRequests({ status: "PendingApproval" });
       setItems(Array.isArray(data?.data) ? data.data : []);
     } finally {
       setLoading(false);

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import type { Report, ReportImage } from "./type";
-import { reportService } from "./api/reportApi";
+import { reportApi } from "./api/reportApi";
 import ReportImages from "./components/ReportImages";
 
 function badge(isResolved: boolean) {
@@ -33,7 +33,7 @@ export default function ReportDetailFeature() {
     setLoading(true);
     setError(null);
     try {
-      const r = await reportService.getById(id);
+      const r = await reportApi.getById(id);
       if (!r) {
         setReport(null);
         setImages([]);
@@ -41,7 +41,7 @@ export default function ReportDetailFeature() {
         return;
       }
       setReport(r);
-      const imgs = await reportService.listImages(r.Id);
+      const imgs = await reportApi.listImages(r.Id);
       setImages(imgs);
     } catch {
       setError("Fail to load report detail.");
@@ -128,7 +128,7 @@ export default function ReportDetailFeature() {
                 if (!report) return;
                 setSaving(true);
                 try {
-                  const updated = await reportService.setResolved(
+                  const updated = await reportApi.setResolved(
                     report.Id,
                     !report.IsResolved,
                   );
