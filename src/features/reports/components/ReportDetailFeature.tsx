@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import type { Report, ReportImage } from "./type";
-import { reportApi } from "./api/reportApi";
-import ReportImages from "./components/ReportImages";
+import type { Report, ReportImage } from "../type";
+import { reportApi } from "../api/reportApi";
+import ReportImages from "./ReportImages";
 
 function badge(isResolved: boolean) {
   return isResolved

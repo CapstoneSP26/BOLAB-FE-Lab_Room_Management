@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Report, ReportType } from "./type";
-import { reportApi } from "./api/reportApi";
-import ReportListFilters from "./components/ReportListFilters";
-import ReportListTable from "./components/ReportListTable";
+import type { Report, ReportType } from "../type";
+import { reportApi } from "../api/reportApi";
+import ReportListFilters from "./ReportListFilters";
+import ReportListTable from "./ReportListTable";
 import { useNavigate } from "react-router-dom";
 
 export default function ReportListFeature() {

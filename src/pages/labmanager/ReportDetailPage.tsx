@@ -1,5 +1,5 @@
 import PageBreadcrumb from "../../components/common/PageBreadcrumb";
-import ReportDetailFeature from "../../features/reports/ReportDetailFeature";
+import ReportDetailFeature from "../../features/reports/components/ReportDetailFeature";
 
 export default function ReportDetailPage() {
   return (
