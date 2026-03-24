@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type {
   MarkAttendanceRequest,
   ExportAttendanceRequest,
-} from '../types/attendace.type';
+} from '../types/attendance.type';
 import { attendanceApi } from '../api/attendanceApi';
 
 /**

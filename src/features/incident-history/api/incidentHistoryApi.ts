@@ -16,11 +16,11 @@ import type {
  */
 
 const INCIDENT_API = {
-  LIST: "/api/incidents", // GET
-  BY_ID: (id: string) => `/api/incidents/${id}`, // GET
-  ADD_FROM_REPORT: "/api/incidents/from-report", // POST
+  LIST: "/incidents", // GET
+  BY_ID: (id: string) => `/incidents/${id}`, // GET
+  ADD_FROM_REPORT: "/incidents/from-report", // POST
   REMOVE_BY_REPORT_ID: (reportId: string) =>
-    `/api/incidents/report/${reportId}`, // DELETE
+    `/incidents/report/${reportId}`, // DELETE
 };
 
 /** Get all incidents */
