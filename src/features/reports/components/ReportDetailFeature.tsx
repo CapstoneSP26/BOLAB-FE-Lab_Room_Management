@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import type { Report, ReportImage } from "../types/report.type";
+import type { Report, ReportImage } from "../types/type";
 import { reportApi } from "../api/reportApi";
 import ReportImages from "./ReportImages";
 
@@ -72,8 +72,9 @@ export default function ReportDetailFeature() {
                 )}`}
               >
                 <span
-                  className={`h-2 w-2 rounded-full ${report.IsResolved ? "bg-emerald-500" : "bg-amber-500"
-                    }`}
+                  className={`h-2 w-2 rounded-full ${
+                    report.IsResolved ? "bg-emerald-500" : "bg-amber-500"
+                  }`}
                 />
                 {report.IsResolved ? "Resolved" : "Pending"}
               </span>
@@ -136,10 +137,11 @@ export default function ReportDetailFeature() {
                   setSaving(false);
                 }
               }}
-              className={`inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 ${report?.IsResolved
-                ? "bg-amber-600 hover:bg-amber-700"
-                : "bg-emerald-600 hover:bg-emerald-700"
-                }`}
+              className={`inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 ${
+                report?.IsResolved
+                  ? "bg-amber-600 hover:bg-amber-700"
+                  : "bg-emerald-600 hover:bg-emerald-700"
+              }`}
             >
               {saving ? (
                 <>
