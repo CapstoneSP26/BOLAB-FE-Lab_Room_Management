@@ -3,7 +3,7 @@ import { Calendar, Clock, Search, CheckCircle, XCircle, AlertCircle, LayoutGrid,
 import { useBookingHistory } from '../../features/booking/hooks/useBookingHistory';
 import { useBookingStats } from '../../features/booking/hooks/useBookingStats';
 import { BookingDetailsModal } from '../../features/booking';
-import type { BookingStatus, Booking } from '../../features/booking/types';
+import type { BookingStatus, Booking, BookingStatusFilter } from '../../features/booking/types/booking.type';
 import { SkeletonStatsCard } from '../../components/ui/Skeleton';
 import { AnimatedCounter } from '../../components/ui/AnimatedCounter';
 
@@ -55,7 +55,7 @@ const MOCK_BOOKINGS: Booking[] = [
     date: '2026-02-23', // Yesterday
     startTime: '14:00',
     endTime: '16:30',
-    status: 'All' as BookingStatus,
+    status: 'PendingApproval' as BookingStatus,
     purpose: 'Web Development Team Meeting',
     userName: 'Nguyen Van A',
   },
@@ -201,7 +201,7 @@ const MOCK_BOOKINGS: Booking[] = [
     roomName: 'Lab 702',
     buildingName: 'Gamma Building',
     date: '2026-06-10', // ~106 days from now
-    status: 'All' as BookingStatus,
+    status: 'PendingApproval' as BookingStatus,
     startTime: '08:00',
     endTime: '10:30',
     purpose: 'Summer Course Registration',
@@ -241,7 +241,7 @@ const MOCK_BOOKINGS: Booking[] = [
  */
 const BookingHistoryPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<BookingStatus | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<BookingStatusFilter>('all');
   const [dateRange, setDateRange] = useState<'week' | 'month' | 'semester' | 'all'>('month');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
@@ -259,8 +259,8 @@ const BookingHistoryPage: React.FC = () => {
   };
 
   // Fetch data
-  const { data: bookingsData, isLoading } = useBookingHistory({ 
-    page: currentPage, 
+  const { data: bookingsData, isLoading } = useBookingHistory({
+    page: currentPage,
     limit: 10,
     status: statusFilter,
   });
@@ -276,9 +276,9 @@ const BookingHistoryPage: React.FC = () => {
   // Filter bookings
   const filteredBookings = bookings.filter(booking => {
     const matchesSearch = booking.roomName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         booking.buildingName.toLowerCase().includes(searchQuery.toLowerCase());
+      booking.buildingName.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || booking.status === statusFilter;
-    
+
     // Date range filter
     const bookingDate = new Date(booking.date);
     const today = new Date();
@@ -312,9 +312,9 @@ const BookingHistoryPage: React.FC = () => {
   // Calculate dynamic stats from filtered bookings
   const dynamicStats = {
     totalAccepted: filteredBookings.filter(b => b.status === 'Approved').length,
-    totalPending: filteredBookings.filter(b => b.status === 'PendingApproval' || b.status === 'All').length,
+    totalPending: filteredBookings.filter(b => b.status === 'PendingApproval').length,
     totalRejected: filteredBookings.filter(b => b.status === 'Rejected').length,
-    upcomingBookings: filteredBookings.filter(b => 
+    upcomingBookings: filteredBookings.filter(b =>
       b.status === 'Approved' && new Date(b.date) > new Date()
     ).length,
   };
@@ -334,30 +334,30 @@ const BookingHistoryPage: React.FC = () => {
 
   const getStatusBadge = (status: BookingStatus) => {
     const statusConfig = {
-      All: { 
-        icon: AlertCircle, 
-        text: 'All', 
-        className: 'bg-amber-100 text-amber-700 border-amber-300' 
+      All: {
+        icon: AlertCircle,
+        text: 'All',
+        className: 'bg-amber-100 text-amber-700 border-amber-300'
       },
-      PendingApproval: { 
-        icon: AlertCircle, 
-        text: 'Pending Approval', 
-        className: 'bg-yellow-100 text-yellow-700 border-yellow-300' 
+      PendingApproval: {
+        icon: AlertCircle,
+        text: 'Pending Approval',
+        className: 'bg-yellow-100 text-yellow-700 border-yellow-300'
       },
-      Approved: { 
-        icon: CheckCircle, 
-        text: 'Approved', 
-        className: 'bg-green-100 text-green-700 border-green-300' 
+      Approved: {
+        icon: CheckCircle,
+        text: 'Approved',
+        className: 'bg-green-100 text-green-700 border-green-300'
       },
-      Rejected: { 
-        icon: XCircle, 
-        text: 'Rejected', 
-        className: 'bg-red-100 text-red-700 border-red-300' 
+      Rejected: {
+        icon: XCircle,
+        text: 'Rejected',
+        className: 'bg-red-100 text-red-700 border-red-300'
       },
-      Cancelled: { 
-        icon: XCircle, 
-        text: 'Cancelled', 
-        className: 'bg-gray-100 text-gray-700 border-gray-300' 
+      Cancelled: {
+        icon: XCircle,
+        text: 'Cancelled',
+        className: 'bg-gray-100 text-gray-700 border-gray-300'
       },
     };
 
@@ -398,61 +398,61 @@ const BookingHistoryPage: React.FC = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-100 p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-green-700 font-medium">Approved</p>
-                <p className="text-3xl font-bold text-green-600 mt-1">
-                  <AnimatedCounter value={displayStats.totalAccepted || 0} />
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-green-600" />
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-100 p-5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-green-700 font-medium">Approved</p>
+                  <p className="text-3xl font-bold text-green-600 mt-1">
+                    <AnimatedCounter value={displayStats.totalAccepted || 0} />
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl border border-amber-100 p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-amber-700 font-medium">Pending</p>
-                <p className="text-3xl font-bold text-amber-600 mt-1">
-                  <AnimatedCounter value={displayStats.totalPending || 0} />
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <AlertCircle className="w-6 h-6 text-yellow-600" />
+            <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl border border-amber-100 p-5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-amber-700 font-medium">Pending</p>
+                  <p className="text-3xl font-bold text-amber-600 mt-1">
+                    <AnimatedCounter value={displayStats.totalPending || 0} />
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                  <AlertCircle className="w-6 h-6 text-yellow-600" />
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="bg-gradient-to-br from-red-50 to-rose-50 rounded-xl border border-red-100 p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-red-700 font-medium">Rejected</p>
-                <p className="text-3xl font-bold text-red-600 mt-1">
-                  <AnimatedCounter value={displayStats.totalRejected || 0} />
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                <XCircle className="w-6 h-6 text-red-600" />
+            <div className="bg-gradient-to-br from-red-50 to-rose-50 rounded-xl border border-red-100 p-5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-red-700 font-medium">Rejected</p>
+                  <p className="text-3xl font-bold text-red-600 mt-1">
+                    <AnimatedCounter value={displayStats.totalRejected || 0} />
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                  <XCircle className="w-6 h-6 text-red-600" />
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100 p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 font-medium">Upcoming</p>
-                <p className="text-3xl font-bold text-blue-600 mt-1">
-                  <AnimatedCounter value={displayStats.upcomingBookings} />
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Calendar className="w-6 h-6 text-blue-600" />
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100 p-5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 font-medium">Upcoming</p>
+                  <p className="text-3xl font-bold text-blue-600 mt-1">
+                    <AnimatedCounter value={displayStats.upcomingBookings} />
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Calendar className="w-6 h-6 text-blue-600" />
+                </div>
               </div>
             </div>
-          </div>
           </div>
         )}
 
@@ -470,27 +470,25 @@ const BookingHistoryPage: React.FC = () => {
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:border-orange-400 focus:ring-2 focus:ring-orange-100 text-sm transition-all"
               />
             </div>
-            
+
             {/* View Toggle */}
             <div className="flex gap-2 bg-gray-100 p-1.5 rounded-lg">
               <button
                 onClick={() => setViewMode('list')}
-                className={`p-2 rounded-md transition-all ${
-                  viewMode === 'list'
+                className={`p-2 rounded-md transition-all ${viewMode === 'list'
                     ? 'bg-white text-orange-600 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
-                }`}
+                  }`}
                 title="List View"
               >
                 <List className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-md transition-all ${
-                  viewMode === 'grid'
+                className={`p-2 rounded-md transition-all ${viewMode === 'grid'
                     ? 'bg-white text-orange-600 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
-                }`}
+                  }`}
                 title="Grid View"
               >
                 <LayoutGrid className="w-5 h-5" />
@@ -505,67 +503,52 @@ const BookingHistoryPage: React.FC = () => {
                 Filter by Status
               </label>
               <div className="flex flex-wrap gap-2">
+                {/* Show all bookings without status filter */}
                 <button
                   onClick={() => setStatusFilter('all')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    statusFilter === 'all'
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${statusFilter === 'all'
                       ? 'bg-orange-100 text-orange-700 border-2 border-orange-300 shadow-sm'
                       : 'bg-gray-50 text-gray-600 border-2 border-transparent hover:border-gray-200 hover:bg-gray-100'
-                  }`}
+                    }`}
                 >
-                  All Status
-                </button>
-                <button
-                  onClick={() => setStatusFilter('All')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
-                    statusFilter === 'All'
-                      ? 'bg-amber-100 text-amber-700 border-2 border-amber-300 shadow-sm'
-                      : 'bg-gray-50 text-gray-600 border-2 border-transparent hover:border-gray-200 hover:bg-gray-100'
-                  }`}
-                >
-                  <AlertCircle className="w-4 h-4" />
-                  All
+                  View All
                 </button>
                 <button
                   onClick={() => setStatusFilter('PendingApproval')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
-                    statusFilter === 'PendingApproval'
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${statusFilter === 'PendingApproval'
                       ? 'bg-yellow-100 text-yellow-700 border-2 border-yellow-300 shadow-sm'
                       : 'bg-gray-50 text-gray-600 border-2 border-transparent hover:border-gray-200 hover:bg-gray-100'
-                  }`}
+                    }`}
                 >
                   <AlertCircle className="w-4 h-4" />
                   Pending
                 </button>
                 <button
                   onClick={() => setStatusFilter('Approved')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
-                    statusFilter === 'Approved'
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${statusFilter === 'Approved'
                       ? 'bg-green-100 text-green-700 border-2 border-green-300 shadow-sm'
                       : 'bg-gray-50 text-gray-600 border-2 border-transparent hover:border-gray-200 hover:bg-gray-100'
-                  }`}
+                    }`}
                 >
                   <CheckCircle className="w-4 h-4" />
                   Approved
                 </button>
                 <button
                   onClick={() => setStatusFilter('Rejected')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
-                    statusFilter === 'Rejected'
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${statusFilter === 'Rejected'
                       ? 'bg-red-100 text-red-700 border-2 border-red-300 shadow-sm'
                       : 'bg-gray-50 text-gray-600 border-2 border-transparent hover:border-gray-200 hover:bg-gray-100'
-                  }`}
+                    }`}
                 >
                   <XCircle className="w-4 h-4" />
                   Rejected
                 </button>
                 <button
                   onClick={() => setStatusFilter('Cancelled')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
-                    statusFilter === 'Cancelled'
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${statusFilter === 'Cancelled'
                       ? 'bg-gray-100 text-gray-700 border-2 border-gray-300 shadow-sm'
                       : 'bg-gray-50 text-gray-600 border-2 border-transparent hover:border-gray-200 hover:bg-gray-100'
-                  }`}
+                    }`}
                 >
                   <XCircle className="w-4 h-4" />
                   Cancelled
@@ -581,41 +564,37 @@ const BookingHistoryPage: React.FC = () => {
               <div className="flex gap-2 bg-gray-100 p-1.5 rounded-lg">
                 <button
                   onClick={() => setDateRange('week')}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                    dateRange === 'week'
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${dateRange === 'week'
                       ? 'bg-white text-orange-600 shadow-sm'
                       : 'text-gray-600 hover:text-gray-900'
-                  }`}
+                    }`}
                 >
                   Week
                 </button>
                 <button
                   onClick={() => setDateRange('month')}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                    dateRange === 'month'
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${dateRange === 'month'
                       ? 'bg-white text-orange-600 shadow-sm'
                       : 'text-gray-600 hover:text-gray-900'
-                  }`}
+                    }`}
                 >
                   Month
                 </button>
                 <button
                   onClick={() => setDateRange('semester')}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                    dateRange === 'semester'
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${dateRange === 'semester'
                       ? 'bg-white text-orange-600 shadow-sm'
                       : 'text-gray-600 hover:text-gray-900'
-                  }`}
+                    }`}
                 >
                   Semester
                 </button>
                 <button
                   onClick={() => setDateRange('all')}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                    dateRange === 'all'
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${dateRange === 'all'
                       ? 'bg-white text-orange-600 shadow-sm'
                       : 'text-gray-600 hover:text-gray-900'
-                  }`}
+                    }`}
                 >
                   All
                 </button>
@@ -649,27 +628,25 @@ const BookingHistoryPage: React.FC = () => {
             // LIST VIEW
             <>
               {paginatedBookings.map((booking) => (
-                <div 
-                  key={booking.id} 
-                  className={`bg-white rounded-xl border-2 shadow-sm hover:shadow-md transition-all group ${
-                    booking.status === 'Approved' ? 'border-green-200 hover:border-green-300' :
-                    booking.status === 'PendingApproval' ? 'border-yellow-200 hover:border-yellow-300' :
-                    booking.status === 'All' ? 'border-amber-200 hover:border-amber-300' :
-                    booking.status === 'Cancelled' ? 'border-gray-200 hover:border-gray-300' :
-                    'border-red-200 hover:border-red-300'
-                  }`}
+                <div
+                  key={booking.id}
+                  className={`bg-white rounded-xl border-2 shadow-sm hover:shadow-md transition-all group ${booking.status === 'Approved' ? 'border-green-200 hover:border-green-300' :
+                      booking.status === 'PendingApproval' ? 'border-yellow-200 hover:border-yellow-300' :
+                        booking.status === 'All' ? 'border-amber-200 hover:border-amber-300' :
+                          booking.status === 'Cancelled' ? 'border-gray-200 hover:border-gray-300' :
+                            'border-red-200 hover:border-red-300'
+                    }`}
                 >
                   <div className="p-5">
                     <div className="flex items-start justify-between gap-4 mb-4">
                       <div className="flex items-start gap-3">
                         {/* Color-coded sidebar */}
-                        <div className={`w-1 h-16 rounded-full flex-shrink-0 ${
-                          booking.status === 'Approved' ? 'bg-gradient-to-b from-green-400 to-green-600' :
-                          booking.status === 'PendingApproval' ? 'bg-gradient-to-b from-yellow-400 to-yellow-600' :
-                          booking.status === 'All' ? 'bg-gradient-to-b from-amber-400 to-amber-600' :
-                          booking.status === 'Cancelled' ? 'bg-gradient-to-b from-gray-400 to-gray-600' :
-                          'bg-gradient-to-b from-red-400 to-red-600'
-                        }`}></div>
+                        <div className={`w-1 h-16 rounded-full flex-shrink-0 ${booking.status === 'Approved' ? 'bg-gradient-to-b from-green-400 to-green-600' :
+                            booking.status === 'PendingApproval' ? 'bg-gradient-to-b from-yellow-400 to-yellow-600' :
+                              booking.status === 'All' ? 'bg-gradient-to-b from-amber-400 to-amber-600' :
+                                booking.status === 'Cancelled' ? 'bg-gradient-to-b from-gray-400 to-gray-600' :
+                                  'bg-gradient-to-b from-red-400 to-red-600'
+                          }`}></div>
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2">
@@ -678,37 +655,35 @@ const BookingHistoryPage: React.FC = () => {
                             </h3>
                             {getStatusBadge(booking.status)}
                           </div>
-                          
+
                           <p className="text-sm text-gray-600 font-medium mb-3 truncate">
                             {booking.buildingName}
                           </p>
 
                           <div className="flex flex-wrap items-center gap-4">
-                            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${
-                              booking.status === 'Approved' ? 'bg-green-50' :
-                              booking.status === 'PendingApproval' ? 'bg-yellow-50' :
-                              booking.status === 'All' ? 'bg-amber-50' :
-                              booking.status === 'Cancelled' ? 'bg-gray-50' :
-                              'bg-red-50'
-                            }`}>
+                            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${booking.status === 'Approved' ? 'bg-green-50' :
+                                booking.status === 'PendingApproval' ? 'bg-yellow-50' :
+                                  booking.status === 'All' ? 'bg-amber-50' :
+                                    booking.status === 'Cancelled' ? 'bg-gray-50' :
+                                      'bg-red-50'
+                              }`}>
                               <Calendar className="w-4 h-4 text-gray-600" />
                               <span className="text-sm font-medium text-gray-900">
-                                {new Date(booking.date).toLocaleDateString('en-US', { 
-                                  weekday: 'short', 
-                                  month: 'short', 
+                                {new Date(booking.date).toLocaleDateString('en-US', {
+                                  weekday: 'short',
+                                  month: 'short',
                                   day: 'numeric',
                                   year: 'numeric'
                                 })}
                               </span>
                             </div>
-                            
-                            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${
-                              booking.status === 'Approved' ? 'bg-green-50' :
-                              booking.status === 'PendingApproval' ? 'bg-yellow-50' :
-                              booking.status === 'All' ? 'bg-amber-50' :
-                              booking.status === 'Cancelled' ? 'bg-gray-50' :
-                              'bg-red-50'
-                            }`}>
+
+                            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${booking.status === 'Approved' ? 'bg-green-50' :
+                                booking.status === 'PendingApproval' ? 'bg-yellow-50' :
+                                  booking.status === 'All' ? 'bg-amber-50' :
+                                    booking.status === 'Cancelled' ? 'bg-gray-50' :
+                                      'bg-red-50'
+                              }`}>
                               <Clock className="w-4 h-4 text-gray-600" />
                               <span className="text-sm font-medium text-gray-900">
                                 {booking.startTime} - {booking.endTime}
@@ -728,7 +703,7 @@ const BookingHistoryPage: React.FC = () => {
                       </div>
 
                       <div className="flex flex-col gap-2">
-                        <button 
+                        <button
                           onClick={() => handleViewDetails(booking)}
                           className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm"
                         >
@@ -749,24 +724,22 @@ const BookingHistoryPage: React.FC = () => {
             // GRID VIEW
             <>
               {paginatedBookings.map((booking) => (
-                <div 
-                  key={booking.id} 
-                  className={`bg-white rounded-xl border-2 shadow-sm hover:shadow-md transition-all group flex flex-col h-full ${
-                    booking.status === 'Approved' ? 'border-green-200 hover:border-green-300' :
-                    booking.status === 'PendingApproval' ? 'border-yellow-200 hover:border-yellow-300' :
-                    booking.status === 'All' ? 'border-amber-200 hover:border-amber-300' :
-                    booking.status === 'Cancelled' ? 'border-gray-200 hover:border-gray-300' :
-                    'border-red-200 hover:border-red-300'
-                  }`}
+                <div
+                  key={booking.id}
+                  className={`bg-white rounded-xl border-2 shadow-sm hover:shadow-md transition-all group flex flex-col h-full ${booking.status === 'Approved' ? 'border-green-200 hover:border-green-300' :
+                      booking.status === 'PendingApproval' ? 'border-yellow-200 hover:border-yellow-300' :
+                        booking.status === 'All' ? 'border-amber-200 hover:border-amber-300' :
+                          booking.status === 'Cancelled' ? 'border-gray-200 hover:border-gray-300' :
+                            'border-red-200 hover:border-red-300'
+                    }`}
                 >
                   {/* Color header */}
-                  <div className={`h-2 rounded-t-xl ${
-                    booking.status === 'Approved' ? 'bg-gradient-to-r from-green-400 to-green-600' :
-                    booking.status === 'PendingApproval' ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' :
-                    booking.status === 'All' ? 'bg-gradient-to-r from-amber-400 to-amber-600' :
-                    booking.status === 'Cancelled' ? 'bg-gradient-to-r from-gray-400 to-gray-600' :
-                    'bg-gradient-to-r from-red-400 to-red-600'
-                  }`}></div>
+                  <div className={`h-2 rounded-t-xl ${booking.status === 'Approved' ? 'bg-gradient-to-r from-green-400 to-green-600' :
+                      booking.status === 'PendingApproval' ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' :
+                        booking.status === 'All' ? 'bg-gradient-to-r from-amber-400 to-amber-600' :
+                          booking.status === 'Cancelled' ? 'bg-gradient-to-r from-gray-400 to-gray-600' :
+                            'bg-gradient-to-r from-red-400 to-red-600'
+                    }`}></div>
 
                   <div className="p-4 flex-1 flex flex-col">
                     {/* Title & Status */}
@@ -782,30 +755,28 @@ const BookingHistoryPage: React.FC = () => {
 
                     {/* Date & Time - Compact */}
                     <div className="space-y-2 mb-3">
-                      <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${
-                        booking.status === 'Approved' ? 'bg-green-50' :
-                        booking.status === 'PendingApproval' ? 'bg-yellow-50' :
-                        booking.status === 'All' ? 'bg-amber-50' :
-                        booking.status === 'Cancelled' ? 'bg-gray-50' :
-                        'bg-red-50'
-                      }`}>
+                      <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${booking.status === 'Approved' ? 'bg-green-50' :
+                          booking.status === 'PendingApproval' ? 'bg-yellow-50' :
+                            booking.status === 'All' ? 'bg-amber-50' :
+                              booking.status === 'Cancelled' ? 'bg-gray-50' :
+                                'bg-red-50'
+                        }`}>
                         <Calendar className="w-4 h-4 text-gray-600 flex-shrink-0" />
                         <span className="text-xs font-medium text-gray-900 truncate">
-                          {new Date(booking.date).toLocaleDateString('en-US', { 
-                            month: 'short', 
+                          {new Date(booking.date).toLocaleDateString('en-US', {
+                            month: 'short',
                             day: 'numeric',
                             year: 'numeric'
                           })}
                         </span>
                       </div>
-                      
-                      <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${
-                        booking.status === 'Approved' ? 'bg-green-50' :
-                        booking.status === 'PendingApproval' ? 'bg-yellow-50' :
-                        booking.status === 'All' ? 'bg-amber-50' :
-                        booking.status === 'Cancelled' ? 'bg-gray-50' :
-                        'bg-red-50'
-                      }`}>
+
+                      <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${booking.status === 'Approved' ? 'bg-green-50' :
+                          booking.status === 'PendingApproval' ? 'bg-yellow-50' :
+                            booking.status === 'All' ? 'bg-amber-50' :
+                              booking.status === 'Cancelled' ? 'bg-gray-50' :
+                                'bg-red-50'
+                        }`}>
                         <Clock className="w-4 h-4 text-gray-600 flex-shrink-0" />
                         <span className="text-xs font-medium text-gray-900">
                           {booking.startTime} - {booking.endTime}
@@ -825,7 +796,7 @@ const BookingHistoryPage: React.FC = () => {
 
                     {/* Actions */}
                     <div className="flex flex-col gap-2 mt-auto">
-                      <button 
+                      <button
                         onClick={() => handleViewDetails(booking)}
                         className="w-full px-3 py-2 text-sm font-medium text-gray-700 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm"
                       >
@@ -852,7 +823,7 @@ const BookingHistoryPage: React.FC = () => {
               <span className="font-bold text-gray-900">{Math.min(endIndex, filteredBookings.length)}</span> of{' '}
               <span className="font-bold text-orange-600">{filteredBookings.length}</span> bookings
             </p>
-            
+
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
@@ -861,23 +832,22 @@ const BookingHistoryPage: React.FC = () => {
               >
                 ← Previous
               </button>
-              
+
               <div className="hidden sm:flex items-center gap-1">
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => i + 1).map((page) => (
                   <button
                     key={page}
                     onClick={() => setCurrentPage(page)}
-                    className={`w-10 h-10 rounded-lg text-sm font-semibold transition-all ${
-                      currentPage === page
+                    className={`w-10 h-10 rounded-lg text-sm font-semibold transition-all ${currentPage === page
                         ? 'bg-orange-600 text-white shadow-md'
                         : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-orange-300 hover:bg-orange-50'
-                    }`}
+                      }`}
                   >
                     {page}
                   </button>
                 ))}
               </div>
-              
+
               <button
                 onClick={() => setCurrentPage(p => p + 1)}
                 disabled={currentPage >= totalPages}

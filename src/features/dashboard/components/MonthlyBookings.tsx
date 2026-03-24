@@ -4,8 +4,13 @@ import type { ApexOptions } from "apexcharts";
 import DropdownMenu, {
   type DropdownMenuItem,
 } from "../../../components/common/DropdownMenu";
+import type { DashboardStatsDto } from "../services/dashboardService";
 
-export default function MonthlyBookings() {
+interface MonthlyBookingsProps {
+  stats?: DashboardStatsDto;
+}
+
+export default function MonthlyBookings({ stats }: MonthlyBookingsProps) {
   const menuItems: DropdownMenuItem[] = useMemo(
     () => [
       { label: "View More", onClick: () => console.log("View More clicked") },
@@ -14,14 +19,17 @@ export default function MonthlyBookings() {
     [],
   );
 
+  // Check if using real data or fallback
+  const isUsingFallbackData = !stats?.monthlyBookings;
+
   const series = useMemo(
     () => [
       {
         name: "Bookings",
-        data: [168, 385, 201, 298, 187, 195, 291, 110, 215, 390, 280, 112],
+        data: stats?.monthlyBookings || [168, 385, 201, 298, 187, 195, 291, 110, 215, 390, 280, 112],
       },
     ],
-    [],
+    [stats?.monthlyBookings],
   );
 
   const options: ApexOptions = useMemo(
@@ -108,6 +116,12 @@ export default function MonthlyBookings() {
           }
         />
       </div>
+
+      {isUsingFallbackData && (
+        <div className="mt-3 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
+          📊 Showing sample data. Backend API needs to implement monthly breakdown.
+        </div>
+      )}
 
       <div className="max-w-full overflow-x-auto custom-scrollbar">
         <div className="-ml-5 min-w-[650px] pl-2 xl:min-w-full">

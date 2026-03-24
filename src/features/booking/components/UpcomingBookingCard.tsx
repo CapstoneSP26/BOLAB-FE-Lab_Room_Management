@@ -1,15 +1,15 @@
 import React from 'react';
 import { Calendar, Clock, Building2 } from 'lucide-react';
-import type { Booking } from '../types';
+import type { Booking } from '../types/booking.type';
 
 interface UpcomingBookingCardProps {
   booking: Booking;
   onClick?: () => void;
 }
 
-export const UpcomingBookingCard: React.FC<UpcomingBookingCardProps> = ({ 
-  booking, 
-  onClick 
+export const UpcomingBookingCard: React.FC<UpcomingBookingCardProps> = ({
+  booking,
+  onClick
 }) => {
   const getStatusColor = (status: Booking['status']) => {
     switch (status) {

@@ -29,31 +29,31 @@ const statusConfig: Record<RoomStatus, {
   icon: React.ElementType;
 }> = {
   available: {
-    label: 'Trống',
+    label: 'Available',
     color: 'text-green-700',
     bgColor: 'bg-green-50',
     borderColor: 'border-green-300',
     icon: Circle,
   },
   occupied: {
-    label: 'Đang dùng',
+    label: 'Occupied',
     color: 'text-red-700',
     bgColor: 'bg-red-50',
     borderColor: 'border-red-300',
     icon: Circle,
   },
   reserved: {
-    label: 'Đã đặt',
+    label: 'Reserved',
     color: 'text-amber-700',
     bgColor: 'bg-amber-50',
     borderColor: 'border-amber-300',
     icon: Clock,
   },
   maintenance: {
-    label: 'Bảo trì',
-    color: 'text-gray-700',
-    bgColor: 'bg-gray-50',
-    borderColor: 'border-gray-300',
+    label: 'Maintenance',
+    color: 'text-amber-800',
+    bgColor: 'bg-amber-50',
+    borderColor: 'border-amber-300',
     icon: Circle,
   },
 };

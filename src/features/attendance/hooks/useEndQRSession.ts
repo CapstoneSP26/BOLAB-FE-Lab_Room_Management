@@ -4,8 +4,8 @@
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { endQRSession } from '../services/attendance.service';
-import type { EndQRSessionRequest, EndQRSessionResponse } from '../types';
+import type { EndQRSessionRequest, EndQRSessionResponse } from '../types/attendance.type';
+import { attendanceApi } from '../api/attendanceApi';
 
 export const QUERY_KEYS = {
   END_QR_SESSION: 'endQRSession',
@@ -25,13 +25,13 @@ export const useEndQRSession = (options: UseEndQRSessionOptions = {}) => {
 
   return useMutation({
     mutationKey: [QUERY_KEYS.END_QR_SESSION],
-    mutationFn: (request: EndQRSessionRequest) => endQRSession(request),
+    mutationFn: (request: EndQRSessionRequest) => attendanceApi.endQRSession(request),
     onSuccess: (data) => {
       // Invalidate QR session query to reflect isActive = false
       queryClient.invalidateQueries({ queryKey: ['qrSession', data.data.sessionId] });
       // Invalidate lecturer bookings
       queryClient.invalidateQueries({ queryKey: ['lecturerBookings'] });
-      
+
       options.onSuccess?.(data);
     },
     onError: (error: Error) => {

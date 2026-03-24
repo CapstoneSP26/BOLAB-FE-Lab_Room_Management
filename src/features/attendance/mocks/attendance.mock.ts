@@ -3,7 +3,7 @@
  * BOLAB-30: Use these while backend APIs are being developed
  */
 
-import type { QRSession, BookingWithQR, StudentAttendance } from '../types';
+import type { QRSession, BookingWithQR, StudentAttendance } from '../types/attendace.type';
 
 /**
  * Mock QR Session

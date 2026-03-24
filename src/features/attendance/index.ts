@@ -22,7 +22,7 @@ export type {
   ExportAttendanceRequest,
   BookingWithQR,
   GetLecturerBookingsResponse,
-} from './types';
+} from './types/attendance.type';
 
 // Hooks
 export {
@@ -43,18 +43,6 @@ export {
   useExportAttendance,
   ATTENDANCE_KEYS,
 } from './hooks/useAttendance';
-
-// Services
-export {
-  createQRSession,
-  getQRSession,
-  refreshQRToken,
-  endQRSession,
-  getAttendanceList,
-  markAttendance,
-  getLecturerBookings,
-  exportAttendance,
-} from './services/attendance.service';
 
 // Mock Data (for testing - remove in production)
 export {

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import type { Report, ReportImage } from "../type";
+import type { Report, ReportImage } from "../types/type";
 import { reportApi } from "../api/reportApi";
 import ReportImages from "./ReportImages";
 

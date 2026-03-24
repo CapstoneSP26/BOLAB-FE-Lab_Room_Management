@@ -4,15 +4,11 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  createQRSession,
-  getQRSession,
-  refreshQRToken,
-} from '../services/attendance.service';
 import type {
   CreateQRSessionRequest,
   RefreshQRTokenRequest,
-} from '../types';
+} from '../types/attendace.type';
+import { attendanceApi } from '../api/attendanceApi';
 
 /**
  * Query keys for cache management
@@ -29,7 +25,7 @@ export const useCreateQRSession = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (request: CreateQRSessionRequest) => createQRSession(request),
+    mutationFn: (request: CreateQRSessionRequest) => attendanceApi.createQRSession(request),
     onSuccess: () => {
       // Invalidate lecturer bookings to update hasQRSession flag
       queryClient.invalidateQueries({ queryKey: ['lecturer-bookings'] });
@@ -43,7 +39,7 @@ export const useCreateQRSession = () => {
 export const useQRSession = (sessionId: string | null, enablePolling = false) => {
   return useQuery({
     queryKey: QR_SESSION_KEYS.QR_SESSION_BY_ID(sessionId || ''),
-    queryFn: () => getQRSession(sessionId!),
+    queryFn: () => attendanceApi.getQRSession(sessionId!),
     enabled: !!sessionId,
     staleTime: enablePolling ? 0 : 30 * 1000, // 30 seconds if not polling
     refetchInterval: enablePolling ? 5 * 1000 : false, // Poll every 5 seconds if enabled
@@ -57,7 +53,7 @@ export const useRefreshQRToken = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (request: RefreshQRTokenRequest) => refreshQRToken(request),
+    mutationFn: (request: RefreshQRTokenRequest) => attendanceApi.refreshQRToken(request),
     onSuccess: (_data, variables) => {
       // Update the cached session with new token
       queryClient.invalidateQueries({

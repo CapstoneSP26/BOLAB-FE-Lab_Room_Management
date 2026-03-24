@@ -23,6 +23,13 @@ const axiosInstance: AxiosInstance = axios.create({
   },
 });
 
+export const api = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL,
+  headers: {
+    "Content-Type": "application/json"
+  }
+});
+
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = getAccessToken();
@@ -117,3 +124,4 @@ axiosInstance.interceptors.response.use(
 );
 
 export default axiosInstance;
+export { clearAuth, getAccessToken, getRefreshToken, saveAccessToken } from '../utils/storage';
