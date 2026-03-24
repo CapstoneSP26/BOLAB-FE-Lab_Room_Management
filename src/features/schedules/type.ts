@@ -1,5 +1,9 @@
 // ===== DOMAIN =====
-export type BookingStatus = "PENDING" | "APPROVED" | "REJECTED";
+export type BookingStatus =
+  | "Draft"
+  | "PendingApproval"
+  | "APPROVED"
+  | "REJECTED";
 
 export type UpdatableBookingStatus = "APPROVED" | "REJECTED";
 
@@ -11,7 +15,7 @@ export interface Booking {
   StartTime: string;
   EndTime: string;
 
-  group_size: number;
+  StudentCount: number;
   PurposeTypeName: string;
   Reason: string;
 
@@ -22,9 +26,7 @@ export interface Booking {
   UpdatedAt: string;
   CreatedBy: string;
   UpdatedBy: string;
-
-  IsWeeklyRecurring: boolean;
-  RecurringUntil?: string | null;
+  Recur: number;
 }
 
 // ===== API REQUEST =====

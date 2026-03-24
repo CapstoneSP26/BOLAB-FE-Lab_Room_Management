@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Report, ReportType } from "./type";
-import { reportService } from "./api/reportApi";
-import ReportListFilters from "./components/ReportListFilters";
-import ReportListTable from "./components/ReportListTable";
+import type { Report, ReportType } from "../types/type";
+import { reportApi } from "../api/reportApi";
+import ReportListFilters from "./ReportListFilters";
+import ReportListTable from "./ReportListTable";
 import { useNavigate } from "react-router-dom";
 
 export default function ReportListFeature() {
@@ -22,7 +22,7 @@ export default function ReportListFeature() {
   const load = async () => {
     setLoading(true);
     try {
-      const data = await reportService.list({
+      const data = await reportApi.list({
         reportType,
         resolved,
         q,
@@ -67,7 +67,7 @@ export default function ReportListFeature() {
   }, [rows]);
 
   const onToggleResolved = async (id: string, next: boolean) => {
-    const updated = await reportService.setResolved(id, next);
+    const updated = await reportApi.setResolved(id, next);
     setItems((prev) => prev.map((x) => (x.Id === updated.Id ? updated : x)));
   };
 
