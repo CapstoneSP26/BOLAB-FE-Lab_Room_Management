@@ -6,23 +6,26 @@ import BookingTable from "./components/BookingRequestTable";
 
 import {
   getBookingRequests,
+  getBuildingOptions,
+  getRoomOptions,
   updateBookingRequestStatus,
 } from "../api/bookingRequestApi";
-import type { Booking, BookingSlotTypeCode } from "../type";
+import type {
+  Booking,
+  BookingSlotTypeCode,
+  BuildingOption,
+  RoomOption,
+} from "../type";
 
 type SlotTypeFilter = "ALL" | BookingSlotTypeCode;
 
-// Helper function to get building from room ID
-const getBuildingFromRoom = (roomId: number): string => {
-  if (roomId >= 100 && roomId < 200) return "Building A";
-  if (roomId >= 200 && roomId < 300) return "Building B";
-  if (roomId >= 300 && roomId < 400) return "Building C";
-  return "Other";
-};
-
 export default function PendingBookingFeature() {
   const [loading, setLoading] = useState(true);
+  const [lookupLoading, setLookupLoading] = useState(true);
+
   const [items, setItems] = useState<Booking[]>([]);
+  const [buildingOptions, setBuildingOptions] = useState<BuildingOption[]>([]);
+  const [roomOptions, setRoomOptions] = useState<RoomOption[]>([]);
 
   const [q, setQ] = useState("");
   const [roomId, setRoomId] = useState<number | "ALL">("ALL");
@@ -37,52 +40,61 @@ export default function PendingBookingFeature() {
     setSelected(null);
   };
 
+  const loadLookups = useCallback(async () => {
+    setLookupLoading(true);
+    try {
+      const [buildingsResult, roomsResult] = await Promise.allSettled([
+        getBuildingOptions(),
+        getRoomOptions(),
+      ]);
+
+      setBuildingOptions(
+        buildingsResult.status === "fulfilled" &&
+          Array.isArray(buildingsResult.value)
+          ? buildingsResult.value
+          : [],
+      );
+
+      setRoomOptions(
+        roomsResult.status === "fulfilled" && Array.isArray(roomsResult.value)
+          ? roomsResult.value
+          : [],
+      );
+    } finally {
+      setLookupLoading(false);
+    }
+  }, []);
+
   const reload = useCallback(async () => {
     setLoading(true);
-
     try {
-      const data = await getBookingRequests();
-
-      console.log("booking requests raw =", data);
-      console.log("booking requests data =", data?.data);
-      console.log("booking requests is array =", Array.isArray(data?.data));
+      const data = await getBookingRequests({
+        status: "PendingApproval",
+        labRoomId: roomId === "ALL" ? undefined : roomId,
+        buildingName: building === "ALL" ? undefined : building,
+        keyword: q.trim() || undefined,
+        slotTypeCode: slotType === "ALL" ? undefined : slotType,
+      });
 
       setItems(Array.isArray(data?.data) ? data.data : []);
-    } catch (error) {
-      console.error("reload booking requests failed =", error);
-      setItems([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [roomId, building, q, slotType]);
+
+  useEffect(() => {
+    void loadLookups();
+  }, [loadLookups]);
 
   useEffect(() => {
     void reload();
   }, [reload]);
 
-  const roomOptions = useMemo(() => {
-    const set = new Set<number>();
-    (items ?? []).forEach((b) => set.add(b.LabRoomId));
-    return Array.from(set).sort((a, b) => a - b);
-  }, [items]);
+  const filteredRoomOptions = useMemo(() => {
+    if (building === "ALL") return roomOptions;
 
-  const buildingOptions = useMemo(() => {
-    const buildings = new Set<string>();
-
-    (items ?? []).forEach((b) => {
-      if (b.BuildingName?.trim()) {
-        buildings.add(b.BuildingName);
-        return;
-      }
-
-      const fallback = getBuildingFromRoom(b.LabRoomId);
-      if (fallback !== "Other") {
-        buildings.add(fallback);
-      }
-    });
-
-    return Array.from(buildings).sort();
-  }, [items]);
+    return roomOptions.filter((room) => room.buildingName === building);
+  }, [roomOptions, building]);
 
   const rows = useMemo(() => {
     return [...items].sort((a, b) =>
@@ -224,7 +236,7 @@ export default function PendingBookingFeature() {
           />
           <QuickStat
             label="Active Rooms"
-            value={roomOptions.length}
+            value={filteredRoomOptions.length}
             icon={
               <svg
                 className="h-5 w-5"
@@ -294,13 +306,13 @@ export default function PendingBookingFeature() {
           onBuilding={setBuilding}
           slotType={slotType}
           onSlotType={setSlotType}
-          roomOptions={roomOptions}
+          roomOptions={filteredRoomOptions}
           buildingOptions={buildingOptions}
         />
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800/50">
-        {loading && items.length === 0 ? (
+        {(loading || lookupLoading) && items.length === 0 ? (
           <LoadingSkeleton />
         ) : rows.length === 0 && items.length === 0 ? (
           <EmptyState

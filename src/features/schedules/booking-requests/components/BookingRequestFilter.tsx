@@ -1,3 +1,5 @@
+import type { BuildingOption, RoomOption } from "../../types/schedule.type";
+
 type SlotTypeFilter = "ALL" | "OLD_SLOT" | "NEW_SLOT" | "OUT_SLOT";
 
 type Props = {
@@ -13,8 +15,8 @@ type Props = {
   slotType: SlotTypeFilter;
   onSlotType: (v: SlotTypeFilter) => void;
 
-  roomOptions: number[];
-  buildingOptions: string[];
+  roomOptions: RoomOption[];
+  buildingOptions: BuildingOption[];
 };
 
 export default function BookingFilters({
@@ -80,8 +82,8 @@ export default function BookingFilters({
           >
             <option value="ALL">All buildings</option>
             {buildingOptions.map((b) => (
-              <option key={b} value={b}>
-                {b}
+              <option key={String(b.id)} value={b.name}>
+                {b.name}
               </option>
             ))}
           </select>
@@ -115,8 +117,8 @@ export default function BookingFilters({
           >
             <option value="ALL">All rooms</option>
             {roomOptions.map((r) => (
-              <option key={r} value={String(r)}>
-                Room {r}
+              <option key={r.id} value={String(r.id)}>
+                {r.name}
               </option>
             ))}
           </select>

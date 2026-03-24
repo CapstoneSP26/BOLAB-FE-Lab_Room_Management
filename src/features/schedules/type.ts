@@ -1,4 +1,5 @@
 // ===== DOMAIN =====
+
 export type BookingStatus =
   | "Draft"
   | "PendingApproval"
@@ -34,6 +35,16 @@ export interface Booking {
 }
 
 // ===== API REQUEST =====
+export type BuildingOption = {
+  id: number | string;
+  name: string;
+};
+
+export type RoomOption = {
+  id: number;
+  name: string;
+  buildingName?: string;
+};
 export interface GetBookingRequestsRequest {
   status?: BookingStatus;
   page?: number;

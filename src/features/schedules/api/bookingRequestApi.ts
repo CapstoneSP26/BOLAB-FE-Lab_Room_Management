@@ -1,5 +1,7 @@
 import axiosInstance from "../../../api/axios";
 import type {
+  BuildingOption,
+  RoomOption,
   GetBookingRequestsRequest,
   GetBookingRequestsResponse,
   GetBookingHistoryRequest,
@@ -19,26 +21,31 @@ import type {
  */
 
 const BOOKING_REQUEST_API = {
-  LIST: "/bookings", // GET ?status=PENDING...
-  HISTORY: "/booking-requests/history", // GET
-  BY_ID: (id: string) => `/booking-requests/${id}`, // GET
+  LIST: "/bookings",
+  HISTORY: "/booking-requests/history",
+  BY_ID: (id: string) => `/booking-requests/${id}`,
   BY_SCHEDULE: (scheduleId: string) =>
-    `/booking-requests/by-schedule/${scheduleId}`, // GET
-  UPDATE_STATUS: (id: string) => `/booking-requests/${id}/status`, // PATCH { status }
+    `/booking-requests/by-schedule/${scheduleId}`,
+  UPDATE_STATUS: (id: string) => `/booking-requests/${id}/status`,
 };
 
-/** List booking requests (lọc theo status PENDING/APPROVED/REJECTED nếu backend hỗ trợ) */
+const BOOKING_LOOKUP_API = {
+  BUILDINGS: "/buildings",
+  LAB_ROOMS: "/lab-rooms",
+};
+
+/** Pending booking requests */
 export const getBookingRequests = async (
   params: GetBookingRequestsRequest = {},
 ): Promise<GetBookingRequestsResponse> => {
   const response = await axiosInstance.get<GetBookingRequestsResponse>(
-    BOOKING_REQUEST_API.LIST,
+    `${BOOKING_REQUEST_API.LIST}/get-unchecked-booking-request`,
     { params },
   );
   return response.data;
 };
 
-/** History (thường APPROVED + REJECTED) */
+/** History */
 export const getBookingRequestHistory = async (
   params: GetBookingHistoryRequest = {},
 ): Promise<GetBookingHistoryResponse> => {
@@ -59,7 +66,7 @@ export const getBookingRequestById = async (
   return response.data;
 };
 
-/** Get booking by scheduleId (cho modal click schedule) */
+/** Get booking by scheduleId */
 export const getBookingRequestByScheduleId = async (
   scheduleId: string,
 ): Promise<GetBookingByScheduleIdResponse> => {
@@ -69,7 +76,7 @@ export const getBookingRequestByScheduleId = async (
   return response.data;
 };
 
-/** Update status (approve/reject) */
+/** Update status */
 export const updateBookingRequestStatus = async (
   id: string,
   body: UpdateBookingStatusRequest,
@@ -77,6 +84,22 @@ export const updateBookingRequestStatus = async (
   const response = await axiosInstance.patch<UpdateBookingStatusResponse>(
     BOOKING_REQUEST_API.UPDATE_STATUS(id),
     body,
+  );
+  return response.data;
+};
+
+/** Lookup: buildings */
+export const getBuildingOptions = async (): Promise<BuildingOption[]> => {
+  const response = await axiosInstance.get<BuildingOption[]>(
+    BOOKING_LOOKUP_API.BUILDINGS,
+  );
+  return response.data;
+};
+
+/** Lookup: rooms */
+export const getRoomOptions = async (): Promise<RoomOption[]> => {
+  const response = await axiosInstance.get<RoomOption[]>(
+    BOOKING_LOOKUP_API.LAB_ROOMS,
   );
   return response.data;
 };
