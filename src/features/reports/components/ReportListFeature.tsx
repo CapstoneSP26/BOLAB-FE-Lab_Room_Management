@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Report, ReportType } from "../type";
+import type { Report, ReportType } from "../types/type";
 import { reportApi } from "../api/reportApi";
 import ReportListFilters from "./ReportListFilters";
 import ReportListTable from "./ReportListTable";

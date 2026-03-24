@@ -1,4 +1,4 @@
-import type { Report } from "../type";
+import type { Report } from "../types/type";
 
 function badge(status: boolean) {
   return status
