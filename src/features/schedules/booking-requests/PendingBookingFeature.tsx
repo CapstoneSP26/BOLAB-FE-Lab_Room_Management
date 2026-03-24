@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import BookingRequestReviewModal from "../booking-requests/components/BookingRequestReviewModal";
 import BookingFilters from "../booking-requests/components/BookingRequestFilter";
@@ -8,9 +8,9 @@ import {
   getBookingRequests,
   updateBookingRequestStatus,
 } from "../api/bookingRequestApi";
-import type { Booking } from "../type";
+import type { Booking, BookingSlotTypeCode } from "../type";
 
-type SortKey = "Old_slot" | "New_slot" | "Out_slot";
+type SlotTypeFilter = "ALL" | BookingSlotTypeCode;
 
 // Helper function to get building from room ID
 const getBuildingFromRoom = (roomId: number): string => {
@@ -27,7 +27,8 @@ export default function PendingBookingFeature() {
   const [q, setQ] = useState("");
   const [roomId, setRoomId] = useState<number | "ALL">("ALL");
   const [building, setBuilding] = useState<string>("ALL");
-  const [sort, setSort] = useState<SortKey>("Old_slot");
+  const [slotType, setSlotType] = useState<SlotTypeFilter>("ALL");
+
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<Booking | null>(null);
 
@@ -36,19 +37,28 @@ export default function PendingBookingFeature() {
     setSelected(null);
   };
 
-  const reload = async () => {
+  const reload = useCallback(async () => {
     setLoading(true);
+
     try {
-      const data = await getBookingRequests({ status: "PendingApproval" });
+      const data = await getBookingRequests();
+
+      console.log("booking requests raw =", data);
+      console.log("booking requests data =", data?.data);
+      console.log("booking requests is array =", Array.isArray(data?.data));
+
       setItems(Array.isArray(data?.data) ? data.data : []);
+    } catch (error) {
+      console.error("reload booking requests failed =", error);
+      setItems([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    reload();
-  }, []);
+    void reload();
+  }, [reload]);
 
   const roomOptions = useMemo(() => {
     const set = new Set<number>();
@@ -56,66 +66,34 @@ export default function PendingBookingFeature() {
     return Array.from(set).sort((a, b) => a - b);
   }, [items]);
 
-  // NEW: Calculate building options from rooms
   const buildingOptions = useMemo(() => {
     const buildings = new Set<string>();
-    roomOptions.forEach((room) => {
-      const buildingName = getBuildingFromRoom(room);
-      if (buildingName !== "Other") {
-        buildings.add(buildingName);
+
+    (items ?? []).forEach((b) => {
+      if (b.BuildingName?.trim()) {
+        buildings.add(b.BuildingName);
+        return;
+      }
+
+      const fallback = getBuildingFromRoom(b.LabRoomId);
+      if (fallback !== "Other") {
+        buildings.add(fallback);
       }
     });
+
     return Array.from(buildings).sort();
-  }, [roomOptions]);
+  }, [items]);
 
   const rows = useMemo(() => {
-    const normalizedQ = q.trim().toLowerCase();
-    let arr = [...items];
-
-    // Building filter
-    if (building !== "ALL") {
-      arr = arr.filter((b) => {
-        const itemBuilding = getBuildingFromRoom(b.LabRoomId);
-        return itemBuilding === building;
-      });
-    }
-
-    // Room filter
-    if (roomId !== "ALL") {
-      arr = arr.filter((b) => b.LabRoomId === roomId);
-    }
-
-    // Search filter
-    if (normalizedQ) {
-      arr = arr.filter((b) => {
-        const hay = [
-          b.Id,
-          String(b.LabRoomId),
-          b.BookedByUserId,
-          b.Reason,
-          b.PurposeTypeName,
-        ]
-          .join(" ")
-          .toLowerCase();
-        return hay.includes(normalizedQ);
-      });
-    }
-
-    // Sort
-    if (sort === "Old_slot") {
-      arr.sort((a, b) => (b.CreatedAt ?? "").localeCompare(a.CreatedAt ?? ""));
-    } else if (sort === "New_slot") {
-      arr.sort((a, b) => a.StartTime.localeCompare(b.StartTime));
-    } else {
-      arr.sort((a, b) => a.LabRoomId - b.LabRoomId);
-    }
-
-    return arr;
-  }, [items, q, building, roomId, sort]);
+    return [...items].sort((a, b) =>
+      (b.CreatedAt ?? "").localeCompare(a.CreatedAt ?? ""),
+    );
+  }, [items]);
 
   const approve = async (id: string) => {
     const ok = window.confirm("Approve this booking?");
     if (!ok) return;
+
     await updateBookingRequestStatus(id, { status: "APPROVED" });
     setItems((prev) => prev.filter((x) => x.Id !== id));
     closeModal();
@@ -124,6 +102,7 @@ export default function PendingBookingFeature() {
   const reject = async (id: string) => {
     const ok = window.confirm("Reject this booking?");
     if (!ok) return;
+
     await updateBookingRequestStatus(id, { status: "REJECTED" });
     setItems((prev) => prev.filter((x) => x.Id !== id));
     closeModal();
@@ -131,7 +110,6 @@ export default function PendingBookingFeature() {
 
   return (
     <div className="space-y-6">
-      {/* Header Card */}
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800/50">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex-1">
@@ -203,7 +181,6 @@ export default function PendingBookingFeature() {
           </div>
         </div>
 
-        {/* Quick Stats */}
         <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
           <QuickStat
             label="Total Items"
@@ -288,7 +265,6 @@ export default function PendingBookingFeature() {
         </div>
       </div>
 
-      {/* Filters Card */}
       <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800/50">
         <div className="mb-4 flex items-center gap-2">
           <svg
@@ -308,21 +284,21 @@ export default function PendingBookingFeature() {
             Filters & Search
           </h3>
         </div>
-        <BookingFilters<SortKey>
+
+        <BookingFilters
           q={q}
           onQ={setQ}
           roomId={roomId}
           onRoomId={setRoomId}
           building={building}
           onBuilding={setBuilding}
-          sort={sort}
-          onSort={setSort}
+          slotType={slotType}
+          onSlotType={setSlotType}
           roomOptions={roomOptions}
           buildingOptions={buildingOptions}
         />
       </div>
 
-      {/* Table Card */}
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800/50">
         {loading && items.length === 0 ? (
           <LoadingSkeleton />
@@ -373,6 +349,7 @@ export default function PendingBookingFeature() {
                 Booking Requests ({rows.length})
               </h3>
             </div>
+
             <BookingTable
               loading={loading}
               rows={rows}
@@ -388,7 +365,6 @@ export default function PendingBookingFeature() {
         )}
       </div>
 
-      {/* Help Card */}
       <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
         <div className="flex items-start gap-3">
           <svg
@@ -411,8 +387,8 @@ export default function PendingBookingFeature() {
             <ul className="mt-2 space-y-1 text-sm text-blue-800 dark:text-blue-300">
               <li>• Click on any row to view detailed information</li>
               <li>
-                • Use filters to narrow down results by building, room or sort
-                order
+                • Use filters to narrow down results by building, room or slot
+                type
               </li>
               <li>• Approve or reject requests directly from the table</li>
             </ul>
@@ -431,7 +407,6 @@ export default function PendingBookingFeature() {
   );
 }
 
-// Helper Components
 function QuickStat({
   label,
   value,

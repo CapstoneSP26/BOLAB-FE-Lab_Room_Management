@@ -1,4 +1,4 @@
-import type { ReportImage } from "../type";
+import type { ReportImage } from "../types/report.type";
 
 export default function ReportImages({ images }: { images: ReportImage[] }) {
   if (images.length === 0) {

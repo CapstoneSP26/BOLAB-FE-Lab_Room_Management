@@ -6,7 +6,7 @@ export type BookingStatus =
   | "REJECTED";
 
 export type UpdatableBookingStatus = "APPROVED" | "REJECTED";
-
+export type BookingSlotTypeCode = "OLD_SLOT" | "NEW_SLOT" | "OUT_SLOT";
 export interface Booking {
   Id: string;
   LabRoomId: number;
@@ -21,6 +21,10 @@ export interface Booking {
 
   BookingStatus: BookingStatus;
   BookingType?: string | null;
+
+  SlotTypeId?: number;
+  SlotTypeCode?: BookingSlotTypeCode;
+  SlotTypeName?: string;
 
   CreatedAt: string;
   UpdatedAt: string;
@@ -37,8 +41,22 @@ export interface GetBookingRequestsRequest {
   startDate?: string;
   endDate?: string;
   labRoomId?: number;
+  buildingName?: string;
+  keyword?: string;
+  slotTypeId?: number;
+  slotTypeCode?: BookingSlotTypeCode;
 }
-
+// export interface GetBookingHistoryRequest {
+//   page?: number;
+//   limit?: number;
+//   startDate?: string;
+//   endDate?: string;
+//   labRoomId?: number;
+//   buildingName?: string;
+//   keyword?: string;
+//   slotTypeId?: number;
+//   slotTypeCode?: BookingSlotTypeCode;
+// }
 export interface GetBookingHistoryRequest {
   page?: number;
   limit?: number;

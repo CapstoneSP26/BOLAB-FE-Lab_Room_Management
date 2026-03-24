@@ -56,31 +56,6 @@ function UserCircleIcon() {
   );
 }
 
-function SettingsIcon() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <path
-        d="M12 15.5a3.5 3.5 0 1 0-3.5-3.5 3.5 3.5 0 0 0 3.5 3.5Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <path
-        d="M19.4 15a7.9 7.9 0 0 0 .1-2l2-1.2-2-3.4-2.3.6a7.7 7.7 0 0 0-1.7-1L15 5H9L8.5 7.9a7.7 7.7 0 0 0-1.7 1L4.5 8.3l-2 3.4 2 1.2a7.9 7.9 0 0 0 .1 2l-2 1.2 2 3.4 2.3-.6a7.7 7.7 0 0 0 1.7 1L9 22h6l.5-2.9a7.7 7.7 0 0 0 1.7-1l2.3.6 2-3.4-2-1.2Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 function InfoCircleIcon() {
   return (
     <svg
@@ -156,7 +131,6 @@ export default function UserMenu() {
         icon: <UserCircleIcon />,
         text: "Profile",
       },
-      { href: "/profile", icon: <SettingsIcon />, text: "Account settings" },
       { href: "/profile", icon: <InfoCircleIcon />, text: "Support" },
     ],
     [],

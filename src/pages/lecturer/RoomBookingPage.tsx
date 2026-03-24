@@ -1,26 +1,32 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Calendar as CalendarIcon, List, Building2, Loader2, Info } from 'lucide-react';
-import { WeeklyCalendarGrid } from '../../features/calendar/components/WeeklyCalendarGrid';
-import { BookingConfirmPanel } from '../../features/booking/components/BookingConfirmPanel';
-import { AvailableSlotList } from '../../features/booking/components/AvailableSlotList';
-import { BookingConfirmationModal } from '../../features/booking/components/BookingConfirmationModal';
+import React, { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import {
+  Calendar as CalendarIcon,
+  List,
+  Building2,
+  Loader2,
+  Info,
+} from "lucide-react";
+import { WeeklyCalendarGrid } from "../../features/calendar/components/WeeklyCalendarGrid";
+import { BookingConfirmPanel } from "../../features/booking/components/BookingConfirmPanel";
+import { AvailableSlotList } from "../../features/booking/components/AvailableSlotList";
+import { BookingConfirmationModal } from "../../features/booking/components/BookingConfirmationModal";
 import {
   useLabRooms,
   useStudentGroups,
   useAvailableSlots,
   useCreateBooking,
-} from '../../features/booking/hooks/useRoomBooking';
+} from "../../features/booking/hooks/useRoomBooking";
 import {
   MOCK_BOOKING_BUILDINGS,
   MOCK_BOOKING_ROOMS,
   MOCK_STUDENT_GROUPS,
   getMockSlotsByRoomAndRange,
-} from '../../features/booking/mocks/roomBookingMockData';
-import { useToast } from '../../hooks/useToast';
-import type { BookingSummary } from '../../features/booking/types/booking.type';
+} from "../../features/booking/mocks/roomBookingMockData";
+import { useToast } from "../../hooks/useToast";
+import type { BookingSummary } from "../../features/booking/types/booking.type";
 
-type BookingView = 'calendar' | 'list';
+type BookingView = "calendar" | "list";
 
 interface PendingBooking {
   date: string;
@@ -36,21 +42,27 @@ interface PendingBooking {
 const RoomBookingPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const roomIdParam = searchParams.get('roomId');
+  const roomIdParam = searchParams.get("roomId");
   const appAlert = useToast();
-  const [activeView, setActiveView] = useState<BookingView>('calendar');
-  const [selectedBuilding, setSelectedBuilding] = useState<string>('');
-  const [selectedRoomId, setSelectedRoomId] = useState<string>('');
+  const [activeView, setActiveView] = useState<BookingView>("calendar");
+  const [selectedBuilding, setSelectedBuilding] = useState<string>("");
+  const [selectedRoomId, setSelectedRoomId] = useState<string>("");
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedSlotIds, setSelectedSlotIds] = useState<string[]>([]);
   const [showConfirmPanel, setShowConfirmPanel] = useState(false);
-  const [pendingBooking, setPendingBooking] = useState<PendingBooking | null>(null);
+  const [pendingBooking, setPendingBooking] = useState<PendingBooking | null>(
+    null,
+  );
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [bookingSummary, setBookingSummary] = useState<BookingSummary | null>(null);
+  const [bookingSummary, setBookingSummary] = useState<BookingSummary | null>(
+    null,
+  );
 
   const dateRange = {
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    startDate: new Date().toISOString().split("T")[0],
+    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0],
   };
 
   // Fetch data
@@ -71,8 +83,11 @@ const RoomBookingPage: React.FC = () => {
       setShowConfirmation(true);
     },
     onError: (error) => {
-      console.error('Booking failed:', error);
-      appAlert.error('Booking failed', 'Failed to submit booking request. Please try again.');
+      console.error("Booking failed:", error);
+      appAlert.error(
+        "Booking failed",
+        "Failed to submit booking request. Please try again.",
+      );
     },
   });
 
@@ -84,7 +99,11 @@ const RoomBookingPage: React.FC = () => {
   const displayRooms = rooms.length > 0 ? rooms : MOCK_BOOKING_ROOMS;
   const displayGroups = groups.length > 0 ? groups : MOCK_STUDENT_GROUPS;
   const mockSlotsForSelectedRoom = selectedRoomId
-    ? getMockSlotsByRoomAndRange(selectedRoomId, dateRange.startDate, dateRange.endDate)
+    ? getMockSlotsByRoomAndRange(
+        selectedRoomId,
+        dateRange.startDate,
+        dateRange.endDate,
+      )
     : [];
   const displaySlots = selectedRoomId
     ? slots.length > 0
@@ -92,7 +111,8 @@ const RoomBookingPage: React.FC = () => {
       : mockSlotsForSelectedRoom
     : [];
 
-  const selectedRoom = displayRooms.find(r => r.id === selectedRoomId) ?? null;
+  const selectedRoom =
+    displayRooms.find((r) => r.id === selectedRoomId) ?? null;
 
   useEffect(() => {
     if (!roomIdParam) {
@@ -106,7 +126,9 @@ const RoomBookingPage: React.FC = () => {
 
     setSelectedRoomId(matchedRoom.id);
 
-    const matchedBuilding = MOCK_BOOKING_BUILDINGS.find((building) => building.name === matchedRoom.building);
+    const matchedBuilding = MOCK_BOOKING_BUILDINGS.find(
+      (building) => building.name === matchedRoom.building,
+    );
     if (matchedBuilding) {
       setSelectedBuilding(matchedBuilding.id);
     }
@@ -116,14 +138,16 @@ const RoomBookingPage: React.FC = () => {
   const availableBuildings = MOCK_BOOKING_BUILDINGS;
 
   // Filter rooms based on selected building (using building name for now)
-  const selectedBuildingName = MOCK_BOOKING_BUILDINGS.find(b => b.id === selectedBuilding)?.name;
-  const availableRooms = displayRooms.filter(r =>
-    selectedBuildingName ? r.building === selectedBuildingName : true
+  const selectedBuildingName = MOCK_BOOKING_BUILDINGS.find(
+    (b) => b.id === selectedBuilding,
+  )?.name;
+  const availableRooms = displayRooms.filter((r) =>
+    selectedBuildingName ? r.building === selectedBuildingName : true,
   );
 
   const handleBuildingChange = (buildingId: string) => {
     setSelectedBuilding(buildingId);
-    setSelectedRoomId('');
+    setSelectedRoomId("");
   };
 
   // Handle drag-and-drop booking from calendar
@@ -151,11 +175,15 @@ const RoomBookingPage: React.FC = () => {
         startTime: pendingBooking.startTime,
         endTime: pendingBooking.endTime,
         repeatWeekly: data.repeatWeekly,
-        weeklyUntil: data.repeatWeekly && data.repeatWeeksCount
-          ? new Date(new Date(pendingBooking.date).getTime() + data.repeatWeeksCount * 7 * 24 * 60 * 60 * 1000)
-            .toISOString()
-            .split('T')[0]
-          : undefined,
+        weeklyUntil:
+          data.repeatWeekly && data.repeatWeeksCount
+            ? new Date(
+                new Date(pendingBooking.date).getTime() +
+                  data.repeatWeeksCount * 7 * 24 * 60 * 60 * 1000,
+              )
+                .toISOString()
+                .split("T")[0]
+            : undefined,
         groupId: data.groupId,
       },
     });
@@ -165,7 +193,7 @@ const RoomBookingPage: React.FC = () => {
   const handleBookSelectedSlots = () => {
     if (selectedSlotIds.length === 0) return;
 
-    const firstSlot = displaySlots.find(s => s.id === selectedSlotIds[0]);
+    const firstSlot = displaySlots.find((s) => s.id === selectedSlotIds[0]);
     if (!firstSlot) return;
 
     setPendingBooking({
@@ -185,7 +213,7 @@ const RoomBookingPage: React.FC = () => {
 
   const handleViewMyBookings = () => {
     handleCloseConfirmation();
-    navigate('/my-bookings'); // TODO: Create this route
+    navigate("/my-bookings"); // TODO: Create this route
   };
 
   const handleCreateAnother = () => {
@@ -213,7 +241,9 @@ const RoomBookingPage: React.FC = () => {
             {/* Building Selection */}
             <div>
               <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide flex items-center gap-2">
-                <span className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 text-xs font-bold">1</span>
+                <span className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 text-xs font-bold">
+                  1
+                </span>
                 Select Building
               </label>
               <div className="relative">
@@ -222,11 +252,22 @@ const RoomBookingPage: React.FC = () => {
                   value={selectedBuilding}
                   onChange={(e) => handleBuildingChange(e.target.value)}
                   className="block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-orange-400 focus:ring-2 focus:ring-orange-100 text-sm py-3 pl-11 pr-4 bg-white hover:border-orange-300 transition-all appearance-none cursor-pointer font-medium"
-                  style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em' }}
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' strokeLinecap='round' strokeLinejoin='round' strokeWidth='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                    backgroundPosition: "right 0.5rem center",
+                    backgroundRepeat: "no-repeat",
+                    backgroundSize: "1.5em 1.5em",
+                  }}
                 >
-                  <option value="" className="text-gray-500">Choose a building...</option>
-                  {availableBuildings.map(building => (
-                    <option key={building.id} value={building.id} className="font-medium">
+                  <option value="" className="text-gray-500">
+                    Choose a building...
+                  </option>
+                  {availableBuildings.map((building) => (
+                    <option
+                      key={building.id}
+                      value={building.id}
+                      className="font-medium"
+                    >
                       {building.name}
                     </option>
                   ))}
@@ -237,7 +278,9 @@ const RoomBookingPage: React.FC = () => {
             {/* Lab Room Selection */}
             <div>
               <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide flex items-center gap-2">
-                <span className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 text-xs font-bold">2</span>
+                <span className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 text-xs font-bold">
+                  2
+                </span>
                 Select Lab Room
               </label>
 
@@ -254,11 +297,22 @@ const RoomBookingPage: React.FC = () => {
                     onChange={(e) => setSelectedRoomId(e.target.value)}
                     disabled={!selectedBuilding}
                     className="block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-orange-400 focus:ring-2 focus:ring-orange-100 text-sm py-3 pl-11 pr-4 bg-white hover:border-orange-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:hover:border-gray-300 transition-all appearance-none cursor-pointer font-medium"
-                    style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em' }}
+                    style={{
+                      backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' strokeLinecap='round' strokeLinejoin='round' strokeWidth='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                      backgroundPosition: "right 0.5rem center",
+                      backgroundRepeat: "no-repeat",
+                      backgroundSize: "1.5em 1.5em",
+                    }}
                   >
-                    <option value="" className="text-gray-500">Choose a lab room...</option>
-                    {availableRooms.map(room => (
-                      <option key={room.id} value={room.id} className="font-medium">
+                    <option value="" className="text-gray-500">
+                      Choose a lab room...
+                    </option>
+                    {availableRooms.map((room) => (
+                      <option
+                        key={room.id}
+                        value={room.id}
+                        className="font-medium"
+                      >
                         {room.name}
                       </option>
                     ))}
@@ -271,29 +325,41 @@ const RoomBookingPage: React.FC = () => {
               <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
                 <div className="flex items-center gap-2 mb-3">
                   <Building2 className="w-5 h-5 text-orange-600" />
-                  <h3 className="font-bold text-gray-900 text-sm">{selectedRoom.name}</h3>
+                  <h3 className="font-bold text-gray-900 text-sm">
+                    {selectedRoom.name}
+                  </h3>
                 </div>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center justify-between">
                     <span className="text-gray-600">Building:</span>
-                    <span className="text-gray-900 font-medium">{selectedRoom.building}</span>
+                    <span className="text-gray-900 font-medium">
+                      {selectedRoom.building}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-gray-600">Capacity:</span>
-                    <span className="text-orange-600 font-semibold">{selectedRoom.capacity} students</span>
+                    <span className="text-orange-600 font-semibold">
+                      {selectedRoom.capacity} students
+                    </span>
                   </div>
-                  {selectedRoom.features && selectedRoom.features.length > 0 && (
-                    <div className="pt-2 border-t border-orange-200">
-                      <span className="text-gray-600 block mb-1.5 text-xs">Features:</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {selectedRoom.features.map((feature, idx) => (
-                          <span key={idx} className="px-2 py-0.5 bg-white text-gray-700 rounded text-xs border border-gray-200">
-                            {feature}
-                          </span>
-                        ))}
+                  {selectedRoom.features &&
+                    selectedRoom.features.length > 0 && (
+                      <div className="pt-2 border-t border-orange-200">
+                        <span className="text-gray-600 block mb-1.5 text-xs">
+                          Features:
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {selectedRoom.features.map((feature, idx) => (
+                            <span
+                              key={idx}
+                              className="px-2 py-0.5 bg-white text-gray-700 rounded text-xs border border-gray-200"
+                            >
+                              {feature}
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </div>
               </div>
             )}
@@ -301,24 +367,28 @@ const RoomBookingPage: React.FC = () => {
 
           {/* View Toggle */}
           <div className="px-6 py-4 border-b border-gray-200">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">View Mode</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              View Mode
+            </label>
             <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
               <button
-                onClick={() => setActiveView('calendar')}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all text-sm font-medium ${activeView === 'calendar'
-                  ? 'bg-white text-orange-600 shadow-sm border border-orange-200'
-                  : 'text-gray-600 hover:text-gray-900'
-                  }`}
+                onClick={() => setActiveView("calendar")}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all text-sm font-medium ${
+                  activeView === "calendar"
+                    ? "bg-white text-orange-600 shadow-sm border border-orange-200"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
               >
                 <CalendarIcon className="w-4 h-4" />
                 <span>Calendar</span>
               </button>
               <button
-                onClick={() => setActiveView('list')}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all text-sm font-medium ${activeView === 'list'
-                  ? 'bg-white text-orange-600 shadow-sm border border-orange-200'
-                  : 'text-gray-600 hover:text-gray-900'
-                  }`}
+                onClick={() => setActiveView("list")}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all text-sm font-medium ${
+                  activeView === "list"
+                    ? "bg-white text-orange-600 shadow-sm border border-orange-200"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
               >
                 <List className="w-4 h-4" />
                 <span>List</span>
@@ -330,15 +400,15 @@ const RoomBookingPage: React.FC = () => {
             <button
               onClick={() => {
                 setBookingSummary({
-                  id: 'TEST-123',
-                  roomName: 'Lab A-101',
-                  building: 'Alpha Building',
-                  date: new Date().toISOString().split('T')[0],
-                  startTime: '09:00',
-                  endTime: '11:30',
+                  id: "TEST-123",
+                  roomName: "Lab A-101",
+                  building: "Alpha Building",
+                  date: new Date().toISOString().split("T")[0],
+                  startTime: "09:00",
+                  endTime: "11:30",
                   repeatWeekly: false,
-                  groupName: 'SE1846',
-                  status: 'Pending',
+                  groupName: "SE1846",
+                  status: "Pending",
                   createdAt: new Date().toISOString(),
                 });
                 setShowConfirmation(true);
@@ -369,11 +439,15 @@ const RoomBookingPage: React.FC = () => {
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
                 <Building2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">Select a Lab Room</h2>
-                <p className="text-gray-600">Choose a lab room from the sidebar to view availability</p>
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                  Select a Lab Room
+                </h2>
+                <p className="text-gray-600">
+                  Choose a lab room from the sidebar to view availability
+                </p>
               </div>
             </div>
-          ) : activeView === 'calendar' ? (
+          ) : activeView === "calendar" ? (
             <WeeklyCalendarGrid
               selectedRoomId={selectedRoomId}
               existingBookings={displaySlots}
@@ -388,10 +462,10 @@ const RoomBookingPage: React.FC = () => {
                   slots={displaySlots}
                   selectedSlotIds={selectedSlotIds}
                   onSelectSlot={(slotId) => {
-                    setSelectedSlotIds(prev =>
+                    setSelectedSlotIds((prev) =>
                       prev.includes(slotId)
-                        ? prev.filter(id => id !== slotId)
-                        : [...prev, slotId]
+                        ? prev.filter((id) => id !== slotId)
+                        : [...prev, slotId],
                     );
                   }}
                   onBookSelected={handleBookSelectedSlots}
@@ -415,7 +489,7 @@ const RoomBookingPage: React.FC = () => {
           selectedDate={pendingBooking.date}
           startTime={pendingBooking.startTime}
           endTime={pendingBooking.endTime}
-          roomName={selectedRoom?.name || ''}
+          roomName={selectedRoom?.name || ""}
           studentGroups={displayGroups}
           onConfirm={handleConfirmBooking}
           loading={createBookingMutation.isPending}

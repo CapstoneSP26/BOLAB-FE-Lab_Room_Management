@@ -4,7 +4,7 @@ import type { GetSchedulesParams, ScheduleDto } from "../types/schedule.type";
 
 export const scheduleApi = {
   getSchedules: (params: GetSchedulesParams) =>
-    axiosInstance.get<PagedResponse<ScheduleDto>>('/schedules', {
+    axiosInstance.get<PagedResponse<ScheduleDto>>("/schedules", {
       params,
     }),
 };

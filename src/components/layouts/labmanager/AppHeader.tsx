@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useSidebar } from "./sidebarContext";
 
 import ThemeToggler from "../../common/ThemeToggler";
-import SearchBar from "./header/Searchbar";
 import HeaderLogo from "../HeaderLogo";
 import NotificationMenu from "./header/NotificationMenu";
 import UserMenu from "./header/UserMenu";
@@ -89,8 +88,6 @@ export default function AppHeader() {
               />
             </svg>
           </button>
-
-          <SearchBar />
         </div>
 
         <div

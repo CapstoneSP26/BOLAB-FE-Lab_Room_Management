@@ -10,7 +10,7 @@ function ManagerLayoutBody({ children }: { children: ReactNode }) {
   const leftClass = isExpanded || isHovered ? "lg:ml-[290px]" : "lg:ml-[90px]";
 
   return (
-    <div className="min-h-screen xl:flex bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-white/90">
+    <div className="min-h-screen xl:flex bg-gray-100 text-gray-900 dark:bg-gray-950 dark:text-white/90">
       <AppSidebar />
       <Backdrop />
 
@@ -19,16 +19,16 @@ function ManagerLayoutBody({ children }: { children: ReactNode }) {
       >
         <AppHeader />
 
-        <div className="p-4 mx-auto max-w-7xl md:p-6">{children}</div>
+        <div className="mx-auto max-w-7xl p-4 md:p-6">{children}</div>
 
-        <footer className="p-4 mx-auto max-w-7xl md:p-6 pt-0">
-          <p className="text-sm text-center text-gray-500 dark:text-gray-400">
+        <footer className="mx-auto max-w-7xl p-4 pt-0 md:p-6">
+          <p className="text-center text-sm text-gray-600 dark:text-gray-500">
             © Powered by{" "}
             <a
               href="https://fpt.edu.vn/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-brand-500 hover:text-brand-600 transition-colors duration-200 font-medium"
+              className="font-medium text-brand-500 transition-colors duration-200 hover:text-brand-600"
             >
               FPT University
             </a>{" "}
