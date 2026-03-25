@@ -11,7 +11,7 @@ import {
   saveAccessToken,
 } from "../utils/storage";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string | undefined;
 console.log("VITE_API_BASE_URL =", API_BASE_URL);
 
 const axiosInstance: AxiosInstance = axios.create({
@@ -26,8 +26,8 @@ const axiosInstance: AxiosInstance = axios.create({
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
   headers: {
-    "Content-Type": "application/json"
-  }
+    "Content-Type": "application/json",
+  },
 });
 
 axiosInstance.interceptors.request.use(
@@ -124,4 +124,9 @@ axiosInstance.interceptors.response.use(
 );
 
 export default axiosInstance;
-export { clearAuth, getAccessToken, getRefreshToken, saveAccessToken } from '../utils/storage';
+export {
+  clearAuth,
+  getAccessToken,
+  getRefreshToken,
+  saveAccessToken,
+} from "../utils/storage";

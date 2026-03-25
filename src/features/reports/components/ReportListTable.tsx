@@ -1,4 +1,4 @@
-import type { Report } from "../types/type";
+import type { Report } from "../types/report.type";
 
 function badge(status: boolean) {
   return status
@@ -88,7 +88,7 @@ export default function ReportListTable({
                     <span
                       className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${badge(r.IsResolved)}`}
                     >
-                      {r.IsResolved ? "RESOLVED" : "PENDING"}
+                      {r.IsResolved ? "Resolved" : "PendingApproval"}
                     </span>
                   </td>
 

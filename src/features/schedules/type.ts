@@ -1,4 +1,5 @@
 // ===== DOMAIN =====
+
 export type BookingStatus =
   | "Draft"
   | "PendingApproval"
@@ -6,7 +7,7 @@ export type BookingStatus =
   | "REJECTED";
 
 export type UpdatableBookingStatus = "APPROVED" | "REJECTED";
-
+export type BookingSlotTypeCode = "OLD_SLOT" | "NEW_SLOT" | "OUT_SLOT";
 export interface Booking {
   Id: string;
   LabRoomId: number;
@@ -22,6 +23,10 @@ export interface Booking {
   BookingStatus: BookingStatus;
   BookingType?: string | null;
 
+  SlotTypeId?: number;
+  SlotTypeCode?: BookingSlotTypeCode;
+  SlotTypeName?: string;
+
   CreatedAt: string;
   UpdatedAt: string;
   CreatedBy: string;
@@ -30,6 +35,16 @@ export interface Booking {
 }
 
 // ===== API REQUEST =====
+export type BuildingOption = {
+  id: number | string;
+  name: string;
+};
+
+export type RoomOption = {
+  id: number;
+  name: string;
+  buildingName?: string;
+};
 export interface GetBookingRequestsRequest {
   status?: BookingStatus;
   page?: number;
@@ -37,8 +52,22 @@ export interface GetBookingRequestsRequest {
   startDate?: string;
   endDate?: string;
   labRoomId?: number;
+  buildingName?: string;
+  keyword?: string;
+  slotTypeId?: number;
+  slotTypeCode?: BookingSlotTypeCode;
 }
-
+// export interface GetBookingHistoryRequest {
+//   page?: number;
+//   limit?: number;
+//   startDate?: string;
+//   endDate?: string;
+//   labRoomId?: number;
+//   buildingName?: string;
+//   keyword?: string;
+//   slotTypeId?: number;
+//   slotTypeCode?: BookingSlotTypeCode;
+// }
 export interface GetBookingHistoryRequest {
   page?: number;
   limit?: number;

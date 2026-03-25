@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import PageBreadcrumb from "../../components/common/PageBreadcrumb";
-import ProfileCard from "../../components/layouts/labmanager/profile/ProfileCard";
+import ProfileCard from "../../features/profile/ProfileCard";
 import {
   profileService,
   type Profile,

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Report, ReportType } from "../types/type";
+import type { Report, ReportType } from "../types/report.type";
 import { reportApi } from "../api/reportApi";
 import ReportListFilters from "./ReportListFilters";
 import ReportListTable from "./ReportListTable";
@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function ReportListFeature() {
   const nav = useNavigate();
-
+  const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<Report[]>([]);
 
@@ -179,7 +179,7 @@ export default function ReportListFeature() {
             color="emerald"
           />
           <StatCard
-            label="Pending"
+            label="PendingApproval"
             value={stats.unresolved}
             icon={
               <svg
@@ -266,10 +266,13 @@ export default function ReportListFeature() {
           </div>
         )}
       </div>
-
       {/* Filters Card */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800/50">
-        <div className="mb-4 flex items-center justify-between">
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800/50">
+        <button
+          type="button"
+          onClick={() => setShowFilters((prev) => !prev)}
+          className="flex w-full items-center justify-between px-6 py-4 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
+        >
           <div className="flex items-center gap-2">
             <svg
               className="h-5 w-5 text-gray-600 dark:text-gray-400"
@@ -284,45 +287,85 @@ export default function ReportListFeature() {
                 d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
               />
             </svg>
+
             <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
               Filters & Search
             </h3>
-          </div>
-          {hasActiveFilters && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
-              <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              Filters Active
-            </span>
-          )}
-        </div>
-        <ReportListFilters
-          reportType={reportType}
-          onReportType={setReportType}
-          resolved={resolved}
-          onResolved={setResolved}
-          q={q}
-          onQ={setQ}
-          from={from}
-          to={to}
-          onFrom={setFrom}
-          onTo={setTo}
-          onReset={() => {
-            setReportType("ALL");
-            setResolved("ALL");
-            setQ("");
-            setFrom("");
-            setTo("");
-          }}
-          onGenerate={load}
-        />
-      </div>
 
+            {hasActiveFilters && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
+                <svg
+                  className="h-3 w-3"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                Filters Active
+              </span>
+            )}
+          </div>
+
+          <svg
+            className={`h-5 w-5 text-gray-500 transition-transform duration-300 ease-in-out dark:text-gray-400 ${
+              showFilters ? "rotate-180" : "rotate-0"
+            }`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </button>
+
+        <div
+          className={`grid transition-all duration-300 ease-in-out ${
+            showFilters
+              ? "grid-rows-[1fr] opacity-100"
+              : "grid-rows-[0fr] opacity-0"
+          }`}
+        >
+          <div className="overflow-hidden">
+            <div
+              className={`border-t border-gray-200 px-6 pb-6 pt-4 transition-all duration-300 ease-in-out dark:border-gray-700 ${
+                showFilters
+                  ? "translate-y-0 scale-100"
+                  : "-translate-y-2 scale-[0.98]"
+              }`}
+            >
+              <ReportListFilters
+                reportType={reportType}
+                onReportType={setReportType}
+                resolved={resolved}
+                onResolved={setResolved}
+                q={q}
+                onQ={setQ}
+                from={from}
+                to={to}
+                onFrom={setFrom}
+                onTo={setTo}
+                onReset={() => {
+                  setReportType("ALL");
+                  setResolved("ALL");
+                  setQ("");
+                  setFrom("");
+                  setTo("");
+                }}
+                onGenerate={load}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
       {/* Table Card */}
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800/50">
         {loading && items.length === 0 ? (
@@ -383,7 +426,6 @@ export default function ReportListFeature() {
           </div>
         )}
       </div>
-
       {/* Help Card */}
       <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
         <div className="flex items-start gap-3">

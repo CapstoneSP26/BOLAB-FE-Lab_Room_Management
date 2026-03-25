@@ -1,4 +1,8 @@
-type Props<TSort extends string> = {
+import type { BuildingOption, RoomOption } from "../../types/schedule.type";
+
+type SlotTypeFilter = "ALL" | "OLD_SLOT" | "NEW_SLOT" | "OUT_SLOT";
+
+type Props = {
   q: string;
   onQ: (v: string) => void;
 
@@ -8,28 +12,27 @@ type Props<TSort extends string> = {
   building: string;
   onBuilding: (v: string) => void;
 
-  sort: TSort;
-  onSort: (v: TSort) => void;
+  slotType: SlotTypeFilter;
+  onSlotType: (v: SlotTypeFilter) => void;
 
-  roomOptions: number[];
-  buildingOptions: string[];
+  roomOptions: RoomOption[];
+  buildingOptions: BuildingOption[];
 };
 
-export default function BookingFilters<TSort extends string>({
+export default function BookingFilters({
   q,
   onQ,
   roomId,
   onRoomId,
   building,
   onBuilding,
-  sort,
-  onSort,
+  slotType,
+  onSlotType,
   roomOptions,
   buildingOptions,
-}: Props<TSort>) {
+}: Props) {
   return (
     <div className="mb-4 space-y-3">
-      {/* Search Bar - Full Width */}
       <div className="relative">
         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
           <svg
@@ -54,9 +57,7 @@ export default function BookingFilters<TSort extends string>({
         />
       </div>
 
-      {/* Filter Row */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {/* Building Filter */}
         <div className="relative">
           <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-600 dark:text-gray-400">
             <svg
@@ -81,14 +82,13 @@ export default function BookingFilters<TSort extends string>({
           >
             <option value="ALL">All buildings</option>
             {buildingOptions.map((b) => (
-              <option key={b} value={b}>
-                {b}
+              <option key={String(b.id)} value={b.name}>
+                {b.name}
               </option>
             ))}
           </select>
         </div>
 
-        {/* Room Filter */}
         <div className="relative">
           <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-600 dark:text-gray-400">
             <svg
@@ -117,14 +117,13 @@ export default function BookingFilters<TSort extends string>({
           >
             <option value="ALL">All rooms</option>
             {roomOptions.map((r) => (
-              <option key={r} value={String(r)}>
-                Room {r}
+              <option key={r.id} value={String(r.id)}>
+                {r.name}
               </option>
             ))}
           </select>
         </div>
 
-        {/* Slot Type Filter */}
         <div className="relative">
           <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-600 dark:text-gray-400">
             <svg
@@ -143,17 +142,14 @@ export default function BookingFilters<TSort extends string>({
             Slot Type
           </label>
           <select
-            value={sort}
-            onChange={(e) => onSort(e.target.value as TSort)}
+            value={slotType}
+            onChange={(e) => onSlotType(e.target.value as SlotTypeFilter)}
             className="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/10 dark:border-gray-600 dark:bg-gray-800 dark:text-white/90 dark:focus:border-brand-800"
           >
-            {(["Old_slot", "New_slot", "Out_slot"] as unknown as TSort[]).map(
-              (k) => (
-                <option key={k} value={k}>
-                  {String(k).replace("_", " ")}
-                </option>
-              ),
-            )}
+            <option value="ALL">All</option>
+            <option value="OLD_SLOT">Old slot</option>
+            <option value="NEW_SLOT">New slot</option>
+            <option value="OUT_SLOT">Out slot</option>
           </select>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import type { ReportType } from "../type";
+import type { ReportType } from "../types/report.type";
 
 type ResolvedFilter = "ALL" | "RESOLVED" | "UNRESOLVED";
 type ReportTypeFilter = ReportType | "ALL";
@@ -83,7 +83,7 @@ export default function ReportListFilters({
             }}
           >
             <option value="ALL">All</option>
-            <option value="UNRESOLVED">Pending</option>
+            <option value="UNRESOLVED">Pending Approval</option>
             <option value="RESOLVED">Resolved</option>
           </select>
         </div>
