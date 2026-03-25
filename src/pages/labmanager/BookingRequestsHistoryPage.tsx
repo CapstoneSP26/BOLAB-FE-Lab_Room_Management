@@ -1,5 +1,5 @@
 import PageBreadcrumb from "../../components/common/PageBreadcrumb";
-import HistoryBookingFeature from "../../features/schedules/booking-requests/HistoryBookingFeature";
+import HistoryBookingFeature from "../../features/schedules/booking-requests/components/HistoryBookingFeature";
 
 export default function BookingRequestsHistoryPage() {
   return (

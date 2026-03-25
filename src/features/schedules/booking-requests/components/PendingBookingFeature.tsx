@@ -1,21 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import BookingRequestReviewModal from "../booking-requests/components/BookingRequestReviewModal";
-import BookingFilters from "../booking-requests/components/BookingRequestFilter";
-import BookingTable from "./components/BookingRequestTable";
+import BookingRequestReviewModal from "./BookingRequestReviewModal";
+import BookingFilters from "./BookingRequestFilter";
+import BookingTable from "./BookingRequestTable";
 
+import type { Building, Room } from "../../../building/types/building.type";
 import {
   getBookingRequests,
   getBuildingOptions,
   getRoomOptions,
   updateBookingRequestStatus,
-} from "../api/bookingRequestApi";
-import type {
-  Booking,
-  BookingSlotTypeCode,
-  BuildingOption,
-  RoomOption,
-} from "../type";
+} from "../../api/bookingRequestApi";
+import type { Booking, BookingSlotTypeCode } from "../../types/schedule.type";
 
 type SlotTypeFilter = "ALL" | BookingSlotTypeCode;
 
@@ -24,8 +20,8 @@ export default function PendingBookingFeature() {
   const [lookupLoading, setLookupLoading] = useState(true);
 
   const [items, setItems] = useState<Booking[]>([]);
-  const [buildingOptions, setBuildingOptions] = useState<BuildingOption[]>([]);
-  const [roomOptions, setRoomOptions] = useState<RoomOption[]>([]);
+  const [buildingOptions, setBuildingOptions] = useState<Building[]>([]);
+  const [roomOptions, setRoomOptions] = useState<Room[]>([]);
 
   const [q, setQ] = useState("");
   const [roomId, setRoomId] = useState<number | "ALL">("ALL");
@@ -49,16 +45,11 @@ export default function PendingBookingFeature() {
       ]);
 
       setBuildingOptions(
-        buildingsResult.status === "fulfilled" &&
-          Array.isArray(buildingsResult.value)
-          ? buildingsResult.value
-          : [],
+        buildingsResult.status === "fulfilled" ? buildingsResult.value : [],
       );
 
       setRoomOptions(
-        roomsResult.status === "fulfilled" && Array.isArray(roomsResult.value)
-          ? roomsResult.value
-          : [],
+        roomsResult.status === "fulfilled" ? roomsResult.value : [],
       );
     } finally {
       setLookupLoading(false);
@@ -93,7 +84,7 @@ export default function PendingBookingFeature() {
   const filteredRoomOptions = useMemo(() => {
     if (building === "ALL") return roomOptions;
 
-    return roomOptions.filter((room) => room.buildingName === building);
+    return roomOptions.filter((room) => room.building === building);
   }, [roomOptions, building]);
 
   const rows = useMemo(() => {

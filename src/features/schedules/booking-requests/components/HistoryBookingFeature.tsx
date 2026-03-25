@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 
-import BookingRequestReviewModal from "../booking-requests/components/BookingRequestReviewModal";
-import HistoryBookingTable from "./components/HistoryBookingTable";
-import HistoryBookingFilter from "./components/HistoryBookingFilter";
+import BookingRequestReviewModal from "./BookingRequestReviewModal";
+import HistoryBookingTable from "./HistoryBookingTable";
+import HistoryBookingFilter from "./HistoryBookingFilter";
 
-import { getBookingRequestHistory } from "../api/bookingRequestApi";
-import type { Booking } from "../type";
+import { getBookingRequestHistory } from "../../api/bookingRequestApi";
+import type { Booking } from "../../type";
 
 type HistoryStatus = "ALL" | "APPROVED" | "REJECTED";
 const norm = (s: unknown) => String(s ?? "").toUpperCase();
