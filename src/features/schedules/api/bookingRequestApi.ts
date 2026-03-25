@@ -1,7 +1,5 @@
 import axiosInstance from "../../../api/axios";
 import type {
-  BuildingOption,
-  RoomOption,
   GetBookingRequestsRequest,
   GetBookingRequestsResponse,
   GetBookingHistoryRequest,
@@ -11,6 +9,32 @@ import type {
   UpdateBookingStatusRequest,
   UpdateBookingStatusResponse,
 } from "../type";
+import type {
+  Building,
+  Room,
+  BuildingResponse,
+} from "../../building/types/building.type";
+
+type BuildingLookupApiResponse =
+  | BuildingResponse[]
+  | { data?: BuildingResponse[] };
+
+interface LabRoomLookupResponse {
+  id: number | string;
+  name?: string;
+  labRoomName?: string;
+  building?: string;
+  buildingName?: string;
+  capacity?: number;
+  status?: "Available" | "Occupied" | "Maintenance";
+  image?: string;
+  features?: string[];
+  nextAvailable?: string;
+}
+
+type LabRoomLookupApiResponse =
+  | LabRoomLookupResponse[]
+  | { data?: LabRoomLookupResponse[] };
 
 /**
  * ===== DATA ACCESS LAYER =====
@@ -89,17 +113,41 @@ export const updateBookingRequestStatus = async (
 };
 
 /** Lookup: buildings */
-export const getBuildingOptions = async (): Promise<BuildingOption[]> => {
-  const response = await axiosInstance.get<BuildingOption[]>(
+export const getBuildingOptions = async (): Promise<Building[]> => {
+  const response = await axiosInstance.get<BuildingLookupApiResponse>(
     BOOKING_LOOKUP_API.BUILDINGS,
   );
-  return response.data;
+
+  const raw = response.data;
+  const items = Array.isArray(raw) ? raw : (raw.data ?? []);
+
+  return items.map((item) => ({
+    id: String(item.id),
+    name: item.buildingName,
+    description: item.description ?? "",
+    roomCount: 0,
+    image: item.buildingImageUrl ?? "",
+    color: undefined,
+  }));
 };
 
 /** Lookup: rooms */
-export const getRoomOptions = async (): Promise<RoomOption[]> => {
-  const response = await axiosInstance.get<RoomOption[]>(
+export const getRoomOptions = async (): Promise<Room[]> => {
+  const response = await axiosInstance.get<LabRoomLookupApiResponse>(
     BOOKING_LOOKUP_API.LAB_ROOMS,
   );
-  return response.data;
+
+  const raw = response.data;
+  const items = Array.isArray(raw) ? raw : (raw.data ?? []);
+
+  return items.map((item) => ({
+    id: Number(item.id),
+    name: item.name ?? item.labRoomName ?? "",
+    building: item.building ?? item.buildingName ?? "",
+    capacity: item.capacity ?? 0,
+    status: item.status ?? "Available",
+    image: item.image ?? "",
+    features: item.features ?? [],
+    nextAvailable: item.nextAvailable ?? "",
+  }));
 };

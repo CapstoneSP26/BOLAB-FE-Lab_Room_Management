@@ -1,4 +1,4 @@
-import type { BuildingOption, RoomOption } from "../../types/schedule.type";
+import type { Building, Room } from "../../../building/types/building.type";
 
 type SlotTypeFilter = "ALL" | "OLD_SLOT" | "NEW_SLOT" | "OUT_SLOT";
 
@@ -15,8 +15,8 @@ type Props = {
   slotType: SlotTypeFilter;
   onSlotType: (v: SlotTypeFilter) => void;
 
-  roomOptions: RoomOption[];
-  buildingOptions: BuildingOption[];
+  roomOptions: Room[];
+  buildingOptions: Building[];
 };
 
 export default function BookingFilters({
