@@ -1,19 +1,23 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-
+import type { ReactNode } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import BookingRequestReviewModal from "./BookingRequestReviewModal";
 import BookingFilters from "./BookingRequestFilter";
 import BookingTable from "./BookingRequestTable";
 
-import type { Building, Room } from "../../../building/types/building.type";
+import type { Building } from "../../building/types/building.type";
+import type { Room } from "../../room/types/room.type";
+import type { SlotType } from "../../slot/types/slot.types";
 import {
   getBookingRequests,
   getBuildingOptions,
   getRoomOptions,
+  getSlotTypes,
   updateBookingRequestStatus,
-} from "../../api/bookingRequestApi";
-import type { Booking, BookingSlotTypeCode } from "../../types/schedule.type";
+} from "../api/bookingRequestApi";
+import type { Booking, BookingSlotTypeCode } from "../types/schedule.type";
 
-type SlotTypeFilter = "ALL" | BookingSlotTypeCode;
+type SlotTypeFilter = "ALL" | BookingSlotTypeCode | string;
 
 export default function PendingBookingFeature() {
   const [loading, setLoading] = useState(true);
@@ -22,6 +26,7 @@ export default function PendingBookingFeature() {
   const [items, setItems] = useState<Booking[]>([]);
   const [buildingOptions, setBuildingOptions] = useState<Building[]>([]);
   const [roomOptions, setRoomOptions] = useState<Room[]>([]);
+  const [slotOptions, setSlotOptions] = useState<SlotType[]>([]);
 
   const [q, setQ] = useState("");
   const [roomId, setRoomId] = useState<number | "ALL">("ALL");
@@ -31,6 +36,8 @@ export default function PendingBookingFeature() {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<Booking | null>(null);
 
+  const [showFilters, setShowFilters] = useState(false);
+
   const closeModal = () => {
     setOpen(false);
     setSelected(null);
@@ -39,10 +46,12 @@ export default function PendingBookingFeature() {
   const loadLookups = useCallback(async () => {
     setLookupLoading(true);
     try {
-      const [buildingsResult, roomsResult] = await Promise.allSettled([
-        getBuildingOptions(),
-        getRoomOptions(),
-      ]);
+      const [buildingsResult, roomsResult, slotsResult] =
+        await Promise.allSettled([
+          getBuildingOptions(),
+          getRoomOptions(),
+          getSlotTypes(),
+        ]);
 
       setBuildingOptions(
         buildingsResult.status === "fulfilled" ? buildingsResult.value : [],
@@ -50,6 +59,12 @@ export default function PendingBookingFeature() {
 
       setRoomOptions(
         roomsResult.status === "fulfilled" ? roomsResult.value : [],
+      );
+
+      setSlotOptions(
+        slotsResult.status === "fulfilled"
+          ? (slotsResult.value.data ?? [])
+          : [],
       );
     } finally {
       setLookupLoading(false);
@@ -64,7 +79,8 @@ export default function PendingBookingFeature() {
         labRoomId: roomId === "ALL" ? undefined : roomId,
         buildingName: building === "ALL" ? undefined : building,
         keyword: q.trim() || undefined,
-        slotTypeCode: slotType === "ALL" ? undefined : slotType,
+        slotTypeCode:
+          slotType === "ALL" ? undefined : (slotType as BookingSlotTypeCode),
       });
 
       setItems(Array.isArray(data?.data) ? data.data : []);
@@ -87,12 +103,28 @@ export default function PendingBookingFeature() {
     return roomOptions.filter((room) => room.building === building);
   }, [roomOptions, building]);
 
+  useEffect(() => {
+    if (roomId === "ALL") return;
+
+    const stillExists = filteredRoomOptions.some((room) => room.id === roomId);
+    if (!stillExists) {
+      setRoomId("ALL");
+    }
+  }, [filteredRoomOptions, roomId]);
+
   const rows = useMemo(() => {
     return [...items].sort((a, b) =>
       (b.CreatedAt ?? "").localeCompare(a.CreatedAt ?? ""),
     );
   }, [items]);
-
+  const hasActiveFilters = useMemo(() => {
+    return (
+      q.trim() !== "" ||
+      building !== "ALL" ||
+      roomId !== "ALL" ||
+      slotType !== "ALL"
+    );
+  }, [q, building, roomId, slotType]);
   const approve = async (id: string) => {
     const ok = window.confirm("Approve this booking?");
     if (!ok) return;
@@ -268,38 +300,96 @@ export default function PendingBookingFeature() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800/50">
-        <div className="mb-4 flex items-center gap-2">
-          <svg
-            className="h-5 w-5 text-gray-600 dark:text-gray-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
-            />
-          </svg>
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-            Filters & Search
-          </h3>
-        </div>
+      {/* Collapsible Filter Card */}
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800/50">
+        {/* Filter Header - Always Visible */}
+        <div className="border-b border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-700 dark:bg-gray-800">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-gray-600 transition-all hover:bg-gray-100 active:scale-95 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                aria-label={showFilters ? "Hide filters" : "Show filters"}
+              >
+                {showFilters ? (
+                  <ChevronUp className="h-5 w-5" />
+                ) : (
+                  <ChevronDown className="h-5 w-5" />
+                )}
+              </button>
 
-        <BookingFilters
-          q={q}
-          onQ={setQ}
-          roomId={roomId}
-          onRoomId={setRoomId}
-          building={building}
-          onBuilding={setBuilding}
-          slotType={slotType}
-          onSlotType={setSlotType}
-          roomOptions={filteredRoomOptions}
-          buildingOptions={buildingOptions}
-        />
+              <div className="flex items-center gap-2">
+                <svg
+                  className="h-5 w-5 text-gray-600 dark:text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+                  />
+                </svg>
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  Filters & Search
+                </h3>
+              </div>
+
+              {hasActiveFilters && (
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
+                  <svg
+                    className="h-3 w-3"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  Active
+                </span>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowFilters(!showFilters)}
+              className="text-xs font-semibold text-blue-600 transition-colors hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              {showFilters ? "Hide" : "Show"} Filters
+            </button>
+          </div>
+        </div>
+        <div
+          className={`transition-all duration-300 ease-in-out ${
+            showFilters
+              ? "max-h-[1000px] opacity-100"
+              : "max-h-0 opacity-0 overflow-hidden"
+          }`}
+        >
+          <div className="border-t border-gray-200 p-6 dark:border-gray-700">
+            <BookingFilters
+              q={q}
+              onQ={setQ}
+              roomId={roomId}
+              onRoomId={setRoomId}
+              building={building}
+              onBuilding={setBuilding}
+              slotType={slotType}
+              onSlotType={setSlotType}
+              roomOptions={filteredRoomOptions}
+              buildingOptions={buildingOptions}
+              slotOptions={slotOptions}
+            />
+          </div>
+        </div>
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800/50">
@@ -418,7 +508,7 @@ function QuickStat({
 }: {
   label: string;
   value: number | string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   color: "blue" | "purple" | "green" | "gray";
 }) {
   const colorClasses = {
@@ -456,7 +546,7 @@ function EmptyState({
 }: {
   title: string;
   description: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
 }) {
   return (
     <div className="flex flex-col items-center justify-center p-12">

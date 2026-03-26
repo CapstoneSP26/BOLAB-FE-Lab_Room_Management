@@ -1,4 +1,4 @@
-import type { Incident } from "../type";
+import type { Incident } from "../types/report.type";
 
 type Props = {
   open: boolean;

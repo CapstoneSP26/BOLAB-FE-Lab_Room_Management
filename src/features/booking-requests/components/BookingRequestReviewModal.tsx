@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import type { Booking } from "../../type";
+import type { Booking } from "../types/schedule.type";
 
 type Props = {
   open: boolean;

@@ -1,31 +1,51 @@
-type HistoryStatus = "ALL" | "APPROVED" | "REJECTED";
+import type { Building } from "../../building/types/building.type";
+import type { Room } from "../../room/types/room.type";
+import type {
+  BookingStatusLookupItem,
+  HistoryStatus,
+} from "../types/schedule.type";
 
 type Props = {
   q: string;
   onQ: (v: string) => void;
 
+  building: string;
+  onBuilding: (v: string) => void;
+  buildingOptions: Building[];
+
   roomId: number | "ALL";
   onRoomId: (v: number | "ALL") => void;
-  roomOptions: number[];
+  roomOptions: Room[];
 
   status: HistoryStatus;
   onStatus: (v: HistoryStatus) => void;
+  statusOptions: BookingStatusLookupItem[];
 
-  from: string; // YYYY-MM-DD
+  from: string;
   onFrom: (v: string) => void;
 
-  to: string; // YYYY-MM-DD
+  to: string;
   onTo: (v: string) => void;
 };
+function toStatusLabel(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 export default function HistoryBookingFilter({
   q,
   onQ,
+  building,
+  onBuilding,
+  buildingOptions,
   roomId,
   onRoomId,
   roomOptions,
   status,
   onStatus,
+  statusOptions,
   from,
   onFrom,
   to,
@@ -58,22 +78,27 @@ export default function HistoryBookingFilter({
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <div className="relative">
           <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-600 dark:text-gray-400">
-            <svg
-              className="h-3.5 w-3.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-              />
-            </svg>
+            Building
+          </label>
+          <select
+            value={building}
+            onChange={(e) => onBuilding(e.target.value)}
+            className="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/10 dark:border-gray-600 dark:bg-gray-800 dark:text-white/90 dark:focus:border-brand-800"
+          >
+            <option value="ALL">All buildings</option>
+            {buildingOptions.map((b) => (
+              <option key={String(b.id)} value={b.name}>
+                {b.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="relative">
+          <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-600 dark:text-gray-400">
             Room
           </label>
           <select
@@ -87,8 +112,8 @@ export default function HistoryBookingFilter({
           >
             <option value="ALL">All rooms</option>
             {roomOptions.map((r) => (
-              <option key={r} value={String(r)}>
-                Room {r}
+              <option key={r.id} value={String(r.id)}>
+                {r.name}
               </option>
             ))}
           </select>
@@ -96,19 +121,6 @@ export default function HistoryBookingFilter({
 
         <div className="relative">
           <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-600 dark:text-gray-400">
-            <svg
-              className="h-3.5 w-3.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-              />
-            </svg>
             Status
           </label>
           <select
@@ -117,26 +129,16 @@ export default function HistoryBookingFilter({
             className="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/10 dark:border-gray-600 dark:bg-gray-800 dark:text-white/90 dark:focus:border-brand-800"
           >
             <option value="ALL">All status</option>
-            <option value="APPROVED">Approved</option>
-            <option value="REJECTED">Rejected</option>
+            {statusOptions.map((s) => (
+              <option key={s.code} value={s.code}>
+                {toStatusLabel(s.name)}
+              </option>
+            ))}
           </select>
         </div>
 
         <div className="relative">
           <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-600 dark:text-gray-400">
-            <svg
-              className="h-3.5 w-3.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 7V3m8 4V3m-9 8h10m-11 9h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v11a2 2 0 002 2z"
-              />
-            </svg>
             From date
           </label>
           <input
@@ -149,19 +151,6 @@ export default function HistoryBookingFilter({
 
         <div className="relative">
           <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-600 dark:text-gray-400">
-            <svg
-              className="h-3.5 w-3.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 7V3m8 4V3m-9 8h10m-11 9h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v11a2 2 0 002 2z"
-              />
-            </svg>
             To date
           </label>
           <input

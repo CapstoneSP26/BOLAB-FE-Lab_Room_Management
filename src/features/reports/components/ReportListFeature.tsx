@@ -267,102 +267,102 @@ export default function ReportListFeature() {
         )}
       </div>
       {/* Filters Card */}
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800/50">
-        <button
-          type="button"
-          onClick={() => setShowFilters((prev) => !prev)}
-          className="flex w-full items-center justify-between px-6 py-4 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
-        >
-          <div className="flex items-center gap-2">
-            <svg
-              className="h-5 w-5 text-gray-600 dark:text-gray-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
-              />
-            </svg>
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800/50">
+        {/* Filter Header - Always Visible */}
+        <div className="border-b border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-700 dark:bg-gray-800">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-gray-600 transition-all hover:bg-gray-100 active:scale-95 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                aria-label={showFilters ? "Hide filters" : "Show filters"}
+              >
+                {showFilters ? (
+                  <ChevronUp className="h-5 w-5" />
+                ) : (
+                  <ChevronDown className="h-5 w-5" />
+                )}
+              </button>
 
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-              Filters & Search
-            </h3>
-
-            {hasActiveFilters && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
+              <div className="flex items-center gap-2">
                 <svg
-                  className="h-3 w-3"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
+                  className="h-5 w-5 text-gray-600 dark:text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
                 >
                   <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                    clipRule="evenodd"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
                   />
                 </svg>
-                Filters Active
-              </span>
-            )}
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  Filters & Search
+                </h3>
+              </div>
+
+              {hasActiveFilters && (
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
+                  <svg
+                    className="h-3 w-3"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  Active
+                </span>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowFilters(!showFilters)}
+              className="text-xs font-semibold text-blue-600 transition-colors hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              {showFilters ? "Hide" : "Show"} Filters
+            </button>
           </div>
+        </div>
 
-          <svg
-            className={`h-5 w-5 text-gray-500 transition-transform duration-300 ease-in-out dark:text-gray-400 ${
-              showFilters ? "rotate-180" : "rotate-0"
-            }`}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
-        </button>
-
+        {/* Filter Content - Collapsible */}
         <div
-          className={`grid transition-all duration-300 ease-in-out ${
+          className={`transition-all duration-300 ease-in-out ${
             showFilters
-              ? "grid-rows-[1fr] opacity-100"
-              : "grid-rows-[0fr] opacity-0"
+              ? "max-h-[1000px] opacity-100"
+              : "max-h-0 opacity-0 overflow-hidden"
           }`}
         >
-          <div className="overflow-hidden">
-            <div
-              className={`border-t border-gray-200 px-6 pb-6 pt-4 transition-all duration-300 ease-in-out dark:border-gray-700 ${
-                showFilters
-                  ? "translate-y-0 scale-100"
-                  : "-translate-y-2 scale-[0.98]"
-              }`}
-            >
-              <ReportListFilters
-                reportType={reportType}
-                onReportType={setReportType}
-                resolved={resolved}
-                onResolved={setResolved}
-                q={q}
-                onQ={setQ}
-                from={from}
-                to={to}
-                onFrom={setFrom}
-                onTo={setTo}
-                onReset={() => {
-                  setReportType("ALL");
-                  setResolved("ALL");
-                  setQ("");
-                  setFrom("");
-                  setTo("");
-                }}
-                onGenerate={load}
-              />
-            </div>
+          <div className="border-t border-gray-200 p-6 dark:border-gray-700">
+            <ReportListFilters
+              reportType={reportType}
+              onReportType={setReportType}
+              resolved={resolved}
+              onResolved={setResolved}
+              q={q}
+              onQ={setQ}
+              from={from}
+              to={to}
+              onFrom={setFrom}
+              onTo={setTo}
+              onReset={() => {
+                setReportType("ALL");
+                setResolved("ALL");
+                setQ("");
+                setFrom("");
+                setTo("");
+              }}
+              onGenerate={load}
+            />
           </div>
         </div>
       </div>

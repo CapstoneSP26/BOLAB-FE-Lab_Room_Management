@@ -8,41 +8,20 @@ import type {
   GetBookingByScheduleIdResponse,
   UpdateBookingStatusRequest,
   UpdateBookingStatusResponse,
-} from "../type";
+  GetBookingStatusLookupResponse,
+} from "../types/schedule.type";
 import type {
   Building,
-  Room,
-  BuildingResponse,
+  BuildingLookupApiResponse,
 } from "../../building/types/building.type";
-
-type BuildingLookupApiResponse =
-  | BuildingResponse[]
-  | { data?: BuildingResponse[] };
-
-interface LabRoomLookupResponse {
-  id: number | string;
-  name?: string;
-  labRoomName?: string;
-  building?: string;
-  buildingName?: string;
-  capacity?: number;
-  status?: "Available" | "Occupied" | "Maintenance";
-  image?: string;
-  features?: string[];
-  nextAvailable?: string;
-}
-
-type LabRoomLookupApiResponse =
-  | LabRoomLookupResponse[]
-  | { data?: LabRoomLookupResponse[] };
-
-/**
- * ===== DATA ACCESS LAYER =====
- * Rules:
- * - Chỉ dùng axiosInstance
- * - Phải định nghĩa TypeScript Interface cho cả Request và Response
- * - Không được catch error (để UI hoặc React Query xử lý)
- */
+import type {
+  Room,
+  LabRoomLookupApiResponse,
+} from "../../room/types/room.type";
+import type {
+  GetSlotTypesRequest,
+  GetSlotTypesResponse,
+} from "../../slot/types/slot.types";
 
 const BOOKING_REQUEST_API = {
   LIST: "/bookings",
@@ -56,6 +35,7 @@ const BOOKING_REQUEST_API = {
 const BOOKING_LOOKUP_API = {
   BUILDINGS: "/buildings",
   LAB_ROOMS: "/lab-rooms",
+  SLOT_TYPES: "/slot-types",
 };
 
 /** Pending booking requests */
@@ -74,7 +54,7 @@ export const getBookingRequestHistory = async (
   params: GetBookingHistoryRequest = {},
 ): Promise<GetBookingHistoryResponse> => {
   const response = await axiosInstance.get<GetBookingHistoryResponse>(
-    BOOKING_REQUEST_API.HISTORY,
+    `${BOOKING_REQUEST_API.HISTORY}/get-unchecked-booking-request`,
     { params },
   );
   return response.data;
@@ -150,4 +130,22 @@ export const getRoomOptions = async (): Promise<Room[]> => {
     features: item.features ?? [],
     nextAvailable: item.nextAvailable ?? "",
   }));
+};
+
+/** Lookup: slot types */
+export const getSlotTypes = async (
+  params: GetSlotTypesRequest = {},
+): Promise<GetSlotTypesResponse> => {
+  const response = await axiosInstance.get<GetSlotTypesResponse>(
+    BOOKING_LOOKUP_API.SLOT_TYPES,
+    { params },
+  );
+  return response.data;
+};
+
+export const getBookingStatusLookup = async () => {
+  const response = await axiosInstance.get<GetBookingStatusLookupResponse>(
+    "/booking-requests/status",
+  );
+  return response.data;
 };

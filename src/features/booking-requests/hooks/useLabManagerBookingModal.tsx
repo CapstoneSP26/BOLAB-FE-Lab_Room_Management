@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import BookingRequestModal from "../booking-requests/components/BookingRequestReviewModal";
+import BookingRequestModal from "../components/BookingRequestReviewModal";
 import {
   getBookingRequestByScheduleId,
   updateBookingRequestStatus,

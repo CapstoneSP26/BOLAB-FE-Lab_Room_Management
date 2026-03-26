@@ -1,11 +1,11 @@
-import type { Booking } from "../../type";
+import type { Booking } from "../types/schedule.type";
 
-function badgeClass(status: string) {
-  const s = status.toUpperCase();
-  if (s === "APPROVED")
-    return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-200";
+function badgeClass(status: unknown) {
+  const s = String(status ?? "").toUpperCase();
+  if (s === "PENDING")
+    return "bg-amber-500/15 text-amber-700 dark:text-amber-200";
   if (s === "REJECTED") return "bg-red-500/15 text-red-700 dark:text-red-200";
-  return "bg-gray-500/15 text-gray-700 dark:text-gray-200";
+  return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-200";
 }
 
 function formatRange(start: string, end: string) {
@@ -27,15 +27,28 @@ function formatRange(start: string, end: string) {
   return `${fmtDate(s)} • ${fmtTime(s)} - ${fmtTime(e)}`;
 }
 
-export default function HistoryBookingTable({
-  loading,
-  rows,
-  onView,
-}: {
+type Props = {
   loading: boolean;
   rows: Booking[];
+  emptyText?: string;
+
   onView: (b: Booking) => void;
-}) {
+
+  // optional để dùng cho history
+  onApprove?: (id: string) => void | Promise<void>;
+  onReject?: (id: string) => void | Promise<void>;
+};
+
+export default function BookingTable({
+  loading,
+  rows,
+  emptyText = "No bookings.",
+  onView,
+  onApprove,
+  onReject,
+}: Props) {
+  const hasActions = Boolean(onApprove && onReject);
+
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
       <div className="overflow-x-auto">
@@ -49,7 +62,9 @@ export default function HistoryBookingTable({
               <th className="px-4 py-3">Purpose</th>
               <th className="px-4 py-3">Reason</th>
               <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-right">Actions</th>
+              <th className="px-4 py-3 text-right">
+                {hasActions ? "Actions" : "View"}
+              </th>
             </tr>
           </thead>
 
@@ -69,7 +84,7 @@ export default function HistoryBookingTable({
                   className="px-4 py-6 text-gray-500 dark:text-gray-400"
                   colSpan={8}
                 >
-                  No history items.
+                  {emptyText}
                 </td>
               </tr>
             ) : (
@@ -109,7 +124,7 @@ export default function HistoryBookingTable({
                   <td className="px-4 py-4">
                     <span
                       className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(
-                        String(b.BookingStatus),
+                        b.BookingStatus,
                       )}`}
                     >
                       {String(b.BookingStatus)}
@@ -125,6 +140,26 @@ export default function HistoryBookingTable({
                       >
                         View
                       </button>
+
+                      {hasActions && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => onReject?.(b.Id)}
+                            className="rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700"
+                          >
+                            Reject
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => onApprove?.(b.Id)}
+                            className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700"
+                          >
+                            Approve
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
