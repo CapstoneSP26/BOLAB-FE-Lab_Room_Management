@@ -6,9 +6,9 @@
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { X } from "lucide-react";
 import { useBuildings } from "../../building/hooks/useBuildings";
-import { useRooms } from "../../labroom/hooks/useRooms";
-import type { Building } from "../../building/types/building.type";
-import type { Room } from "../../labroom/types/room.type";
+import { useLabRooms } from "../../labroom/hooks/useLabRooms";
+import type { Building, BuildingDto } from "../../building/types/building.type";
+import type { LabRoomDto } from "../../labroom/types/room.type";
 
 import { FALLBACK_REPORT_REASONS } from "../types/report.type";
 import { ImageUploadArea } from "./ImageUploadArea";
@@ -48,7 +48,7 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({
 
   // Fetch rooms for dropdown
   const { data: buildingsData, isLoading: buildingsLoading } = useBuildings({});
-  const { data: roomsData, isLoading: roomsLoading } = useRooms({});
+  const { data: roomsData, isLoading: roomsLoading } = useLabRooms({});
   const { data: reasonsData, isLoading: reasonsLoading } = useReportReasons();
 
   // Create report mutation
@@ -151,28 +151,28 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({
     });
   };
 
-  const buildings = buildingsData?.data || [];
+  const buildings = buildingsData?.items || [];
   const selectedBuilding = useMemo(
     () =>
       buildings.find(
-        (item: Building) => String(item.id) === selectedBuildingId,
+        (item: BuildingDto) => String(item.id) === selectedBuildingId,
       ),
     [buildings, selectedBuildingId],
   );
 
-  const rooms = roomsData?.data || [];
+  const rooms = roomsData?.items || [];
   const filteredRooms = useMemo(() => {
     if (!selectedBuilding) {
       return [];
     }
 
-    const selectedBuildingName = selectedBuilding.name.toLowerCase();
+    const selectedBuildingName = selectedBuilding.buildingName.toLowerCase();
     const selectedBuildingIdNormalized = String(
       selectedBuilding.id,
     ).toLowerCase();
 
-    return rooms.filter((room: Room) => {
-      const roomBuilding = String(room.building).toLowerCase();
+    return rooms.filter((room: LabRoomDto) => {
+      const roomBuilding = String(room.buildingName).toLowerCase();
       return (
         roomBuilding === selectedBuildingName ||
         roomBuilding === selectedBuildingIdNormalized ||
@@ -187,7 +187,7 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({
     }
 
     const roomExists = filteredRooms.some(
-      (room: Room) => String(room.id) === selectedRoomId,
+      (room: LabRoomDto) => String(room.id) === selectedRoomId,
     );
 
     if (!roomExists) {
@@ -262,9 +262,9 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({
                 `}
                 >
                   <option value="">-- Chọn tòa nhà --</option>
-                  {buildings.map((building: Building) => (
+                  {buildings.map((building: BuildingDto) => (
                     <option key={building.id} value={building.id}>
-                      {building.name}
+                      {building.buildingName}
                     </option>
                   ))}
                 </select>
@@ -312,9 +312,9 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({
                       ? "-- Chọn phòng --"
                       : "-- Chọn tòa nhà trước --"}
                   </option>
-                  {filteredRooms.map((room: Room) => (
+                  {filteredRooms.map((room: LabRoomDto) => (
                     <option key={room.id} value={room.id}>
-                      {room.name} - {room.building}
+                      {room.roomName} - {room.buildingName}
                     </option>
                   ))}
                 </select>

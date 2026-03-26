@@ -92,9 +92,6 @@ export const ActiveSessionIndicator: React.FC<ActiveSessionIndicatorProps> = ({
                 {formatTime(time)}
               </div>
             </div>
-            <div className="bg-white rounded-full px-2 py-0.5 text-xs font-bold">
-              {session.attendeeCount}
-            </div>
           </button>
         );
       })}

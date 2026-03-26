@@ -1,12 +1,31 @@
-export interface Room {
-  id: string | number;
-  name: string;
-  building: string;
+export interface LabImageDto {
+  id: string; // Guid
+  url: string;
+  isPrimary: boolean;
+}
+
+export interface LabRoomDto {
+  id: number;
+  roomName: string;
+  roomNo: string;
+  location?: string;
   capacity: number;
-  status: RoomStatus;
-  image: string;
-  nextAvailable?: string;
-  features?: string[];
+  hasEquipment: boolean;
+  description?: string;
+  buildingName: string;
+  images?: LabImageDto[];
+}
+
+export interface GetLabRoomsQuery {
+  buildingId?: number;
+  roomNo?: string;
+  searchTerm?: string;
+  includeImages?: boolean;
+  includeBuilding?: boolean;
+  pageNumber?: number;
+  pageSize?: number;
+  sortBy?: string;
+  isDescending?: boolean;
 }
 
 export type RoomStatus = "Available" | "Occupied" | "Maintenance";

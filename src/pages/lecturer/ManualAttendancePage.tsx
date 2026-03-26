@@ -26,8 +26,9 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { useQRSession } from '../../features/attendance/hooks/useQRSession';
+import { useAttendanceList } from '../../features/attendance/hooks/useAttendance';
 import { MOCK_QR_SESSION } from '../../features/attendance/mocks/attendance.mock';
-import type { AttendanceStatus } from '../../features/attendance/types/attendace.type';
+import type { AttendanceStatus } from '../../features/attendance/types/attendance.type';
 import { useToast } from '../../hooks/useToast';
 
 // Mock student data - will be replaced with real Student Group API
@@ -79,13 +80,15 @@ export default function ManualAttendancePage() {
 
   // Fetch session data
   const { data: sessionData, isLoading: sessionLoading } = useQRSession(sessionId || null);
+  const { data: attendanceData } = useAttendanceList(sessionId || null);
   const session = sessionData?.data || (sessionId === 'qr-session-001' ? MOCK_QR_SESSION : null);
 
   // Local state
   const [searchQuery, setSearchQuery] = useState('');
-  const [attendanceRecords, setAttendanceRecords] = useState<Record<string, AttendanceStatus | null>>({});
+  const [attendanceRecords, setAttendanceRecords] = useState<Record<string, AttendanceStatus>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Check if session is editable (only today's sessions)
   const isEditable = useMemo(() => {
@@ -100,14 +103,30 @@ export default function ManualAttendancePage() {
     );
   }, [session?.date]);
 
-  // Initialize attendance records
+  // Initialize attendance records and pre-fill students who already scanned QR.
   useEffect(() => {
-    const initial: Record<string, AttendanceStatus | null> = {};
+    if (isInitialized) return;
+
+    const initial: Record<string, AttendanceStatus> = {};
     MOCK_STUDENTS.forEach(student => {
-      initial[student.id] = null; // Default: not marked
+      initial[student.id] = 'absent';
     });
+
+    const scannedStudents = attendanceData?.data?.students || [];
+    scannedStudents.forEach(record => {
+      const matchedStudent = MOCK_STUDENTS.find(
+        student => student.studentId === record.studentId || student.studentId === record.rollNumber
+      );
+
+      if (matchedStudent) {
+        // Legacy "late" values from previous data are treated as present.
+        initial[matchedStudent.id] = record.status === 'absent' ? 'absent' : 'present';
+      }
+    });
+
     setAttendanceRecords(initial);
-  }, []);
+    setIsInitialized(true);
+  }, [attendanceData?.data?.students, isInitialized]);
 
   // Filter students by search query
   const filteredStudents = useMemo(() => {
@@ -126,17 +145,13 @@ export default function ManualAttendancePage() {
     const total = MOCK_STUDENTS.length;
     let present = 0;
     let absent = 0;
-    let late = 0;
-    let unmarked = 0;
 
     Object.values(attendanceRecords).forEach(status => {
       if (status === 'present') present++;
       else if (status === 'absent') absent++;
-      else if (status === 'late') late++;
-      else unmarked++;
     });
 
-    return { total, present, absent, late, unmarked };
+    return { total, present, absent };
   }, [attendanceRecords]);
 
   // Handle status change
@@ -144,14 +159,14 @@ export default function ManualAttendancePage() {
     if (!isEditable) return; // Prevent editing past sessions
     setAttendanceRecords(prev => ({
       ...prev,
-      [studentId]: prev[studentId] === status ? null : status, // Toggle off if clicking same status
+      [studentId]: status,
     }));
   };
 
   // Bulk actions
   const markAllPresent = () => {
     if (!isEditable) return;
-    const updated: Record<string, AttendanceStatus | null> = {};
+    const updated: Record<string, AttendanceStatus> = {};
     MOCK_STUDENTS.forEach(student => {
       updated[student.id] = 'present';
     });
@@ -160,7 +175,7 @@ export default function ManualAttendancePage() {
 
   const markAllAbsent = () => {
     if (!isEditable) return;
-    const updated: Record<string, AttendanceStatus | null> = {};
+    const updated: Record<string, AttendanceStatus> = {};
     MOCK_STUDENTS.forEach(student => {
       updated[student.id] = 'absent';
     });
@@ -169,9 +184,9 @@ export default function ManualAttendancePage() {
 
   const clearAll = () => {
     if (!isEditable) return;
-    const updated: Record<string, AttendanceStatus | null> = {};
+    const updated: Record<string, AttendanceStatus> = {};
     MOCK_STUDENTS.forEach(student => {
-      updated[student.id] = null;
+      updated[student.id] = 'absent';
     });
     setAttendanceRecords(updated);
   };
@@ -261,10 +276,10 @@ export default function ManualAttendancePage() {
             </button>
             <button
               onClick={handleSave}
-              disabled={isSaving || stats.unmarked === stats.total || !isEditable}
+              disabled={isSaving || !isEditable}
               className={`flex items-center gap-2 text-white px-6 py-2.5 rounded-xl font-semibold shadow-md transition-all ${!isEditable
                   ? 'bg-slate-400 cursor-not-allowed'
-                  : isSaving || stats.unmarked === stats.total
+                  : isSaving
                     ? 'bg-slate-300 cursor-not-allowed'
                     : 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg'
                 }`}
@@ -345,7 +360,7 @@ export default function ManualAttendancePage() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
@@ -382,29 +397,6 @@ export default function ManualAttendancePage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-amber-200 p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
-                <Clock className="w-6 h-6 text-amber-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-amber-900 tabular-nums">{stats.late}</p>
-                <p className="text-xs text-amber-700 font-medium">Late</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center">
-                <Users className="w-6 h-6 text-slate-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900 tabular-nums">{stats.unmarked}</p>
-                <p className="text-xs text-slate-600 font-medium">Unmarked</p>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Controls */}
@@ -529,20 +521,6 @@ export default function ManualAttendancePage() {
                       </button>
 
                       <button
-                        onClick={() => handleStatusChange(student.id, 'late')}
-                        disabled={!isEditable}
-                        className={`flex items-center gap-1.5 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${!isEditable
-                            ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                            : status === 'late'
-                              ? 'bg-amber-600 text-white shadow-md'
-                              : 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200'
-                          }`}
-                      >
-                        <Clock className="w-4 h-4" />
-                        <span>Late</span>
-                      </button>
-
-                      <button
                         onClick={() => handleStatusChange(student.id, 'absent')}
                         disabled={!isEditable}
                         className={`flex items-center gap-1.5 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${!isEditable
@@ -566,8 +544,7 @@ export default function ManualAttendancePage() {
         {/* Footer Info */}
         <div className="mt-6 text-center text-sm text-slate-500">
           <p>
-            💡 <strong>Tip:</strong> Click a status button again to unmark. Use bulk actions for
-            faster marking.
+            💡 <strong>Tip:</strong> QR-scanned students are auto-filled as Present when this page opens.
           </p>
           <p className="mt-1">
             Mock data: 30 students · Will be replaced with real Student Group data
@@ -617,21 +594,13 @@ export default function ManualAttendancePage() {
               {/* Stats Summary */}
               <div className="mb-4">
                 <p className="text-sm font-semibold text-slate-700 mb-3">Tóm tắt điểm danh:</p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-200">
                     <div className="flex items-center gap-2 mb-1">
                       <CheckCircle className="w-4 h-4 text-emerald-600" />
                       <span className="text-xs font-medium text-emerald-700">Có mặt</span>
                     </div>
                     <p className="text-2xl font-bold text-emerald-900 tabular-nums">{stats.present}</p>
-                  </div>
-
-                  <div className="bg-amber-50 rounded-xl p-3 border border-amber-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Clock className="w-4 h-4 text-amber-600" />
-                      <span className="text-xs font-medium text-amber-700">Muộn</span>
-                    </div>
-                    <p className="text-2xl font-bold text-amber-900 tabular-nums">{stats.late}</p>
                   </div>
 
                   <div className="bg-red-50 rounded-xl p-3 border border-red-200">
@@ -645,25 +614,12 @@ export default function ManualAttendancePage() {
                   <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
                     <div className="flex items-center gap-2 mb-1">
                       <Users className="w-4 h-4 text-slate-600" />
-                      <span className="text-xs font-medium text-slate-700">Chưa điểm</span>
+                      <span className="text-xs font-medium text-slate-700">Tổng số</span>
                     </div>
-                    <p className="text-2xl font-bold text-slate-900 tabular-nums">{stats.unmarked}</p>
+                    <p className="text-2xl font-bold text-slate-900 tabular-nums">{stats.total}</p>
                   </div>
                 </div>
               </div>
-
-              {/* Warning if unmarked */}
-              {stats.unmarked > 0 && (
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
-                    <p className="text-sm text-amber-800">
-                      <strong>{stats.unmarked}</strong> sinh viên chưa được điểm danh.
-                      Bạn có chắc muốn nộp?
-                    </p>
-                  </div>
-                </div>
-              )}
 
               {/* Total */}
               <div className="bg-blue-50 rounded-xl p-3 border border-blue-200">

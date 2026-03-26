@@ -1,3 +1,20 @@
+export interface BuildingDto {
+  id: number;
+  campusId: number;
+  buildingName: string;
+  buildingImageUrl?: string;
+  description: string;
+  campusName: string;
+}
+
+export interface GetBuildingsQuery {
+  campusId?: number;
+  searchTerm?: string;
+  pageNumber?: number;
+  pageSize?: number;
+  buildingName?: string;
+}
+
 export interface Building {
   id: string;
   name: string;

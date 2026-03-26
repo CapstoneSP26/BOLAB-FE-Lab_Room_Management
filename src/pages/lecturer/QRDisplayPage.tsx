@@ -330,17 +330,6 @@ export default function QRDisplayPage() {
                   </span>
                 </div>
 
-                {/* Late */}
-                <div className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-                    <span className="text-sm font-semibold text-slate-700">Late</span>
-                  </div>
-                  <span className="text-xl font-bold text-amber-700 tabular-nums">
-                    {session.lateCount}
-                  </span>
-                </div>
-
                 {/* Absent */}
                 <div className="flex items-center justify-between p-3 bg-red-50 border border-red-200 rounded-xl">
                   <div className="flex items-center gap-3">

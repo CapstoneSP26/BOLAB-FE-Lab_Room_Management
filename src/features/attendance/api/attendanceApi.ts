@@ -31,7 +31,7 @@ const ATTENDANCE_API = {
 
 export const attendanceApi = {
   createQRSession: (params: CreateQRSessionRequest) =>
-    axiosInstance.post<CreateQRSessionResponse>(ATTENDANCE_API.CREATE_QR_SESSION, params),
+    axiosInstance.post<CreateQRSessionResponse>(ATTENDANCE_API.CREATE_QR_SESSION, params).then(res => res.data),
 
   getQRSession: (sessionId: string) =>
     axiosInstance.get<GetQRSessionResponse>(ATTENDANCE_API.GET_QR_SESSION(sessionId)).then(res => res.data),
