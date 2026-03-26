@@ -25,7 +25,7 @@ function splitFullName(fullName: string) {
   return { firstName: parts[0], lastName: parts.slice(1).join(" ") };
 }
 
-function normalizeProfile(input: Partial<Profile>): Profile {
+function normalizeProfile(input: Partial<Profile> & Record<string, any>): Profile {
   const fullName = (input.fullName ?? "").trim();
 
   const firstName =
@@ -42,7 +42,7 @@ function normalizeProfile(input: Partial<Profile>): Profile {
     email: (input.email ?? "").trim(),
     phone: (input.phone ?? "").trim(),
     birthday: (input.birthday ?? "").trim(),
-    campus: (input.campus ?? "").trim(),
+    campus: (input.campus ?? input.campusName ?? "").trim() as string,
     avatarUrl: input.avatarUrl,
   };
 }
