@@ -1,12 +1,31 @@
-export interface Room {
-  id: string | number;
-  name: string;
-  building: string;
+export interface LabImageDto {
+  id: string; // Guid
+  url: string;
+  isPrimary: boolean;
+}
+
+export interface LabRoomDto {
+  id: number;
+  roomName: string;
+  roomNo: string;
+  location?: string;
   capacity: number;
-  status: RoomStatus;
-  image: string;
-  nextAvailable?: string;
-  features?: string[];
+  hasEquipment: boolean;
+  description?: string;
+  buildingName: string;
+  images?: LabImageDto[];
+}
+
+export interface GetLabRoomsQuery {
+  buildingId?: number;
+  roomNo?: string;
+  searchTerm?: string;
+  includeImages?: boolean;
+  includeBuilding?: boolean;
+  pageNumber?: number;
+  pageSize?: number;
+  sortBy?: string;
+  isDescending?: boolean;
 }
 
 export type RoomStatus = 'Available' | 'Occupied' | 'Maintenance';
@@ -19,14 +38,6 @@ export interface GetRoomsRequest {
   limit?: number;
 }
 
-export interface GetRoomsResponse {
-  data: Room[];
-  total: number;
-  page: number;
-  limit: number;
-}
-
-
 export interface Stats {
   totalRooms: number;
   activeRooms: number;
@@ -35,26 +46,4 @@ export interface Stats {
 
 export interface GetStatsResponse {
   data: Stats;
-}
-
-
-////////////////////////////////////////
-export interface LabRoom {
-  id: string;
-  name: string;
-  building: string;
-  capacity: number;
-  features: string[];
-  image?: string;
-}
-
-export interface GetLabRoomsRequest {
-  buildingId?: string;
-  minCapacity?: number;
-  features?: string[];
-}
-
-export interface GetLabRoomsResponse {
-  rooms: LabRoom[];
-  total: number;
 }

@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { labApi } from "../api/labApi";
+import { labroomApi } from "../api/labroom.api";
 import type { PolicyType } from "../types/policy.type";
 
 export const useLabPolicies = (labRoomId?: number) => {
   return useQuery({
     queryKey: ['labPolicies', labRoomId],
-    queryFn: () => labApi.getLabPolicies(labRoomId || 0), // Truyền 0 hoặc một giá trị mặc định nếu labRoomId không hợp lệ
+    queryFn: () => labroomApi.getLabPolicies(labRoomId || 0), // Truyền 0 hoặc một giá trị mặc định nếu labRoomId không hợp lệ
     staleTime: Infinity,
     enabled: !!labRoomId, // Chỉ chạy query khi có labRoomId hợp lệ
     select: (data) => {

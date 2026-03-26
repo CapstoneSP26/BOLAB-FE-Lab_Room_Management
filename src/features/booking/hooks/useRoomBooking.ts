@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  getLabRooms,
   getStudentGroups,
   getAvailableSlots,
   createBooking,
@@ -8,7 +7,6 @@ import {
 } from "../api/room-bookingApi";
 import type { CreateBookingRequest, GetMyBookingsRequest } from "../types/booking.type";
 import type { GetStudentGroupByLecturerRequest } from "../../groups/types/group.type";
-import type { GetLabRoomsRequest } from "../../labroom/types/room.type";
 import type { GetAvailableSlotsRequest } from '../../slot/types/slot.types';
 
 /**
@@ -27,26 +25,6 @@ export const QUERY_KEYS = {
 } as const;
 
 // ===== QUERIES =====
-
-interface UseLabRoomsOptions {
-  params?: GetLabRoomsRequest;
-  enabled?: boolean;
-}
-
-/**
- * Hook lấy danh sách phòng lab
- */
-export const useLabRooms = (options: UseLabRoomsOptions = {}) => {
-  const { params, enabled = true } = options;
-
-  return useQuery({
-    queryKey: [QUERY_KEYS.LAB_ROOMS, params],
-    queryFn: () => getLabRooms(params),
-    enabled,
-    staleTime: 5 * 60 * 1000, // 5 phút
-    gcTime: 10 * 60 * 1000, // 10 phút
-  });
-};
 
 interface UseStudentGroupsOptions {
   params?: GetStudentGroupByLecturerRequest;
