@@ -10,13 +10,8 @@ import {
   getRefreshToken,
   saveAccessToken,
 } from "../utils/storage";
-import { defaultMockProfile } from "../features/profile/mocks/profileMocks";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string | undefined;
-const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === "true";
-
-console.log("VITE_API_BASE_URL =", API_BASE_URL);
-console.log("VITE_USE_MOCK_DATA =", USE_MOCK_DATA);
 
 const axiosInstance: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -38,9 +33,6 @@ axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = getAccessToken();
 
-    console.log("Request baseURL:", config.baseURL);
-    console.log("Request url:", config.url);
-    console.log("Full request:", `${config.baseURL}${config.url}`);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -68,63 +60,7 @@ const processQueue = (error: AxiosError | null, token: string | null) => {
   failedQueue = [];
 };
 
-// ============================================
-// 🔷 MOCK INTERCEPTOR - Handles mocked endpoints
-// ============================================
-function setupMockInterceptor() {
-  axiosInstance.interceptors.response.use(
-    async (response) => {
-      // For successful mock responses, pass through
-      return response;
-    },
-    async (error: AxiosError) => {
-      // If mock mode is enabled, try to handle with mock data first
-      if (USE_MOCK_DATA && error.config) {
-        const url = error.config.url || "";
-        const method = error.config.method?.toUpperCase() || "GET";
 
-        console.log(`[MOCK] Intercepting ${method} ${url}`);
-
-        // Mock GET /users/me or /me (User Profile)
-        if ((url.includes("/users/me") || url.includes("/me")) && method === "GET") {
-          console.log("[MOCK] Returning mock user profile");
-          // Simulate network delay
-          await new Promise((resolve) => setTimeout(resolve, 300));
-          return Promise.resolve({
-            config: error.config,
-            status: 200,
-            statusText: "OK",
-            headers: {},
-            data: defaultMockProfile,
-          });
-        }
-
-        // Mock PUT /users/me or /me (Update Profile)
-        if ((url.includes("/users/me") || url.includes("/me")) && method === "PUT") {
-          console.log("[MOCK] Returning mocked update profile response");
-          // Simulate network delay
-          await new Promise((resolve) => setTimeout(resolve, 300));
-          const requestBody = error.config.data;
-          return Promise.resolve({
-            config: error.config,
-            status: 200,
-            statusText: "OK",
-            headers: {},
-            data: requestBody
-              ? JSON.parse(typeof requestBody === "string" ? requestBody : JSON.stringify(requestBody))
-              : defaultMockProfile,
-          });
-        }
-      }
-
-      // If not mocked, pass to next error handler
-      return Promise.reject(error);
-    },
-  );
-}
-
-// Initialize mock interceptor
-setupMockInterceptor();
 
 axiosInstance.interceptors.response.use(
   (response) => response,
