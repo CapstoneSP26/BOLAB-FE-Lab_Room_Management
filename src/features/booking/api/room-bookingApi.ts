@@ -1,6 +1,5 @@
 import axiosInstance from '../../../api/axios';
 import type { GetStudentGroupByLecturerRequest, GetStudentGroupsByLecturerResponse } from '../../groups/types/group.type';
-import type { GetLabRoomsRequest, GetLabRoomsResponse } from '../../labroom/types/room.type';
 import type { GetAvailableSlotsRequest, GetAvailableSlotsResponse } from '../../slot/types/slot.types';
 import type {
   CreateBookingRequest,
@@ -17,26 +16,12 @@ import type {
  */
 
 const ROOM_BOOKING_API = {
-  LAB_ROOMS: '/lab-rooms',
   STUDENT_GROUPS: '/student-groups',
   AVAILABLE_SLOTS: '/available-slots',
   CREATE_BOOKING: '/bookings',
   MY_BOOKINGS: '/bookings/my-bookings',
   BOOKING: '/bookings',
   SCHEDULE: '/schedules',
-};
-
-/**
- * Lấy danh sách phòng lab
- */
-export const getLabRooms = async (
-  params: GetLabRoomsRequest = {}
-): Promise<GetLabRoomsResponse> => {
-  const response = await axiosInstance.get<GetLabRoomsResponse>(
-    ROOM_BOOKING_API.LAB_ROOMS,
-    { params }
-  );
-  return response.data;
 };
 
 /**
