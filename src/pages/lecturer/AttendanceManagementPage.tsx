@@ -74,10 +74,27 @@ const isNowInsideBookingWindow = (booking: BookingDto): boolean => {
   return now >= start && now <= end;
 };
 
+const isNowInsideFeatureBookingWindow = (booking: BookingWithQR): boolean => {
+  const now = new Date();
+  const start = parseTimeValue(booking.date, booking.startTime);
+  const end = parseTimeValue(booking.date, booking.endTime);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return false;
+  }
+
+  return now >= start && now <= end;
+};
+
 export default function AttendanceManagementPage() {
   const appAlert = useToast();
   const navigate = useNavigate();
   const { activeSession, setActiveSession } = useActiveSession();
+  const isAttendanceTestMode = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    const params = new URLSearchParams(window.location.search);
+    return params.get('testAttendance') === '1';
+  }, []);
 
   const bookingScheduleParams: GetBookingsParams = useMemo(
     () => ({
@@ -107,10 +124,18 @@ export default function AttendanceManagementPage() {
   const bookingScheduleItems: BookingDto[] = bookingScheduleData?.data?.items || [];
 
   const activeRoomNamesFromSchedule = useMemo(() => {
+    if (isAttendanceTestMode) {
+      return new Set(
+        bookings
+          .filter(item => item.status === 'Approved')
+          .map(item => normalizeRoomName(item.roomName))
+      );
+    }
+
     if (bookingScheduleItems.length === 0) {
       return new Set(
         bookings
-          .filter(item => item.isUpcoming && item.status === 'Approved')
+          .filter(item => item.status === 'Approved' && isNowInsideFeatureBookingWindow(item))
           .map(item => normalizeRoomName(item.roomName))
       );
     }
@@ -120,7 +145,7 @@ export default function AttendanceManagementPage() {
         .filter(isNowInsideBookingWindow)
         .map(item => normalizeRoomName(item.labRoomName))
     );
-  }, [bookingScheduleItems, bookings]);
+  }, [bookingScheduleItems, bookings, isAttendanceTestMode]);
 
   const activeBookingByTime = useMemo(() => {
     if (activeRoomNamesFromSchedule.size === 0) {
@@ -134,9 +159,9 @@ export default function AttendanceManagementPage() {
     );
   }, [bookings, activeRoomNamesFromSchedule]);
 
-  const resolvedSessionId = activeSession?.isActive
-    ? activeSession.id
-    : (activeBookingByTime?.hasQRSession ? (activeBookingByTime.qrSessionId ?? null) : null);
+  const resolvedSessionId = activeBookingByTime
+    ? (activeSession?.isActive ? activeSession.id : (activeBookingByTime.hasQRSession ? (activeBookingByTime.qrSessionId ?? null) : null))
+    : null;
 
   const { data: sessionData } = useQRSession(resolvedSessionId, !!resolvedSessionId);
   useAttendanceList(resolvedSessionId, !!resolvedSessionId);
@@ -234,7 +259,7 @@ export default function AttendanceManagementPage() {
     if (!session) return;
 
     const confirmed = window.confirm(
-      'Bạn có chắc chắn muốn kết thúc phiên điểm danh này?\n\nSau khi kết thúc, sinh viên sẽ không thể quét QR code nữa.'
+      'Bạn có chắc chắn muốn tắt QR hiện tại?\n\nSau khi tắt, ảnh QR sẽ ẩn và sinh viên không thể quét mã này nữa.'
     );
 
     if (!confirmed) return;
@@ -631,7 +656,7 @@ export default function AttendanceManagementPage() {
                 className="bg-red-50 border-2 border-red-300 hover:border-red-500 hover:bg-red-100 disabled:border-slate-300 disabled:bg-slate-50 text-red-700 disabled:text-slate-400 px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed"
               >
                 <XCircle className="w-5 h-5" />
-                <span>{endSessionMutation.isPending ? 'Ending...' : 'End Session'}</span>
+                <span>{endSessionMutation.isPending ? 'Stopping...' : 'Stop QR'}</span>
               </button>
             </div>
 
