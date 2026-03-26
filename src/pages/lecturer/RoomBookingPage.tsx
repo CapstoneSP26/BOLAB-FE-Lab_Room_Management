@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Calendar as CalendarIcon,
@@ -12,11 +12,11 @@ import { BookingConfirmPanel } from "../../features/booking/components/BookingCo
 import { AvailableSlotList } from "../../features/booking/components/AvailableSlotList";
 import { BookingConfirmationModal } from "../../features/booking/components/BookingConfirmationModal";
 import {
-  useLabRooms,
   useStudentGroups,
   useAvailableSlots,
   useCreateBooking,
 } from "../../features/booking/hooks/useRoomBooking";
+import { useLabRooms } from "../../features/labroom/hooks/useLabRooms";
 import {
   MOCK_BOOKING_BUILDINGS,
   MOCK_BOOKING_ROOMS,
@@ -25,6 +25,7 @@ import {
 } from "../../features/booking/mocks/roomBookingMockData";
 import { useToast } from "../../hooks/useToast";
 import type { BookingSummary } from "../../features/booking/types/booking.type";
+import { RoomSelector } from "../../features/labroom/components/RoomSelector";
 
 type BookingView = "calendar" | "list";
 
@@ -45,9 +46,11 @@ const RoomBookingPage: React.FC = () => {
   const roomIdParam = searchParams.get("roomId");
   const appAlert = useToast();
   const [activeView, setActiveView] = useState<BookingView>("calendar");
-  const [selectedBuilding, setSelectedBuilding] = useState<string>("");
-  const [selectedRoomId, setSelectedRoomId] = useState<string>("");
+
+  const [selectedBuildingId, setSelectedBuildingId] = useState<number>();
+  const [selectedRoomId, setSelectedRoomId] = useState<number>();
   const [weekOffset, setWeekOffset] = useState(0);
+
   const [selectedSlotIds, setSelectedSlotIds] = useState<string[]>([]);
   const [showConfirmPanel, setShowConfirmPanel] = useState(false);
   const [pendingBooking, setPendingBooking] = useState<PendingBooking | null>(
@@ -65,17 +68,20 @@ const RoomBookingPage: React.FC = () => {
       .split("T")[0],
   };
 
-  // Fetch data
-  const { data: roomsData, isLoading: roomsLoading } = useLabRooms();
-  const { data: groupsData } = useStudentGroups();
-  const { data: slotsData, isLoading: slotsLoading } = useAvailableSlots({
-    params: {
-      roomId: selectedRoomId,
-      startDate: dateRange.startDate,
-      endDate: dateRange.endDate,
-    },
-    enabled: !!selectedRoomId,
+  // fetch Buildings data
+
+
+  // Fetch Rooms data
+  const { data: pagedRooms, isLoading: roomsLoading } = useLabRooms({
+    buildingId: selectedBuildingId,
+    includeBuilding: true
   });
+  const rooms = useMemo(() => pagedRooms?.items ?? [], [pagedRooms])
+  const selectedRoom = useMemo(() => {
+    return rooms.find(room => room.id === selectedRoomId) || null;
+  }, [rooms, selectedRoomId]);
+
+  const { data: groupsData } = useStudentGroups();
 
   const createBookingMutation = useCreateBooking({
     onSuccess: (response) => {
@@ -91,48 +97,10 @@ const RoomBookingPage: React.FC = () => {
     },
   });
 
-  const rooms = roomsData?.rooms ?? [];
   const groups = groupsData?.groups ?? [];
-  const slots = slotsData?.slots ?? [];
 
   // Use mock data as fallback
-  const displayRooms = rooms.length > 0 ? rooms : MOCK_BOOKING_ROOMS;
   const displayGroups = groups.length > 0 ? groups : MOCK_STUDENT_GROUPS;
-  const mockSlotsForSelectedRoom = selectedRoomId
-    ? getMockSlotsByRoomAndRange(
-        selectedRoomId,
-        dateRange.startDate,
-        dateRange.endDate,
-      )
-    : [];
-  const displaySlots = selectedRoomId
-    ? slots.length > 0
-      ? slots
-      : mockSlotsForSelectedRoom
-    : [];
-
-  const selectedRoom =
-    displayRooms.find((r) => r.id === selectedRoomId) ?? null;
-
-  useEffect(() => {
-    if (!roomIdParam) {
-      return;
-    }
-
-    const matchedRoom = displayRooms.find((room) => room.id === roomIdParam);
-    if (!matchedRoom) {
-      return;
-    }
-
-    setSelectedRoomId(matchedRoom.id);
-
-    const matchedBuilding = MOCK_BOOKING_BUILDINGS.find(
-      (building) => building.name === matchedRoom.building,
-    );
-    if (matchedBuilding) {
-      setSelectedBuilding(matchedBuilding.id);
-    }
-  }, [roomIdParam, displayRooms]);
 
   // All buildings are available (campus is pre-determined for lecturer)
   const availableBuildings = MOCK_BOOKING_BUILDINGS;
@@ -178,11 +146,11 @@ const RoomBookingPage: React.FC = () => {
         weeklyUntil:
           data.repeatWeekly && data.repeatWeeksCount
             ? new Date(
-                new Date(pendingBooking.date).getTime() +
-                  data.repeatWeeksCount * 7 * 24 * 60 * 60 * 1000,
-              )
-                .toISOString()
-                .split("T")[0]
+              new Date(pendingBooking.date).getTime() +
+              data.repeatWeeksCount * 7 * 24 * 60 * 60 * 1000,
+            )
+              .toISOString()
+              .split("T")[0]
             : undefined,
         groupId: data.groupId,
       },
@@ -276,93 +244,9 @@ const RoomBookingPage: React.FC = () => {
             </div>
 
             {/* Lab Room Selection */}
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide flex items-center gap-2">
-                <span className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 text-xs font-bold">
-                  2
-                </span>
-                Select Lab Room
-              </label>
-
-              {roomsLoading ? (
-                <div className="flex items-center gap-3 text-gray-600 bg-gray-50 rounded-lg p-4 border-2 border-gray-300">
-                  <Loader2 className="w-5 h-5 animate-spin text-orange-500" />
-                  <span className="text-sm font-medium">Loading rooms...</span>
-                </div>
-              ) : (
-                <div className="relative">
-                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-orange-500 pointer-events-none z-10" />
-                  <select
-                    value={selectedRoomId}
-                    onChange={(e) => setSelectedRoomId(e.target.value)}
-                    disabled={!selectedBuilding}
-                    className="block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-orange-400 focus:ring-2 focus:ring-orange-100 text-sm py-3 pl-11 pr-4 bg-white hover:border-orange-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:hover:border-gray-300 transition-all appearance-none cursor-pointer font-medium"
-                    style={{
-                      backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' strokeLinecap='round' strokeLinejoin='round' strokeWidth='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-                      backgroundPosition: "right 0.5rem center",
-                      backgroundRepeat: "no-repeat",
-                      backgroundSize: "1.5em 1.5em",
-                    }}
-                  >
-                    <option value="" className="text-gray-500">
-                      Choose a lab room...
-                    </option>
-                    {availableRooms.map((room) => (
-                      <option
-                        key={room.id}
-                        value={room.id}
-                        className="font-medium"
-                      >
-                        {room.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-            </div>
-
-            {selectedRoom && (
-              <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                <div className="flex items-center gap-2 mb-3">
-                  <Building2 className="w-5 h-5 text-orange-600" />
-                  <h3 className="font-bold text-gray-900 text-sm">
-                    {selectedRoom.name}
-                  </h3>
-                </div>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Building:</span>
-                    <span className="text-gray-900 font-medium">
-                      {selectedRoom.building}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Capacity:</span>
-                    <span className="text-orange-600 font-semibold">
-                      {selectedRoom.capacity} students
-                    </span>
-                  </div>
-                  {selectedRoom.features &&
-                    selectedRoom.features.length > 0 && (
-                      <div className="pt-2 border-t border-orange-200">
-                        <span className="text-gray-600 block mb-1.5 text-xs">
-                          Features:
-                        </span>
-                        <div className="flex flex-wrap gap-1.5">
-                          {selectedRoom.features.map((feature, idx) => (
-                            <span
-                              key={idx}
-                              className="px-2 py-0.5 bg-white text-gray-700 rounded text-xs border border-gray-200"
-                            >
-                              {feature}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                </div>
-              </div>
-            )}
+            <RoomSelector
+              rooms={ }
+            />
           </div>
 
           {/* View Toggle */}
@@ -373,22 +257,20 @@ const RoomBookingPage: React.FC = () => {
             <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
               <button
                 onClick={() => setActiveView("calendar")}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all text-sm font-medium ${
-                  activeView === "calendar"
-                    ? "bg-white text-orange-600 shadow-sm border border-orange-200"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all text-sm font-medium ${activeView === "calendar"
+                  ? "bg-white text-orange-600 shadow-sm border border-orange-200"
+                  : "text-gray-600 hover:text-gray-900"
+                  }`}
               >
                 <CalendarIcon className="w-4 h-4" />
                 <span>Calendar</span>
               </button>
               <button
                 onClick={() => setActiveView("list")}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all text-sm font-medium ${
-                  activeView === "list"
-                    ? "bg-white text-orange-600 shadow-sm border border-orange-200"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all text-sm font-medium ${activeView === "list"
+                  ? "bg-white text-orange-600 shadow-sm border border-orange-200"
+                  : "text-gray-600 hover:text-gray-900"
+                  }`}
               >
                 <List className="w-4 h-4" />
                 <span>List</span>

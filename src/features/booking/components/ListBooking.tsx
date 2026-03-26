@@ -5,10 +5,10 @@ import { Input } from '../../../components/ui/Input';
 import { AvailableSlotList } from './AvailableSlotList';
 import type { TimeSlot } from '../../slot/types/slot.types';
 import type { StudentGroupInBooking } from '../../groups/types/group.type';
-import type { LabRoom } from '../../labroom/types/room.type';
+import type { LabRoomDto } from '../../labroom/types/room.type';
 
 interface ListBookingProps {
-  selectedRoom: LabRoom | null;
+  selectedRoom: LabRoomDto | null;
   studentGroups: StudentGroupInBooking[];
   availableSlots: TimeSlot[];
   onSubmitBooking: (data: {
@@ -235,7 +235,7 @@ export const ListBooking: React.FC<ListBookingProps> = ({
             <h4 className="font-semibold text-brand-900 mb-2">Booking Summary</h4>
             <ul className="text-sm text-brand-800 space-y-1">
               <li>• <strong>{selectedSlotIds.length}</strong> time slot{selectedSlotIds.length > 1 ? 's' : ''} selected</li>
-              <li>• Room: <strong>{selectedRoom?.name}</strong></li>
+              <li>• Room: <strong>{selectedRoom?.roomName}</strong></li>
               {repeatWeekly && <li>• Repeating weekly {repeatUntil ? `until ${repeatUntil}` : ''}</li>}
               {selectedGroupId && (
                 <li>• Group: <strong>{studentGroups.find(g => g.id === selectedGroupId)?.name}</strong></li>
