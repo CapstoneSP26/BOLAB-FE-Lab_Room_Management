@@ -1,3 +1,5 @@
+import axiosInstance from "../../api/axios";
+
 export type Role = "Lab Manager" | "Lecturer";
 
 export type Profile = {
@@ -14,14 +16,6 @@ export type Profile = {
 };
 
 const STORAGE_KEY = "profile_v1";
-
-const USE_MOCK = true;
-
-const API_URL = import.meta.env.VITE_API_BASE_URL as string | undefined;
-
-function sleep(ms = 200) {
-  return new Promise((r) => setTimeout(r, ms));
-}
 
 function splitFullName(fullName: string) {
   const cleaned = fullName.trim().replace(/\s+/g, " ");
@@ -53,66 +47,39 @@ function normalizeProfile(input: Partial<Profile>): Profile {
   };
 }
 
-const defaultProfile: Profile = normalizeProfile({
-  fullName: "Nguyen Dinh Thai Ha",
-  email: "abc@gmail.com",
-  phone: "+09 363 398 46",
-  birthday: "2001-05-20",
-  campus: "Campus Da Nang",
-  avatarUrl: "/images/user/owner.jpg",
-});
-
-async function http<T>(path: string, init?: RequestInit): Promise<T> {
-  if (!API_URL) throw new Error("Missing VITE_API_BASE_URL");
-  const res = await fetch(`${API_URL}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`HTTP ${res.status}: ${text || "Request failed"}`);
-  }
-  return (await res.json()) as T;
-}
-
 export const profileService = {
+  /**
+   * GET /auth/me
+   * Fetch current user profile
+   * Supports mock mode via VITE_USE_MOCK_DATA env
+   */
   async getMe(): Promise<Profile> {
-    if (!USE_MOCK) {
-      return normalizeProfile(await http<Profile>("/me"));
-    }
-
-    await sleep(150);
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultProfile));
-      return defaultProfile;
-    }
     try {
-      const parsed = JSON.parse(raw) as Profile;
-      return normalizeProfile(parsed);
-    } catch {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultProfile));
-      return defaultProfile;
+      const response = await axiosInstance.get<Profile>("/auth/me");
+      return normalizeProfile(response.data);
+    } catch (error) {
+      console.error("Failed to fetch user profile:", error);
+      throw error;
     }
   },
 
+  /**
+   * PUT /auth/me
+   * Update current user profile
+   * Supports mock mode via VITE_USE_MOCK_DATA env
+   */
   async updateMe(next: Partial<Profile>): Promise<Profile> {
     const normalized = normalizeProfile(next);
 
-    if (!USE_MOCK) {
-      return normalizeProfile(
-        await http<Profile>("/me", {
-          method: "PUT",
-          body: JSON.stringify(normalized),
-        }),
+    try {
+      const response = await axiosInstance.put<Profile>(
+        "/auth/me",
+        normalized,
       );
+      return normalizeProfile(response.data);
+    } catch (error) {
+      console.error("Failed to update user profile:", error);
+      throw error;
     }
-
-    await sleep(150);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
-    return normalized;
   },
 };
