@@ -1,5 +1,5 @@
 import type { Building } from "../../building/types/building.type";
-import type { Room } from "../../room/types/room.type";
+import type { Room } from "../../labroom/types/room.type";
 import type { SlotType } from "../../slot/types/slot.types";
 
 type SlotTypeFilter = "ALL" | string;

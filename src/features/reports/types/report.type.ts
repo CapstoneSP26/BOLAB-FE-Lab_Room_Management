@@ -21,6 +21,8 @@ export const FALLBACK_REPORT_REASONS: ReportReasonOption[] = Object.entries(
 ).map(([value, label]) => ({ value, label }));
 
 export type ReportStatus = "pending" | "in_progress" | "resolved" | "rejected";
+export type ReportResolvedFilter = "ALL" | "RESOLVED" | "UNRESOLVED";
+export type ReportHistorySortKey = "Newest" | "Oldest" | "Room";
 
 export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = {
   pending: "Chờ xử lý",
@@ -45,71 +47,20 @@ export interface ReportDraft {
   resolverNote?: string;
 }
 
-export interface CreateReportRequest {
-  roomId: string;
-  reason: string;
-  description: string;
-  images?: File[]; // Files to upload
-}
-
-export interface GetReportReasonsResponse {
-  success: boolean;
-  data: ReportReasonOption[];
-}
-
-export interface CreateReportResponse {
-  success: boolean;
-  message: string;
-  data: Report;
-}
-
-export interface GetMyReportsRequest {
-  status?: ReportStatus;
-  page?: number;
-  limit?: number;
-}
-
-export interface GetMyReportsResponse {
-  success: boolean;
-  data: {
-    reports: Report[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
-}
-
-export interface GetReportDetailRequest {
-  reportId: string;
-}
-
-export interface GetReportDetailResponse {
-  success: boolean;
-  data: Report;
-}
-
-export interface ImagePreview {
-  id: string;
-  file: File;
-  preview: string;
-}
-
-export type ReportType = "USER" | "LAB_ROOM" | "BOOKING" | "INCIDENT";
-export type ReportResolvedFilter = "ALL" | "RESOLVED" | "UNRESOLVED";
-export type ReportHistorySortKey = "Newest" | "Oldest" | "Room";
-
-export interface FilterOption<T extends string = string> {
-  value: T;
-  label: string;
-}
 export interface Report {
   Id: string;
   ScheduleId?: string | null;
   UserId: string;
-  ReportType: ReportType;
+
+  ReportType: string;
   Description: string;
   IsResolved: boolean;
+
+  LabRoomId?: number;
+  RoomName?: string;
+  BuildingName?: string;
+  Reason?: string;
+
   CreatedAt: string;
   UpdatedAt?: string | null;
   CreatedBy?: string | null;
@@ -128,7 +79,7 @@ export interface CreateReportRequest {
   roomId: string;
   reason: string;
   description: string;
-  images?: File[];
+  images?: File[]; // Files to upload
 }
 
 export interface GetReportReasonsResponse {
@@ -170,4 +121,14 @@ export interface GetReportDetailRequest {
 export interface GetReportDetailResponse {
   success: boolean;
   data: Report;
+}
+export interface FilterOption<T extends string = string> {
+  value: T;
+  label: string;
+}
+
+export interface ImagePreview {
+  id: string;
+  file: File;
+  preview: string;
 }

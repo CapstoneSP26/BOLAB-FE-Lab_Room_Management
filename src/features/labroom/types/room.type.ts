@@ -9,7 +9,7 @@ export interface Room {
   features?: string[];
 }
 
-export type RoomStatus = 'Available' | 'Occupied' | 'Maintenance';
+export type RoomStatus = "Available" | "Occupied" | "Maintenance";
 
 export interface GetRoomsRequest {
   building?: string;
@@ -26,7 +26,6 @@ export interface GetRoomsResponse {
   limit: number;
 }
 
-
 export interface Stats {
   totalRooms: number;
   activeRooms: number;
@@ -36,7 +35,6 @@ export interface Stats {
 export interface GetStatsResponse {
   data: Stats;
 }
-
 
 ////////////////////////////////////////
 export interface LabRoom {
@@ -58,3 +56,22 @@ export interface GetLabRoomsResponse {
   rooms: LabRoom[];
   total: number;
 }
+
+//////////
+
+export interface LabRoomLookupResponse {
+  id: number | string;
+  name?: string;
+  labRoomName?: string;
+  building?: string;
+  buildingName?: string;
+  capacity?: number;
+  status?: "Available" | "Occupied" | "Maintenance";
+  image?: string;
+  features?: string[];
+  nextAvailable?: string;
+}
+
+export type LabRoomLookupApiResponse =
+  | LabRoomLookupResponse[]
+  | { data?: LabRoomLookupResponse[] };
