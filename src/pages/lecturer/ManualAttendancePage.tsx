@@ -26,9 +26,9 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { useQRSession } from '../../features/attendance/hooks/useQRSession';
-import { useAttendanceList } from '../../features/attendance/hooks/useAttendance';
-import { MOCK_QR_SESSION } from '../../features/attendance/mocks/attendance.mock';
+import { useAttendanceList, useMarkAttendance } from '../../features/attendance/hooks/useAttendance';
 import type { AttendanceStatus } from '../../features/attendance/types/attendance.type';
+import { MOCK_QR_SESSION } from '../../features/attendance/mocks/attendance.mock';
 import { useToast } from '../../hooks/useToast';
 
 // Mock student data - will be replaced with real Student Group API
@@ -77,11 +77,20 @@ export default function ManualAttendancePage() {
   const appAlert = useToast();
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
+  const isAttendanceMockMode = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    const params = new URLSearchParams(window.location.search);
+    return params.get('mockAttendance') === '1' || params.get('testAttendance') === '1';
+  }, []);
+
+  const isMockSession = isAttendanceMockMode && sessionId === MOCK_QR_SESSION.id;
+  const apiSessionId = isMockSession ? null : (sessionId || null);
 
   // Fetch session data
-  const { data: sessionData, isLoading: sessionLoading } = useQRSession(sessionId || null);
-  const { data: attendanceData } = useAttendanceList(sessionId || null);
-  const session = sessionData?.data || (sessionId === 'qr-session-001' ? MOCK_QR_SESSION : null);
+  const { data: sessionData, isLoading: sessionLoading } = useQRSession(apiSessionId);
+  const { data: attendanceData } = useAttendanceList(apiSessionId);
+  const markAttendanceMutation = useMarkAttendance();
+  const session = sessionData?.data || (isMockSession ? MOCK_QR_SESSION : null);
 
   // Local state
   const [searchQuery, setSearchQuery] = useState('');
@@ -205,18 +214,56 @@ export default function ManualAttendancePage() {
     setShowConfirmModal(false);
     setIsSaving(true);
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      if (isAttendanceMockMode) {
+        await new Promise(resolve => setTimeout(resolve, 600));
+        appAlert.success('Attendance saved', 'Mock attendance has been saved for testing.');
+        return;
+      }
 
-    console.log('✅ Saving attendance records:', {
-      sessionId,
-      records: attendanceRecords,
-      stats,
-    });
+      if (!session?.id || !session.qrToken) {
+        throw new Error('Session token is missing.');
+      }
 
-    setIsSaving(false);
-    appAlert.success('Attendance saved', 'Attendance saved successfully!');
-    // In real app: navigate back or show success toast
+      const alreadyMarkedPresent = new Set(
+        (attendanceData?.data?.students || [])
+          .filter(record => record.status === 'present')
+          .flatMap(record => [record.studentId, record.rollNumber].filter(Boolean) as string[])
+      );
+
+      const studentsToMarkPresent = MOCK_STUDENTS.filter(
+        student =>
+          attendanceRecords[student.id] === 'present' &&
+          !alreadyMarkedPresent.has(student.studentId)
+      );
+
+      const results = await Promise.allSettled(
+        studentsToMarkPresent.map(student =>
+          markAttendanceMutation.mutateAsync({
+            sessionId: session.id,
+            qrToken: session.qrToken,
+            studentId: student.studentId,
+            rollNumber: student.studentId,
+          })
+        )
+      );
+
+      const failedCount = results.filter(result => result.status === 'rejected').length;
+      const successCount = results.length - failedCount;
+
+      if (failedCount > 0) {
+        appAlert.warning(
+          'Saved with warnings',
+          `Marked ${successCount} student(s). ${failedCount} failed request(s).`
+        );
+      } else {
+        appAlert.success('Attendance saved', `Marked ${successCount} student(s) successfully.`);
+      }
+    } catch {
+      appAlert.error('Save failed', 'Could not save attendance to backend. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Get initials for avatar

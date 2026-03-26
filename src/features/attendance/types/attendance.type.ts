@@ -58,8 +58,8 @@ export interface QRSession {
  * Create QR Session Request
  */
 export interface CreateQRSessionRequest {
-  bookingId: string;
-  expiryMinutes?: number; // Default: 5 minutes
+  scheduleId: string;
+  isCheckIn: boolean;
 }
 
 /**
@@ -106,7 +106,8 @@ export interface RefreshQRTokenResponse {
  * End QR Session Request
  */
 export interface EndQRSessionRequest {
-  sessionId: string;
+  scheduleId: string;
+  isCheckIn: boolean;
 }
 
 /**
