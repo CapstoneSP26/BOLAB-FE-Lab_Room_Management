@@ -27,7 +27,7 @@ const Header: React.FC = () => {
         id: activeSession.id,
         roomName: activeSession.roomName,
         expiresAt: activeSession.qrExpiry,
-        attendeeCount: activeSession.presentCount + activeSession.lateCount,
+        attendeeCount: activeSession.presentCount,
       }]
     : [];
   

@@ -11,7 +11,7 @@ export type BookingStatus = 'Draft' | 'PendingApproval' | 'Approved' | 'Rejected
 /**
  * Attendance Status
  */
-export type AttendanceStatus = 'present' | 'absent' | 'late';
+export type AttendanceStatus = 'present' | 'absent';
 
 /**
  * Student Attendance Record
@@ -45,12 +45,13 @@ export interface QRSession {
   lecturerId: string;
   qrToken: string; // Unique token for QR code
   qrExpiry: string; // ISO date string
+  qrImageUrl?: string;
+  qrImageBase64?: string;
   createdAt: string;
   isActive: boolean;
   totalStudents: number;
   presentCount: number;
   absentCount: number;
-  lateCount: number;
 }
 
 /**
@@ -96,6 +97,8 @@ export interface RefreshQRTokenResponse {
   data: {
     qrToken: string;
     qrExpiry: string;
+    qrImageUrl?: string;
+    qrImageBase64?: string;
   };
 }
 
