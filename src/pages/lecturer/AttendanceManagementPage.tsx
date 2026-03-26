@@ -3,18 +3,16 @@
  * Lecturer's page to manage attendance and active QR sessions
  */
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   QrCode,
   Calendar,
   Clock,
   MapPin,
-  Users,
   RefreshCw,
   ExternalLink,
   Download,
-  CheckCircle2,
   XCircle,
   AlertCircle,
   Building2,
@@ -24,166 +22,346 @@ import {
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import {
+  useCreateQRSession,
   useLecturerBookings,
   useQRSession,
-  useRefreshQRToken,
   useEndQRSession,
   useAttendanceList,
   useExportAttendance,
   type BookingWithQR,
 } from '../../features/attendance';
+import { useBookings } from '../../features/booking/hooks/useBooking';
+import type { BookingDto, GetBookingsParams } from '../../features/booking/types/booking.type';
 import { MOCK_LECTURER_BOOKINGS, MOCK_QR_SESSION } from '../../features/attendance/mocks/attendance.mock';
 import { useActiveSession } from '../../context/ActiveSessionContext';
 import { useToast } from '../../hooks/useToast';
 
+const normalizeRoomName = (value: string) => value.trim().toLowerCase();
+
+const parseTimeValue = (bookingDate: string, value: string): Date => {
+  // Handle API values that already include full datetime.
+  if (value.includes('T')) {
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+
+  // Fallback for HH:mm values by combining with booking date.
+  const [hourText, minuteText] = value.split(':');
+  const base = new Date(bookingDate);
+  if (Number.isNaN(base.getTime())) {
+    return new Date(0);
+  }
+
+  base.setHours(Number(hourText || 0), Number(minuteText || 0), 0, 0);
+  return base;
+};
+
+const isNowInsideBookingWindow = (booking: BookingDto): boolean => {
+  if (!booking.startTime || !booking.endTime) {
+    return false;
+  }
+
+  const now = new Date();
+  const start = parseTimeValue(booking.startTime, booking.startTime);
+  const end = parseTimeValue(booking.startTime, booking.endTime);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return false;
+  }
+
+  return now >= start && now <= end;
+};
+
+const isNowInsideFeatureBookingWindow = (booking: BookingWithQR): boolean => {
+  const now = new Date();
+  const start = parseTimeValue(booking.date, booking.startTime);
+  const end = parseTimeValue(booking.date, booking.endTime);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return false;
+  }
+
+  return now >= start && now <= end;
+};
+
 export default function AttendanceManagementPage() {
   const appAlert = useToast();
-  // Global context for active session (shared with Header)
-  const { activeSession, setActiveSession } = useActiveSession();
-  
-  // Queries & Mutations
-  const { data: bookingsData, isLoading: bookingsLoading } = useLecturerBookings();
   const navigate = useNavigate();
-  const refreshTokenMutation = useRefreshQRToken();
-  const endSessionMutation = useEndQRSession({
-    onSuccess: () => {
-      console.log('✅ QR Session ended successfully');
-      setActiveSession(null); // Clear global context
-    },
-    onError: (error) => {
-      console.error('Failed to end QR session:', error);
-    },
-  });
+  const { activeSession, setActiveSession } = useActiveSession();
+  const isAttendanceTestMode = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    const params = new URLSearchParams(window.location.search);
+    return params.get('testAttendance') === '1';
+  }, []);
+
+  const bookingScheduleParams: GetBookingsParams = useMemo(
+    () => ({
+      status: 'Approved',
+      pageNumber: 1,
+      pageSize: 100,
+      sortBy: 'startTime',
+      isDescending: false,
+    }),
+    []
+  );
+
+  const { data: bookingsData, isLoading: bookingsLoading } = useLecturerBookings();
+  const { data: bookingScheduleData } = useBookings(bookingScheduleParams, true);
+  const createQrSessionMutation = useCreateQRSession();
+  const [isRefreshingQr, setIsRefreshingQr] = useState(false);
+  const endSessionMutation = useEndQRSession();
   const exportMutation = useExportAttendance();
 
-  // State
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'upcoming' | 'past' | 'all'>('upcoming');
   const [showQRModal, setShowQRModal] = useState(false);
+  const [isCreatingQr, setIsCreatingQr] = useState(false);
+  const [stoppedQrBySessionId, setStoppedQrBySessionId] = useState<Record<string, boolean>>({});
 
-  // Get active session details (polling enabled)
-  const { data: sessionData } = useQRSession(activeSession?.id || null, !!activeSession?.id);
-  // Poll attendance for background updates (results cached in React Query)
-  useAttendanceList(activeSession?.id || null, !!activeSession?.id);
-  
-  // Initialize active session from mock data on mount (for demo purposes)
-  useEffect(() => {
-    if (!activeSession) {
-      setActiveSession(MOCK_QR_SESSION);
-    }
-  }, []);
+  const bookings = bookingsData?.data || MOCK_LECTURER_BOOKINGS;
+  const bookingScheduleItems: BookingDto[] = bookingScheduleData?.data?.items || [];
 
-  const session = sessionData?.data || activeSession; // Use API data or context data
-  const bookings = bookingsData?.data || MOCK_LECTURER_BOOKINGS; // Mock data - remove when API ready
-
-  // Generate scan URL for QR code
-  const scanUrl = session ? `${window.location.origin}/scan-attendance/${session.id}?token=${encodeURIComponent(session.qrToken)}` : '';
-
-  // Filter bookings
-  const filteredBookings = bookings.filter((booking) => {
-    // Status filter
-    if (statusFilter === 'upcoming' && !booking.isUpcoming) return false;
-    if (statusFilter === 'past' && !booking.isPast) return false;
-
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      return (
-        booking.roomName.toLowerCase().includes(query) ||
-        booking.roomCode.toLowerCase().includes(query) ||
-        booking.buildingName.toLowerCase().includes(query) ||
-        booking.purpose.toLowerCase().includes(query)
+  const activeRoomNamesFromSchedule = useMemo(() => {
+    if (isAttendanceTestMode) {
+      return new Set(
+        bookings
+          .filter(item => item.status === 'Approved')
+          .map(item => normalizeRoomName(item.roomName))
       );
     }
 
-    return true;
-  });
+    if (bookingScheduleItems.length === 0) {
+      return new Set(
+        bookings
+          .filter(item => item.status === 'Approved' && isNowInsideFeatureBookingWindow(item))
+          .map(item => normalizeRoomName(item.roomName))
+      );
+    }
 
-  // Handle refresh QR token
-  const handleRefreshQR = async () => {
-    if (!activeSession) return;
+    return new Set(
+      bookingScheduleItems
+        .filter(isNowInsideBookingWindow)
+        .map(item => normalizeRoomName(item.labRoomName))
+    );
+  }, [bookingScheduleItems, bookings, isAttendanceTestMode]);
 
-    try {
-      // Mock mode: Update global context with new token and expiry
-      if (!sessionData?.data) {
-        // Using mock data - simulate refresh
-        const newToken = 'QR_SESSION_TOKEN_REFRESHED_' + Date.now();
-        const newExpiry = new Date(Date.now() + 5 * 60 * 1000).toISOString();
-        
-        setActiveSession({
-          ...activeSession,
-          qrToken: newToken,
-          qrExpiry: newExpiry,
-        });
-        
-        console.log('✅ QR Code refreshed! (Mock mode)');
-        return;
+  const activeBookingByTime = useMemo(() => {
+    if (activeRoomNamesFromSchedule.size === 0) {
+      return null;
+    }
+
+    return (
+      bookings.find(
+        booking => activeRoomNamesFromSchedule.has(normalizeRoomName(booking.roomName))
+      ) || null
+    );
+  }, [bookings, activeRoomNamesFromSchedule]);
+
+  const resolvedSessionId = activeBookingByTime
+    ? (activeSession?.isActive ? activeSession.id : (activeBookingByTime.hasQRSession ? (activeBookingByTime.qrSessionId ?? null) : null))
+    : null;
+
+  const { data: sessionData } = useQRSession(resolvedSessionId, !!resolvedSessionId);
+  useAttendanceList(resolvedSessionId, !!resolvedSessionId);
+
+  useEffect(() => {
+    if (sessionData?.data?.isActive) {
+      setActiveSession(sessionData.data);
+      return;
+    }
+
+    // Keep header counter visible while testing with mock data.
+    if (!sessionData?.data && resolvedSessionId === MOCK_QR_SESSION.id) {
+      setActiveSession(MOCK_QR_SESSION);
+      return;
+    }
+
+    if (!resolvedSessionId && activeSession) {
+      setActiveSession(null);
+    }
+  }, [activeSession, resolvedSessionId, sessionData?.data, setActiveSession]);
+
+  const session = sessionData?.data || (resolvedSessionId === MOCK_QR_SESSION.id ? MOCK_QR_SESSION : activeSession);
+  const activeDisplayRoom = session?.roomName || activeBookingByTime?.roomName || 'Unknown Room';
+  const activeDisplayBuilding = session?.buildingName || activeBookingByTime?.buildingName || 'Unknown Building';
+
+  const scanUrl = session
+    ? `${window.location.origin}/scan-attendance/${session.id}?token=${encodeURIComponent(session.qrToken)}`
+    : '';
+
+  const filteredBookings = useMemo(() => {
+    const items = bookings.filter((booking) => {
+      if (statusFilter === 'upcoming' && !booking.isUpcoming) return false;
+      if (statusFilter === 'past' && !booking.isPast) return false;
+
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        return (
+          booking.roomName.toLowerCase().includes(query) ||
+          booking.roomCode.toLowerCase().includes(query) ||
+          booking.buildingName.toLowerCase().includes(query) ||
+          booking.purpose.toLowerCase().includes(query)
+        );
       }
-      
-      // Real API mode
-      await refreshTokenMutation.mutateAsync({
-        sessionId: activeSession.id,
+
+      return true;
+    });
+
+    if (!activeBookingByTime) {
+      return items;
+    }
+
+    return [...items].sort((a, b) => {
+      const aIsActive = a.bookingId === activeBookingByTime.bookingId;
+      const bIsActive = b.bookingId === activeBookingByTime.bookingId;
+
+      if (aIsActive && !bIsActive) return -1;
+      if (!aIsActive && bIsActive) return 1;
+      return 0;
+    });
+  }, [activeBookingByTime, bookings, searchQuery, statusFilter]);
+
+  const handleRefreshQR = async () => {
+    const bookingIdForRefresh = activeBookingByTime?.bookingId || session?.bookingId;
+    if (!bookingIdForRefresh) {
+      appAlert.warning('No active class', 'No booking is available to generate a new QR.');
+      return;
+    }
+
+    setIsRefreshingQr(true);
+    try {
+      const response = await createQrSessionMutation.mutateAsync({
+        bookingId: bookingIdForRefresh,
         expiryMinutes: 5,
       });
-    } catch (error) {
-      console.error('Failed to refresh QR token:', error);
+
+      setActiveSession(response.data);
+      setStoppedQrBySessionId(prev => {
+        const next = { ...prev };
+        if (session?.id) {
+          next[session.id] = false;
+        }
+        next[response.data.id] = false;
+        return next;
+      });
+
+      appAlert.success('QR refreshed', 'New QR code is ready.');
+    } catch {
+      appAlert.error('Refresh failed', 'Could not create a new QR from backend.');
+    } finally {
+      setIsRefreshingQr(false);
     }
   };
 
-  // Handle end QR session
   const handleEndSession = async () => {
-    if (!activeSession) return;
+    if (!session) return;
 
     const confirmed = window.confirm(
-      'Bạn có chắc chắn muốn kết thúc phiên điểm danh này?\n\nSau khi kết thúc, sinh viên sẽ không thể quét QR code nữa.'
+      'Bạn có chắc chắn muốn tắt QR hiện tại?\n\nSau khi tắt, ảnh QR sẽ ẩn và sinh viên không thể quét mã này nữa.'
     );
 
     if (!confirmed) return;
 
     try {
-      // Mock mode: Clear global context
       if (!sessionData?.data) {
-        setActiveSession(null);
-        console.log('✅ QR Session ended! (Mock mode)');
+        setStoppedQrBySessionId(prev => ({
+          ...prev,
+          [session.id]: true,
+        }));
+        appAlert.success('QR stopped', 'QR image has been turned off for this session.');
         return;
       }
 
-      // Real API mode
       await endSessionMutation.mutateAsync({
-        sessionId: activeSession.id,
+        sessionId: session.id,
       });
-    } catch (error) {
-      console.error('Failed to end QR session:', error);
+      setStoppedQrBySessionId(prev => ({
+        ...prev,
+        [session.id]: true,
+      }));
+      appAlert.success('QR stopped', 'QR image has been turned off for this session.');
+    } catch {
+      appAlert.error('End session failed', 'Could not end this session. Please try again.');
     }
   };
 
-  // Handle open TV display
   const handleOpenTVDisplay = () => {
-    if (!activeSession) return;
-    window.open(`/qr-display/${activeSession.id}`, '_blank');
+    if (!session) return;
+    window.open(`/qr-display/${session.id}`, '_blank');
   };
 
-  // Handle manual attendance
+  const handleViewQR = async () => {
+    if (session?.isActive) {
+      setShowQRModal(true);
+      return;
+    }
+
+    if (!activeBookingByTime) {
+      appAlert.warning('No active class', 'There is no in-progress class to create QR for.');
+      return;
+    }
+
+    setIsCreatingQr(true);
+    try {
+      const response = await createQrSessionMutation.mutateAsync({
+        bookingId: activeBookingByTime.bookingId,
+        expiryMinutes: 5,
+      });
+
+      if (response?.data) {
+        setActiveSession(response.data);
+        setStoppedQrBySessionId(prev => ({
+          ...prev,
+          [response.data.id]: false,
+        }));
+        setShowQRModal(true);
+        return;
+      }
+
+      throw new Error('Invalid create QR response');
+    } catch {
+      // Mock fallback to keep local flow testable when backend endpoint is unavailable.
+      if (activeBookingByTime.bookingId === MOCK_QR_SESSION.bookingId) {
+        const mockSession = {
+          ...MOCK_QR_SESSION,
+          qrToken: `QR_SESSION_TOKEN_${Date.now()}`,
+          qrExpiry: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+          isActive: true,
+        };
+        setActiveSession(mockSession);
+        setStoppedQrBySessionId(prev => ({
+          ...prev,
+          [mockSession.id]: false,
+        }));
+        setShowQRModal(true);
+      } else {
+        appAlert.error('Create QR failed', 'Cannot create QR from backend for this session.');
+      }
+    } finally {
+      setIsCreatingQr(false);
+    }
+  };
+
   const handleManualAttendance = () => {
-    if (!activeSession) return;
-    navigate(`/attendance/manual/${activeSession.id}`);
+    if (!session) return;
+    navigate(`/attendance/manual/${session.id}`);
   };
 
-  // Handle export attendance
   const handleExport = async (format: 'csv' | 'excel' | 'pdf') => {
-    if (!activeSession) return;
+    if (!session) return;
 
     try {
       await exportMutation.mutateAsync({
-        sessionId: activeSession.id,
+        sessionId: session.id,
         format,
       });
-    } catch (error) {
-      console.error('Failed to export attendance:', error);
+    } catch {
+      appAlert.error('Export failed', 'Could not export attendance file.');
     }
   };
 
-  // Calculate time remaining
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
 
   useEffect(() => {
@@ -197,17 +375,12 @@ export default function AttendanceManagementPage() {
       const now = new Date();
       const diff = Math.floor((expiry.getTime() - now.getTime()) / 1000);
       setTimeRemaining(diff > 0 ? diff : 0);
-      
-      // Auto-clear session from context when expired
-      if (diff <= 0 && activeSession) {
-        setActiveSession(null);
-      }
     };
 
     calculateRemaining();
     const interval = setInterval(calculateRemaining, 1000);
     return () => clearInterval(interval);
-  }, [session?.qrExpiry, activeSession, setActiveSession]);
+  }, [session?.qrExpiry]);
 
   const formatTimeRemaining = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -215,7 +388,6 @@ export default function AttendanceManagementPage() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Check if session is editable (only today's sessions)
   const isSessionEditable = (sessionDate: string): boolean => {
     const date = new Date(sessionDate);
     const today = new Date();
@@ -227,18 +399,17 @@ export default function AttendanceManagementPage() {
   };
 
   const isExpired = timeRemaining !== null && timeRemaining <= 0;
+  const isQrStopped = !!(session && stoppedQrBySessionId[session.id]);
+  const shouldHideQrImage = isExpired || isQrStopped;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
-      {/* Header */}
       <div className="bg-white/80 backdrop-blur-sm border-b border-emerald-100">
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-slate-900">Attendance Management</h1>
-              <p className="text-slate-600 mt-1">
-                Track student attendance and manage active QR sessions
-              </p>
+              <p className="text-slate-600 mt-1">Track student attendance and manage active QR sessions</p>
             </div>
             <div className="flex items-center gap-3">
               <div className="px-4 py-2 bg-slate-100 rounded-xl border border-slate-200">
@@ -251,8 +422,7 @@ export default function AttendanceManagementPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-6">
-        {/* Active Session Card */}
-        {session && (
+        {(session || activeBookingByTime) && (
           <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-2 border-slate-200 rounded-2xl p-6 mb-6 shadow-md">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4">
@@ -265,7 +435,7 @@ export default function AttendanceManagementPage() {
                     <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-lg border border-emerald-300">
                       LIVE
                     </span>
-                    {!isSessionEditable(session.date) && (
+                    {session && !isSessionEditable(session.date) && (
                       <span className="px-2.5 py-1 bg-amber-100 text-amber-700 text-xs font-bold rounded-lg border border-amber-300 flex items-center gap-1">
                         <Lock className="w-3 h-3" />
                         Read-Only
@@ -273,22 +443,12 @@ export default function AttendanceManagementPage() {
                     )}
                   </div>
                   <p className="text-slate-600 font-medium">
-                    {session.roomName} • {session.buildingName}
+                    {activeDisplayRoom} • {activeDisplayBuilding}
                   </p>
                 </div>
               </div>
 
-              {/* Timer Badge */}
-              {!isExpired ? (
-                <div className="bg-emerald-100 border-2 border-emerald-300 rounded-xl px-5 py-3">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-emerald-600" />
-                    <span className="text-2xl font-bold text-emerald-700 tabular-nums">
-                      {timeRemaining !== null ? formatTimeRemaining(timeRemaining) : '--:--'}
-                    </span>
-                  </div>
-                </div>
-              ) : (
+              {session && isExpired && (
                 <div className="bg-red-100 border-2 border-red-300 rounded-xl px-5 py-3">
                   <div className="flex items-center gap-2">
                     <AlertCircle className="w-5 h-5 text-red-600" />
@@ -298,108 +458,41 @@ export default function AttendanceManagementPage() {
               )}
             </div>
 
-            <div className="grid grid-cols-4 gap-4 mb-6">
-              {/* Present */}
-              <div className="bg-emerald-50 border-2 border-emerald-200 rounded-xl p-4 hover:border-emerald-400 hover:shadow-md transition-all">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-9 h-9 bg-emerald-100 rounded-lg flex items-center justify-center">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                  </div>
-                  <span className="text-sm font-semibold text-slate-600">Present</span>
-                </div>
-                <p className="text-3xl font-bold text-emerald-600 tabular-nums">{session.presentCount}</p>
-              </div>
-
-              {/* Late */}
-              <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-4 hover:border-amber-400 hover:shadow-md transition-all">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-9 h-9 bg-amber-100 rounded-lg flex items-center justify-center">
-                    <Clock className="w-5 h-5 text-amber-600" />
-                  </div>
-                  <span className="text-sm font-semibold text-slate-600">Late</span>
-                </div>
-                <p className="text-3xl font-bold text-amber-600 tabular-nums">{session.lateCount}</p>
-              </div>
-
-              {/* Absent */}
-              <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 hover:border-red-400 hover:shadow-md transition-all">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-9 h-9 bg-red-100 rounded-lg flex items-center justify-center">
-                    <XCircle className="w-5 h-5 text-red-600" />
-                  </div>
-                  <span className="text-sm font-semibold text-slate-600">Absent</span>
-                </div>
-                <p className="text-3xl font-bold text-red-600 tabular-nums">{session.absentCount}</p>
-              </div>
-
-              {/* Total */}
-              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 hover:border-blue-400 hover:shadow-md transition-all">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-9 h-9 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <Users className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <span className="text-sm font-semibold text-slate-600">Total</span>
-                </div>
-                <p className="text-3xl font-bold text-blue-600 tabular-nums">{session.totalStudents}</p>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={handleOpenTVDisplay}
-                  className="bg-blue-50 border-2 border-blue-300 hover:border-blue-500 hover:bg-blue-100 text-blue-700 px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
-                >
-                  <ExternalLink className="w-5 h-5" />
-                  <span>Open TV Display</span>
-                </button>
-
-                <button
-                  onClick={handleManualAttendance}
-                  className="bg-indigo-50 border-2 border-indigo-300 hover:border-indigo-500 hover:bg-indigo-100 text-indigo-700 px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
-                >
-                  <UserCheck className="w-5 h-5" />
-                  <span>Manual Attendance</span>
-                </button>
-
-                <button
-                  onClick={handleRefreshQR}
-                  disabled={refreshTokenMutation.isPending}
-                  className="bg-emerald-50 border-2 border-emerald-300 hover:border-emerald-500 hover:bg-emerald-100 disabled:border-slate-300 disabled:bg-slate-50 text-emerald-700 disabled:text-slate-400 px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed"
-                >
-                  <RefreshCw className={`w-5 h-5 ${refreshTokenMutation.isPending ? 'animate-spin' : ''}`} />
-                  <span>Refresh QR</span>
-                </button>
-
-                <button
-                  onClick={() => setShowQRModal(true)}
-                  className="bg-slate-50 border-2 border-slate-300 hover:border-slate-500 hover:bg-slate-100 text-slate-700 px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
-                >
-                  <QrCode className="w-5 h-5" />
-                  <span>View QR</span>
-                </button>
-              </div>
-
-              {/* End Session Button */}
+            <div className="grid grid-cols-3 gap-3">
               <button
-                onClick={handleEndSession}
-                disabled={endSessionMutation.isPending}
-                className="w-full bg-red-50 border-2 border-red-300 hover:border-red-500 hover:bg-red-100 disabled:border-slate-300 disabled:bg-slate-50 text-red-700 disabled:text-slate-400 px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed"
+                onClick={handleOpenTVDisplay}
+                disabled={!session}
+                className="bg-blue-50 border-2 border-blue-300 hover:border-blue-500 hover:bg-blue-100 text-blue-700 px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
               >
-                <XCircle className="w-5 h-5" />
-                <span>{endSessionMutation.isPending ? 'Ending...' : 'End Session'}</span>
+                <ExternalLink className="w-5 h-5" />
+                <span>Open TV Display</span>
+              </button>
+
+              <button
+                onClick={handleManualAttendance}
+                disabled={!session}
+                className="bg-indigo-50 border-2 border-indigo-300 hover:border-indigo-500 hover:bg-indigo-100 text-indigo-700 px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
+              >
+                <UserCheck className="w-5 h-5" />
+                <span>Manual Attendance</span>
+              </button>
+
+              <button
+                onClick={handleViewQR}
+                disabled={isCreatingQr}
+                className="bg-slate-50 border-2 border-slate-300 hover:border-slate-500 hover:bg-slate-100 text-slate-700 px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
+              >
+                {isCreatingQr ? <RefreshCw className="w-5 h-5 animate-spin" /> : <QrCode className="w-5 h-5" />}
+                <span>{isCreatingQr ? 'Creating QR...' : 'View QR'}</span>
               </button>
             </div>
 
-            {/* Export Dropdown */}
             <div className="relative group mt-3">
               <button className="w-full bg-slate-50 border-2 border-slate-300 hover:border-slate-500 hover:bg-slate-100 text-slate-700 px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2">
                 <Download className="w-5 h-5" />
                 <span>Export Attendance</span>
               </button>
-                
-              {/* Dropdown */}
+
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
                 <button
                   onClick={() => handleExport('csv')}
@@ -424,10 +517,8 @@ export default function AttendanceManagementPage() {
           </div>
         )}
 
-        {/* Filters */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-6">
           <div className="flex items-center gap-4">
-            {/* Search */}
             <div className="flex-1 relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
               <input
@@ -439,14 +530,11 @@ export default function AttendanceManagementPage() {
               />
             </div>
 
-            {/* Status Filter */}
             <div className="flex gap-1 bg-slate-100 p-1 rounded-xl">
               <button
                 onClick={() => setStatusFilter('upcoming')}
                 className={`px-5 py-2 rounded-lg font-semibold text-sm transition-all ${
-                  statusFilter === 'upcoming'
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                  statusFilter === 'upcoming' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 Upcoming
@@ -454,9 +542,7 @@ export default function AttendanceManagementPage() {
               <button
                 onClick={() => setStatusFilter('past')}
                 className={`px-5 py-2 rounded-lg font-semibold text-sm transition-all ${
-                  statusFilter === 'past'
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                  statusFilter === 'past' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 Past
@@ -464,9 +550,7 @@ export default function AttendanceManagementPage() {
               <button
                 onClick={() => setStatusFilter('all')}
                 className={`px-5 py-2 rounded-lg font-semibold text-sm transition-all ${
-                  statusFilter === 'all'
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                  statusFilter === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 All
@@ -475,7 +559,6 @@ export default function AttendanceManagementPage() {
           </div>
         </div>
 
-        {/* Bookings List */}
         <div className="space-y-3">
           {bookingsLoading ? (
             <div className="text-center py-16">
@@ -491,17 +574,11 @@ export default function AttendanceManagementPage() {
               <p className="text-slate-600 text-sm">Try adjusting your search or filters</p>
             </div>
           ) : (
-            filteredBookings.map((booking) => (
-              <BookingCard
-                key={booking.bookingId}
-                booking={booking}
-              />
-            ))
+            filteredBookings.map((booking) => <BookingCard key={booking.bookingId} booking={booking} />)
           )}
         </div>
       </div>
 
-      {/* QR Modal */}
       {showQRModal && session && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 animate-in zoom-in-95 duration-200">
@@ -515,40 +592,42 @@ export default function AttendanceManagementPage() {
               </p>
             </div>
 
-            {/* QR Code */}
             <div className="flex justify-center mb-6 bg-slate-50 border-2 border-slate-200 rounded-2xl p-8">
-              {isExpired ? (
+              {shouldHideQrImage ? (
                 <div className="text-center py-12">
                   <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <AlertCircle className="w-8 h-8 text-red-600" />
                   </div>
-                  <p className="text-lg font-bold text-slate-900 mb-1">QR Code Expired</p>
-                  <p className="text-sm text-slate-600">Please refresh to generate a new code</p>
+                  <p className="text-lg font-bold text-slate-900 mb-1">{isQrStopped ? 'QR Code Turned Off' : 'QR Code Expired'}</p>
+                  <p className="text-sm text-slate-600">
+                    {isQrStopped ? 'QR has been stopped. Refresh QR to generate a new one.' : 'Refresh QR to generate a new code'}
+                  </p>
                 </div>
-              ) : (
-                <QRCodeSVG 
-                  value={scanUrl} 
-                  size={280} 
-                  level="H" 
-                  includeMargin
-                  bgColor="#ffffff"
-                  fgColor="#0f172a"
+              ) : session.qrImageBase64 || session.qrImageUrl ? (
+                <img
+                  src={
+                    session.qrImageBase64
+                      ? (session.qrImageBase64.startsWith('data:')
+                        ? session.qrImageBase64
+                        : `data:image/png;base64,${session.qrImageBase64}`)
+                      : session.qrImageUrl
+                  }
+                  alt="Session QR"
+                  className="w-[280px] h-[280px] object-contain"
                 />
+              ) : (
+                <QRCodeSVG value={scanUrl} size={280} level="H" includeMargin bgColor="#ffffff" fgColor="#0f172a" />
               )}
             </div>
 
-            {/* Timer */}
-            {!isExpired && timeRemaining !== null && (
+            {!shouldHideQrImage && timeRemaining !== null && (
               <div className="text-center mb-6 space-y-3">
                 <div className="inline-flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-5 py-3">
                   <Clock className="w-5 h-5 text-amber-600" />
-                  <span className="text-xl font-bold text-slate-900 tabular-nums">
-                    {formatTimeRemaining(timeRemaining)}
-                  </span>
+                  <span className="text-xl font-bold text-slate-900 tabular-nums">{formatTimeRemaining(timeRemaining)}</span>
                   <span className="text-sm text-slate-600 font-medium">left</span>
                 </div>
-                
-                {/* Test Button */}
+
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(scanUrl);
@@ -556,12 +635,31 @@ export default function AttendanceManagementPage() {
                   }}
                   className="text-sm text-blue-600 hover:text-blue-700 font-semibold hover:underline"
                 >
-                  📋 Copy Link to Test
+                  Copy Link to Test
                 </button>
               </div>
             )}
 
-            {/* Close Button */}
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <button
+                onClick={handleRefreshQR}
+                disabled={isRefreshingQr || endSessionMutation.isPending || isCreatingQr}
+                className="bg-emerald-50 border-2 border-emerald-300 hover:border-emerald-500 hover:bg-emerald-100 disabled:border-slate-300 disabled:bg-slate-50 text-emerald-700 disabled:text-slate-400 px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed"
+              >
+                <RefreshCw className={`w-5 h-5 ${isRefreshingQr ? 'animate-spin' : ''}`} />
+                <span>Refresh QR</span>
+              </button>
+
+              <button
+                onClick={handleEndSession}
+                disabled={endSessionMutation.isPending || isRefreshingQr || isCreatingQr}
+                className="bg-red-50 border-2 border-red-300 hover:border-red-500 hover:bg-red-100 disabled:border-slate-300 disabled:bg-slate-50 text-red-700 disabled:text-slate-400 px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed"
+              >
+                <XCircle className="w-5 h-5" />
+                <span>{endSessionMutation.isPending ? 'Stopping...' : 'Stop QR'}</span>
+              </button>
+            </div>
+
             <button
               onClick={() => setShowQRModal(false)}
               className="w-full bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white py-3 rounded-xl font-semibold transition-all shadow-sm hover:shadow-md"
@@ -575,9 +673,6 @@ export default function AttendanceManagementPage() {
   );
 }
 
-/**
- * Booking Card Component
- */
 interface BookingCardProps {
   booking: BookingWithQR;
 }
@@ -597,7 +692,6 @@ function BookingCard({ booking }: BookingCardProps) {
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 hover:shadow-md hover:border-slate-300 transition-all p-5">
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
-          {/* Header */}
           <div className="flex items-center gap-3 mb-4">
             <div className="w-11 h-11 bg-slate-100 rounded-xl flex items-center justify-center flex-shrink-0">
               <Building2 className="w-5 h-5 text-slate-700" />
@@ -605,11 +699,7 @@ function BookingCard({ booking }: BookingCardProps) {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <h3 className="text-lg font-bold text-slate-900 truncate">{booking.roomName}</h3>
-                <span
-                  className={`inline-block px-2.5 py-1 rounded-lg text-xs font-bold border ${
-                    statusColors[booking.status]
-                  }`}
-                >
+                <span className={`inline-block px-2.5 py-1 rounded-lg text-xs font-bold border ${statusColors[booking.status]}`}>
                   {booking.status}
                 </span>
               </div>
@@ -617,7 +707,6 @@ function BookingCard({ booking }: BookingCardProps) {
             </div>
           </div>
 
-          {/* Details Grid */}
           <div className="grid grid-cols-3 gap-3 mb-3">
             <div className="flex items-center gap-2 text-slate-600">
               <MapPin className="w-4 h-4 flex-shrink-0" />
@@ -635,13 +724,11 @@ function BookingCard({ booking }: BookingCardProps) {
             </div>
           </div>
 
-          {/* Purpose */}
           <p className="text-sm text-slate-700 line-clamp-1">
             <span className="font-semibold">Purpose:</span> {booking.purpose}
           </p>
         </div>
 
-        {/* Actions */}
         <div className="flex-shrink-0">
           {booking.hasQRSession ? (
             <button
