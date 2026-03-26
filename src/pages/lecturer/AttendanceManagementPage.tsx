@@ -19,6 +19,8 @@ import {
   Search,
   UserCheck,
   Lock,
+  CheckCircle,
+  Users,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import {
@@ -30,7 +32,7 @@ import {
   useExportAttendance,
   type BookingWithQR,
 } from '../../features/attendance';
-import { useBookings } from '../../features/booking/hooks/useBooking';
+import { useBookingAttendance } from '../../features/booking';
 import type { BookingDto, GetBookingsParams } from '../../features/booking/types/booking.type';
 import { MOCK_LECTURER_BOOKINGS, MOCK_QR_SESSION } from '../../features/attendance/mocks/attendance.mock';
 import { useActiveSession } from '../../context/ActiveSessionContext';
@@ -90,10 +92,10 @@ export default function AttendanceManagementPage() {
   const appAlert = useToast();
   const navigate = useNavigate();
   const { activeSession, setActiveSession } = useActiveSession();
-  const isAttendanceTestMode = useMemo(() => {
+  const isAttendanceMockMode = useMemo(() => {
     if (typeof window === 'undefined') return false;
     const params = new URLSearchParams(window.location.search);
-    return params.get('testAttendance') === '1';
+    return params.get('mockAttendance') === '1' || params.get('testAttendance') === '1';
   }, []);
 
   const bookingScheduleParams: GetBookingsParams = useMemo(
@@ -108,7 +110,7 @@ export default function AttendanceManagementPage() {
   );
 
   const { data: bookingsData, isLoading: bookingsLoading } = useLecturerBookings();
-  const { data: bookingScheduleData } = useBookings(bookingScheduleParams, true);
+  const { data: bookingScheduleData } = useBookingAttendance(bookingScheduleParams, true);
   const createQrSessionMutation = useCreateQRSession();
   const [isRefreshingQr, setIsRefreshingQr] = useState(false);
   const endSessionMutation = useEndQRSession();
@@ -120,18 +122,10 @@ export default function AttendanceManagementPage() {
   const [isCreatingQr, setIsCreatingQr] = useState(false);
   const [stoppedQrBySessionId, setStoppedQrBySessionId] = useState<Record<string, boolean>>({});
 
-  const bookings = bookingsData?.data || MOCK_LECTURER_BOOKINGS;
+  const bookings = bookingsData?.data || (isAttendanceMockMode ? MOCK_LECTURER_BOOKINGS : []);
   const bookingScheduleItems: BookingDto[] = bookingScheduleData?.data?.items || [];
 
   const activeRoomNamesFromSchedule = useMemo(() => {
-    if (isAttendanceTestMode) {
-      return new Set(
-        bookings
-          .filter(item => item.status === 'Approved')
-          .map(item => normalizeRoomName(item.roomName))
-      );
-    }
-
     if (bookingScheduleItems.length === 0) {
       return new Set(
         bookings
@@ -145,7 +139,7 @@ export default function AttendanceManagementPage() {
         .filter(isNowInsideBookingWindow)
         .map(item => normalizeRoomName(item.labRoomName))
     );
-  }, [bookingScheduleItems, bookings, isAttendanceTestMode]);
+  }, [bookingScheduleItems, bookings]);
 
   const activeBookingByTime = useMemo(() => {
     if (activeRoomNamesFromSchedule.size === 0) {
@@ -159,12 +153,22 @@ export default function AttendanceManagementPage() {
     );
   }, [bookings, activeRoomNamesFromSchedule]);
 
-  const resolvedSessionId = activeBookingByTime
-    ? (activeSession?.isActive ? activeSession.id : (activeBookingByTime.hasQRSession ? (activeBookingByTime.qrSessionId ?? null) : null))
+  const mockFallbackBooking = useMemo(() => {
+    if (!isAttendanceMockMode) return null;
+    return bookings.find(booking => booking.hasQRSession) || bookings.find(booking => booking.status === 'Approved') || null;
+  }, [bookings, isAttendanceMockMode]);
+
+  const actionBooking = activeBookingByTime || mockFallbackBooking;
+
+  const resolvedSessionId = actionBooking
+    ? (activeSession?.isActive ? activeSession.id : (actionBooking.hasQRSession ? (actionBooking.qrSessionId ?? null) : null))
     : null;
 
-  const { data: sessionData } = useQRSession(resolvedSessionId, !!resolvedSessionId);
-  useAttendanceList(resolvedSessionId, !!resolvedSessionId);
+  const isMockSession = isAttendanceMockMode && resolvedSessionId === MOCK_QR_SESSION.id;
+  const apiSessionId = isMockSession ? null : resolvedSessionId;
+
+  const { data: sessionData } = useQRSession(apiSessionId, !!apiSessionId);
+  const { data: attendanceListData } = useAttendanceList(apiSessionId, !!apiSessionId);
 
   useEffect(() => {
     if (sessionData?.data?.isActive) {
@@ -172,8 +176,7 @@ export default function AttendanceManagementPage() {
       return;
     }
 
-    // Keep header counter visible while testing with mock data.
-    if (!sessionData?.data && resolvedSessionId === MOCK_QR_SESSION.id) {
+    if (isMockSession && !sessionData?.data) {
       setActiveSession(MOCK_QR_SESSION);
       return;
     }
@@ -181,14 +184,18 @@ export default function AttendanceManagementPage() {
     if (!resolvedSessionId && activeSession) {
       setActiveSession(null);
     }
-  }, [activeSession, resolvedSessionId, sessionData?.data, setActiveSession]);
+  }, [activeSession, isMockSession, resolvedSessionId, sessionData?.data, setActiveSession]);
 
-  const session = sessionData?.data || (resolvedSessionId === MOCK_QR_SESSION.id ? MOCK_QR_SESSION : activeSession);
-  const activeDisplayRoom = session?.roomName || activeBookingByTime?.roomName || 'Unknown Room';
-  const activeDisplayBuilding = session?.buildingName || activeBookingByTime?.buildingName || 'Unknown Building';
+  const session = sessionData?.data || (isMockSession ? MOCK_QR_SESSION : activeSession);
+  const activeDisplayRoom = session?.roomName || actionBooking?.roomName || 'Unknown Room';
+  const activeDisplayBuilding = session?.buildingName || actionBooking?.buildingName || 'Unknown Building';
+  const attendanceStats = attendanceListData?.data?.session || session;
+  const totalStudents = attendanceStats?.totalStudents ?? 0;
+  const presentStudents = attendanceStats?.presentCount ?? 0;
+  const absentStudents = attendanceStats?.absentCount ?? Math.max(totalStudents - presentStudents, 0);
 
   const scanUrl = session
-    ? `${window.location.origin}/scan-attendance/${session.id}?token=${encodeURIComponent(session.qrToken)}`
+    ? `${window.location.origin}/scan-attendance/${session.id}?token=${encodeURIComponent(session.qrToken)}${isAttendanceMockMode ? '&mockAttendance=1' : ''}`
     : '';
 
   const filteredBookings = useMemo(() => {
@@ -223,8 +230,10 @@ export default function AttendanceManagementPage() {
     });
   }, [activeBookingByTime, bookings, searchQuery, statusFilter]);
 
+  const shouldShowBookingsLoading = bookingsLoading && !(isAttendanceMockMode && bookings.length > 0);
+
   const handleRefreshQR = async () => {
-    const bookingIdForRefresh = activeBookingByTime?.bookingId || session?.bookingId;
+    const bookingIdForRefresh = actionBooking?.bookingId || session?.bookingId;
     if (!bookingIdForRefresh) {
       appAlert.warning('No active class', 'No booking is available to generate a new QR.');
       return;
@@ -233,8 +242,8 @@ export default function AttendanceManagementPage() {
     setIsRefreshingQr(true);
     try {
       const response = await createQrSessionMutation.mutateAsync({
-        bookingId: bookingIdForRefresh,
-        expiryMinutes: 5,
+        scheduleId: bookingIdForRefresh,
+        isCheckIn: true,
       });
 
       setActiveSession(response.data);
@@ -249,7 +258,22 @@ export default function AttendanceManagementPage() {
 
       appAlert.success('QR refreshed', 'New QR code is ready.');
     } catch {
-      appAlert.error('Refresh failed', 'Could not create a new QR from backend.');
+      if (isAttendanceMockMode) {
+        const mockSession = {
+          ...MOCK_QR_SESSION,
+          qrToken: `QR_SESSION_TOKEN_${Date.now()}`,
+          qrExpiry: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+          isActive: true,
+        };
+        setActiveSession(mockSession);
+        setStoppedQrBySessionId(prev => ({
+          ...prev,
+          [mockSession.id]: false,
+        }));
+        appAlert.success('QR refreshed', 'Mock QR code is ready for testing.');
+      } else {
+        appAlert.error('Refresh failed', 'Could not create a new QR from backend.');
+      }
     } finally {
       setIsRefreshingQr(false);
     }
@@ -257,6 +281,12 @@ export default function AttendanceManagementPage() {
 
   const handleEndSession = async () => {
     if (!session) return;
+    const scheduleIdForEnd = actionBooking?.bookingId || session.bookingId;
+
+    if (!scheduleIdForEnd) {
+      appAlert.warning('No active class', 'No schedule is available to end QR session.');
+      return;
+    }
 
     const confirmed = window.confirm(
       'Bạn có chắc chắn muốn tắt QR hiện tại?\n\nSau khi tắt, ảnh QR sẽ ẩn và sinh viên không thể quét mã này nữa.'
@@ -265,17 +295,9 @@ export default function AttendanceManagementPage() {
     if (!confirmed) return;
 
     try {
-      if (!sessionData?.data) {
-        setStoppedQrBySessionId(prev => ({
-          ...prev,
-          [session.id]: true,
-        }));
-        appAlert.success('QR stopped', 'QR image has been turned off for this session.');
-        return;
-      }
-
       await endSessionMutation.mutateAsync({
-        sessionId: session.id,
+        scheduleId: scheduleIdForEnd,
+        isCheckIn: true,
       });
       setStoppedQrBySessionId(prev => ({
         ...prev,
@@ -298,7 +320,7 @@ export default function AttendanceManagementPage() {
       return;
     }
 
-    if (!activeBookingByTime) {
+    if (!actionBooking) {
       appAlert.warning('No active class', 'There is no in-progress class to create QR for.');
       return;
     }
@@ -306,8 +328,8 @@ export default function AttendanceManagementPage() {
     setIsCreatingQr(true);
     try {
       const response = await createQrSessionMutation.mutateAsync({
-        bookingId: activeBookingByTime.bookingId,
-        expiryMinutes: 5,
+        scheduleId: actionBooking.bookingId,
+        isCheckIn: true,
       });
 
       if (response?.data) {
@@ -322,8 +344,7 @@ export default function AttendanceManagementPage() {
 
       throw new Error('Invalid create QR response');
     } catch {
-      // Mock fallback to keep local flow testable when backend endpoint is unavailable.
-      if (activeBookingByTime.bookingId === MOCK_QR_SESSION.bookingId) {
+      if (isAttendanceMockMode) {
         const mockSession = {
           ...MOCK_QR_SESSION,
           qrToken: `QR_SESSION_TOKEN_${Date.now()}`,
@@ -346,7 +367,7 @@ export default function AttendanceManagementPage() {
 
   const handleManualAttendance = () => {
     if (!session) return;
-    navigate(`/attendance/manual/${session.id}`);
+    navigate(`/attendance/manual/${session.id}${isAttendanceMockMode ? '?mockAttendance=1' : ''}`);
   };
 
   const handleExport = async (format: 'csv' | 'excel' | 'pdf') => {
@@ -412,9 +433,26 @@ export default function AttendanceManagementPage() {
               <p className="text-slate-600 mt-1">Track student attendance and manage active QR sessions</p>
             </div>
             <div className="flex items-center gap-3">
-              <div className="px-4 py-2 bg-slate-100 rounded-xl border border-slate-200">
-                <p className="text-xs text-slate-500 font-medium">Total Sessions</p>
-                <p className="text-2xl font-bold text-slate-900">{bookings.length}</p>
+              <div className="px-5 py-2.5 bg-blue-50 rounded-xl border border-blue-200 min-w-[130px]">
+                <p className="text-xs text-blue-700 font-semibold">Total</p>
+                <p className="text-2xl font-bold text-blue-900 tabular-nums flex items-center gap-1.5">
+                  <Users className="w-5 h-5" />
+                  {totalStudents}
+                </p>
+              </div>
+              <div className="px-5 py-2.5 bg-emerald-50 rounded-xl border border-emerald-200 min-w-[130px]">
+                <p className="text-xs text-emerald-700 font-semibold">Present</p>
+                <p className="text-2xl font-bold text-emerald-900 tabular-nums flex items-center gap-1.5">
+                  <CheckCircle className="w-5 h-5" />
+                  {presentStudents}
+                </p>
+              </div>
+              <div className="px-5 py-2.5 bg-red-50 rounded-xl border border-red-200 min-w-[130px]">
+                <p className="text-xs text-red-700 font-semibold">Absent</p>
+                <p className="text-2xl font-bold text-red-900 tabular-nums flex items-center gap-1.5">
+                  <XCircle className="w-5 h-5" />
+                  {absentStudents}
+                </p>
               </div>
             </div>
           </div>
@@ -422,7 +460,7 @@ export default function AttendanceManagementPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-6">
-        {(session || activeBookingByTime) && (
+        {(session || actionBooking) && (
           <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-2 border-slate-200 rounded-2xl p-6 mb-6 shadow-md">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4">
@@ -560,7 +598,7 @@ export default function AttendanceManagementPage() {
         </div>
 
         <div className="space-y-3">
-          {bookingsLoading ? (
+          {shouldShowBookingsLoading ? (
             <div className="text-center py-16">
               <div className="animate-spin rounded-full h-12 w-12 border-4 border-slate-200 border-t-blue-600 mx-auto mb-4"></div>
               <p className="text-slate-600 font-medium">Loading bookings...</p>

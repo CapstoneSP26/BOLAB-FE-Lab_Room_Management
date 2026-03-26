@@ -4,6 +4,7 @@ import type { BookingDto, GetBookingHistoryRequest, GetBookingHistoryResponse, G
 
 const BOOKING_API = {
   BOOKS: '/bookings',
+  BOOKING_ATTENDANCE: '/bookings/booking-attendance',
   UPCOMING: '/bookings/upcoming',
   STATS: '/bookings/stats',
   RECENT_REQUESTS: '/booking-requests/recent',
@@ -13,6 +14,11 @@ const BOOKING_API = {
 export const bookingApi = {
   getBookings: (params: GetBookingsParams) =>
     axiosInstance.get<PagedResponse<BookingDto>>(BOOKING_API.BOOKS, {
+      params,
+    }),
+
+  getBookingAttendance: (params: GetBookingsParams) =>
+    axiosInstance.get<PagedResponse<BookingDto>>(BOOKING_API.BOOKING_ATTENDANCE, {
       params,
     }),
 
