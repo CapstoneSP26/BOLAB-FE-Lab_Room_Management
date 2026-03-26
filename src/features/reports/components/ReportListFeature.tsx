@@ -1,53 +1,75 @@
-import { useEffect, useMemo, useState } from "react";
-import type { Report, ReportType } from "../types/report.type";
-import { reportApi } from "../api/reportApi";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { Report, ReportResolvedFilter } from "../types/report.type";
+import {
+  getFilteredReports,
+  getUnresolvedReports,
+  resolveReport,
+} from "../api/reportApi";
 import ReportListFilters from "./ReportListFilters";
 import ReportListTable from "./ReportListTable";
 import { useNavigate } from "react-router-dom";
-
+import { ChevronDown, ChevronUp } from "lucide-react";
 export default function ReportListFeature() {
   const nav = useNavigate();
   const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<Report[]>([]);
 
-  const [reportType, setReportType] = useState<ReportType | "ALL">("ALL");
-  const [resolved, setResolved] = useState<"ALL" | "RESOLVED" | "UNRESOLVED">(
-    "ALL",
-  );
+  const [reportType, setReportType] = useState<string | "ALL">("ALL");
+  const [resolved, setResolved] = useState<ReportResolvedFilter>("UNRESOLVED");
   const [q, setQ] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await reportApi.list({
-        reportType,
-        resolved,
-        q,
-        from,
-        to,
-      });
-      setItems(data);
+      const data =
+        resolved === "UNRESOLVED"
+          ? await getUnresolvedReports({
+              q,
+            })
+          : await getFilteredReports({
+              q,
+              status: resolved,
+            });
+
+      const reports = Array.isArray(data?.data?.reports)
+        ? data.data.reports
+        : [];
+
+      let next = reports;
+
+      if (reportType !== "ALL") {
+        next = next.filter((r) => r.ReportType === reportType);
+      }
+
+      if (from) {
+        const fromTime = new Date(`${from}T00:00:00`).getTime();
+        next = next.filter((r) => new Date(r.CreatedAt).getTime() >= fromTime);
+      }
+
+      if (to) {
+        const toTime = new Date(`${to}T23:59:59`).getTime();
+        next = next.filter((r) => new Date(r.CreatedAt).getTime() <= toTime);
+      }
+
+      setItems(next);
     } finally {
       setLoading(false);
     }
-  };
+  }, [resolved, q, reportType, from, to]);
 
   useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    void load();
+  }, [load]);
 
   const rows = useMemo(() => items, [items]);
 
-  // Calculate statistics
   const stats = useMemo(() => {
     const resolvedCount = rows.filter((r) => r.IsResolved).length;
     const unresolvedCount = rows.filter((r) => !r.IsResolved).length;
 
-    // Count by type
     const typeBreakdown: Record<string, number> = {};
     rows.forEach((r) => {
       const type = r.ReportType || "Unknown";
@@ -67,20 +89,22 @@ export default function ReportListFeature() {
   }, [rows]);
 
   const onToggleResolved = async (id: string, next: boolean) => {
-    const updated = await reportApi.setResolved(id, next);
-    setItems((prev) => prev.map((x) => (x.Id === updated.Id ? updated : x)));
+    if (!next) return;
+
+    const updated = await resolveReport(id);
+
+    setItems((prev) => prev.filter((x) => x.Id !== updated.Id));
   };
 
   const hasActiveFilters =
     reportType !== "ALL" ||
-    resolved !== "ALL" ||
+    resolved !== "UNRESOLVED" ||
     q.trim() !== "" ||
     from !== "" ||
     to !== "";
 
   return (
     <div className="space-y-6">
-      {/* Header Card */}
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800/50">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex-1">
@@ -136,7 +160,6 @@ export default function ReportListFeature() {
           </div>
         </div>
 
-        {/* Stats Grid */}
         <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
           <StatCard
             label="Total Reports"
@@ -220,7 +243,6 @@ export default function ReportListFeature() {
           />
         </div>
 
-        {/* Resolution Progress Bar */}
         {stats.total > 0 && (
           <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/30">
             <div className="mb-2 flex items-center justify-between">
@@ -234,9 +256,7 @@ export default function ReportListFeature() {
             <div className="h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-600">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 transition-all duration-500"
-                style={{
-                  width: `${stats.resolutionRate}%`,
-                }}
+                style={{ width: `${stats.resolutionRate}%` }}
               />
             </div>
             <div className="mt-2 flex justify-between text-xs text-gray-600 dark:text-gray-400">
@@ -246,7 +266,6 @@ export default function ReportListFeature() {
           </div>
         )}
 
-        {/* Type Breakdown */}
         {Object.keys(stats.typeBreakdown).length > 0 && (
           <div className="mt-4 flex flex-wrap gap-2">
             {Object.entries(stats.typeBreakdown).map(([type, count]) => (
@@ -266,9 +285,8 @@ export default function ReportListFeature() {
           </div>
         )}
       </div>
-      {/* Filters Card */}
+
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800/50">
-        {/* Filter Header - Always Visible */}
         <div className="border-b border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-700 dark:bg-gray-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -334,7 +352,6 @@ export default function ReportListFeature() {
           </div>
         </div>
 
-        {/* Filter Content - Collapsible */}
         <div
           className={`transition-all duration-300 ease-in-out ${
             showFilters
@@ -356,7 +373,7 @@ export default function ReportListFeature() {
               onTo={setTo}
               onReset={() => {
                 setReportType("ALL");
-                setResolved("ALL");
+                setResolved("UNRESOLVED");
                 setQ("");
                 setFrom("");
                 setTo("");
@@ -366,7 +383,7 @@ export default function ReportListFeature() {
           </div>
         </div>
       </div>
-      {/* Table Card */}
+
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800/50">
         {loading && items.length === 0 ? (
           <LoadingSkeleton />
@@ -426,7 +443,7 @@ export default function ReportListFeature() {
           </div>
         )}
       </div>
-      {/* Help Card */}
+
       <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
         <div className="flex items-start gap-3">
           <svg
@@ -463,7 +480,6 @@ export default function ReportListFeature() {
   );
 }
 
-// Helper Components
 function StatCard({
   label,
   value,

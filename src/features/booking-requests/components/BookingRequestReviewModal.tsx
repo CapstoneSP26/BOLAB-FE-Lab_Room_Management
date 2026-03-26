@@ -1,9 +1,9 @@
 import { useEffect, useMemo } from "react";
-import type { Booking } from "../types/schedule.type";
+import type { BookingRequest } from "../../booking/types/booking.type";
 
 type Props = {
   open: boolean;
-  booking: Booking | null;
+  booking: BookingRequest | null;
   loading?: boolean;
   onClose: () => void;
   onApprove: (id: string) => void;
@@ -13,21 +13,23 @@ type Props = {
 const norm = (s: unknown) => String(s ?? "").trim();
 
 function isPendingStatus(status: unknown) {
-  return norm(status) === "PendingApproval";
+  const s = norm(status).toLowerCase();
+  return s === "pending" || s === "pendingapproval";
 }
 
 function statusMeta(status: unknown) {
   const s = norm(status);
+  const lower = s.toLowerCase();
 
-  if (s === "PendingApproval") {
+  if (lower === "pendingapproval" || lower === "pending") {
     return {
-      label: "Pending Approval",
+      label: "Pending",
       cls: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
       dot: "bg-amber-500",
     };
   }
 
-  if (s === "Draft") {
+  if (lower === "draft") {
     return {
       label: "Draft",
       cls: "bg-slate-50 text-slate-700 dark:bg-slate-500/10 dark:text-slate-400",
@@ -35,7 +37,7 @@ function statusMeta(status: unknown) {
     };
   }
 
-  if (s === "REJECTED") {
+  if (lower === "rejected") {
     return {
       label: "Rejected",
       cls: "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400",
@@ -43,7 +45,7 @@ function statusMeta(status: unknown) {
     };
   }
 
-  if (s === "APPROVED") {
+  if (lower === "approved" || lower === "accepted") {
     return {
       label: "Approved",
       cls: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
@@ -66,11 +68,6 @@ function fmtDateTime(v?: string) {
     dateStyle: "medium",
     timeStyle: "short",
   });
-}
-
-function recurrenceLabel(recur?: number) {
-  if (!recur || recur <= 0) return "No";
-  return `Yes (${recur})`;
 }
 
 export default function BookingRequestModal({
@@ -103,12 +100,8 @@ export default function BookingRequestModal({
     };
   }, [open]);
 
-  const pending = booking ? isPendingStatus(booking.BookingStatus) : false;
-
-  const meta = useMemo(
-    () => statusMeta(booking?.BookingStatus),
-    [booking?.BookingStatus],
-  );
+  const pending = booking ? isPendingStatus(booking.status) : false;
+  const meta = useMemo(() => statusMeta(booking?.status), [booking?.status]);
 
   if (!open) return null;
 
@@ -130,7 +123,7 @@ export default function BookingRequestModal({
                   Booking Request Details
                 </h3>
                 <p className="mt-1 font-mono text-sm text-gray-500 dark:text-gray-400">
-                  {booking?.Id || "Loading..."}
+                  {booking?.id || "Loading..."}
                 </p>
               </div>
 
@@ -190,55 +183,48 @@ export default function BookingRequestModal({
               <div className="space-y-6">
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                   <InfoCard title="Location & Time">
-                    <InfoRow label="Room" value={`Room ${booking.LabRoomId}`} />
+                    <InfoRow label="Room ID" value={String(booking.roomId)} />
+                    <InfoRow
+                      label="Room Name"
+                      value={booking.roomName || "-"}
+                    />
                     <InfoRow
                       label="Building"
-                      value={booking.BuildingName || "-"}
+                      value={booking.buildingName || "-"}
                     />
                     <InfoRow
                       label="Start Time"
-                      value={fmtDateTime(booking.StartTime)}
+                      value={fmtDateTime(booking.startTime)}
                     />
                     <InfoRow
                       label="End Time"
-                      value={fmtDateTime(booking.EndTime)}
+                      value={fmtDateTime(booking.endTime)}
                     />
                     <InfoRow
                       label="Student Count"
-                      value={String(booking.StudentCount)}
+                      value={String(booking.studentCount ?? "-")}
                     />
                   </InfoCard>
 
                   <InfoCard title="Requester">
                     <InfoRow
-                      label="User ID"
-                      value={booking.BookedByUserId}
-                      mono
+                      label="Requested By"
+                      value={booking.requestedBy || "-"}
                     />
+                    <InfoRow label="Status" value={booking.status || "-"} />
                     <InfoRow
-                      label="Purpose Name"
-                      value={booking.PurposeTypeName}
+                      label="Requested At"
+                      value={fmtDateTime(booking.requestedAt)}
                     />
-                    <InfoRow
-                      label="Booking Type"
-                      value={booking.BookingType || "-"}
-                    />
-                    <InfoRow label="Status" value={booking.BookingStatus} />
+                    <InfoRow label="Date" value={booking.date || "-"} />
                   </InfoCard>
 
-                  <InfoCard title="Recurrence">
+                  <InfoCard title="Purpose">
+                    <InfoRow label="Purpose" value={booking.purpose || "-"} />
                     <InfoRow
-                      label="Recur"
-                      value={recurrenceLabel(booking.Recur)}
-                      highlight={(booking.Recur ?? 0) > 0}
-                    />
-                    <InfoRow
-                      label="Created By"
-                      value={booking.CreatedBy || "-"}
-                    />
-                    <InfoRow
-                      label="Updated By"
-                      value={booking.UpdatedBy || "-"}
+                      label="Request ID"
+                      value={String(booking.id)}
+                      mono
                     />
                   </InfoCard>
                 </div>
@@ -246,37 +232,17 @@ export default function BookingRequestModal({
                 <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800/50">
                   <div className="border-b border-gray-200 bg-gray-50 px-6 py-3 dark:border-gray-700 dark:bg-gray-800">
                     <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      Booking Reason
+                      Notes
                     </h4>
                   </div>
                   <div className="px-6 py-4">
                     <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-gray-800 dark:text-gray-200">
-                      {booking.Reason || (
+                      {booking.purpose || (
                         <span className="italic text-gray-400">
-                          No reason provided
+                          No details provided
                         </span>
                       )}
                     </p>
-                  </div>
-                </div>
-
-                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800/50">
-                  <div className="border-b border-gray-200 bg-gray-50 px-6 py-3 dark:border-gray-700 dark:bg-gray-800">
-                    <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      Audit Trail
-                    </h4>
-                  </div>
-                  <div className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2">
-                    <AuditItem
-                      label="Created"
-                      value={fmtDateTime(booking.CreatedAt)}
-                      user={booking.CreatedBy}
-                    />
-                    <AuditItem
-                      label="Last Updated"
-                      value={fmtDateTime(booking.UpdatedAt)}
-                      user={booking.UpdatedBy}
-                    />
                   </div>
                 </div>
 
@@ -286,7 +252,7 @@ export default function BookingRequestModal({
                       <p className="text-sm text-gray-600 dark:text-gray-400">
                         Actions are only available for{" "}
                         <span className="font-semibold text-amber-600 dark:text-amber-400">
-                          PendingApproval
+                          Pending
                         </span>{" "}
                         status bookings.
                       </p>
@@ -306,14 +272,14 @@ export default function BookingRequestModal({
                       <>
                         <button
                           type="button"
-                          onClick={() => onReject(booking.Id)}
+                          onClick={() => onReject(String(booking.id))}
                           className="inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-red-700 active:scale-[0.98]"
                         >
                           Reject
                         </button>
                         <button
                           type="button"
-                          onClick={() => onApprove(booking.Id)}
+                          onClick={() => onApprove(String(booking.id))}
                           className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-emerald-700 active:scale-[0.98]"
                         >
                           Approve
@@ -381,30 +347,6 @@ function InfoRow({
   );
 }
 
-function AuditItem({
-  label,
-  value,
-  user,
-}: {
-  label: string;
-  value: string;
-  user: string;
-}) {
-  return (
-    <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/30">
-      <div className="text-xs font-medium text-gray-500 dark:text-gray-400">
-        {label}
-      </div>
-      <div className="mt-1.5 text-sm font-semibold text-gray-900 dark:text-white">
-        {value}
-      </div>
-      <div className="mt-1 font-mono text-xs text-gray-600 dark:text-gray-400">
-        by {user}
-      </div>
-    </div>
-  );
-}
-
 function Skeleton() {
   return (
     <div className="space-y-6">
@@ -431,18 +373,6 @@ function Skeleton() {
         <div className="h-12 animate-pulse bg-gray-100 dark:bg-gray-800" />
         <div className="p-6">
           <div className="h-20 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
-        </div>
-      </div>
-
-      <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
-        <div className="h-12 animate-pulse bg-gray-100 dark:bg-gray-800" />
-        <div className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2">
-          {Array.from({ length: 2 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-24 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"
-            />
-          ))}
         </div>
       </div>
 

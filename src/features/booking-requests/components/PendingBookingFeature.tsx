@@ -6,7 +6,7 @@ import BookingFilters from "./BookingRequestFilter";
 import BookingTable from "./BookingRequestTable";
 
 import type { Building } from "../../building/types/building.type";
-import type { Room } from "../../labroom/types/room.type";
+import type { LabRoomLookupItem } from "../../labroom/types/room.type";
 import type { SlotType } from "../../slot/types/slot.types";
 import {
   getBookingRequests,
@@ -15,7 +15,11 @@ import {
   getSlotTypes,
   updateBookingRequestStatus,
 } from "../api/bookingRequestApi";
-import type { Booking, BookingSlotTypeCode } from "../types/schedule.type";
+import type {
+  BookingRequest,
+  BookingStatus,
+} from "../../booking/types/booking.type";
+import type { BookingSlotTypeCode } from "../types/schedule.type";
 
 type SlotTypeFilter = "ALL" | BookingSlotTypeCode | string;
 
@@ -23,18 +27,18 @@ export default function PendingBookingFeature() {
   const [loading, setLoading] = useState(true);
   const [lookupLoading, setLookupLoading] = useState(true);
 
-  const [items, setItems] = useState<Booking[]>([]);
+  const [items, setItems] = useState<BookingRequest[]>([]);
   const [buildingOptions, setBuildingOptions] = useState<Building[]>([]);
-  const [roomOptions, setRoomOptions] = useState<Room[]>([]);
+  const [roomOptions, setRoomOptions] = useState<LabRoomLookupItem[]>([]);
   const [slotOptions, setSlotOptions] = useState<SlotType[]>([]);
 
   const [q, setQ] = useState("");
   const [roomId, setRoomId] = useState<number | "ALL">("ALL");
-  const [building, setBuilding] = useState<string>("ALL");
+  const [buildingId, setBuildingId] = useState<number | "ALL">("ALL");
   const [slotType, setSlotType] = useState<SlotTypeFilter>("ALL");
 
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState<Booking | null>(null);
+  const [selected, setSelected] = useState<BookingRequest | null>(null);
 
   const [showFilters, setShowFilters] = useState(false);
 
@@ -75,9 +79,9 @@ export default function PendingBookingFeature() {
     setLoading(true);
     try {
       const data = await getBookingRequests({
-        status: "PendingApproval",
+        status: "PendingApproval" as BookingStatus,
         labRoomId: roomId === "ALL" ? undefined : roomId,
-        buildingName: building === "ALL" ? undefined : building,
+        buildingId: buildingId === "ALL" ? undefined : buildingId,
         keyword: q.trim() || undefined,
         slotTypeCode:
           slotType === "ALL" ? undefined : (slotType as BookingSlotTypeCode),
@@ -87,7 +91,7 @@ export default function PendingBookingFeature() {
     } finally {
       setLoading(false);
     }
-  }, [roomId, building, q, slotType]);
+  }, [roomId, buildingId, q, slotType]);
 
   useEffect(() => {
     void loadLookups();
@@ -98,10 +102,9 @@ export default function PendingBookingFeature() {
   }, [reload]);
 
   const filteredRoomOptions = useMemo(() => {
-    if (building === "ALL") return roomOptions;
-
-    return roomOptions.filter((room) => room.building === building);
-  }, [roomOptions, building]);
+    if (buildingId === "ALL") return roomOptions;
+    return roomOptions.filter((room) => room.buildingId === buildingId);
+  }, [roomOptions, buildingId]);
 
   useEffect(() => {
     if (roomId === "ALL") return;
@@ -114,23 +117,25 @@ export default function PendingBookingFeature() {
 
   const rows = useMemo(() => {
     return [...items].sort((a, b) =>
-      (b.CreatedAt ?? "").localeCompare(a.CreatedAt ?? ""),
+      (b.requestedAt ?? "").localeCompare(a.requestedAt ?? ""),
     );
   }, [items]);
+
   const hasActiveFilters = useMemo(() => {
     return (
       q.trim() !== "" ||
-      building !== "ALL" ||
+      buildingId !== "ALL" ||
       roomId !== "ALL" ||
       slotType !== "ALL"
     );
-  }, [q, building, roomId, slotType]);
+  }, [q, buildingId, roomId, slotType]);
+
   const approve = async (id: string) => {
     const ok = window.confirm("Approve this booking?");
     if (!ok) return;
 
     await updateBookingRequestStatus(id, { status: "APPROVED" });
-    setItems((prev) => prev.filter((x) => x.Id !== id));
+    setItems((prev) => prev.filter((x) => String(x.id) !== id));
     closeModal();
   };
 
@@ -139,7 +144,7 @@ export default function PendingBookingFeature() {
     if (!ok) return;
 
     await updateBookingRequestStatus(id, { status: "REJECTED" });
-    setItems((prev) => prev.filter((x) => x.Id !== id));
+    setItems((prev) => prev.filter((x) => String(x.id) !== id));
     closeModal();
   };
 
@@ -300,9 +305,7 @@ export default function PendingBookingFeature() {
         </div>
       </div>
 
-      {/* Collapsible Filter Card */}
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800/50">
-        {/* Filter Header - Always Visible */}
         <div className="border-b border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-700 dark:bg-gray-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -367,11 +370,12 @@ export default function PendingBookingFeature() {
             </button>
           </div>
         </div>
+
         <div
           className={`transition-all duration-300 ease-in-out ${
             showFilters
               ? "max-h-[1000px] opacity-100"
-              : "max-h-0 opacity-0 overflow-hidden"
+              : "max-h-0 overflow-hidden opacity-0"
           }`}
         >
           <div className="border-t border-gray-200 p-6 dark:border-gray-700">
@@ -380,8 +384,8 @@ export default function PendingBookingFeature() {
               onQ={setQ}
               roomId={roomId}
               onRoomId={setRoomId}
-              building={building}
-              onBuilding={setBuilding}
+              buildingId={buildingId}
+              onBuildingId={setBuildingId}
               slotType={slotType}
               onSlotType={setSlotType}
               roomOptions={filteredRoomOptions}

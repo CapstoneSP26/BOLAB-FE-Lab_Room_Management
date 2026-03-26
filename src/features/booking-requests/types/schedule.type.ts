@@ -1,3 +1,7 @@
+import type {
+  BookingRequest,
+  BookingStatus,
+} from "../../booking/types/booking.type";
 export interface ScheduleDto {
   id: string;
   subjectCode: string;
@@ -29,38 +33,9 @@ export interface GetSchedulesParams {
   isDescending?: boolean;
 }
 
-// ===== DOMAIN =====
-
-/** Backend trả gì thì FE nhận string đó */
-export type BookingStatus = string;
 export type UpdatableBookingStatus = string;
 export type BookingSlotTypeCode = string;
 export type HistoryStatus = "ALL" | BookingStatus;
-export interface Booking {
-  Id: string;
-  LabRoomId: number;
-  BuildingName: string;
-  BookedByUserId: string;
-  StartTime: string;
-  EndTime: string;
-
-  StudentCount: number;
-  PurposeTypeName: string;
-  Reason: string;
-
-  BookingStatus: BookingStatus;
-  BookingType?: string | null;
-
-  SlotTypeId?: number;
-  SlotTypeCode?: BookingSlotTypeCode;
-  SlotTypeName?: string;
-
-  CreatedAt: string;
-  UpdatedAt: string;
-  CreatedBy: string;
-  UpdatedBy: string;
-  Recur: number;
-}
 
 // ===== LOOKUP FROM BACKEND =====
 
@@ -84,7 +59,7 @@ export interface GetBookingRequestsRequest {
   startDate?: string;
   endDate?: string;
   labRoomId?: number;
-  buildingName?: string;
+  buildingId?: number;
   keyword?: string;
   slotTypeId?: number;
   slotTypeCode?: BookingSlotTypeCode;
@@ -96,7 +71,7 @@ export interface GetBookingHistoryRequest {
   startDate?: string;
   endDate?: string;
   labRoomId?: number;
-  buildingName?: string;
+  buildingId?: number;
   keyword?: string;
   status?: BookingStatus;
   slotTypeId?: number;
@@ -113,27 +88,27 @@ export interface UpdateBookingStatusRequest {
 
 // ===== API RESPONSE =====
 export interface GetBookingRequestsResponse {
-  data: Booking[];
+  data: BookingRequest[];
   total?: number;
   page?: number;
   limit?: number;
 }
 
 export interface GetBookingHistoryResponse {
-  data: Booking[];
+  data: BookingRequest[];
   total?: number;
   page?: number;
   limit?: number;
 }
 
 export interface GetBookingByIdResponse {
-  data: Booking;
+  data: BookingRequest;
 }
 
 export interface GetBookingByScheduleIdResponse {
-  data: Booking | null;
+  data: BookingRequest | null;
 }
 
 export interface UpdateBookingStatusResponse {
-  data: Booking;
+  data: BookingRequest;
 }

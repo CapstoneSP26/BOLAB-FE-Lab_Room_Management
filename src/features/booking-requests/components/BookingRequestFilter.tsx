@@ -1,5 +1,5 @@
 import type { Building } from "../../building/types/building.type";
-import type { Room } from "../../labroom/types/room.type";
+import type { LabRoomLookupItem } from "../../labroom/types/room.type";
 import type { SlotType } from "../../slot/types/slot.types";
 
 type SlotTypeFilter = "ALL" | string;
@@ -11,13 +11,13 @@ type Props = {
   roomId: number | "ALL";
   onRoomId: (v: number | "ALL") => void;
 
-  building: string;
-  onBuilding: (v: string) => void;
+  buildingId: number | "ALL";
+  onBuildingId: (v: number | "ALL") => void;
 
   slotType: SlotTypeFilter;
   onSlotType: (v: SlotTypeFilter) => void;
 
-  roomOptions: Room[];
+  roomOptions: LabRoomLookupItem[];
   buildingOptions: Building[];
   slotOptions: SlotType[];
 };
@@ -27,8 +27,8 @@ export default function BookingFilters({
   onQ,
   roomId,
   onRoomId,
-  building,
-  onBuilding,
+  buildingId,
+  onBuildingId,
   slotType,
   onSlotType,
   roomOptions,
@@ -67,13 +67,17 @@ export default function BookingFilters({
             Building
           </label>
           <select
-            value={building}
-            onChange={(e) => onBuilding(e.target.value)}
+            value={buildingId}
+            onChange={(e) =>
+              onBuildingId(
+                e.target.value === "ALL" ? "ALL" : Number(e.target.value),
+              )
+            }
             className="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/10 dark:border-gray-600 dark:bg-gray-800 dark:text-white/90 dark:focus:border-brand-800"
           >
             <option value="ALL">All buildings</option>
             {buildingOptions.map((b) => (
-              <option key={String(b.id)} value={b.name}>
+              <option key={String(b.id)} value={b.id}>
                 {b.name}
               </option>
             ))}
@@ -96,7 +100,7 @@ export default function BookingFilters({
             <option value="ALL">All rooms</option>
             {roomOptions.map((r) => (
               <option key={r.id} value={String(r.id)}>
-                {r.name}
+                {r.roomName} - {r.buildingName}
               </option>
             ))}
           </select>

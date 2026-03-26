@@ -35,7 +35,6 @@ export interface GetBookingsParams {
   isDescending?: boolean;
 }
 
-
 // ===== DOMAIN MODELS =====
 
 export interface Booking {
@@ -52,11 +51,16 @@ export interface Booking {
   lecturerName?: string;
   scheduleType?: string;
   studentCount?: number;
-  bookingSource?: 'AO_BOOK' | 'LECTURER_BOOK';
+  bookingSource?: "AO_BOOK" | "LECTURER_BOOK";
 }
 
-export type BookingStatus = 'All' | 'PendingApproval' | 'Approved' | 'Rejected' | 'Cancelled';
-export type BookingStatusFilter = BookingStatus | 'all';
+export type BookingStatus =
+  | "All"
+  | "PendingApproval"
+  | "Approved"
+  | "Rejected"
+  | "Cancelled";
+export type BookingStatusFilter = BookingStatus | "all";
 
 export interface BookingRequest {
   id: string | number;
@@ -68,11 +72,12 @@ export interface BookingRequest {
   startTime: string;
   endTime: string;
   date: string;
+  studentCount?: number;
   status: RequestStatus;
   purpose?: string;
 }
 
-export type RequestStatus = 'pending' | 'accepted' | 'rejected';
+export type RequestStatus = "pending" | "accepted" | "rejected";
 
 export interface BookingStats {
   totalAccepted: number;
@@ -135,8 +140,6 @@ export interface GetBookingHistoryResponse {
   limit: number;
 }
 
-
-
 ///////////////////////thanh
 export interface BookingRequestDraft {
   roomId: string;
@@ -159,7 +162,7 @@ export interface BookingSummary {
   repeatWeekly: boolean;
   weeklyUntil?: string;
   groupName?: string;
-  status: 'Pending' | 'Approved' | 'Rejected';
+  status: "Pending" | "Approved" | "Rejected";
   createdAt: string;
 }
 
@@ -177,7 +180,7 @@ export interface CreateBookingResponse {
 }
 
 export interface GetMyBookingsRequest {
-  status?: 'Pending' | 'Approved' | 'Rejected';
+  status?: "Pending" | "Approved" | "Rejected";
   startDate?: string;
   endDate?: string;
 }

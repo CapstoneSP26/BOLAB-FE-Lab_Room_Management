@@ -12,6 +12,7 @@ export interface LabRoomDto {
   capacity: number;
   hasEquipment: boolean;
   description?: string;
+  buildingId: number;
   buildingName: string;
   images?: LabImageDto[];
 }
@@ -38,13 +39,6 @@ export interface GetRoomsRequest {
   limit?: number;
 }
 
-export interface GetRoomsResponse {
-  data: Room[];
-  total: number;
-  page: number;
-  limit: number;
-}
-
 export interface Stats {
   totalRooms: number;
   activeRooms: number;
@@ -55,42 +49,21 @@ export interface GetStatsResponse {
   data: Stats;
 }
 
-////////////////////////////////////////
-export interface LabRoom {
-  id: string;
-  name: string;
-  building: string;
-  capacity: number;
-  features: string[];
-  image?: string;
-}
-
-export interface GetLabRoomsRequest {
-  buildingId?: string;
-  minCapacity?: number;
-  features?: string[];
-}
-
-export interface GetLabRoomsResponse {
-  rooms: LabRoom[];
-  total: number;
-}
-
-//////////
-
-export interface LabRoomLookupResponse {
-  id: number | string;
-  name?: string;
-  labRoomName?: string;
-  building?: string;
-  buildingName?: string;
-  capacity?: number;
-  status?: "Available" | "Occupied" | "Maintenance";
-  image?: string;
-  features?: string[];
-  nextAvailable?: string;
+export interface LabRoomLookupItem {
+  id: number;
+  roomName: string;
+  roomNo: string;
+  buildingId: number;
+  buildingName: string;
 }
 
 export type LabRoomLookupApiResponse =
-  | LabRoomLookupResponse[]
-  | { data?: LabRoomLookupResponse[] };
+  | LabRoomLookupItem[]
+  | { data?: LabRoomLookupItem[] };
+
+export interface GetLabRoomsResponse {
+  data: LabRoomDto[];
+  total: number;
+  pageNumber?: number;
+  pageSize?: number;
+}

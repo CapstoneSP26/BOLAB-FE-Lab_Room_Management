@@ -1,4 +1,4 @@
-import type { ReportType } from "../types/report.type";
+import type { FilterOption } from "../types/report.type";
 
 type ResolvedFilter = "ALL" | "RESOLVED" | "UNRESOLVED";
 type ReportTypeFilter = ReportType | "ALL";

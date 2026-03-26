@@ -6,9 +6,10 @@ import type {
   GetMyReportsRequest,
   GetMyReportsResponse,
   GetReportDetailRequest,
+  GetReportDetailResponse,
   ReportResolvedFilter,
   ReportHistorySortKey,
-  GetReportDetailResponse,
+  Report,
 } from "../types/report.type";
 import {
   getResponseSuccess,
@@ -92,22 +93,23 @@ export const getFilteredReports = async (
 };
 
 export const getUnresolvedReports = async (
-  params: Omit<GetMyReportsRequest, "isResolved"> = {},
+  filters: Omit<GetFilteredReportsParams, "status"> = {},
 ): Promise<GetMyReportsResponse> => {
-  return getMyReports({
-    ...params,
-    isResolved: false,
+  return getFilteredReports({
+    ...filters,
+    status: "UNRESOLVED",
   });
 };
 
 export const getResolvedReports = async (
-  params: Omit<GetMyReportsRequest, "isResolved"> = {},
+  filters: Omit<GetFilteredReportsParams, "status"> = {},
 ): Promise<GetMyReportsResponse> => {
-  return getMyReports({
-    ...params,
-    isResolved: true,
+  return getFilteredReports({
+    ...filters,
+    status: "RESOLVED",
   });
 };
+
 export const getReportReasons = async (): Promise<GetReportReasonsResponse> => {
   const response = await axiosInstance.get(REPORT_API.REASONS);
   const raw = response.data;
