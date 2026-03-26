@@ -10,3 +10,4 @@ export { Breadcrumb } from './Breadcrumb';
 export { RoomStatusBadge } from './RoomStatusBadge';
 export { ActiveSessionIndicator } from './ActiveSessionIndicator';
 export { AnimatedCounter } from './AnimatedCounter';
+export { JoyrideTour } from './JoyrideTour';

@@ -29,6 +29,7 @@ interface WeeklyCalendarGridProps {
   }) => void;
   weekOffset?: number;
   onWeekChange?: (offset: number) => void;
+  onTourWeekNavigated?: () => void;
 }
 
 /**
@@ -40,6 +41,7 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
   onCreateBooking,
   weekOffset = 0,
   onWeekChange,
+  onTourWeekNavigated,
 }) => {
   const [bookingMode, setBookingMode] = useState<BookingMode>('OutSlot');
   const [showSlotConfig, setShowSlotConfig] = useState(false);
@@ -466,14 +468,17 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
 
   const handlePrevWeek = () => {
     onWeekChange?.(weekOffset - 1);
+    onTourWeekNavigated?.();
   };
 
   const handleNextWeek = () => {
     onWeekChange?.(weekOffset + 1);
+    onTourWeekNavigated?.();
   };
 
   const handleToday = () => {
     onWeekChange?.(0);
+    onTourWeekNavigated?.();
   };
 
   const conflict = hasConflict();
@@ -481,7 +486,10 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
   return (
     <div className="flex flex-col h-full bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
       {/* Week Navigation Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b-2 border-gray-200 bg-gradient-to-r from-gray-50 via-white to-gray-50">
+      <div
+        className="flex items-center justify-between px-6 py-4 border-b-2 border-gray-200 bg-gradient-to-r from-gray-50 via-white to-gray-50"
+        data-tour="booking-week-navigation"
+      >
         <div className="flex items-center gap-4">
           <button
             onClick={handleToday}
@@ -512,10 +520,12 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
         </div>
 
         {/* Booking Mode Toggle */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" data-tour="booking-mode-toggle">
           <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
             <button
-              onClick={() => setBookingMode('OutSlot')}
+              onClick={() => {
+                setBookingMode('OutSlot');
+              }}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-md text-sm font-medium transition-all ${bookingMode === 'OutSlot'
                 ? 'bg-white text-blue-700 shadow-sm border border-blue-200'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-white/70'
@@ -525,7 +535,9 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
               <span>Flexible</span>
             </button>
             <button
-              onClick={() => setBookingMode('OldSlot')}
+              onClick={() => {
+                setBookingMode('OldSlot');
+              }}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-md text-sm font-medium transition-all ${bookingMode === 'OldSlot'
                 ? 'bg-white text-blue-700 shadow-sm border border-blue-200'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-white/70'
@@ -550,7 +562,7 @@ export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
       </div>
 
       {/* Calendar Grid */}
-      <div className="flex-1 overflow-auto bg-gradient-to-b from-white to-gray-50">
+      <div className="flex-1 overflow-auto bg-gradient-to-b from-white to-gray-50" data-tour="booking-calendar-grid">
         <div
           ref={gridRef}
           className="grid grid-cols-[80px_repeat(7,1fr)] border-l border-t border-gray-200 relative select-none"
