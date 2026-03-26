@@ -73,11 +73,9 @@ export interface BookingRequest {
   endTime: string;
   date: string;
   studentCount?: number;
-  status: RequestStatus;
+  status: string;
   purpose?: string;
 }
-
-export type RequestStatus = "pending" | "accepted" | "rejected";
 
 export interface BookingStats {
   totalAccepted: number;

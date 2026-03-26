@@ -1,5 +1,5 @@
 import type { Building } from "../../building/types/building.type";
-import type { Room } from "../../labroom/types/room.type";
+import type { LabRoomLookupItem } from "../../labroom/types/room.type";
 import type {
   BookingStatusLookupItem,
   HistoryStatus,
@@ -9,13 +9,13 @@ type Props = {
   q: string;
   onQ: (v: string) => void;
 
-  building: string;
-  onBuilding: (v: string) => void;
+  buildingId: number | "ALL";
+  onBuildingId: (v: number | "ALL") => void;
   buildingOptions: Building[];
 
   roomId: number | "ALL";
   onRoomId: (v: number | "ALL") => void;
-  roomOptions: Room[];
+  roomOptions: LabRoomLookupItem[];
 
   status: HistoryStatus;
   onStatus: (v: HistoryStatus) => void;
@@ -27,6 +27,7 @@ type Props = {
   to: string;
   onTo: (v: string) => void;
 };
+
 function toStatusLabel(value: string) {
   return value
     .toLowerCase()
@@ -37,8 +38,8 @@ function toStatusLabel(value: string) {
 export default function HistoryBookingFilter({
   q,
   onQ,
-  building,
-  onBuilding,
+  buildingId,
+  onBuildingId,
   buildingOptions,
   roomId,
   onRoomId,
@@ -84,13 +85,17 @@ export default function HistoryBookingFilter({
             Building
           </label>
           <select
-            value={building}
-            onChange={(e) => onBuilding(e.target.value)}
+            value={String(buildingId)}
+            onChange={(e) =>
+              onBuildingId(
+                e.target.value === "ALL" ? "ALL" : Number(e.target.value),
+              )
+            }
             className="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/10 dark:border-gray-600 dark:bg-gray-800 dark:text-white/90 dark:focus:border-brand-800"
           >
             <option value="ALL">All buildings</option>
             {buildingOptions.map((b) => (
-              <option key={String(b.id)} value={b.name}>
+              <option key={String(b.id)} value={String(b.id)}>
                 {b.name}
               </option>
             ))}
@@ -113,7 +118,7 @@ export default function HistoryBookingFilter({
             <option value="ALL">All rooms</option>
             {roomOptions.map((r) => (
               <option key={r.id} value={String(r.id)}>
-                {r.name}
+                {r.roomName} - {r.buildingName}
               </option>
             ))}
           </select>

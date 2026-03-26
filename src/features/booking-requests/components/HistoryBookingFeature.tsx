@@ -22,12 +22,12 @@ import {
 } from "../api/bookingRequestApi";
 
 import type {
-  Booking,
   HistoryStatus,
   BookingStatusLookupItem,
 } from "../types/schedule.type";
+import type { BookingRequest } from "../../booking/types/booking.type";
 import type { Building } from "../../building/types/building.type";
-import type { Room } from "../../labroom/types/room.type";
+import type { LabRoomLookupItem } from "../../labroom/types/room.type";
 
 const normText = (s: unknown) =>
   String(s ?? "")
@@ -38,22 +38,22 @@ export default function HistoryBookingFeature() {
   const [loading, setLoading] = useState(true);
   const [lookupLoading, setLookupLoading] = useState(true);
 
-  const [items, setItems] = useState<Booking[]>([]);
+  const [items, setItems] = useState<BookingRequest[]>([]);
   const [buildingOptions, setBuildingOptions] = useState<Building[]>([]);
-  const [roomOptions, setRoomOptions] = useState<Room[]>([]);
+  const [roomOptions, setRoomOptions] = useState<LabRoomLookupItem[]>([]);
   const [statusOptions, setStatusOptions] = useState<BookingStatusLookupItem[]>(
     [],
   );
 
   const [q, setQ] = useState("");
-  const [building, setBuilding] = useState<string>("ALL");
+  const [buildingId, setBuildingId] = useState<number | "ALL">("ALL");
   const [roomId, setRoomId] = useState<number | "ALL">("ALL");
   const [status, setStatus] = useState<HistoryStatus>("ALL");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
 
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState<Booking | null>(null);
+  const [selected, setSelected] = useState<BookingRequest | null>(null);
 
   const [showFilters, setShowFilters] = useState(false);
 
@@ -91,18 +91,18 @@ export default function HistoryBookingFeature() {
     }
   }, []);
 
-  const handleView = async (b: Booking) => {
-    if (!b.Id) return;
+  const handleView = async (b: BookingRequest) => {
+    if (!b.id) return;
 
-    const detail = await getBookingRequestById(b.Id);
+    const detail = await getBookingRequestById(String(b.id));
     setSelected(detail.data);
     setOpen(true);
   };
 
   const handleApprove = async () => {
-    if (!selected?.Id) return;
+    if (!selected?.id) return;
 
-    await updateBookingRequestStatus(selected.Id, {
+    await updateBookingRequestStatus(String(selected.id), {
       status: "APPROVED",
     });
 
@@ -111,9 +111,9 @@ export default function HistoryBookingFeature() {
   };
 
   const handleReject = async () => {
-    if (!selected?.Id) return;
+    if (!selected?.id) return;
 
-    await updateBookingRequestStatus(selected.Id, {
+    await updateBookingRequestStatus(String(selected.id), {
       status: "REJECTED",
     });
 
@@ -128,7 +128,7 @@ export default function HistoryBookingFeature() {
         startDate: from || undefined,
         endDate: to || undefined,
         labRoomId: roomId === "ALL" ? undefined : roomId,
-        buildingName: building === "ALL" ? undefined : building,
+        buildingId: buildingId === "ALL" ? undefined : buildingId,
         keyword: q.trim() || undefined,
         status: status === "ALL" ? undefined : status,
       });
@@ -137,7 +137,7 @@ export default function HistoryBookingFeature() {
     } finally {
       setLoading(false);
     }
-  }, [from, to, roomId, building, q, status]);
+  }, [from, to, roomId, buildingId, q, status]);
 
   useEffect(() => {
     void loadLookups();
@@ -148,12 +148,9 @@ export default function HistoryBookingFeature() {
   }, [reload]);
 
   const filteredRoomOptions = useMemo(() => {
-    if (building === "ALL") return roomOptions;
-
-    return roomOptions.filter(
-      (room) => normText(room.building) === normText(building),
-    );
-  }, [roomOptions, building]);
+    if (buildingId === "ALL") return roomOptions;
+    return roomOptions.filter((room) => room.buildingId === buildingId);
+  }, [roomOptions, buildingId]);
 
   useEffect(() => {
     if (roomId === "ALL") return;
@@ -166,51 +163,54 @@ export default function HistoryBookingFeature() {
 
   const rows = useMemo(() => {
     return [...items].sort((a, b) =>
-      (b.StartTime ?? "").localeCompare(a.StartTime ?? ""),
+      (b.requestedAt ?? "").localeCompare(a.requestedAt ?? ""),
     );
   }, [items]);
 
   const hasActiveFilters = useMemo(() => {
     return (
       q.trim() !== "" ||
-      building !== "ALL" ||
+      buildingId !== "ALL" ||
       roomId !== "ALL" ||
       status !== "ALL" ||
       from !== "" ||
       to !== ""
     );
-  }, [q, building, roomId, status, from, to]);
+  }, [q, buildingId, roomId, status, from, to]);
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (q.trim() !== "") count++;
-    if (building !== "ALL") count++;
+    if (buildingId !== "ALL") count++;
     if (roomId !== "ALL") count++;
     if (status !== "ALL") count++;
     if (from !== "") count++;
     if (to !== "") count++;
     return count;
-  }, [q, building, roomId, status, from, to]);
+  }, [q, buildingId, roomId, status, from, to]);
 
   const clearAllFilters = () => {
     setQ("");
-    setBuilding("ALL");
+    setBuildingId("ALL");
     setRoomId("ALL");
     setStatus("ALL");
     setFrom("");
     setTo("");
   };
 
-  // Calculate stats
   const stats = useMemo(() => {
     const approved = items.filter(
-      (item) => normText(item.BookingStatus) === "approved",
+      (item) =>
+        normText(item.status) === "approved" ||
+        normText(item.status) === "accepted",
     ).length;
     const rejected = items.filter(
-      (item) => normText(item.BookingStatus) === "rejected",
+      (item) => normText(item.status) === "rejected",
     ).length;
     const pending = items.filter(
-      (item) => normText(item.BookingStatus) === "pending",
+      (item) =>
+        normText(item.status) === "pending" ||
+        normText(item.status) === "pendingapproval",
     ).length;
 
     return {
@@ -225,10 +225,8 @@ export default function HistoryBookingFeature() {
 
   return (
     <div className="space-y-6">
-      {/* Hero Header */}
       <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-white via-gray-50 to-blue-50/30 p-6 shadow-sm dark:border-gray-700 dark:from-gray-800/50 dark:via-gray-800/30 dark:to-blue-900/10">
         <div className="flex flex-col gap-6">
-          {/* Title Section */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-start gap-4">
               <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/20">
@@ -257,7 +255,6 @@ export default function HistoryBookingFeature() {
             </button>
           </div>
 
-          {/* Stats Dashboard */}
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
             <StatCard
               label="Total Records"
@@ -349,9 +346,7 @@ export default function HistoryBookingFeature() {
         </div>
       </div>
 
-      {/* Collapsible Filter Card */}
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all dark:border-gray-700 dark:bg-gray-800/50">
-        {/* Filter Header */}
         <button
           type="button"
           onClick={() => setShowFilters(!showFilters)}
@@ -418,7 +413,6 @@ export default function HistoryBookingFeature() {
           </div>
         </button>
 
-        {/* Filter Content */}
         <div
           className={`grid transition-all duration-300 ease-in-out ${
             showFilters
@@ -431,8 +425,8 @@ export default function HistoryBookingFeature() {
               <HistoryBookingFilter
                 q={q}
                 onQ={setQ}
-                building={building}
-                onBuilding={setBuilding}
+                buildingId={buildingId}
+                onBuildingId={setBuildingId}
                 buildingOptions={buildingOptions}
                 roomId={roomId}
                 onRoomId={setRoomId}
@@ -450,7 +444,6 @@ export default function HistoryBookingFeature() {
         </div>
       </div>
 
-      {/* Results Card */}
       <div className="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800/50">
         <div className="border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100/50 px-6 py-4 dark:border-gray-700 dark:from-gray-800 dark:to-gray-800/50">
           <div className="flex items-center justify-between">
@@ -525,7 +518,6 @@ export default function HistoryBookingFeature() {
   );
 }
 
-// Stat Card Component
 function StatCard({
   label,
   value,
