@@ -388,24 +388,36 @@ export default function AttendanceManagementPage() {
   );
 
   const { data: bookingsData, isLoading: bookingsLoading } = useLecturerBookings();
-  const { data: bookingScheduleData } = useBookingAttendance(bookingScheduleParams, true);
+  const {
+    data: bookingScheduleData,
+    isLoading: bookingScheduleLoading,
+    isFetching: bookingScheduleFetching,
+  } = useBookingAttendance(bookingScheduleParams, true);
   const createQrSessionMutation = useCreateQRSession();
   const [isRefreshingQr, setIsRefreshingQr] = useState(false);
   const endSessionMutation = useEndQRSession();
   const exportMutation = useExportAttendance();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'upcoming' | 'past' | 'all'>('upcoming');
+  const [statusFilter, setStatusFilter] = useState<'upcoming' | 'past' | 'all'>('all');
   const [showQRModal, setShowQRModal] = useState(false);
   const [isCreatingQr, setIsCreatingQr] = useState(false);
   const [stoppedQrBySessionId, setStoppedQrBySessionId] = useState<Record<string, boolean>>({});
   const [latestBackendScanUrl, setLatestBackendScanUrl] = useState('');
 
-  const bookingScheduleItems: BookingDto[] = bookingScheduleData?.data?.items || [];
+  const bookingScheduleItems: BookingDto[] =
+    ((bookingScheduleData?.data as { result?: { items?: BookingDto[] } })?.result?.items)
+    || bookingScheduleData?.data?.items
+    || [];
 
   const bookings = useMemo<BookingWithQR[]>(() => {
     if (bookingScheduleItems.length > 0) {
       return bookingScheduleItems.map(mapBookingDtoToAttendanceBooking);
+    }
+
+    // If booking-attendance has responded, treat it as source of truth for this list.
+    if (bookingScheduleData) {
+      return [];
     }
 
     if (bookingsData?.data?.length) {
@@ -481,7 +493,7 @@ export default function AttendanceManagementPage() {
   const session = (activeSession && (!sessionData?.data || activeSession.id === sessionData.data.id))
     ? activeSession
     : (sessionData?.data || (isMockSession ? MOCK_QR_SESSION : null));
-    console.log(session);
+
   const activeDisplayRoom = session?.roomName || actionBooking?.roomName || 'Unknown Room';
   const activeDisplayBuilding = session?.buildingName || actionBooking?.buildingName || 'Unknown Building';
   const attendanceStats = attendanceListData?.data?.session || session;
@@ -543,7 +555,10 @@ export default function AttendanceManagementPage() {
     });
   }, [activeBookingByTime, bookings, searchQuery, statusFilter]);
 
-  const shouldShowBookingsLoading = bookingsLoading && !(isAttendanceMockMode && bookings.length > 0);
+  const shouldShowBookingsLoading =
+    (bookingScheduleLoading || bookingScheduleFetching || bookingsLoading)
+    && bookings.length === 0
+    && !(isAttendanceMockMode && bookings.length > 0);
 
   const handleRefreshQR = async () => {
     setIsRefreshingQr(true);
