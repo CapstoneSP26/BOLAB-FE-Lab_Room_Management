@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo } from 'react';
-import type { WeeklyCalendarProps } from '../types/calendar.type';
+import type { CalendarMode } from '../types/calendar.type';
 import { useCalendarEvents } from '../hooks/useCalendarEvents';
 import { getWeekDaysByOffset } from '../../../utils/date.util';
 import { useLabPolicies } from '../../labroom/hooks/useLabPolicies';
@@ -13,6 +13,9 @@ import { FlexibleGridView } from './FlexibleGridView';
 import { useSlotTypes } from '../../slot/hooks/useSlotTypes';
 import { useSlotStore } from '../../../store/slotStore';
 import { FixedGridView } from './FixedGridView';
+import type { PendingBooking } from '../../booking/types/booking.type';
+import { getStartOfDayVNInUTC } from '../../../utils/date.util';
+import { addDays } from 'date-fns';
 
 interface DragState {
   isActive: boolean;
@@ -23,6 +26,19 @@ interface DragState {
   endTime: string;
 }
 
+
+export interface WeeklyCalendarProps {
+  labRoomId?: number;
+  calendarMode: CalendarMode;
+  selectedRoomId: string;
+  onCreateBooking: (data: PendingBooking) => void;
+  selectedSlotTypeId: number;
+  onSlotTypeChange: (id: number) => void
+  weekOffset?: number;
+  onWeekChange: (offset: number) => void;
+}
+
+
 /**
  * 🗓️ Weekly Calendar Grid Component (Google Calendar Style)
  * Click-and-drag to create bookings, resize blocks, visual conflict detection
@@ -31,11 +47,12 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   labRoomId,
   calendarMode,
   onCreateBooking,
+  selectedSlotTypeId,
+  onSlotTypeChange,
   weekOffset = 0,
   onWeekChange,
 }) => {
   const { CELL_HEIGHT } = CALENDAR_CONFIG;
-  const [selectedSlotTypeId, setSelectedSlotTypeId] = useState(FLEXIBLE_ID);
   const [dragState, setDragState] = useState<DragState>({
     isActive: false,
     dayIndex: null,
@@ -69,8 +86,8 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
 
   const { events } = useCalendarEvents({
     calendarMode: calendarMode,
-    startDate: weekStart.toISOString().split('T')[0],
-    endDate: weekEnd.toISOString().split('T')[0]
+    startDate: getStartOfDayVNInUTC(weekStart),
+    endDate: getStartOfDayVNInUTC(addDays(weekEnd, 1))
   });
 
 
@@ -108,6 +125,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
       date: date,           // Định dạng YYYY-MM-DD
       startTime: frame.startTime,
       endTime: frame.endTime,
+      slotTypeId: selectedSlotTypeId
     });
   };
 
@@ -210,6 +228,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
       date,
       startTime: dragState.startTime,
       endTime: dragState.endTime,
+      slotTypeId: selectedSlotTypeId
     });
 
     setDragState({
@@ -251,7 +270,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
         {/* Booking Mode Toggle */}
         <SlotTypeSelector
           selectedId={selectedSlotTypeId}
-          onSelect={setSelectedSlotTypeId}
+          onSelect={onSlotTypeChange}
           isFlexibleAllowed={Boolean(policies?.IsFreeTimeAllowed ?? true)}
         />
       </div>

@@ -3,6 +3,7 @@ export interface ScheduleDto {
   subjectCode: string;
   lecturerName: string;
   labRoomName: string;
+  userCode?: string;
   slotName: string;
   groupName?: string;
   startTime: string;

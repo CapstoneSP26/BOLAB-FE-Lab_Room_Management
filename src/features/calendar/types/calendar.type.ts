@@ -17,16 +17,3 @@ export interface CalendarEvent {
   rawOrigin: any; // Giữ lại data gốc nếu cần hiển thị Modal chi tiết
   color?: string;
 }
-
-export interface WeeklyCalendarProps {
-  labRoomId?: number;
-  calendarMode: CalendarMode;
-  selectedRoomId: string;
-  onCreateBooking: (data: {
-    date: string;
-    startTime: string;
-    endTime: string;
-  }) => void;
-  weekOffset?: number;
-  onWeekChange: (offset: number) => void;
-}

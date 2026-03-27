@@ -1,17 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import {
-  X,
-  Calendar,
-  AlertCircle,
-} from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Users, MessageSquare, ClipboardCheck } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
-import type { StudentGroupInBooking } from '../../groups/types/group.type';
 import { formatDate } from '../../../utils/formatDate';
-import { useToast } from '../../../hooks/useToast';
-import { SelectedStudentsSummary } from '../../groups/components/SelectedStudentsSummary';
-import { StudentPickerModal } from '../../groups/components/StudentPickerModal';
-import type { BookingStudent, ManualStudentDraft, SelectedGroupBucket } from '../../groups/types/group.type';
-import { buildStudentsForGroup, getInitials } from '../../groups/utils/buildStudentsForGroup';
+import type { PurposeTypeDto } from '../types/booking.type';
 
 interface BookingConfirmPanelProps {
   isOpen: boolean;
@@ -20,19 +11,18 @@ interface BookingConfirmPanelProps {
   startTime: string;
   endTime: string;
   roomName: string;
-  studentGroups: StudentGroupInBooking[];
   onConfirm: (data: {
-    groupId?: string;
-    repeatWeekly: boolean;
-    repeatWeeksCount?: number;
+    reason: string;
+    studentCount: number;
+    isRecurring: boolean;
+    weeks: number;
+    purposeId: number;
   }) => void;
   loading?: boolean;
+  purposes: PurposeTypeDto[];
+  purposesLoading: boolean;
 }
 
-/**
- * 📋 Modern Booking Confirmation Panel
- * Clean, friendly design inspired by modern booking systems
- */
 export const BookingConfirmPanel: React.FC<BookingConfirmPanelProps> = ({
   isOpen,
   onClose,
@@ -40,425 +30,128 @@ export const BookingConfirmPanel: React.FC<BookingConfirmPanelProps> = ({
   startTime,
   endTime,
   roomName,
-  studentGroups,
   onConfirm,
   loading = false,
+  purposes,
+  purposesLoading,
+
 }) => {
-  const appAlert = useToast();
-  const [repeatWeekly, setRepeatWeekly] = useState(false);
-  const [repeatWeeksCount, setRepeatWeeksCount] = useState(4);
-  const [selectedGroupId, setSelectedGroupId] = useState<string>('');
-  const [showStudentPicker, setShowStudentPicker] = useState(false);
-  const [selectedGroups, setSelectedGroups] = useState<Record<string, SelectedGroupBucket>>({});
-  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
-  const [newGroupName, setNewGroupName] = useState('');
-  const [manualStudentDrafts, setManualStudentDrafts] = useState<Record<string, ManualStudentDraft>>({});
-
-  const studentsByGroup = useMemo(() => {
-    return studentGroups.reduce<Record<string, BookingStudent[]>>((acc, group) => {
-      acc[group.id] = buildStudentsForGroup(group);
-      return acc;
-    }, {});
-  }, [studentGroups]);
-
-  const selectedGroupEntries = useMemo(() => {
-    return Object.entries(selectedGroups);
-  }, [selectedGroups]);
-
-  const selectedStudentsCount = useMemo(() => {
-    return selectedGroupEntries.reduce((total, [, group]) => total + group.students.length, 0);
-  }, [selectedGroupEntries]);
-
-  const selectedGroupIds = useMemo(() => {
-    return selectedGroupEntries.map(([groupId]) => groupId);
-  }, [selectedGroupEntries]);
-
-  useEffect(() => {
-    if (selectedGroupIds.length === 0) {
-      setSelectedGroupId('');
-      return;
-    }
-
-    if (!selectedGroupIds.includes(selectedGroupId)) {
-      setSelectedGroupId(selectedGroupIds[0]);
-    }
-  }, [selectedGroupId, selectedGroupIds]);
-
+  const [reason, setReason] = useState('');
+  const [studentCount, setStudentCount] = useState(1);
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [weeks, setWeeks] = useState(1);
+  const [purposeId, setPurposeId] = useState<number>(purposes[0]?.id || 1);
   if (!isOpen) return null;
-
-  const handleClosePanel = () => {
-    setShowStudentPicker(false);
-    onClose();
-  };
-
-  const handleAddExistingGroup = (group: StudentGroupInBooking) => {
-    if (selectedGroups[group.id]) {
-      appAlert.warning('Group already added', `${group.name} is already in Selected Groups.`);
-      return;
-    }
-
-    const allStudents = studentsByGroup[group.id] || [];
-
-    setSelectedGroups((prev) => ({
-      ...prev,
-      [group.id]: {
-        id: group.id,
-        name: group.name,
-        courseCode: group.courseCode,
-        isCustom: false,
-        students: allStudents,
-      },
-    }));
-
-    setSelectedGroupId(group.id);
-  };
-
-  const handleCreateEmptyGroup = () => {
-    const trimmed = newGroupName.trim();
-    if (!trimmed) {
-      return;
-    }
-
-    const customId = `custom-${Date.now()}`;
-
-    setSelectedGroups((prev) => ({
-      ...prev,
-      [customId]: {
-        id: customId,
-        name: trimmed,
-        courseCode: 'Custom Group',
-        isCustom: true,
-        students: [],
-      },
-    }));
-
-    setManualStudentDrafts((prev) => ({
-      ...prev,
-      [customId]: { fullName: '', studentCode: '' },
-    }));
-
-    setSelectedGroupId(customId);
-    setNewGroupName('');
-  };
-
-  const handleRemoveStudent = (groupId: string, studentId: string) => {
-    setSelectedGroups((prev) => {
-      const group = prev[groupId];
-      if (!group) {
-        return prev;
-      }
-
-      const current = group.students;
-      const next = current.filter((student) => student.studentId !== studentId);
-
-      return {
-        ...prev,
-        [groupId]: {
-          ...group,
-          students: next,
-        },
-      };
-    });
-  };
-
-  const handleDraftChange = (groupId: string, key: 'fullName' | 'studentCode', value: string) => {
-    setManualStudentDrafts((prev) => ({
-      ...prev,
-      [groupId]: {
-        fullName: prev[groupId]?.fullName || '',
-        studentCode: prev[groupId]?.studentCode || '',
-        [key]: value,
-      },
-    }));
-  };
-
-  const handleAddManualStudent = (groupId: string) => {
-    const draft = manualStudentDrafts[groupId];
-    const fullName = draft?.fullName?.trim();
-    const studentCode = draft?.studentCode?.trim();
-
-    if (!fullName || !studentCode) {
-      return;
-    }
-
-    setSelectedGroups((prev) => {
-      const group = prev[groupId];
-      if (!group) {
-        return prev;
-      }
-
-      const exists = group.students.some((student) => student.studentCode === studentCode);
-      if (exists) {
-        return prev;
-      }
-
-      const manualStudent: BookingStudent = {
-        studentId: `${groupId}-${Date.now()}-${group.students.length + 1}`,
-        fullName,
-        studentCode,
-      };
-
-      return {
-        ...prev,
-        [groupId]: {
-          ...group,
-          students: [...group.students, manualStudent],
-        },
-      };
-    });
-
-    setManualStudentDrafts((prev) => ({
-      ...prev,
-      [groupId]: {
-        fullName: '',
-        studentCode: '',
-      },
-    }));
-  };
-
-  const handleRemoveGroup = (groupId: string) => {
-    setSelectedGroups((prev) => {
-      const { [groupId]: _removed, ...rest } = prev;
-      return rest;
-    });
-
-    setCollapsedGroups((prev) => {
-      const { [groupId]: _removed, ...rest } = prev;
-      return rest;
-    });
-
-    setManualStudentDrafts((prev) => {
-      const { [groupId]: _removed, ...rest } = prev;
-      return rest;
-    });
-  };
-
-  const handleToggleGroupCollapse = (groupId: string) => {
-    setCollapsedGroups((prev) => ({
-      ...prev,
-      [groupId]: !prev[groupId],
-    }));
-  };
-
-  const handleConfirm = () => {
-    const activeGroup = selectedGroupId ? selectedGroups[selectedGroupId] : undefined;
-
-    onConfirm({
-      groupId: activeGroup && !activeGroup.isCustom ? activeGroup.id : undefined,
-      repeatWeekly,
-      repeatWeeksCount: repeatWeekly ? repeatWeeksCount : undefined,
-    });
-
-    // Reset form
-    setRepeatWeekly(false);
-    setRepeatWeeksCount(4);
-    setSelectedGroupId('');
-    setSelectedGroups({});
-    setNewGroupName('');
-    setManualStudentDrafts({});
-    setShowStudentPicker(false);
-  };
-
-  // Calculate repeated dates for preview
-  const getRepeatedDates = (): string[] => {
-    if (!repeatWeekly) return [];
-
-    const dates: string[] = [];
-    const baseDate = new Date(selectedDate);
-
-    for (let i = 1; i <= repeatWeeksCount; i++) {
-      const nextDate = new Date(baseDate);
-      nextDate.setDate(baseDate.getDate() + i * 7);
-      dates.push(nextDate.toISOString().split('T')[0]);
-    }
-
-    return dates;
-  };
-
-  const repeatedDates = getRepeatedDates();
 
   return (
     <>
-      {/* Overlay */}
-      <div
-        className="fixed inset-0 bg-transparent z-[1000] transition-opacity backdrop-blur-sm"
-        onClick={handleClosePanel}
-      />
+      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[1000] animate-in fade-in duration-300" onClick={onClose} />
+      <div className="fixed inset-0 z-[1010] flex items-center justify-center p-4 pointer-events-none">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden pointer-events-auto animate-in zoom-in-95 duration-200">
 
-      {/* Modal Panel - Centered */}
-      <div className="fixed inset-0 z-[1010] flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden animate-scale-in">
           {/* Header */}
-          <div className="px-5 py-4 border-b border-gray-100">
-            <div className="flex items-start justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">Booking Details</h2>
-                <p className="text-xs text-gray-500 mt-1">Review and confirm your booking</p>
-              </div>
-              <Button
-                type="button"
-                onClick={handleClosePanel}
-                variant="ghost"
-                size="sm"
-                className="h-10 w-10 rounded-full p-0 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-              >
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
+          <div className="px-6 py-4 border-b flex items-center justify-between bg-orange-50/50">
+            <h2 className="text-lg font-black text-gray-900 uppercase">Xác nhận đặt phòng</h2>
+            <button onClick={onClose} className="p-2 hover:bg-white rounded-full transition-colors"><X className="h-5 w-5 text-gray-400" /></button>
           </div>
 
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-            {/* Booking Info Card */}
-            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
-              <div className="flex items-center gap-2 mb-3">
-                <Calendar className="w-4 h-4 text-orange-600" />
-                <h3 className="font-semibold text-sm text-gray-900">Selected Time Slot</h3>
+          <div className="flex-1 overflow-y-auto p-6 space-y-5">
+            {/* Tóm tắt */}
+            <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500 font-bold uppercase text-[10px]">Phòng</span>
+                <span className="font-black text-orange-600">{roomName}</span>
               </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-white rounded-lg p-3">
-                  <p className="text-xs text-gray-500 uppercase font-medium mb-1">Date</p>
-                  <p className="text-sm font-semibold text-gray-900">
-                    {formatDate(new Date(selectedDate), 'MMM DD, YYYY')}
-                  </p>
-                </div>
-                <div className="bg-white rounded-lg p-3">
-                  <p className="text-xs text-gray-500 uppercase font-medium mb-1">Time</p>
-                  <p className="text-sm font-semibold text-gray-900">
-                    {startTime} - {endTime}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-3 bg-white rounded-lg p-3">
-                <p className="text-xs text-gray-500 uppercase font-medium mb-1">Room</p>
-                <p className="text-sm font-semibold text-orange-600">{roomName}</p>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500 font-bold uppercase text-[10px]">Thời gian</span>
+                <span className="font-bold text-gray-900">{formatDate(new Date(selectedDate), 'DD/MM/YYYY')} | {startTime}-{endTime}</span>
               </div>
             </div>
 
-            <SelectedStudentsSummary
-              selectedGroupEntries={selectedGroupEntries}
-              selectedStudentsCount={selectedStudentsCount}
-              onOpenStudentPicker={() => setShowStudentPicker(true)}
-            />
+            {/* Input số lượng */}
+            <div>
+              <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase mb-2">
+                <Users className="w-3.5 h-3.5" /> Số lượng người dự kiến
+              </label>
+              <input
+                type="number" min="1"
+                value={studentCount}
+                onChange={(e) => setStudentCount(Number(e.target.value))}
+                className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-2 font-bold focus:border-orange-400 outline-none transition-all"
+              />
+            </div>
 
-            {/* Repeat Weekly Option */}
-            <div className="border-t border-gray-200 pt-4">
-              <label className="flex items-center gap-2.5 cursor-pointer group">
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    checked={repeatWeekly}
-                    onChange={(e) => setRepeatWeekly(e.target.checked)}
-                    className="w-4 h-4 text-orange-600 focus:ring-orange-500 rounded"
-                  />
+            {/* Input lý do */}
+            <div>
+              <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase mb-2">
+                <MessageSquare className="w-3.5 h-3.5" /> Lý do sử dụng
+              </label>
+              <textarea
+                rows={2}
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="Nhập lý do cụ thể..."
+                className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-2 text-sm focus:border-orange-400 outline-none transition-all resize-none"
+              />
+            </div>
+
+            {/* Toggle lặp lại */}
+            <div className="pt-2">
+              <label className="flex items-center gap-3 cursor-pointer select-none">
+                <input type="checkbox" checked={isRecurring} onChange={(e) => setIsRecurring(e.target.checked)} className="w-4 h-4 accent-orange-600" />
+                <span className="text-sm font-bold text-gray-700 uppercase text-[11px]">Đặt lịch lặp lại hàng tuần</span>
+              </label>
+              {isRecurring && (
+                <div className="mt-3 pl-7 space-y-2 animate-in slide-in-from-top-2">
+                  <div className="flex justify-between text-[10px] font-bold text-gray-500 uppercase">
+                    <span>Số tuần: {weeks}</span>
+                  </div>
+                  <input type="range" min="1" max="10" value={weeks} onChange={(e) => setWeeks(Number(e.target.value))} className="w-full accent-orange-600" />
                 </div>
-                <div>
-                  <p className="font-semibold text-sm text-gray-900 group-hover:text-orange-600 transition-colors">
-                    Repeat Weekly
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Book the same time slot for multiple weeks
-                  </p>
-                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase mb-2">
+                <ClipboardCheck className="w-3.5 h-3.5" /> Mục đích sử dụng
               </label>
 
-              {repeatWeekly && (
-                <div className="mt-3 ml-6 space-y-3 animate-fade-in">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Number of weeks: <span className="text-orange-600 font-bold">{repeatWeeksCount}</span>
-                    </label>
-                    <input
-                      type="range"
-                      min="1"
-                      max="16"
-                      value={repeatWeeksCount}
-                      onChange={(e) => setRepeatWeeksCount(Number(e.target.value))}
-                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-orange-600"
-                    />
-                    <div className="flex justify-between text-xs text-gray-500 mt-1">
-                      <span>1 week</span>
-                      <span>16 weeks</span>
-                    </div>
-                  </div>
-
-                  {/* Preview of repeated dates */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <div className="flex items-start gap-2">
-                      <AlertCircle className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="font-semibold text-sm text-blue-900 mb-2">
-                          {repeatWeeksCount + 1} bookings will be created
-                        </p>
-                        <div className="space-y-1 text-xs text-blue-800 max-h-28 overflow-y-auto">
-                          <div className="flex items-center gap-2">
-                            <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
-                            {formatDate(new Date(selectedDate), 'MMM DD, YYYY')} (Today)
-                          </div>
-                          {repeatedDates.map((date, idx) => (
-                            <div key={idx} className="flex items-center gap-2">
-                              <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
-                              {formatDate(new Date(date), 'MMM DD, YYYY')}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              {purposesLoading ? (
+                <div className="h-10 bg-gray-100 animate-pulse rounded-xl" />
+              ) : (
+                <select
+                  value={purposeId}
+                  onChange={(e) => setPurposeId(Number(e.target.value))}
+                  className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-2.5 font-bold text-sm focus:border-orange-400 outline-none appearance-none cursor-pointer"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                    backgroundPosition: "right 0.75rem center",
+                    backgroundRepeat: "no-repeat",
+                    backgroundSize: "1.2em"
+                  }}
+                >
+                  {purposes.map((p) => (
+                    <option key={p.id} value={p.id}>{p.purposeName}</option>
+                  ))}
+                </select>
               )}
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="px-5 py-4 bg-gray-50 border-t border-gray-200">
-            <div className="flex gap-2.5">
-              <Button
-                onClick={handleClosePanel}
-                variant="outline"
-                fullWidth
-                size="sm"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleConfirm}
-                variant="primary"
-                fullWidth
-                size="sm"
-                isLoading={loading}
-                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
-              >
-                {loading ? 'Saving...' : 'Confirm Booking'}
-              </Button>
-            </div>
+          <div className="p-4 bg-gray-50 border-t flex gap-3">
+            <Button variant="outline" fullWidth onClick={onClose} className="rounded-xl font-bold uppercase text-[10px]">Hủy</Button>
+            <Button
+              variant="primary" fullWidth
+              onClick={() => onConfirm({ reason, studentCount, isRecurring, weeks, purposeId })}
+              isLoading={loading}
+              disabled={!reason.trim()}
+              className="rounded-xl font-bold uppercase text-[10px] bg-orange-600"
+            >
+              Xác nhận đặt
+            </Button>
           </div>
         </div>
       </div>
-
-      <StudentPickerModal
-        isOpen={showStudentPicker}
-        onClose={() => setShowStudentPicker(false)}
-        studentGroups={studentGroups}
-        studentsByGroup={studentsByGroup}
-        selectedGroups={selectedGroups}
-        selectedGroupEntries={selectedGroupEntries}
-        selectedStudentsCount={selectedStudentsCount}
-        collapsedGroups={collapsedGroups}
-        manualStudentDrafts={manualStudentDrafts}
-        newGroupName={newGroupName}
-        onNewGroupNameChange={setNewGroupName}
-        onCreateEmptyGroup={handleCreateEmptyGroup}
-        onAddExistingGroup={handleAddExistingGroup}
-        onToggleGroupCollapse={handleToggleGroupCollapse}
-        onRemoveGroup={handleRemoveGroup}
-        onDraftChange={handleDraftChange}
-        onAddManualStudent={handleAddManualStudent}
-        onRemoveStudent={handleRemoveStudent}
-        getInitials={getInitials}
-      />
     </>
   );
 };

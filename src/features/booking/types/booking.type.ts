@@ -6,6 +6,7 @@ export interface BookingDto {
   createdBy: string;
   userFullName: string;
   userEmail: string;
+  userCode?: string;
 
   startTime: string;
   endTime: string;
@@ -15,9 +16,9 @@ export interface BookingDto {
   status: string;
   createdAt: string;
 
-  isOverdue: boolean;
-  canApprove: boolean;
-  canReject: boolean;
+  isOverdue?: boolean;
+  canApprove?: boolean;
+  canReject?: boolean;
 }
 
 export interface GetBookingsParams {
@@ -33,6 +34,34 @@ export interface GetBookingsParams {
 
   sortBy?: string;
   isDescending?: boolean;
+}
+
+export interface CreateBookingCommand {
+  labRoomId: number;
+  slotTypeId: number;
+  purposeTypeId: number;
+  startTime: string; // ISO String: "2024-03-26T07:30:00Z"
+  endTime: string;
+  studentCount: number;
+  recurringCount: number;
+  reason: string;
+  groupIds?: string[]; // Hiện tại để optional hoặc []
+}
+
+export interface CreateBookingResponse {
+  id: string; // Guid trả về từ Backend
+}
+
+export interface PurposeTypeDto {
+  id: number;
+  purposeName: string;
+}
+
+export interface PendingBooking {
+  date: string;       // YYYY-MM-DD
+  startTime: string;  // HH:mm
+  endTime: string;    // HH:mm
+  slotTypeId: number; // Để biết là đang đặt theo ca hay tự do
 }
 
 
@@ -164,17 +193,6 @@ export interface BookingSummary {
 }
 
 // ===== API REQUEST/RESPONSE TYPES =====
-
-export interface CreateBookingRequest {
-  bookingData: BookingRequestDraft;
-}
-
-export interface CreateBookingResponse {
-  success: boolean;
-  bookingId: string;
-  summary: BookingSummary;
-  message: string;
-}
 
 export interface GetMyBookingsRequest {
   status?: 'Pending' | 'Approved' | 'Rejected';

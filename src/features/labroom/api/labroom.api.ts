@@ -5,13 +5,13 @@ import type { PagedResponse } from "../../../types/pagination.types";
 
 export const labroomApi = {
   getRooms: (params?: GetLabRoomsQuery) =>
-    axiosInstance.get<PagedResponse<LabRoomDto>>('/LabRooms', { params })
+    axiosInstance.get<PagedResponse<LabRoomDto>>('/LabRoom', { params })
       .then(response => response.data),
 
   getLabPolicies: (labRoomId: number) =>
-    axiosInstance.get<LabRoomPolicy[]>(`/LabRooms/${labRoomId}/policies`),
+    axiosInstance.get<LabRoomPolicy[]>(`/LabRoom/${labRoomId}/policies`),
 
   getStats: () =>
-    axiosInstance.get<GetStatsResponse>('/LabRooms/stats')
+    axiosInstance.get<GetStatsResponse>('/LabRoom/stats')
       .then(response => response.data),
 };
