@@ -240,16 +240,130 @@ const unwrapSessionPayload = (response: unknown): Record<string, unknown> => {
   }
 
   if (typeof current === 'string') {
+    const trimmed = current.trim();
+    const isUrlLike = /^https?:\/\//i.test(trimmed)
+      || trimmed.startsWith('/api/')
+      || trimmed.startsWith('/attendances/')
+      || trimmed.startsWith('api/')
+      || trimmed.startsWith('attendances/');
+
     return {
-      scanUrl: current,
-      qrValue: current,
-      qrContent: current,
+      ...(isUrlLike
+        ? {
+          scanUrl: trimmed,
+          qrValue: trimmed,
+          qrContent: trimmed,
+        }
+        : {
+          qrImageBase64: trimmed,
+          qrCodeBase64: trimmed,
+          base64Image: trimmed,
+        }),
     };
   }
 
   return current && typeof current === 'object'
     ? (current as Record<string, unknown>)
     : {};
+};
+
+const getApiBaseOrigin = (): string => {
+  const baseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
+  if (!baseUrl) {
+    return window.location.origin;
+  }
+
+  try {
+    return new URL(baseUrl).origin;
+  } catch {
+    return window.location.origin;
+  }
+};
+
+const normalizePossibleScanUrl = (value: string): string => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return '';
+  }
+
+  const absoluteMatch = trimmed.match(/https?:\/\/[^\s"']+/i);
+  if (absoluteMatch?.[0]) {
+    return absoluteMatch[0];
+  }
+
+  if (trimmed.startsWith('/api/') || trimmed.startsWith('/attendances/')) {
+    return `${getApiBaseOrigin()}${trimmed}`;
+  }
+
+  if (trimmed.startsWith('api/') || trimmed.startsWith('attendances/')) {
+    return `${getApiBaseOrigin()}/${trimmed}`;
+  }
+
+  return '';
+};
+
+const buildBackendScanUrl = (session: QRSession | null): string => {
+  if (!session?.id || !session?.bookingId) {
+    return '';
+  }
+
+  const params = new URLSearchParams({
+    qrId: session.id,
+    scheduleId: session.bookingId,
+    isCheckIn: 'true',
+    studentId: '',
+  });
+
+  return `${getApiBaseOrigin()}/api/attendances/scan-qrcode?${params.toString()}`;
+};
+
+const extractBackendScanUrl = (input: unknown, depth = 0): string => {
+  if (depth > 4 || input == null) {
+    return '';
+  }
+
+  if (typeof input === 'string') {
+    return normalizePossibleScanUrl(input);
+  }
+
+  if (Array.isArray(input)) {
+    for (const item of input) {
+      const found = extractBackendScanUrl(item, depth + 1);
+      if (found) return found;
+    }
+    return '';
+  }
+
+  if (typeof input === 'object') {
+    const record = input as Record<string, unknown>;
+
+    const priorityKeys = [
+      'scanUrl',
+      'qrScanUrl',
+      'url',
+      'qrUrl',
+      'qrContent',
+      'qrValue',
+      'qrCode',
+      'qrCodeUrl',
+      'qrCodeContent',
+      'qrCodeValue',
+      'content',
+      'value',
+    ];
+
+    for (const key of priorityKeys) {
+      const found = extractBackendScanUrl(record[key], depth + 1);
+      if (found) return found;
+    }
+
+    for (const value of Object.values(record)) {
+      const found = extractBackendScanUrl(value, depth + 1);
+      if (found) return found;
+    }
+  }
+
+  return '';
 };
 
 export default function AttendanceManagementPage() {
@@ -285,6 +399,7 @@ export default function AttendanceManagementPage() {
   const [showQRModal, setShowQRModal] = useState(false);
   const [isCreatingQr, setIsCreatingQr] = useState(false);
   const [stoppedQrBySessionId, setStoppedQrBySessionId] = useState<Record<string, boolean>>({});
+  const [latestBackendScanUrl, setLatestBackendScanUrl] = useState('');
 
   const bookingScheduleItems: BookingDto[] = bookingScheduleData?.data?.items || [];
 
@@ -382,7 +497,13 @@ export default function AttendanceManagementPage() {
     || (typeof sessionRecord.qrContent === 'string' ? sessionRecord.qrContent : '')
     || (typeof sessionRecord.qrValue === 'string' ? sessionRecord.qrValue : '');
 
-  const scanUrl = backendScanUrl || (session
+  const derivedBackendScanUrl = buildBackendScanUrl(session);
+
+  const scanUrl =
+    normalizePossibleScanUrl(latestBackendScanUrl)
+    || normalizePossibleScanUrl(backendScanUrl)
+    || derivedBackendScanUrl
+    || (session
     ? `${window.location.origin}/scan-attendance/${session.id}?token=${encodeURIComponent(session.qrToken)}${isAttendanceMockMode ? '&mockAttendance=1' : ''}`
     : '');
 
@@ -441,6 +562,13 @@ export default function AttendanceManagementPage() {
         unwrapSessionPayload(created),
         session || null
       );
+
+      const extractedScanUrl = extractBackendScanUrl(created);
+      if (extractedScanUrl) {
+        setLatestBackendScanUrl(extractedScanUrl);
+      } else {
+        setLatestBackendScanUrl(buildBackendScanUrl(nextSession));
+      }
 
       const refreshedExpiry = new Date(nextSession.qrExpiry);
       const refreshedDiff = Math.floor((refreshedExpiry.getTime() - Date.now()) / 1000);
@@ -524,6 +652,13 @@ export default function AttendanceManagementPage() {
         unwrapSessionPayload(response),
         session || null
       );
+
+      const extractedScanUrl = extractBackendScanUrl(response);
+      if (extractedScanUrl) {
+        setLatestBackendScanUrl(extractedScanUrl);
+      } else {
+        setLatestBackendScanUrl(buildBackendScanUrl(nextSession));
+      }
 
       if (nextSession?.id) {
         setActiveSession(nextSession);
