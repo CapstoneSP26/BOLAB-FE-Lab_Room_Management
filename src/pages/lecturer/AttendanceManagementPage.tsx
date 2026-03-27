@@ -206,6 +206,47 @@ const normalizeQrSessionPayload = (
   };
 };
 
+const unwrapSessionPayload = (response: unknown): Record<string, unknown> => {
+  let current: unknown = response;
+
+  for (let i = 0; i < 3; i++) {
+    if (
+      current
+      && typeof current === 'object'
+      && 'data' in (current as Record<string, unknown>)
+      && (current as Record<string, unknown>).data
+      && typeof (current as Record<string, unknown>).data === 'object'
+    ) {
+      current = (current as Record<string, unknown>).data;
+      continue;
+    }
+
+    break;
+  }
+
+  return current && typeof current === 'object'
+    ? (current as Record<string, unknown>)
+    : {};
+};
+
+const toDataUrlImageSrc = (value?: string): string | null => {
+  if (!value || typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  if (trimmed.startsWith('data:image/')) {
+    return trimmed;
+  }
+
+  const compactBase64 = trimmed.replace(/\s+/g, '');
+  return compactBase64 ? `data:image/png;base64,${compactBase64}` : null;
+};
+
 export default function AttendanceManagementPage() {
   const appAlert = useToast();
   const navigate = useNavigate();
@@ -327,9 +368,21 @@ export default function AttendanceManagementPage() {
   const presentStudents = attendanceStats?.presentCount ?? 0;
   const absentStudents = attendanceStats?.absentCount ?? Math.max(totalStudents - presentStudents, 0);
 
-  const scanUrl = session
-    ? `${window.location.origin}/scan-attendance/${session.id}?token=${encodeURIComponent(session.qrToken)}${isAttendanceMockMode ? '&mockAttendance=1' : ''}`
+  const sessionRecord = (session || {}) as Record<string, unknown>;
+  const qrImageDataUrl = toDataUrlImageSrc(session?.qrImageBase64);
+  const qrImageUrlWithCacheBust = session?.qrImageUrl
+    ? `${session.qrImageUrl}${session.qrImageUrl.includes('?') ? '&' : '?'}v=${encodeURIComponent(session.qrExpiry || session.qrToken || session.createdAt || '')}`
     : '';
+  const qrImageSrc = qrImageDataUrl || qrImageUrlWithCacheBust;
+  const backendScanUrl =
+    (typeof sessionRecord.scanUrl === 'string' ? sessionRecord.scanUrl : '')
+    || (typeof sessionRecord.qrScanUrl === 'string' ? sessionRecord.qrScanUrl : '')
+    || (typeof sessionRecord.qrContent === 'string' ? sessionRecord.qrContent : '')
+    || (typeof sessionRecord.qrValue === 'string' ? sessionRecord.qrValue : '');
+
+  const scanUrl = backendScanUrl || (session
+    ? `${window.location.origin}/scan-attendance/${session.id}?token=${encodeURIComponent(session.qrToken)}${isAttendanceMockMode ? '&mockAttendance=1' : ''}`
+    : '');
 
   const filteredBookings = useMemo(() => {
     const items = bookings.filter((booking) => {
@@ -383,7 +436,7 @@ export default function AttendanceManagementPage() {
       });
 
       const nextSession = normalizeQrSessionPayload(
-        (created.data || {}) as unknown as Record<string, unknown>,
+        unwrapSessionPayload(created),
         session || null
       );
 
@@ -465,11 +518,16 @@ export default function AttendanceManagementPage() {
         isCheckIn: true,
       });
 
-      if (response?.data) {
-        setActiveSession(response.data);
+      const nextSession = normalizeQrSessionPayload(
+        unwrapSessionPayload(response),
+        session || null
+      );
+
+      if (nextSession?.id) {
+        setActiveSession(nextSession);
         setStoppedQrBySessionId(prev => ({
           ...prev,
-          [response.data.id]: false,
+          [nextSession.id]: false,
         }));
         setShowQRModal(true);
         return;
@@ -764,15 +822,9 @@ export default function AttendanceManagementPage() {
                     {isQrStopped ? 'QR has been stopped. Refresh QR to generate a new one.' : 'Refresh QR to generate a new code'}
                   </p>
                 </div>
-              ) : session.qrImageBase64 || session.qrImageUrl ? (
+              ) : qrImageSrc ? (
                 <img
-                  src={
-                    session.qrImageBase64
-                      ? (session.qrImageBase64.startsWith('data:')
-                        ? session.qrImageBase64
-                        : `data:image/png;base64,${session.qrImageBase64}`)
-                      : `${session.qrImageUrl}${session.qrImageUrl?.includes('?') ? '&' : '?'}v=${encodeURIComponent(session.qrExpiry || session.qrToken || session.createdAt || '')}`
-                  }
+                  src={qrImageSrc}
                   alt="Session QR"
                   className="w-[280px] h-[280px] object-contain"
                 />
