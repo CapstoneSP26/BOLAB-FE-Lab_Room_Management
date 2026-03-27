@@ -19,9 +19,8 @@ import type {
   BookingRequest,
   BookingStatus,
 } from "../../booking/types/booking.type";
-import type { BookingSlotTypeCode } from "../types/schedule.type";
 
-type SlotTypeFilter = "ALL" | BookingSlotTypeCode | string;
+type SlotTypeFilter = "ALL" | number;
 
 export default function PendingBookingFeature() {
   const [loading, setLoading] = useState(true);
@@ -79,8 +78,7 @@ export default function PendingBookingFeature() {
         labRoomId: roomId === "ALL" ? undefined : roomId,
         buildingId: buildingId === "ALL" ? undefined : buildingId,
         keyword: q.trim() || undefined,
-        slotTypeCode:
-          slotType === "ALL" ? undefined : (slotType as BookingSlotTypeCode),
+        slotTypeId: slotType === "ALL" ? undefined : slotType,
       });
 
       setItems(Array.isArray(data?.data) ? data.data : []);

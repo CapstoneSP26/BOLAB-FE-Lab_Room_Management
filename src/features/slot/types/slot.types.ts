@@ -34,23 +34,13 @@ export interface TimeSlot {
   bookingSource?: "AO_BOOK" | "LECTURER_BOOK";
 }
 export interface GetSlotTypesRequest {
+  id?: number;
   page?: number;
   limit?: number;
   keyword?: string;
   code?: string;
 }
-export interface GetAvailableSlotsRequest {
-  roomId: string;
-  startDate: string;
-  endDate: string;
-  startTime?: string;
-  endTime?: string;
-}
 
-export interface GetAvailableSlotsResponse {
-  slots: TimeSlot[];
-  total: number;
-}
 /** ===== SLOT LOOKUP RESPONSE ===== */
 export interface GetSlotTypesResponse {
   data: SlotType[];

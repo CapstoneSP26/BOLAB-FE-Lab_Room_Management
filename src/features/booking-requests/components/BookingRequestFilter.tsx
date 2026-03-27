@@ -2,7 +2,7 @@ import type { Building } from "../../building/types/building.type";
 import type { LabRoomLookupItem } from "../../labroom/types/room.type";
 import type { SlotType } from "../../slot/types/slot.types";
 
-type SlotTypeFilter = "ALL" | string;
+type SlotTypeFilter = "ALL" | number;
 
 type Props = {
   q: string;
@@ -115,7 +115,11 @@ export default function BookingFilters({
           </label>
           <select
             value={slotType}
-            onChange={(e) => onSlotType(e.target.value)}
+            onChange={(e) =>
+              onSlotType(
+                e.target.value === "ALL" ? "ALL" : Number(e.target.value),
+              )
+            }
             className="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/10 dark:border-gray-600 dark:bg-gray-800 dark:text-white/90 dark:focus:border-brand-800"
           >
             <option value="ALL">All slot types</option>
