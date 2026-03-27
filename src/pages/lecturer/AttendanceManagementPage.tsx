@@ -313,27 +313,6 @@ export default function AttendanceManagementPage() {
   const shouldShowBookingsLoading = bookingsLoading && !(isAttendanceMockMode && bookings.length > 0);
 
   const handleRefreshQR = async () => {
-    if (isAttendanceMockMode) {
-      const baseSession = session || MOCK_QR_SESSION;
-      const mockSession = {
-        ...baseSession,
-        id: MOCK_QR_SESSION.id,
-        qrToken: `QR_SESSION_TOKEN_${Date.now()}`,
-        qrExpiry: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
-        isActive: true,
-      };
-
-      const refreshedDiff = Math.floor((new Date(mockSession.qrExpiry).getTime() - Date.now()) / 1000);
-      setTimeRemaining(refreshedDiff > 0 ? refreshedDiff : 0);
-      setActiveSession(mockSession);
-      setStoppedQrBySessionId(prev => ({
-        ...prev,
-        [mockSession.id]: false,
-      }));
-      appAlert.success('QR refreshed', 'Mock QR code is ready for testing.');
-      return;
-    }
-
     setIsRefreshingQr(true);
     try {
       if (!session?.id) {
@@ -393,21 +372,6 @@ export default function AttendanceManagementPage() {
 
   const handleEndSession = async () => {
     if (!session) return;
-
-    if (isAttendanceMockMode) {
-      setTimeRemaining(0);
-      setStoppedQrBySessionId(prev => ({
-        ...prev,
-        [session.id]: true,
-      }));
-      setActiveSession({
-        ...session,
-        isActive: false,
-        qrExpiry: new Date().toISOString(),
-      });
-      appAlert.success('QR stopped', 'Mock QR has been turned off.');
-      return;
-    }
 
     const scheduleIdForEnd = actionBooking?.bookingId || session.bookingId;
 
@@ -473,22 +437,7 @@ export default function AttendanceManagementPage() {
 
       throw new Error('Invalid create QR response');
     } catch {
-      if (isAttendanceMockMode) {
-        const mockSession = {
-          ...MOCK_QR_SESSION,
-          qrToken: `QR_SESSION_TOKEN_${Date.now()}`,
-          qrExpiry: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
-          isActive: true,
-        };
-        setActiveSession(mockSession);
-        setStoppedQrBySessionId(prev => ({
-          ...prev,
-          [mockSession.id]: false,
-        }));
-        setShowQRModal(true);
-      } else {
-        appAlert.error('Create QR failed', 'Cannot create QR from backend for this session.');
-      }
+      appAlert.error('Create QR failed', 'Cannot create QR from backend for this session.');
     } finally {
       setIsCreatingQr(false);
     }
