@@ -1,4 +1,4 @@
-import type { Role, Profile } from "../../services/labmanager/profile.service";
+import type { Role, Profile } from "../api/profile.api";
 
 type ProfileCardProps = {
   role: Role;

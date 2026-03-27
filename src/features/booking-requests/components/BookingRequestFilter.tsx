@@ -95,9 +95,12 @@ export default function BookingFilters({
                 e.target.value === "ALL" ? "ALL" : Number(e.target.value),
               )
             }
-            className="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/10 dark:border-gray-600 dark:bg-gray-800 dark:text-white/90 dark:focus:border-brand-800"
+            disabled={buildingId === "ALL"}
+            className="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/10 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:text-white/90 dark:focus:border-brand-800 dark:disabled:bg-gray-700 dark:disabled:text-gray-500"
           >
-            <option value="ALL">All rooms</option>
+            <option value="ALL">
+              {buildingId === "ALL" ? "Select building first" : "All rooms"}
+            </option>
             {roomOptions.map((r) => (
               <option key={r.id} value={String(r.id)}>
                 {r.roomName} - {r.buildingName}

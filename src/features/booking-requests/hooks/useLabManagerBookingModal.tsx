@@ -4,7 +4,7 @@ import {
   getBookingRequestByScheduleId,
   updateBookingRequestStatus,
 } from "../api/bookingRequestApi";
-import type { Booking } from "../type";
+import type { BookingRequest } from "../../booking/types/booking.type";
 import type { EventClickArg } from "@fullcalendar/core";
 
 type Role = "ADMIN" | "LAB_MANAGER" | "LECTURER" | "STUDENT";

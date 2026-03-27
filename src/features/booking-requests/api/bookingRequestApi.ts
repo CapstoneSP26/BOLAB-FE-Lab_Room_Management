@@ -114,12 +114,15 @@ export const getBuildingOptions = async (): Promise<Building[]> => {
 /** Lookup: rooms for booking filter
  * Dùng labroomApi để đổ dropdown room
  */
-export const getRoomOptions = async (): Promise<LabRoomLookupItem[]> => {
+export const getRoomOptions = async (
+  buildingId?: string | number,
+): Promise<LabRoomLookupItem[]> => {
   const response = await labroomApi.getRooms({
     pageNumber: 1,
     pageSize: 1000,
     includeBuilding: true,
     isDescending: false,
+    buildingId: buildingId ? Number(buildingId) : undefined,
   });
 
   const items: LabRoomDto[] = response.items ?? [];

@@ -21,8 +21,6 @@ export const FALLBACK_REPORT_REASONS: ReportReasonOption[] = Object.entries(
 ).map(([value, label]) => ({ value, label }));
 
 export type ReportStatus = "pending" | "in_progress" | "resolved" | "rejected";
-export type ReportResolvedFilter = "ALL" | "RESOLVED" | "UNRESOLVED";
-export type ReportHistorySortKey = "Newest" | "Oldest" | "Room";
 
 export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = {
   pending: "Chờ xử lý",
@@ -52,7 +50,7 @@ export interface Report {
   ScheduleId?: string | null;
   UserId: string;
 
-  ReportType: string;
+  ReportType?: string;
   Description: string;
   IsResolved: boolean;
 
@@ -75,22 +73,48 @@ export interface ReportImage {
   FileType: string;
 }
 
+export interface ReportTypeLookupItem {
+  code: string;
+  name: string;
+}
+
+export interface ReportStatusLookupItem {
+  code: string;
+  name: string;
+}
+
+export interface ReportReasonLookupItem {
+  value: string;
+  label: string;
+}
+
+export interface GetReportTypeLookupResponse {
+  data: ReportTypeLookupItem[];
+  total?: number;
+  page?: number;
+  limit?: number;
+}
+
+export interface GetReportStatusLookupResponse {
+  data: ReportStatusLookupItem[];
+  total?: number;
+  page?: number;
+  limit?: number;
+}
+
+export interface GetReportReasonLookupResponse {
+  data: ReportReasonLookupItem[];
+  total?: number;
+  page?: number;
+  limit?: number;
+}
+
+//request
 export interface CreateReportRequest {
   roomId: string;
   reason: string;
   description: string;
   images?: File[]; // Files to upload
-}
-
-export interface GetReportReasonsResponse {
-  success: boolean;
-  data: ReportReasonOption[];
-}
-
-export interface CreateReportResponse {
-  success: boolean;
-  message: string;
-  data: Report;
 }
 
 export interface GetMyReportsRequest {
@@ -101,6 +125,61 @@ export interface GetMyReportsRequest {
   limit?: number;
   sortBy?: string;
   isDescending?: boolean;
+}
+export interface GetReportDetailRequest {
+  reportId: string;
+}
+export interface GetReportsRequest {
+  q?: string;
+  roomId?: number;
+  reportType?: string;
+  isResolved?: boolean;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  isDescending?: boolean;
+  fromDate?: string;
+  toDate?: string;
+}
+export interface GetReportHistoryRequest {
+  q?: string;
+  roomId?: number;
+  ReportType?: string;
+  isResolved?: boolean;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  isDescending?: boolean;
+  fromDate?: string;
+  toDate?: string;
+}
+export interface ResolveReportRequest {
+  isResolved: boolean;
+}
+
+export interface GetReportReasonsResponse {
+  success: boolean;
+  data: ReportReasonOption[];
+}
+
+////response
+export interface CreateReportResponse {
+  success: boolean;
+  message: string;
+  data: Report;
+}
+export interface GetReportsResponse {
+  data: Report[];
+  total?: number;
+  page?: number;
+  limit?: number;
+}
+
+export interface GetReportHistoryResponse {
+  data: Report[];
+  total?: number;
+  page?: number;
+  limit?: number;
 }
 
 export interface GetMyReportsResponse {
@@ -114,17 +193,13 @@ export interface GetMyReportsResponse {
   };
 }
 
-export interface GetReportDetailRequest {
-  reportId: string;
-}
-
 export interface GetReportDetailResponse {
   success: boolean;
   data: Report;
 }
-export interface FilterOption<T extends string = string> {
-  value: T;
-  label: string;
+
+export interface ResolveReportResponse {
+  data: Report;
 }
 
 export interface ImagePreview {

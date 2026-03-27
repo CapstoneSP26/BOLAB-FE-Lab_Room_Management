@@ -2,20 +2,23 @@ import axiosInstance from "../../../api/axios";
 import type {
   CreateReportRequest,
   CreateReportResponse,
-  GetReportReasonsResponse,
   GetMyReportsRequest,
   GetMyReportsResponse,
   GetReportDetailRequest,
   GetReportDetailResponse,
-  ReportResolvedFilter,
-  ReportHistorySortKey,
-  Report,
+  GetReportReasonsResponse,
+  ResolveReportRequest,
+  ResolveReportResponse,
 } from "../types/report.type";
 import {
   getResponseSuccess,
   normalizeReasonOptions,
 } from "../types/report.mapper";
-
+import type {
+  LabRoomDto,
+  LabRoomLookupItem,
+} from "../../labroom/types/room.type";
+import { labroomApi } from "../../labroom/api/labroom.api";
 const REPORT_API = {
   CREATE: "/reports",
   REASONS: "/reports/reasons",
@@ -23,30 +26,6 @@ const REPORT_API = {
   DETAIL: (id: string) => `/reports/${id}`,
   RESOLVE: (id: string) => `/reports/${id}/resolve`,
 } as const;
-
-type GetFilteredReportsParams = {
-  q?: string;
-  roomId?: number | "ALL";
-  status?: ReportResolvedFilter;
-  page?: number;
-  limit?: number;
-  sort?: ReportHistorySortKey;
-};
-
-const buildReportQueryParams = (
-  params: GetFilteredReportsParams = {},
-): GetMyReportsRequest => {
-  return {
-    q: params.q?.trim() || undefined,
-    roomId: params.roomId === "ALL" ? undefined : params.roomId,
-    isResolved:
-      params.status === "ALL" ? undefined : params.status === "RESOLVED",
-    page: params.page,
-    limit: params.limit,
-    sortBy: params.sort === "Room" ? "roomId" : "createdAt",
-    isDescending: params.sort === "Oldest" ? false : true,
-  };
-};
 
 export const createReport = async (
   data: CreateReportRequest,
@@ -86,30 +65,6 @@ export const getMyReports = async (
   return response.data;
 };
 
-export const getFilteredReports = async (
-  filters: GetFilteredReportsParams = {},
-): Promise<GetMyReportsResponse> => {
-  return getMyReports(buildReportQueryParams(filters));
-};
-
-export const getUnresolvedReports = async (
-  filters: Omit<GetFilteredReportsParams, "status"> = {},
-): Promise<GetMyReportsResponse> => {
-  return getFilteredReports({
-    ...filters,
-    status: "UNRESOLVED",
-  });
-};
-
-export const getResolvedReports = async (
-  filters: Omit<GetFilteredReportsParams, "status"> = {},
-): Promise<GetMyReportsResponse> => {
-  return getFilteredReports({
-    ...filters,
-    status: "RESOLVED",
-  });
-};
-
 export const getReportReasons = async (): Promise<GetReportReasonsResponse> => {
   const response = await axiosInstance.get(REPORT_API.REASONS);
   const raw = response.data;
@@ -130,13 +85,34 @@ export const getReportDetail = async (
   return response.data;
 };
 
-export const resolveReport = async (reportId: string): Promise<Report> => {
-  const response = await axiosInstance.patch<{ data: Report }>(
-    REPORT_API.RESOLVE(reportId),
-    {
-      isResolved: true,
-    },
+export const resolveReport = async (
+  id: string,
+  body: ResolveReportRequest,
+): Promise<ResolveReportResponse> => {
+  const response = await axiosInstance.patch<ResolveReportResponse>(
+    REPORT_API.RESOLVE(id),
+    body,
   );
 
-  return response.data.data;
+  return response.data;
+};
+
+/** Lookup: rooms for report filter */
+export const getRoomOptions = async (): Promise<LabRoomLookupItem[]> => {
+  const response = await labroomApi.getRooms({
+    pageNumber: 1,
+    pageSize: 1000,
+    includeBuilding: true,
+    isDescending: false,
+  });
+
+  const items: LabRoomDto[] = response.items ?? [];
+
+  return items.map((item: LabRoomDto) => ({
+    id: item.id,
+    roomName: item.roomName,
+    roomNo: item.roomNo,
+    buildingId: item.buildingId,
+    buildingName: item.buildingName,
+  }));
 };
