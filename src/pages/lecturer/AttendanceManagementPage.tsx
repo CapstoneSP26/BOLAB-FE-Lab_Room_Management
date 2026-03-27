@@ -404,12 +404,12 @@ export default function AttendanceManagementPage() {
   const bookingScheduleItems: BookingDto[] = bookingScheduleData?.data?.items || [];
 
   const bookings = useMemo<BookingWithQR[]>(() => {
-    if (bookingsData?.data?.length) {
-      return bookingsData.data;
-    }
-
     if (bookingScheduleItems.length > 0) {
       return bookingScheduleItems.map(mapBookingDtoToAttendanceBooking);
+    }
+
+    if (bookingsData?.data?.length) {
+      return bookingsData.data;
     }
 
     return isAttendanceMockMode ? MOCK_LECTURER_BOOKINGS : [];
