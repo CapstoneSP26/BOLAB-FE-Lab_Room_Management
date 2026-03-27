@@ -40,6 +40,18 @@ import { useToast } from '../../hooks/useToast';
 
 const normalizeRoomName = (value: string) => value.trim().toLowerCase();
 
+const getRoomCodeFromName = (roomName: string): string => {
+  const numberMatch = roomName.match(/(\d+)/);
+  return numberMatch ? `L${numberMatch[1]}` : roomName;
+};
+
+const normalizeBookingStatus = (status: string): BookingWithQR['status'] => {
+  if (status === 'PendingApproval' || status === 'Approved' || status === 'Rejected' || status === 'Cancelled') {
+    return status;
+  }
+  return 'Draft';
+};
+
 const parseTimeValue = (bookingDate: string, value: string): Date => {
   // Handle API values that already include full datetime.
   if (value.includes('T')) {
@@ -88,6 +100,54 @@ const isNowInsideFeatureBookingWindow = (booking: BookingWithQR): boolean => {
   return now >= start && now <= end;
 };
 
+const isBookingPast = (booking: BookingWithQR): boolean => {
+  const now = new Date();
+  const end = parseTimeValue(booking.date, booking.endTime);
+  if (Number.isNaN(end.getTime())) {
+    return booking.isPast;
+  }
+  return end < now;
+};
+
+const isBookingUpcoming = (booking: BookingWithQR): boolean => !isBookingPast(booking);
+
+const formatBookingTimeLabel = (bookingDate: string, value: string): string => {
+  const parsed = parseTimeValue(bookingDate, value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+  return parsed.toLocaleTimeString('vi-VN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+};
+
+const mapBookingDtoToAttendanceBooking = (booking: BookingDto): BookingWithQR => {
+  const dateSource = booking.startTime || booking.createdAt;
+  const start = parseTimeValue(dateSource, booking.startTime);
+  const end = parseTimeValue(dateSource, booking.endTime);
+  const now = new Date();
+  const isPast = !Number.isNaN(end.getTime()) ? end < now : false;
+  const hasValidStart = !Number.isNaN(start.getTime());
+
+  return {
+    bookingId: booking.id,
+    roomName: booking.labRoomName || 'Unknown Room',
+    roomCode: getRoomCodeFromName(booking.labRoomName || 'Room'),
+    buildingName: 'Unknown Building',
+    date: hasValidStart ? start.toISOString() : dateSource,
+    startTime: booking.startTime,
+    endTime: booking.endTime,
+    status: normalizeBookingStatus(booking.status),
+    purpose: booking.reason || 'No purpose provided',
+    hasQRSession: false,
+    qrSessionId: undefined,
+    isUpcoming: !isPast,
+    isPast,
+  };
+};
+
 export default function AttendanceManagementPage() {
   const appAlert = useToast();
   const navigate = useNavigate();
@@ -122,8 +182,19 @@ export default function AttendanceManagementPage() {
   const [isCreatingQr, setIsCreatingQr] = useState(false);
   const [stoppedQrBySessionId, setStoppedQrBySessionId] = useState<Record<string, boolean>>({});
 
-  const bookings = bookingsData?.data || (isAttendanceMockMode ? MOCK_LECTURER_BOOKINGS : []);
   const bookingScheduleItems: BookingDto[] = bookingScheduleData?.data?.items || [];
+
+  const bookings = useMemo<BookingWithQR[]>(() => {
+    if (bookingsData?.data?.length) {
+      return bookingsData.data;
+    }
+
+    if (bookingScheduleItems.length > 0) {
+      return bookingScheduleItems.map(mapBookingDtoToAttendanceBooking);
+    }
+
+    return isAttendanceMockMode ? MOCK_LECTURER_BOOKINGS : [];
+  }, [bookingScheduleItems, bookingsData?.data, isAttendanceMockMode]);
 
   const activeRoomNamesFromSchedule = useMemo(() => {
     if (bookingScheduleItems.length === 0) {
@@ -186,7 +257,9 @@ export default function AttendanceManagementPage() {
     }
   }, [activeSession, isMockSession, resolvedSessionId, sessionData?.data, setActiveSession]);
 
-  const session = sessionData?.data || (isMockSession ? MOCK_QR_SESSION : activeSession);
+  const session = (activeSession && (!sessionData?.data || activeSession.id === sessionData.data.id))
+    ? activeSession
+    : (sessionData?.data || (isMockSession ? MOCK_QR_SESSION : null));
   const activeDisplayRoom = session?.roomName || actionBooking?.roomName || 'Unknown Room';
   const activeDisplayBuilding = session?.buildingName || actionBooking?.buildingName || 'Unknown Building';
   const attendanceStats = attendanceListData?.data?.session || session;
@@ -200,8 +273,11 @@ export default function AttendanceManagementPage() {
 
   const filteredBookings = useMemo(() => {
     const items = bookings.filter((booking) => {
-      if (statusFilter === 'upcoming' && !booking.isUpcoming) return false;
-      if (statusFilter === 'past' && !booking.isPast) return false;
+      const upcoming = isBookingUpcoming(booking);
+      const past = isBookingPast(booking);
+
+      if (statusFilter === 'upcoming' && !upcoming) return false;
+      if (statusFilter === 'past' && !past) return false;
 
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -648,7 +724,7 @@ export default function AttendanceManagementPage() {
                       ? (session.qrImageBase64.startsWith('data:')
                         ? session.qrImageBase64
                         : `data:image/png;base64,${session.qrImageBase64}`)
-                      : session.qrImageUrl
+                      : `${session.qrImageUrl}${session.qrImageUrl?.includes('?') ? '&' : '?'}v=${encodeURIComponent(session.qrExpiry || session.qrToken || session.createdAt || '')}`
                   }
                   alt="Session QR"
                   className="w-[280px] h-[280px] object-contain"
@@ -757,7 +833,7 @@ function BookingCard({ booking }: BookingCardProps) {
             <div className="flex items-center gap-2 text-slate-600">
               <Clock className="w-4 h-4 flex-shrink-0" />
               <span className="text-sm tabular-nums">
-                {booking.startTime} - {booking.endTime}
+                {formatBookingTimeLabel(booking.date, booking.startTime)} - {formatBookingTimeLabel(booking.date, booking.endTime)}
               </span>
             </div>
           </div>
@@ -776,7 +852,7 @@ function BookingCard({ booking }: BookingCardProps) {
               <ExternalLink className="w-4 h-4" />
               <span>View Session</span>
             </button>
-          ) : booking.isUpcoming && booking.status === 'Approved' ? (
+          ) : isBookingUpcoming(booking) && booking.status === 'Approved' ? (
             <button
               disabled
               className="bg-slate-100 text-slate-500 px-4 py-2.5 rounded-xl font-semibold text-sm cursor-not-allowed border border-slate-200 whitespace-nowrap flex items-center gap-2"
