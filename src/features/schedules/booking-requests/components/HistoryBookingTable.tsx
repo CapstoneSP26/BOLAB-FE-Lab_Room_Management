@@ -27,6 +27,12 @@ function formatRange(start: string, end: string) {
   return `${fmtDate(s)} • ${fmtTime(s)} - ${fmtTime(e)}`;
 }
 
+function displayReason(reason?: string) {
+  const trimmed = String(reason ?? "").trim();
+  if (!trimmed) return "No reason provided";
+  return trimmed;
+}
+
 export default function HistoryBookingTable({
   loading,
   rows,
@@ -101,8 +107,17 @@ export default function HistoryBookingTable({
                   </td>
 
                   <td className="px-4 py-4">
-                    <div className="max-w-[280px] truncate text-gray-700 dark:text-gray-300">
-                      {b.Reason}
+                    <div
+                      className="max-w-[280px] line-clamp-2 text-gray-700 dark:text-gray-300"
+                      title={displayReason(b.Reason)}
+                    >
+                      {displayReason(b.Reason) === "No reason provided" ? (
+                        <span className="italic text-gray-400">
+                          {displayReason(b.Reason)}
+                        </span>
+                      ) : (
+                        displayReason(b.Reason)
+                      )}
                     </div>
                   </td>
 

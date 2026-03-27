@@ -4,22 +4,10 @@ import BookingRequestReviewModal from "./BookingRequestReviewModal";
 import HistoryBookingTable from "./HistoryBookingTable";
 import HistoryBookingFilter from "./HistoryBookingFilter";
 
-import { getBookingRequestHistory } from "../../api/bookingRequestApi";
+import { getBookingRequestHistory, getRoomOptions } from "../../api/bookingRequestApi";
 import type { Booking } from "../../type";
 
 type HistoryStatus = "ALL" | "APPROVED" | "REJECTED";
-const norm = (s: unknown) => String(s ?? "").toUpperCase();
-
-function inDateRange(startIso: string, from: string, to: string) {
-  if (!from && !to) return true;
-
-  const t = new Date(startIso).getTime();
-  if (Number.isNaN(t)) return true;
-
-  const fromT = from ? new Date(`${from}T00:00:00`).getTime() : -Infinity;
-  const toT = to ? new Date(`${to}T23:59:59`).getTime() : Infinity;
-  return t >= fromT && t <= toT;
-}
 
 export default function HistoryBookingFeature() {
   const [loading, setLoading] = useState(true);
@@ -27,9 +15,14 @@ export default function HistoryBookingFeature() {
 
   const [q, setQ] = useState("");
   const [roomId, setRoomId] = useState<number | "ALL">("ALL");
+  const [roomOptions, setRoomOptions] = useState<number[]>([]);
   const [status, setStatus] = useState<HistoryStatus>("ALL");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const limit = 50;
 
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<Booking | null>(null);
@@ -42,57 +35,92 @@ export default function HistoryBookingFeature() {
   const reload = async () => {
     setLoading(true);
     try {
-      const data = await getBookingRequestHistory();
-      console.log("booking history response =", data);
+      const data = await getBookingRequestHistory({
+        page,
+        limit,
+        status: status === "ALL" ? "all" : status.toLowerCase(),
+        startDate: from ? `${from}T00:00:00.000Z` : undefined,
+        endDate: to ? `${to}T23:59:59.999Z` : undefined,
+        labRoomId: roomId === "ALL" ? undefined : roomId,
+      });
+
       setItems(data?.data ?? []);
+      setTotal(Number(data?.total ?? 0));
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    reload();
+    void reload();
+  }, [status, from, to, roomId, page]);
+
+  useEffect(() => {
+    const loadRoomOptions = async () => {
+      try {
+        const rooms = await getRoomOptions();
+        const roomIds = rooms
+          .map((r) => Number(r.id))
+          .filter((id) => Number.isFinite(id))
+          .sort((a, b) => a - b);
+
+        setRoomOptions(Array.from(new Set(roomIds)));
+      } catch {
+        setRoomOptions([]);
+      }
+    };
+
+    void loadRoomOptions();
   }, []);
 
-  const roomOptions = useMemo(() => {
-    const set = new Set<number>();
-    (items ?? []).forEach((b) => set.add(b.LabRoomId));
-    return Array.from(set).sort((a, b) => a - b);
-  }, [items]);
 
   const rows = useMemo(() => {
-    const normalizedQ = q.trim().toLowerCase();
+    const normalizedQ = q.trim().toLowerCase().replace(/^#/, "");
     let arr = [...(items ?? [])];
-
-    if (status !== "ALL") {
-      arr = arr.filter((b) => norm(b.BookingStatus) === status);
-    }
-
-    if (roomId !== "ALL") {
-      arr = arr.filter((b) => b.LabRoomId === roomId);
-    }
-
-    arr = arr.filter((b) => inDateRange(b.StartTime, from, to));
 
     if (normalizedQ) {
       arr = arr.filter((b) => {
+        const start = b.StartTime ? new Date(b.StartTime) : null;
+        const end = b.EndTime ? new Date(b.EndTime) : null;
+
         const hay = [
           b.Id,
           String(b.LabRoomId),
+          `room ${String(b.LabRoomId)}`,
+          (b as Booking & { roomName?: string }).roomName,
+          (b as Booking & { buildingName?: string }).buildingName,
           b.BookedByUserId,
           b.Reason,
           b.PurposeTypeName,
           String(b.BookingStatus),
+          start && !Number.isNaN(start.getTime())
+            ? `${String(start.getDate()).padStart(2, "0")}/${String(start.getMonth() + 1).padStart(2, "0")}/${start.getFullYear()}`
+            : "",
+          start && !Number.isNaN(start.getTime())
+            ? `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`
+            : "",
+          end && !Number.isNaN(end.getTime())
+            ? `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`
+            : "",
         ]
+          .filter(Boolean)
           .join(" ")
-          .toLowerCase();
+          .toLowerCase()
+          .replace(/^#/, "");
+
         return hay.includes(normalizedQ);
       });
     }
 
     arr.sort((a, b) => (b.StartTime ?? "").localeCompare(a.StartTime ?? ""));
     return arr;
-  }, [items, q, roomId, status, from, to]);
+  }, [items, q]);
+
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+
+  useEffect(() => {
+    setPage(1);
+  }, [status, from, to, roomId]);
 
   return (
     <div className="space-y-6">
@@ -134,6 +162,31 @@ export default function HistoryBookingFeature() {
               setOpen(true);
             }}
           />
+
+          <div className="mt-4 flex items-center justify-between gap-3 border-t border-gray-200 pt-4 text-sm dark:border-gray-700">
+            <div className="text-gray-600 dark:text-gray-400">
+              Page {page} / {totalPages} • Total {total}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={loading || page <= 1}
+                className="rounded-lg border border-gray-300 px-3 py-1.5 font-medium text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:text-gray-200"
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={loading || page >= totalPages}
+                className="rounded-lg border border-gray-300 px-3 py-1.5 font-medium text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:text-gray-200"
+              >
+                Next
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 

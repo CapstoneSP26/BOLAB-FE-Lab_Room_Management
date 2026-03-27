@@ -107,5 +107,5 @@ export interface GetBookingByScheduleIdResponse {
 }
 
 export interface UpdateBookingStatusResponse {
-  data: Booking;
+  Message: string;
 }

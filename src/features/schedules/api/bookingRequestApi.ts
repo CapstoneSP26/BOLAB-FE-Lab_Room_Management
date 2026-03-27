@@ -36,6 +36,57 @@ type LabRoomLookupApiResponse =
   | LabRoomLookupResponse[]
   | { data?: LabRoomLookupResponse[] };
 
+type RawHistoryItem = Record<string, unknown>;
+
+const toIsoFromDateAndTime = (date?: string, time?: string): string => {
+  if (!date) return "";
+  if (!time) return `${date}T00:00:00`;
+  return `${date}T${time}:00`;
+};
+
+const normalizeHistoryItem = (raw: RawHistoryItem) => {
+  const date = String(raw.date ?? raw.Date ?? "");
+  const startTimePart = String(raw.startTime ?? raw.StartTime ?? "");
+  const endTimePart = String(raw.endTime ?? raw.EndTime ?? "");
+
+  return {
+    Id: String(raw.Id ?? raw.id ?? ""),
+    LabRoomId: Number(raw.LabRoomId ?? raw.labRoomId ?? raw.roomId ?? 0),
+    roomName: String(raw.roomName ?? raw.RoomName ?? ""),
+    BuildingName: String(raw.BuildingName ?? raw.buildingName ?? ""),
+    buildingName: String(raw.BuildingName ?? raw.buildingName ?? ""),
+    BookedByUserId: String(
+      raw.BookedByUserId ?? raw.bookedByUserId ?? raw.userName ?? "",
+    ),
+    StartTime: toIsoFromDateAndTime(date, startTimePart),
+    EndTime: toIsoFromDateAndTime(date, endTimePart),
+    StudentCount: Number(raw.StudentCount ?? raw.studentCount ?? 0),
+    PurposeTypeName: String(
+      raw.PurposeTypeName ?? raw.purposeTypeName ?? raw.purpose ?? "",
+    ),
+    Reason: String(raw.Reason ?? raw.reason ?? ""),
+    BookingStatus: String(
+      raw.BookingStatus ?? raw.bookingStatus ?? raw.status ?? "",
+    ),
+    BookingType:
+      (raw.BookingType as string | null | undefined) ??
+      (raw.bookingType as string | null | undefined) ??
+      null,
+    SlotTypeId: Number(raw.SlotTypeId ?? raw.slotTypeId ?? 0) || undefined,
+    SlotTypeCode: (raw.SlotTypeCode ?? raw.slotTypeCode) as
+      | "OLD_SLOT"
+      | "NEW_SLOT"
+      | "OUT_SLOT"
+      | undefined,
+    SlotTypeName: String(raw.SlotTypeName ?? raw.slotTypeName ?? "") || undefined,
+    CreatedAt: String(raw.CreatedAt ?? raw.createdAt ?? ""),
+    UpdatedAt: String(raw.UpdatedAt ?? raw.updatedAt ?? ""),
+    CreatedBy: String(raw.CreatedBy ?? raw.createdBy ?? ""),
+    UpdatedBy: String(raw.UpdatedBy ?? raw.updatedBy ?? ""),
+    Recur: Number(raw.Recur ?? raw.recur ?? 0),
+  };
+};
+
 /**
  * ===== DATA ACCESS LAYER =====
  * Rules:
@@ -46,16 +97,15 @@ type LabRoomLookupApiResponse =
 
 const BOOKING_REQUEST_API = {
   LIST: "/bookings",
-  HISTORY: "/booking-requests/history",
-  BY_ID: (id: string) => `/booking-requests/${id}`,
-  BY_SCHEDULE: (scheduleId: string) =>
-    `/booking-requests/by-schedule/${scheduleId}`,
-  UPDATE_STATUS: (id: string) => `/booking-requests/${id}/status`,
+  HISTORY: "/bookings/history",
+  APPROVE: (id: string) => `/bookings/${id}/approve`,
+  REJECT: (id: string) => `/bookings/${id}/reject`,
 };
 
 const BOOKING_LOOKUP_API = {
   BUILDINGS: "/buildings",
-  LAB_ROOMS: "/lab-rooms",
+  // BE route hiện tại: /api/LabRoom (controller: LabRoomController)
+  LAB_ROOMS: "/LabRoom",
 };
 
 /** Pending booking requests */
@@ -73,43 +123,67 @@ export const getBookingRequests = async (
 export const getBookingRequestHistory = async (
   params: GetBookingHistoryRequest = {},
 ): Promise<GetBookingHistoryResponse> => {
-  const response = await axiosInstance.get<GetBookingHistoryResponse>(
+  const response = await axiosInstance.get<Record<string, unknown>>(
     BOOKING_REQUEST_API.HISTORY,
     { params },
   );
-  return response.data;
+
+  const raw = response.data;
+  const list = Array.isArray(raw?.data) ? (raw.data as RawHistoryItem[]) : [];
+
+  return {
+    data: list.map(normalizeHistoryItem),
+    total: Number(raw?.total ?? list.length),
+    page: Number(raw?.page ?? params.page ?? 1),
+    limit: Number(raw?.limit ?? params.limit ?? 10),
+  };
 };
 
-/** Get by booking id */
+/**
+ * Not supported by current BE contract (/api/bookings).
+ * Keep explicit error to avoid silent wrong endpoint calls.
+ */
 export const getBookingRequestById = async (
-  id: string,
+  _id: string,
 ): Promise<GetBookingByIdResponse> => {
-  const response = await axiosInstance.get<GetBookingByIdResponse>(
-    BOOKING_REQUEST_API.BY_ID(id),
-  );
-  return response.data;
+  throw new Error("BE does not support GET /bookings/{id} for booking request");
 };
 
-/** Get booking by scheduleId */
+/**
+ * Not supported by current BE contract (/api/bookings).
+ * Keep explicit error to avoid silent wrong endpoint calls.
+ */
 export const getBookingRequestByScheduleId = async (
-  scheduleId: string,
+  _scheduleId: string,
 ): Promise<GetBookingByScheduleIdResponse> => {
-  const response = await axiosInstance.get<GetBookingByScheduleIdResponse>(
-    BOOKING_REQUEST_API.BY_SCHEDULE(scheduleId),
+  throw new Error(
+    "BE does not support GET /bookings/by-schedule/{scheduleId} for booking request",
   );
-  return response.data;
 };
 
-/** Update status */
+/**
+ * Map FE status action -> current BE endpoints:
+ * - APPROVED => PUT /bookings/{id}/approve with body { bookingId }
+ * - REJECTED => PUT /bookings/{id}/reject with body { bookingId, reason }
+ */
 export const updateBookingRequestStatus = async (
   id: string,
   body: UpdateBookingStatusRequest,
 ): Promise<UpdateBookingStatusResponse> => {
-  const response = await axiosInstance.patch<UpdateBookingStatusResponse>(
-    BOOKING_REQUEST_API.UPDATE_STATUS(id),
-    body,
-  );
-  return response.data;
+  if (body.status === "APPROVED") {
+    const response = await axiosInstance.put(BOOKING_REQUEST_API.APPROVE(id), {
+      bookingId: id,
+    });
+
+    return response.data as UpdateBookingStatusResponse;
+  }
+
+  const response = await axiosInstance.put(BOOKING_REQUEST_API.REJECT(id), {
+    bookingId: id,
+    reason: "Rejected by lab manager",
+  });
+
+  return response.data as UpdateBookingStatusResponse;
 };
 
 /** Lookup: buildings */
@@ -133,12 +207,26 @@ export const getBuildingOptions = async (): Promise<Building[]> => {
 
 /** Lookup: rooms */
 export const getRoomOptions = async (): Promise<Room[]> => {
-  const response = await axiosInstance.get<LabRoomLookupApiResponse>(
-    BOOKING_LOOKUP_API.LAB_ROOMS,
-  );
+  const response = await axiosInstance.get<
+    | LabRoomLookupApiResponse
+    | {
+        items?: LabRoomLookupResponse[];
+        Items?: LabRoomLookupResponse[];
+        data?: LabRoomLookupResponse[];
+      }
+  >(BOOKING_LOOKUP_API.LAB_ROOMS);
 
-  const raw = response.data;
-  const items = Array.isArray(raw) ? raw : (raw.data ?? []);
+  const raw = response.data as Record<string, unknown>;
+
+  const items = Array.isArray(raw)
+    ? (raw as LabRoomLookupResponse[])
+    : Array.isArray(raw.items)
+      ? (raw.items as LabRoomLookupResponse[])
+      : Array.isArray(raw.Items)
+        ? (raw.Items as LabRoomLookupResponse[])
+        : Array.isArray(raw.data)
+          ? (raw.data as LabRoomLookupResponse[])
+          : [];
 
   return items.map((item) => ({
     id: Number(item.id),
