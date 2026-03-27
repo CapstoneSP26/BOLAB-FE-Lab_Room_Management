@@ -481,6 +481,7 @@ export default function AttendanceManagementPage() {
   const session = (activeSession && (!sessionData?.data || activeSession.id === sessionData.data.id))
     ? activeSession
     : (sessionData?.data || (isMockSession ? MOCK_QR_SESSION : null));
+    console.log(session);
   const activeDisplayRoom = session?.roomName || actionBooking?.roomName || 'Unknown Room';
   const activeDisplayBuilding = session?.buildingName || actionBooking?.buildingName || 'Unknown Building';
   const attendanceStats = attendanceListData?.data?.session || session;
@@ -959,14 +960,9 @@ export default function AttendanceManagementPage() {
                     {isQrStopped ? 'QR has been stopped. Refresh QR to generate a new one.' : 'Refresh QR to generate a new code'}
                   </p>
                 </div>
-              ) : session.qrImageBase64 || session.qrImageUrl ? (
+              ) : session.data ? (
                 <img
-                  src={
-                    session.qrImageBase64
-                      ? (session.qrImageBase64.startsWith('data:')
-                        ? session.qrImageBase64
-                        : `data:image/png;base64,${session.qrImageBase64}`)
-                      : `${session.qrImageUrl}${session.qrImageUrl?.includes('?') ? '&' : '?'}v=${encodeURIComponent(session.qrExpiry || session.qrToken || session.createdAt || '')}`
+                  src={`data:image/png;base64,${session.data}`
                   }
                   alt="Session QR"
                   className="w-[280px] h-[280px] object-contain"
