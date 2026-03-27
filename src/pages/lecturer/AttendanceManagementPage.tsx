@@ -27,7 +27,6 @@ import {
   useCreateQRSession,
   useLecturerBookings,
   useQRSession,
-  useRefreshQRToken,
   useEndQRSession,
   useAttendanceList,
   useExportAttendance,
@@ -173,7 +172,6 @@ export default function AttendanceManagementPage() {
   const { data: bookingsData, isLoading: bookingsLoading } = useLecturerBookings();
   const { data: bookingScheduleData } = useBookingAttendance(bookingScheduleParams, true);
   const createQrSessionMutation = useCreateQRSession();
-  const refreshQrTokenMutation = useRefreshQRToken();
   const [isRefreshingQr, setIsRefreshingQr] = useState(false);
   const endSessionMutation = useEndQRSession();
   const exportMutation = useExportAttendance();
@@ -315,50 +313,29 @@ export default function AttendanceManagementPage() {
   const handleRefreshQR = async () => {
     setIsRefreshingQr(true);
     try {
-      if (!session?.id) {
-        const bookingIdForRefresh = actionBooking?.bookingId || session?.bookingId;
-        if (!bookingIdForRefresh) {
-          appAlert.warning('No active class', 'No booking is available to generate a new QR.');
-          return;
-        }
-
-        const created = await createQrSessionMutation.mutateAsync({
-          scheduleId: bookingIdForRefresh,
-          isCheckIn: true,
-        });
-
-        setActiveSession(created.data);
-        setStoppedQrBySessionId(prev => ({
-          ...prev,
-          [created.data.id]: false,
-        }));
-
-        appAlert.success('QR refreshed', 'New QR code is ready.');
+      const bookingIdForRefresh = actionBooking?.bookingId || session?.bookingId;
+      if (!bookingIdForRefresh) {
+        appAlert.warning('No active class', 'No booking is available to generate a new QR.');
         return;
       }
 
-      const refreshed = await refreshQrTokenMutation.mutateAsync({
-        sessionId: session.id,
+      const created = await createQrSessionMutation.mutateAsync({
+        scheduleId: bookingIdForRefresh,
+        isCheckIn: true,
       });
 
-      const refreshedExpiry = new Date(refreshed.data.qrExpiry);
+      const refreshedExpiry = new Date(created.data.qrExpiry);
       const refreshedDiff = Math.floor((refreshedExpiry.getTime() - Date.now()) / 1000);
       setTimeRemaining(refreshedDiff > 0 ? refreshedDiff : 0);
 
-      setActiveSession({
-        ...session,
-        qrToken: refreshed.data.qrToken,
-        qrExpiry: refreshed.data.qrExpiry,
-        qrImageUrl: refreshed.data.qrImageUrl || session.qrImageUrl,
-        qrImageBase64: refreshed.data.qrImageBase64 || session.qrImageBase64,
-        isActive: true,
-      });
+      setActiveSession(created.data);
 
       setStoppedQrBySessionId(prev => {
         const next = { ...prev };
         if (session?.id) {
           next[session.id] = false;
         }
+        next[created.data.id] = false;
         return next;
       });
 
