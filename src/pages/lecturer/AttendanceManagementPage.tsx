@@ -112,16 +112,50 @@ const isBookingPast = (booking: BookingWithQR): boolean => {
 
 const isBookingUpcoming = (booking: BookingWithQR): boolean => !isBookingPast(booking);
 
+const getIsoDateTimeParts = (value: string): { dateLabel: string; timeLabel: string } | null => {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  if (!match) {
+    return null;
+  }
+
+  const [, year, month, day, hour, minute] = match;
+  return {
+    dateLabel: `${day}/${month}/${year}`,
+    timeLabel: `${hour}:${minute}`,
+  };
+};
+
+const formatUtcDateLabel = (value: string): string => {
+  const isoParts = getIsoDateTimeParts(value);
+  if (isoParts) {
+    return isoParts.dateLabel;
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  const day = String(parsed.getUTCDate()).padStart(2, '0');
+  const month = String(parsed.getUTCMonth() + 1).padStart(2, '0');
+  const year = parsed.getUTCFullYear();
+  return `${day}/${month}/${year}`;
+};
+
 const formatBookingTimeLabel = (bookingDate: string, value: string): string => {
+  const isoParts = getIsoDateTimeParts(value);
+  if (isoParts) {
+    return isoParts.timeLabel;
+  }
+
   const parsed = parseTimeValue(bookingDate, value);
   if (Number.isNaN(parsed.getTime())) {
     return value;
   }
-  return parsed.toLocaleTimeString('vi-VN', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
+
+  const hour = String(parsed.getUTCHours()).padStart(2, '0');
+  const minute = String(parsed.getUTCMinutes()).padStart(2, '0');
+  return `${hour}:${minute}`;
 };
 
 const mapBookingDtoToAttendanceBooking = (booking: BookingDto): BookingWithQR => {
@@ -960,7 +994,7 @@ export default function AttendanceManagementPage() {
               </div>
               <h3 className="text-2xl font-bold text-slate-900 mb-2">QR Code</h3>
               <p className="text-slate-600 text-sm">
-                {session.roomName} • {new Date(session.date).toLocaleDateString('vi-VN')}
+                {session.roomName} • {formatUtcDateLabel(session.date)}
               </p>
             </div>
 
@@ -1081,7 +1115,7 @@ function BookingCard({ booking }: BookingCardProps) {
             </div>
             <div className="flex items-center gap-2 text-slate-600">
               <Calendar className="w-4 h-4 flex-shrink-0" />
-              <span className="text-sm">{new Date(booking.date).toLocaleDateString('vi-VN')}</span>
+              <span className="text-sm">{formatUtcDateLabel(booking.startTime || booking.date)}</span>
             </div>
             <div className="flex items-center gap-2 text-slate-600">
               <Clock className="w-4 h-4 flex-shrink-0" />
