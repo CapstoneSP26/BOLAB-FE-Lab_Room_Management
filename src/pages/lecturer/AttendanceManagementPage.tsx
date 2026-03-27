@@ -30,6 +30,7 @@ import {
   useEndQRSession,
   useAttendanceList,
   useExportAttendance,
+  type QRSession,
   type BookingWithQR,
 } from '../../features/attendance';
 import { useBookingAttendance } from '../../features/booking';
@@ -145,6 +146,63 @@ const mapBookingDtoToAttendanceBooking = (booking: BookingDto): BookingWithQR =>
     qrSessionId: undefined,
     isUpcoming: !isPast,
     isPast,
+  };
+};
+
+const normalizeQrSessionPayload = (
+  payload: Record<string, unknown>,
+  fallback: QRSession | null
+): QRSession => {
+  const base = fallback || ({} as QRSession);
+
+  const qrImageBase64 =
+    (typeof payload.qrImageBase64 === 'string' ? payload.qrImageBase64 : undefined)
+    || (typeof payload.qrCodeBase64 === 'string' ? payload.qrCodeBase64 : undefined)
+    || (typeof payload.qrCodeImageBase64 === 'string' ? payload.qrCodeImageBase64 : undefined)
+    || (typeof payload.base64Image === 'string' ? payload.base64Image : undefined)
+    || (typeof payload.imageBase64 === 'string' ? payload.imageBase64 : undefined)
+    || base.qrImageBase64;
+
+  const qrImageUrl =
+    (typeof payload.qrImageUrl === 'string' ? payload.qrImageUrl : undefined)
+    || (typeof payload.qrCodeUrl === 'string' ? payload.qrCodeUrl : undefined)
+    || (typeof payload.imageUrl === 'string' ? payload.imageUrl : undefined)
+    || base.qrImageUrl;
+
+  const qrToken =
+    (typeof payload.qrToken === 'string' ? payload.qrToken : undefined)
+    || (typeof payload.token === 'string' ? payload.token : undefined)
+    || (typeof payload.qrCodeToken === 'string' ? payload.qrCodeToken : undefined)
+    || base.qrToken;
+
+  const qrExpiry =
+    (typeof payload.qrExpiry === 'string' ? payload.qrExpiry : undefined)
+    || (typeof payload.expiryTime === 'string' ? payload.expiryTime : undefined)
+    || (typeof payload.expiredAt === 'string' ? payload.expiredAt : undefined)
+    || base.qrExpiry;
+
+  return {
+    ...base,
+    ...payload,
+    id: (payload.id as string) || (payload.qrId as string) || base.id,
+    bookingId: (payload.bookingId as string) || (payload.scheduleId as string) || base.bookingId,
+    roomName: (payload.roomName as string) || (payload.labRoomName as string) || base.roomName,
+    roomCode: (payload.roomCode as string) || base.roomCode,
+    buildingName: (payload.buildingName as string) || base.buildingName,
+    date: (payload.date as string) || base.date,
+    startTime: (payload.startTime as string) || base.startTime,
+    endTime: (payload.endTime as string) || base.endTime,
+    lecturerName: (payload.lecturerName as string) || base.lecturerName,
+    lecturerId: (payload.lecturerId as string) || base.lecturerId,
+    qrToken,
+    qrExpiry,
+    qrImageBase64,
+    qrImageUrl,
+    createdAt: (payload.createdAt as string) || base.createdAt,
+    isActive: typeof payload.isActive === 'boolean' ? payload.isActive : (base.isActive ?? true),
+    totalStudents: (payload.totalStudents as number) ?? base.totalStudents ?? 0,
+    presentCount: (payload.presentCount as number) ?? base.presentCount ?? 0,
+    absentCount: (payload.absentCount as number) ?? base.absentCount ?? 0,
   };
 };
 
@@ -324,18 +382,23 @@ export default function AttendanceManagementPage() {
         isCheckIn: true,
       });
 
-      const refreshedExpiry = new Date(created.data.qrExpiry);
+      const nextSession = normalizeQrSessionPayload(
+        (created.data || {}) as unknown as Record<string, unknown>,
+        session || null
+      );
+
+      const refreshedExpiry = new Date(nextSession.qrExpiry);
       const refreshedDiff = Math.floor((refreshedExpiry.getTime() - Date.now()) / 1000);
       setTimeRemaining(refreshedDiff > 0 ? refreshedDiff : 0);
 
-      setActiveSession(created.data);
+      setActiveSession(nextSession);
 
       setStoppedQrBySessionId(prev => {
         const next = { ...prev };
         if (session?.id) {
           next[session.id] = false;
         }
-        next[created.data.id] = false;
+        next[nextSession.id] = false;
         return next;
       });
 
