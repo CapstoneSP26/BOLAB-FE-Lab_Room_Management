@@ -28,7 +28,6 @@ import type {
 import type { BookingRequest } from "../../booking/types/booking.type";
 import type { Building } from "../../building/types/building.type";
 import type { LabRoomLookupItem } from "../../labroom/types/room.type";
-
 const normText = (s: unknown) =>
   String(s ?? "")
     .trim()
@@ -65,19 +64,13 @@ export default function HistoryBookingFeature() {
   const loadLookups = useCallback(async () => {
     setLookupLoading(true);
     try {
-      const [buildingsResult, roomsResult, statusesResult] =
-        await Promise.allSettled([
-          getBuildingOptions(),
-          getRoomOptions(),
-          getBookingStatusLookup(),
-        ]);
+      const [buildingsResult, statusesResult] = await Promise.allSettled([
+        getBuildingOptions(),
+        getBookingStatusLookup(),
+      ]);
 
       setBuildingOptions(
         buildingsResult.status === "fulfilled" ? buildingsResult.value : [],
-      );
-
-      setRoomOptions(
-        roomsResult.status === "fulfilled" ? roomsResult.value : [],
       );
 
       setStatusOptions(
@@ -140,26 +133,30 @@ export default function HistoryBookingFeature() {
   }, [from, to, roomId, buildingId, q, status]);
 
   useEffect(() => {
+    const loadRoomsByBuilding = async () => {
+      if (buildingId === "ALL") {
+        setRoomOptions([]);
+        setRoomId("ALL");
+        return;
+      }
+
+      try {
+        const rooms = await getRoomOptions(buildingId);
+        setRoomOptions(rooms);
+      } catch {
+        setRoomOptions([]);
+      }
+    };
+
+    void loadRoomsByBuilding();
+  }, [buildingId]);
+  useEffect(() => {
     void loadLookups();
   }, [loadLookups]);
 
   useEffect(() => {
     void reload();
   }, [reload]);
-
-  const filteredRoomOptions = useMemo(() => {
-    if (buildingId === "ALL") return roomOptions;
-    return roomOptions.filter((room) => room.buildingId === buildingId);
-  }, [roomOptions, buildingId]);
-
-  useEffect(() => {
-    if (roomId === "ALL") return;
-
-    const stillExists = filteredRoomOptions.some((room) => room.id === roomId);
-    if (!stillExists) {
-      setRoomId("ALL");
-    }
-  }, [filteredRoomOptions, roomId]);
 
   const rows = useMemo(() => {
     return [...items].sort((a, b) =>
@@ -426,11 +423,14 @@ export default function HistoryBookingFeature() {
                 q={q}
                 onQ={setQ}
                 buildingId={buildingId}
-                onBuildingId={setBuildingId}
+                onBuildingId={(value) => {
+                  setBuildingId(value);
+                  setRoomId("ALL");
+                }}
                 buildingOptions={buildingOptions}
                 roomId={roomId}
                 onRoomId={setRoomId}
-                roomOptions={filteredRoomOptions}
+                roomOptions={roomOptions}
                 status={status}
                 onStatus={setStatus}
                 statusOptions={statusOptions}

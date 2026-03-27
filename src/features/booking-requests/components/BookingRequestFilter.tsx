@@ -124,7 +124,7 @@ export default function BookingFilters({
           >
             <option value="ALL">All slot types</option>
             {slotOptions.map((slot) => (
-              <option key={slot.id} value={slot.code}>
+              <option key={slot.id} value={slot.id}>
                 {slot.name}
               </option>
             ))}
