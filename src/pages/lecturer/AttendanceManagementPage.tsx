@@ -155,6 +155,15 @@ const normalizeQrSessionPayload = (
 ): QRSession => {
   const base = fallback || ({} as QRSession);
 
+  const scanUrl =
+    (typeof payload.scanUrl === 'string' ? payload.scanUrl : undefined)
+    || (typeof payload.qrScanUrl === 'string' ? payload.qrScanUrl : undefined)
+    || (typeof payload.url === 'string' ? payload.url : undefined)
+    || (typeof payload.qrUrl === 'string' ? payload.qrUrl : undefined)
+    || (typeof payload.qrContent === 'string' ? payload.qrContent : undefined)
+    || (typeof payload.qrValue === 'string' ? payload.qrValue : undefined)
+    || '';
+
   const qrImageBase64 =
     (typeof payload.qrImageBase64 === 'string' ? payload.qrImageBase64 : undefined)
     || (typeof payload.qrCodeBase64 === 'string' ? payload.qrCodeBase64 : undefined)
@@ -181,7 +190,7 @@ const normalizeQrSessionPayload = (
     || (typeof payload.expiredAt === 'string' ? payload.expiredAt : undefined)
     || base.qrExpiry;
 
-  return {
+  const normalized: QRSession = {
     ...base,
     ...payload,
     id: (payload.id as string) || (payload.qrId as string) || base.id,
@@ -204,6 +213,12 @@ const normalizeQrSessionPayload = (
     presentCount: (payload.presentCount as number) ?? base.presentCount ?? 0,
     absentCount: (payload.absentCount as number) ?? base.absentCount ?? 0,
   };
+
+  if (scanUrl) {
+    (normalized as unknown as Record<string, unknown>).scanUrl = scanUrl;
+  }
+
+  return normalized;
 };
 
 const unwrapSessionPayload = (response: unknown): Record<string, unknown> => {
@@ -224,27 +239,17 @@ const unwrapSessionPayload = (response: unknown): Record<string, unknown> => {
     break;
   }
 
+  if (typeof current === 'string') {
+    return {
+      scanUrl: current,
+      qrValue: current,
+      qrContent: current,
+    };
+  }
+
   return current && typeof current === 'object'
     ? (current as Record<string, unknown>)
     : {};
-};
-
-const toDataUrlImageSrc = (value?: string): string | null => {
-  if (!value || typeof value !== 'string') {
-    return null;
-  }
-
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return null;
-  }
-
-  if (trimmed.startsWith('data:image/')) {
-    return trimmed;
-  }
-
-  const compactBase64 = trimmed.replace(/\s+/g, '');
-  return compactBase64 ? `data:image/png;base64,${compactBase64}` : null;
 };
 
 export default function AttendanceManagementPage() {
@@ -369,14 +374,11 @@ export default function AttendanceManagementPage() {
   const absentStudents = attendanceStats?.absentCount ?? Math.max(totalStudents - presentStudents, 0);
 
   const sessionRecord = (session || {}) as Record<string, unknown>;
-  const qrImageDataUrl = toDataUrlImageSrc(session?.qrImageBase64);
-  const qrImageUrlWithCacheBust = session?.qrImageUrl
-    ? `${session.qrImageUrl}${session.qrImageUrl.includes('?') ? '&' : '?'}v=${encodeURIComponent(session.qrExpiry || session.qrToken || session.createdAt || '')}`
-    : '';
-  const qrImageSrc = qrImageDataUrl || qrImageUrlWithCacheBust;
   const backendScanUrl =
     (typeof sessionRecord.scanUrl === 'string' ? sessionRecord.scanUrl : '')
     || (typeof sessionRecord.qrScanUrl === 'string' ? sessionRecord.qrScanUrl : '')
+    || (typeof sessionRecord.url === 'string' ? sessionRecord.url : '')
+    || (typeof sessionRecord.qrUrl === 'string' ? sessionRecord.qrUrl : '')
     || (typeof sessionRecord.qrContent === 'string' ? sessionRecord.qrContent : '')
     || (typeof sessionRecord.qrValue === 'string' ? sessionRecord.qrValue : '');
 
@@ -822,9 +824,15 @@ export default function AttendanceManagementPage() {
                     {isQrStopped ? 'QR has been stopped. Refresh QR to generate a new one.' : 'Refresh QR to generate a new code'}
                   </p>
                 </div>
-              ) : qrImageSrc ? (
+              ) : session.qrImageBase64 || session.qrImageUrl ? (
                 <img
-                  src={qrImageSrc}
+                  src={
+                    session.qrImageBase64
+                      ? (session.qrImageBase64.startsWith('data:')
+                        ? session.qrImageBase64
+                        : `data:image/png;base64,${session.qrImageBase64}`)
+                      : `${session.qrImageUrl}${session.qrImageUrl?.includes('?') ? '&' : '?'}v=${encodeURIComponent(session.qrExpiry || session.qrToken || session.createdAt || '')}`
+                  }
                   alt="Session QR"
                   className="w-[280px] h-[280px] object-contain"
                 />
