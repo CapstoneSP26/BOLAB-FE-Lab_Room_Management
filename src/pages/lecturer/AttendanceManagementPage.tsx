@@ -27,6 +27,7 @@ import {
   useCreateQRSession,
   useLecturerBookings,
   useQRSession,
+  useRefreshQRToken,
   useEndQRSession,
   useAttendanceList,
   useExportAttendance,
@@ -172,6 +173,7 @@ export default function AttendanceManagementPage() {
   const { data: bookingsData, isLoading: bookingsLoading } = useLecturerBookings();
   const { data: bookingScheduleData } = useBookingAttendance(bookingScheduleParams, true);
   const createQrSessionMutation = useCreateQRSession();
+  const refreshQrTokenMutation = useRefreshQRToken();
   const [isRefreshingQr, setIsRefreshingQr] = useState(false);
   const endSessionMutation = useEndQRSession();
   const exportMutation = useExportAttendance();
@@ -248,7 +250,9 @@ export default function AttendanceManagementPage() {
     }
 
     if (isMockSession && !sessionData?.data) {
-      setActiveSession(MOCK_QR_SESSION);
+      if (!activeSession || activeSession.id !== MOCK_QR_SESSION.id) {
+        setActiveSession(MOCK_QR_SESSION);
+      }
       return;
     }
 
@@ -309,47 +313,79 @@ export default function AttendanceManagementPage() {
   const shouldShowBookingsLoading = bookingsLoading && !(isAttendanceMockMode && bookings.length > 0);
 
   const handleRefreshQR = async () => {
-    const bookingIdForRefresh = actionBooking?.bookingId || session?.bookingId;
-    if (!bookingIdForRefresh) {
-      appAlert.warning('No active class', 'No booking is available to generate a new QR.');
+    if (isAttendanceMockMode) {
+      const baseSession = session || MOCK_QR_SESSION;
+      const mockSession = {
+        ...baseSession,
+        id: MOCK_QR_SESSION.id,
+        qrToken: `QR_SESSION_TOKEN_${Date.now()}`,
+        qrExpiry: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+        isActive: true,
+      };
+
+      const refreshedDiff = Math.floor((new Date(mockSession.qrExpiry).getTime() - Date.now()) / 1000);
+      setTimeRemaining(refreshedDiff > 0 ? refreshedDiff : 0);
+      setActiveSession(mockSession);
+      setStoppedQrBySessionId(prev => ({
+        ...prev,
+        [mockSession.id]: false,
+      }));
+      appAlert.success('QR refreshed', 'Mock QR code is ready for testing.');
       return;
     }
 
     setIsRefreshingQr(true);
     try {
-      const response = await createQrSessionMutation.mutateAsync({
-        scheduleId: bookingIdForRefresh,
-        isCheckIn: true,
+      if (!session?.id) {
+        const bookingIdForRefresh = actionBooking?.bookingId || session?.bookingId;
+        if (!bookingIdForRefresh) {
+          appAlert.warning('No active class', 'No booking is available to generate a new QR.');
+          return;
+        }
+
+        const created = await createQrSessionMutation.mutateAsync({
+          scheduleId: bookingIdForRefresh,
+          isCheckIn: true,
+        });
+
+        setActiveSession(created.data);
+        setStoppedQrBySessionId(prev => ({
+          ...prev,
+          [created.data.id]: false,
+        }));
+
+        appAlert.success('QR refreshed', 'New QR code is ready.');
+        return;
+      }
+
+      const refreshed = await refreshQrTokenMutation.mutateAsync({
+        sessionId: session.id,
       });
 
-      setActiveSession(response.data);
+      const refreshedExpiry = new Date(refreshed.data.qrExpiry);
+      const refreshedDiff = Math.floor((refreshedExpiry.getTime() - Date.now()) / 1000);
+      setTimeRemaining(refreshedDiff > 0 ? refreshedDiff : 0);
+
+      setActiveSession({
+        ...session,
+        qrToken: refreshed.data.qrToken,
+        qrExpiry: refreshed.data.qrExpiry,
+        qrImageUrl: refreshed.data.qrImageUrl || session.qrImageUrl,
+        qrImageBase64: refreshed.data.qrImageBase64 || session.qrImageBase64,
+        isActive: true,
+      });
+
       setStoppedQrBySessionId(prev => {
         const next = { ...prev };
         if (session?.id) {
           next[session.id] = false;
         }
-        next[response.data.id] = false;
         return next;
       });
 
       appAlert.success('QR refreshed', 'New QR code is ready.');
     } catch {
-      if (isAttendanceMockMode) {
-        const mockSession = {
-          ...MOCK_QR_SESSION,
-          qrToken: `QR_SESSION_TOKEN_${Date.now()}`,
-          qrExpiry: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
-          isActive: true,
-        };
-        setActiveSession(mockSession);
-        setStoppedQrBySessionId(prev => ({
-          ...prev,
-          [mockSession.id]: false,
-        }));
-        appAlert.success('QR refreshed', 'Mock QR code is ready for testing.');
-      } else {
-        appAlert.error('Refresh failed', 'Could not create a new QR from backend.');
-      }
+      appAlert.error('Refresh failed', 'Could not create a new QR from backend.');
     } finally {
       setIsRefreshingQr(false);
     }
@@ -357,6 +393,22 @@ export default function AttendanceManagementPage() {
 
   const handleEndSession = async () => {
     if (!session) return;
+
+    if (isAttendanceMockMode) {
+      setTimeRemaining(0);
+      setStoppedQrBySessionId(prev => ({
+        ...prev,
+        [session.id]: true,
+      }));
+      setActiveSession({
+        ...session,
+        isActive: false,
+        qrExpiry: new Date().toISOString(),
+      });
+      appAlert.success('QR stopped', 'Mock QR has been turned off.');
+      return;
+    }
+
     const scheduleIdForEnd = actionBooking?.bookingId || session.bookingId;
 
     if (!scheduleIdForEnd) {
@@ -375,6 +427,7 @@ export default function AttendanceManagementPage() {
         scheduleId: scheduleIdForEnd,
         isCheckIn: true,
       });
+      setTimeRemaining(0);
       setStoppedQrBySessionId(prev => ({
         ...prev,
         [session.id]: true,
@@ -462,6 +515,11 @@ export default function AttendanceManagementPage() {
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
 
   useEffect(() => {
+    if (session && stoppedQrBySessionId[session.id]) {
+      setTimeRemaining(0);
+      return;
+    }
+
     if (!session?.qrExpiry) {
       setTimeRemaining(null);
       return;
@@ -477,7 +535,7 @@ export default function AttendanceManagementPage() {
     calculateRemaining();
     const interval = setInterval(calculateRemaining, 1000);
     return () => clearInterval(interval);
-  }, [session?.qrExpiry]);
+  }, [session?.id, session?.qrExpiry, stoppedQrBySessionId]);
 
   const formatTimeRemaining = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);

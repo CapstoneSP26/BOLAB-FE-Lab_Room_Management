@@ -19,14 +19,14 @@ import type {
  * API endpoints
  */
 const ATTENDANCE_API = {
-  CREATE_QR_SESSION: '/attendance/generate-qrcode',
-  GET_QR_SESSION: (sessionId: string) => `/attendance/qr-session/${sessionId}`,
-  REFRESH_QR_TOKEN: '/attendance/qr-session/refresh',
-  END_QR_SESSION: '/attendance/remove-qrcode',
-  GET_ATTENDANCE_LIST: (sessionId: string) => `/attendance/session/${sessionId}/students`,
-  MARK_ATTENDANCE: '/attendance/mark',
-  GET_LECTURER_BOOKINGS: '/attendance/lecturer-bookings',
-  EXPORT_ATTENDANCE: (sessionId: string) => `/attendance/session/${sessionId}/export`,
+  CREATE_QR_SESSION: '/attendances/generate-qrcode',
+  GET_QR_SESSION: (sessionId: string) => `/attendances/qr-session/${sessionId}`,
+  REFRESH_QR_TOKEN: '/attendances/qr-session/refresh',
+  END_QR_SESSION: '/attendances/remove-qrcode',
+  GET_ATTENDANCE_LIST: (sessionId: string) => `/attendances/session/${sessionId}/students`,
+  MARK_ATTENDANCE: '/attendances/mark',
+  GET_LECTURER_BOOKINGS: '/attendances/lecturer-bookings',
+  EXPORT_ATTENDANCE: (sessionId: string) => `/attendances/session/${sessionId}/export`,
 } as const;
 
 export const attendanceApi = {
