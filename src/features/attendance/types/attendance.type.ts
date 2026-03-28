@@ -3,10 +3,7 @@
  * BOLAB-30: QR Code Attendance System
  */
 
-/**
- * Schedule Status (session state)
- */
-export type ScheduleStatus = 'Active' | 'NotYet' | 'Done';
+import type { ScheduleStatus } from '../../schedules/types/schedule.type';
 
 /**
  * Attendance Status
