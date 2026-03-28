@@ -1,4 +1,4 @@
-import type { ScheduleDto } from "../../schedules/types/schedule.type";
+import type { ScheduleDto } from "../../booking/types/bookingRequest.type";
 import type { BookingDto } from "../../booking/types/booking.type";
 import type { CalendarEvent } from "../types/calendar.type";
 
@@ -7,10 +7,10 @@ export const mapBookingToEvent = (booking: BookingDto): CalendarEvent => ({
   title: `[Đợi duyệt] ${booking.userFullName}`,
   start: booking.startTime,
   end: booking.endTime,
-  type: 'BOOKING',
+  type: "BOOKING",
   status: booking.status,
-  color: '#FF9F43', // Màu cam đặc trưng cho Booking
-  rawOrigin: { ...booking }
+  color: "#FF9F43", // Màu cam đặc trưng cho Booking
+  rawOrigin: { ...booking },
 });
 
 export const mapScheduleToEvent = (schedule: ScheduleDto): CalendarEvent => ({
@@ -18,8 +18,8 @@ export const mapScheduleToEvent = (schedule: ScheduleDto): CalendarEvent => ({
   title: `${schedule.subjectCode} - ${schedule.lecturerName}`,
   start: schedule.startTime,
   end: schedule.endTime,
-  type: 'SCHEDULE',
-  status: 'Approved',
-  color: '#28C76F', // Màu xanh đặc trưng cho lịch cứng
-  rawOrigin: { ...schedule }
+  type: "SCHEDULE",
+  status: "Approved",
+  color: "#28C76F", // Màu xanh đặc trưng cho lịch cứng
+  rawOrigin: { ...schedule },
 });

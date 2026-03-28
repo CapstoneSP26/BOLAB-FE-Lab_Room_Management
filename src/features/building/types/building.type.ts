@@ -43,13 +43,6 @@ export interface GetBuildingsRequest {
   limit?: number;
 }
 
-export interface Room {
-  id: number;
-  name: string;
-  building: string;
-  capacity: number;
-  status: 'Available' | 'Occupied' | 'Maintenance';
-  image: string;
-  features: string[];
-  nextAvailable: string;
-}
+export type BuildingLookupApiResponse =
+  | BuildingResponse[]
+  | { data?: BuildingResponse[] };

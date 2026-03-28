@@ -12,6 +12,7 @@ export interface LabRoomDto {
   capacity: number;
   hasEquipment: boolean;
   description?: string;
+  buildingId: number;
   buildingName: string;
   images?: LabImageDto[];
 }
@@ -28,15 +29,7 @@ export interface GetLabRoomsQuery {
   isDescending?: boolean;
 }
 
-export type RoomStatus = 'Available' | 'Occupied' | 'Maintenance';
-
-export interface GetRoomsRequest {
-  building?: string;
-  search?: string;
-  status?: RoomStatus;
-  page?: number;
-  limit?: number;
-}
+export type RoomStatus = "Available" | "Occupied" | "Maintenance";
 
 export interface Stats {
   totalRooms: number;
@@ -46,4 +39,12 @@ export interface Stats {
 
 export interface GetStatsResponse {
   data: Stats;
+}
+
+export interface LabRoomLookupItem {
+  id: number;
+  roomName: string;
+  roomNo: string;
+  buildingId: number;
+  buildingName: string;
 }

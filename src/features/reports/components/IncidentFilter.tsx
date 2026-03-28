@@ -1,5 +1,9 @@
-export type IncidentSortKey = "Newest" | "Oldest" | "Room";
-export type IncidentStatusFilter = "ALL" | "OPEN" | "CLOSED" | "RESOLVED";
+import type { LabRoomLookupItem } from "../../labroom/types/room.type";
+
+type SelectOption = {
+  value: string;
+  label: string;
+};
 
 type Props = {
   q: string;
@@ -8,13 +12,15 @@ type Props = {
   roomId: number | "ALL";
   onRoomId: (v: number | "ALL") => void;
 
-  status: IncidentStatusFilter;
-  onStatus: (v: IncidentStatusFilter) => void;
+  status: string;
+  onStatus: (v: string) => void;
 
-  sort: IncidentSortKey;
-  onSort: (v: IncidentSortKey) => void;
+  sort: string;
+  onSort: (v: string) => void;
 
-  roomOptions: number[];
+  roomOptions: LabRoomLookupItem[];
+  statusOptions: SelectOption[];
+  sortOptions: SelectOption[];
 
   onClear?: () => void;
 };
@@ -29,6 +35,8 @@ export default function IncidentFilters({
   sort,
   onSort,
   roomOptions,
+  statusOptions,
+  sortOptions,
   onClear,
 }: Props) {
   return (
@@ -44,16 +52,17 @@ export default function IncidentFilters({
 
       <div className="md:col-span-2">
         <select
-          value={roomId}
+          value={String(roomId)}
           onChange={(e) =>
             onRoomId(e.target.value === "ALL" ? "ALL" : Number(e.target.value))
           }
           className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-sm text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-4 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
         >
           <option value="ALL">All rooms</option>
-          {roomOptions.map((r) => (
-            <option key={r} value={r}>
-              Room {r}
+          {roomOptions.map((room) => (
+            <option key={room.id} value={String(room.id)}>
+              {room.roomName}
+              {room.buildingName ? ` - ${room.buildingName}` : ""}
             </option>
           ))}
         </select>
@@ -62,25 +71,29 @@ export default function IncidentFilters({
       <div className="md:col-span-2">
         <select
           value={status}
-          onChange={(e) => onStatus(e.target.value as IncidentStatusFilter)}
+          onChange={(e) => onStatus(e.target.value)}
           className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-sm text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-4 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
         >
           <option value="ALL">All status</option>
-          <option value="RESOLVED">RESOLVED</option>
-          <option value="CLOSED">CLOSED</option>
-          <option value="OPEN">OPEN</option>
+          {statusOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
         </select>
       </div>
 
       <div className="md:col-span-2 flex gap-2">
         <select
           value={sort}
-          onChange={(e) => onSort(e.target.value as IncidentSortKey)}
+          onChange={(e) => onSort(e.target.value)}
           className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-sm text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-4 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
         >
-          <option value="Newest">Newest</option>
-          <option value="Oldest">Oldest</option>
-          <option value="Room">Room</option>
+          {sortOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
         </select>
 
         {onClear ? (

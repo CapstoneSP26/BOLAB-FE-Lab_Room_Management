@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useSidebar } from "./sidebarContext";
 
-import ThemeToggler from "../../common/ThemeToggler";
+import ThemeToggler from "../../components/common/ThemeToggler";
 import HeaderLogo from "../HeaderLogo";
 import NotificationMenu from "./header/NotificationMenu";
 import UserMenu from "./header/UserMenu";

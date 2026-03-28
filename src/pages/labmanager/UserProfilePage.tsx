@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import PageBreadcrumb from "../../components/common/PageBreadcrumb";
-import ProfileCard from "../../features/profile/ProfileCard";
+import ProfileCard from "../../features/profile/components/ProfileCard";
 import {
   profileService,
   type Profile,
   type Role,
-} from "../../services/labmanager/profile.service";
+} from "../../features/profile/api/profile.api";
 
 function normalizeRole(role: string) {
   return role.trim().toLowerCase();
