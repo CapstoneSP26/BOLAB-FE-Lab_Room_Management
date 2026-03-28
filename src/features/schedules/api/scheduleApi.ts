@@ -7,4 +7,8 @@ export const scheduleApi = {
     axiosInstance.get<PagedResponse<ScheduleDto>>("/schedules", {
       params,
     }),
+  getScheduleAttendance: (params: GetSchedulesParams) =>
+    axiosInstance.get<PagedResponse<ScheduleDto>>("/schedules/schedule-attendance", {
+      params,
+    }),
 };

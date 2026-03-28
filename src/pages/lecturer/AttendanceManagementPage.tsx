@@ -25,7 +25,6 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 import {
   useCreateQRSession,
-  useLecturerBookings,
   useQRSession,
   useEndQRSession,
   useAttendanceList,
@@ -33,8 +32,8 @@ import {
   type QRSession,
   type BookingWithQR,
 } from '../../features/attendance';
-import { useBookingAttendance } from '../../features/booking';
-import type { BookingDto, GetBookingsParams } from '../../features/booking/types/booking.type';
+import { useSchedulesAttendance } from '../../features/schedules/hooks/useSchedulesAttendance';
+import type { GetSchedulesParams, ScheduleDto } from '../../features/schedules/types/schedule.type';
 import { MOCK_LECTURER_BOOKINGS, MOCK_QR_SESSION } from '../../features/attendance/mocks/attendance.mock';
 import { useActiveSession } from '../../context/ActiveSessionContext';
 import { useToast } from '../../hooks/useToast';
@@ -47,10 +46,21 @@ const getRoomCodeFromName = (roomName: string): string => {
 };
 
 const normalizeBookingStatus = (status: string): BookingWithQR['status'] => {
-  if (status === 'PendingApproval' || status === 'Approved' || status === 'Rejected' || status === 'Cancelled') {
-    return status;
+  const normalizedStatus = status.trim().toLowerCase();
+
+  if (normalizedStatus === 'active') {
+    return 'Active';
   }
-  return 'Draft';
+
+  if (normalizedStatus === 'done') {
+    return 'Done';
+  }
+
+  if (normalizedStatus === 'notyet' || normalizedStatus === 'not_yet' || normalizedStatus === 'not yet') {
+    return 'NotYet';
+  }
+
+  return 'NotYet';
 };
 
 const parseTimeValue = (bookingDate: string, value: string): Date => {
@@ -73,14 +83,14 @@ const parseTimeValue = (bookingDate: string, value: string): Date => {
   return base;
 };
 
-const isNowInsideBookingWindow = (booking: BookingDto): boolean => {
-  if (!booking.startTime || !booking.endTime) {
+const isNowInsideScheduleWindow = (schedule: ScheduleDto): boolean => {
+  if (!schedule.startTime || !schedule.endTime) {
     return false;
   }
 
   const now = new Date();
-  const start = parseTimeValue(booking.startTime, booking.startTime);
-  const end = parseTimeValue(booking.startTime, booking.endTime);
+  const start = parseTimeValue(schedule.startTime, schedule.startTime);
+  const end = parseTimeValue(schedule.startTime, schedule.endTime);
 
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
     return false;
@@ -158,24 +168,24 @@ const formatBookingTimeLabel = (bookingDate: string, value: string): string => {
   return `${hour}:${minute}`;
 };
 
-const mapBookingDtoToAttendanceBooking = (booking: BookingDto): BookingWithQR => {
-  const dateSource = booking.startTime || booking.createdAt;
-  const start = parseTimeValue(dateSource, booking.startTime);
-  const end = parseTimeValue(dateSource, booking.endTime);
+const mapScheduleDtoToAttendanceBooking = (schedule: ScheduleDto): BookingWithQR => {
+  const dateSource = schedule.startTime || schedule.endTime;
+  const start = parseTimeValue(dateSource, schedule.startTime);
+  const end = parseTimeValue(dateSource, schedule.endTime);
   const now = new Date();
   const isPast = !Number.isNaN(end.getTime()) ? end < now : false;
   const hasValidStart = !Number.isNaN(start.getTime());
 
   return {
-    bookingId: booking.id,
-    roomName: booking.labRoomName || 'Unknown Room',
-    roomCode: getRoomCodeFromName(booking.labRoomName || 'Room'),
+    bookingId: schedule.id,
+    roomName: schedule.labRoomName || 'Unknown Room',
+    roomCode: getRoomCodeFromName(schedule.labRoomName || 'Room'),
     buildingName: 'Unknown Building',
     date: hasValidStart ? start.toISOString() : dateSource,
-    startTime: booking.startTime,
-    endTime: booking.endTime,
-    status: normalizeBookingStatus(booking.status),
-    purpose: booking.reason || 'No purpose provided',
+    startTime: schedule.startTime,
+    endTime: schedule.endTime,
+    status: normalizeBookingStatus(schedule.status),
+    purpose: schedule.subjectCode || 'Schedule session',
     hasQRSession: false,
     qrSessionId: undefined,
     isUpcoming: !isPast,
@@ -410,9 +420,9 @@ export default function AttendanceManagementPage() {
     return params.get('mockAttendance') === '1' || params.get('testAttendance') === '1';
   }, []);
 
-  const bookingScheduleParams: GetBookingsParams = useMemo(
+  const bookingScheduleParams: GetSchedulesParams = useMemo(
     () => ({
-      status: 'Approved',
+      // status: 'Approved',
       pageNumber: 1,
       pageSize: 100,
       sortBy: 'startTime',
@@ -421,12 +431,11 @@ export default function AttendanceManagementPage() {
     []
   );
 
-  const { data: bookingsData, isLoading: bookingsLoading } = useLecturerBookings();
   const {
     data: bookingScheduleData,
     isLoading: bookingScheduleLoading,
     isFetching: bookingScheduleFetching,
-  } = useBookingAttendance(bookingScheduleParams, true);
+  } = useSchedulesAttendance(bookingScheduleParams, true);
   const createQrSessionMutation = useCreateQRSession();
   const [isRefreshingQr, setIsRefreshingQr] = useState(false);
   const endSessionMutation = useEndQRSession();
@@ -439,41 +448,37 @@ export default function AttendanceManagementPage() {
   const [stoppedQrBySessionId, setStoppedQrBySessionId] = useState<Record<string, boolean>>({});
   const [latestBackendScanUrl, setLatestBackendScanUrl] = useState('');
 
-  const bookingScheduleItems: BookingDto[] =
-    ((bookingScheduleData?.data as { result?: { items?: BookingDto[] } })?.result?.items)
+  const bookingScheduleItems: ScheduleDto[] =
+    ((bookingScheduleData?.data as { result?: { items?: ScheduleDto[] } })?.result?.items)
     || bookingScheduleData?.data?.items
     || [];
 
   const bookings = useMemo<BookingWithQR[]>(() => {
     if (bookingScheduleItems.length > 0) {
-      return bookingScheduleItems.map(mapBookingDtoToAttendanceBooking);
+      return bookingScheduleItems.map(mapScheduleDtoToAttendanceBooking);
     }
 
-    // If booking-attendance has responded, treat it as source of truth for this list.
+    // If schedules-attendance has responded, treat it as source of truth for this list.
     if (bookingScheduleData) {
       return [];
     }
 
-    if (bookingsData?.data?.length) {
-      return bookingsData.data;
-    }
-
     return isAttendanceMockMode ? MOCK_LECTURER_BOOKINGS : [];
-  }, [bookingScheduleItems, bookingsData?.data, isAttendanceMockMode]);
+  }, [bookingScheduleData, bookingScheduleItems, isAttendanceMockMode]);
 
   const activeRoomNamesFromSchedule = useMemo(() => {
     if (bookingScheduleItems.length === 0) {
       return new Set(
         bookings
-          .filter(item => item.status === 'Approved' && isNowInsideFeatureBookingWindow(item))
+          .filter(item => item.status === 'Active' && isNowInsideFeatureBookingWindow(item))
           .map(item => normalizeRoomName(item.roomName))
       );
     }
 
     return new Set(
       bookingScheduleItems
-        .filter(isNowInsideBookingWindow)
-        .map(item => normalizeRoomName(item.labRoomName))
+        .filter(isNowInsideScheduleWindow)
+        .map(item => normalizeRoomName(item.labRoomName || ''))
     );
   }, [bookingScheduleItems, bookings]);
 
@@ -491,7 +496,7 @@ export default function AttendanceManagementPage() {
 
   const mockFallbackBooking = useMemo(() => {
     if (!isAttendanceMockMode) return null;
-    return bookings.find(booking => booking.hasQRSession) || bookings.find(booking => booking.status === 'Approved') || null;
+    return bookings.find(booking => booking.hasQRSession) || bookings.find(booking => booking.status === 'Active') || null;
   }, [bookings, isAttendanceMockMode]);
 
   const actionBooking = activeBookingByTime || mockFallbackBooking;
@@ -590,7 +595,7 @@ export default function AttendanceManagementPage() {
   }, [activeBookingByTime, bookings, searchQuery, statusFilter]);
 
   const shouldShowBookingsLoading =
-    (bookingScheduleLoading || bookingScheduleFetching || bookingsLoading)
+    (bookingScheduleLoading || bookingScheduleFetching)
     && bookings.length === 0
     && !(isAttendanceMockMode && bookings.length > 0);
 
@@ -1082,11 +1087,9 @@ function BookingCard({ booking }: BookingCardProps) {
   const navigate = useNavigate();
 
   const statusColors: Record<BookingWithQR['status'], string> = {
-    Draft: 'bg-slate-100 text-slate-700 border-slate-200',
-    PendingApproval: 'bg-amber-50 text-amber-700 border-amber-200',
-    Approved: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    Rejected: 'bg-red-50 text-red-700 border-red-200',
-    Cancelled: 'bg-slate-100 text-slate-500 border-slate-200',
+    Active: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    NotYet: 'bg-amber-50 text-amber-700 border-amber-200',
+    Done: 'bg-slate-100 text-slate-700 border-slate-200',
   };
 
   return (
@@ -1139,7 +1142,7 @@ function BookingCard({ booking }: BookingCardProps) {
               <ExternalLink className="w-4 h-4" />
               <span>View Session</span>
             </button>
-          ) : isBookingUpcoming(booking) && booking.status === 'Approved' ? (
+          ) : isBookingUpcoming(booking) && booking.status === 'Active' ? (
             <button
               disabled
               className="bg-slate-100 text-slate-500 px-4 py-2.5 rounded-xl font-semibold text-sm cursor-not-allowed border border-slate-200 whitespace-nowrap flex items-center gap-2"

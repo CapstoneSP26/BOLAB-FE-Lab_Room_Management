@@ -4,9 +4,9 @@
  */
 
 /**
- * Booking Status (from booking feature)
+ * Schedule Status (session state)
  */
-export type BookingStatus = 'Draft' | 'PendingApproval' | 'Approved' | 'Rejected' | 'Cancelled';
+export type ScheduleStatus = 'Active' | 'NotYet' | 'Done';
 
 /**
  * Attendance Status
@@ -180,7 +180,7 @@ export interface BookingWithQR {
   date: string;
   startTime: string;
   endTime: string;
-  status: BookingStatus;
+  status: ScheduleStatus;
   purpose: string;
   hasQRSession: boolean;
   qrSessionId?: string;
