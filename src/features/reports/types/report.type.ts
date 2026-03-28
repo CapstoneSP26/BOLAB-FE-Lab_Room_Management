@@ -1,3 +1,4 @@
+import type { PagedResponse } from "../../../types/pagination.types";
 export interface ReportReasonOption {
   value: string;
   label: string;
@@ -147,12 +148,7 @@ export interface CreateReportResponse {
   message: string;
   data: Report;
 }
-export interface GetReportsResponse {
-  data: Report[];
-  total?: number;
-  page?: number;
-  limit?: number;
-}
+export type GetReportsResponse = PagedResponse<Report>;
 
 export interface GetReportHistoryResponse {
   data: Report[];

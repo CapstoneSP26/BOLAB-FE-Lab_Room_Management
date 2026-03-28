@@ -103,7 +103,7 @@ export const useReports = (options: UseReportsOptions = {}) => {
     queryKey: [QUERY_KEYS.REPORTS, params],
     queryFn: async () => {
       const response = await getReports(params);
-      return Array.isArray(response?.data) ? response.data : [];
+      return Array.isArray(response?.items) ? response.items : [];
     },
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
