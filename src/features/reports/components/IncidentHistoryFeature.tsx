@@ -1,12 +1,12 @@
 import { useMemo, useState } from "react";
-import type { Incident } from "./type";
-import { useIncidentHistory } from "./hook/useIncidentHistory";
+import type { Incident } from "../types/type";
+import { useIncidentHistory } from "../hooks/useIncidentHistory";
 import IncidentFilters, {
   type IncidentSortKey,
   type IncidentStatusFilter,
-} from "./components/IncidentFilter";
-import IncidentHistoryTable from "./components/IncidentHistoryTable";
-import IncidentModal from "./components/IncidentModal";
+} from "./IncidentFilter";
+import IncidentHistoryTable from "./IncidentHistoryTable";
+import IncidentModal from "./IncidentModal";
 
 export default function IncidentHistoryFeature() {
   const { loading, items } = useIncidentHistory();

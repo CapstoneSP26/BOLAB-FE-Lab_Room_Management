@@ -3,7 +3,7 @@ import type {
   Schedule,
   ScheduleType,
   ScheduleStatus,
-} from "../../../calendar/type";
+} from "../../calendar/types/calendar.type";
 import { useToast } from "../../../../hooks/useToast";
 
 type Props = {

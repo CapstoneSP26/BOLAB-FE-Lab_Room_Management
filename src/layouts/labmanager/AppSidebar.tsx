@@ -8,7 +8,7 @@ import {
   IncidentHistoryIcon,
   ListBookingRequest,
   ListIcon,
-} from "../../icon/index.ts";
+} from "../../components/icon/index.ts";
 
 type IconProps = React.SVGProps<SVGSVGElement> & { size?: number };
 type IconComp = React.ComponentType<IconProps>;

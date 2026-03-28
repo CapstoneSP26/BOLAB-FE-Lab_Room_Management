@@ -1,6 +1,8 @@
-import type { Building, Room } from "../../../building/types/building.type";
+import type { Building } from "../../building/types/building.type";
+import type { LabRoomLookupItem } from "../../labroom/types/room.type";
+import type { SlotType } from "../../slot/types/slot.types";
 
-type SlotTypeFilter = "ALL" | "OLD_SLOT" | "NEW_SLOT" | "OUT_SLOT";
+type SlotTypeFilter = "ALL" | number;
 
 type Props = {
   q: string;
@@ -9,14 +11,15 @@ type Props = {
   roomId: number | "ALL";
   onRoomId: (v: number | "ALL") => void;
 
-  building: string;
-  onBuilding: (v: string) => void;
+  buildingId: number | "ALL";
+  onBuildingId: (v: number | "ALL") => void;
 
   slotType: SlotTypeFilter;
   onSlotType: (v: SlotTypeFilter) => void;
 
-  roomOptions: Room[];
+  roomOptions: LabRoomLookupItem[];
   buildingOptions: Building[];
+  slotOptions: SlotType[];
 };
 
 export default function BookingFilters({
@@ -24,12 +27,13 @@ export default function BookingFilters({
   onQ,
   roomId,
   onRoomId,
-  building,
-  onBuilding,
+  buildingId,
+  onBuildingId,
   slotType,
   onSlotType,
   roomOptions,
   buildingOptions,
+  slotOptions,
 }: Props) {
   return (
     <div className="mb-4 space-y-3">
@@ -58,52 +62,30 @@ export default function BookingFilters({
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="relative">
-          <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-600 dark:text-gray-400">
-            <svg
-              className="h-3.5 w-3.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-              />
-            </svg>
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400">
             Building
           </label>
           <select
-            value={building}
-            onChange={(e) => onBuilding(e.target.value)}
+            value={buildingId}
+            onChange={(e) =>
+              onBuildingId(
+                e.target.value === "ALL" ? "ALL" : Number(e.target.value),
+              )
+            }
             className="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/10 dark:border-gray-600 dark:bg-gray-800 dark:text-white/90 dark:focus:border-brand-800"
           >
             <option value="ALL">All buildings</option>
             {buildingOptions.map((b) => (
-              <option key={String(b.id)} value={b.name}>
+              <option key={String(b.id)} value={b.id}>
                 {b.name}
               </option>
             ))}
           </select>
         </div>
 
-        <div className="relative">
-          <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-600 dark:text-gray-400">
-            <svg
-              className="h-3.5 w-3.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-              />
-            </svg>
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400">
             Room
           </label>
           <select
@@ -113,43 +95,39 @@ export default function BookingFilters({
                 e.target.value === "ALL" ? "ALL" : Number(e.target.value),
               )
             }
-            className="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/10 dark:border-gray-600 dark:bg-gray-800 dark:text-white/90 dark:focus:border-brand-800"
+            disabled={buildingId === "ALL"}
+            className="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/10 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:text-white/90 dark:focus:border-brand-800 dark:disabled:bg-gray-700 dark:disabled:text-gray-500"
           >
-            <option value="ALL">All rooms</option>
+            <option value="ALL">
+              {buildingId === "ALL" ? "Select building first" : "All rooms"}
+            </option>
             {roomOptions.map((r) => (
               <option key={r.id} value={String(r.id)}>
-                {r.name}
+                {r.roomName} - {r.buildingName}
               </option>
             ))}
           </select>
         </div>
 
-        <div className="relative">
-          <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-600 dark:text-gray-400">
-            <svg
-              className="h-3.5 w-3.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-              />
-            </svg>
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400">
             Slot Type
           </label>
           <select
             value={slotType}
-            onChange={(e) => onSlotType(e.target.value as SlotTypeFilter)}
+            onChange={(e) =>
+              onSlotType(
+                e.target.value === "ALL" ? "ALL" : Number(e.target.value),
+              )
+            }
             className="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-500/10 dark:border-gray-600 dark:bg-gray-800 dark:text-white/90 dark:focus:border-brand-800"
           >
-            <option value="ALL">All</option>
-            <option value="OLD_SLOT">Old slot</option>
-            <option value="NEW_SLOT">New slot</option>
-            <option value="OUT_SLOT">Out slot</option>
+            <option value="ALL">All slot types</option>
+            {slotOptions.map((slot) => (
+              <option key={slot.id} value={slot.id}>
+                {slot.name}
+              </option>
+            ))}
           </select>
         </div>
       </div>
