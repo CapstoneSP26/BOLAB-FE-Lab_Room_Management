@@ -22,6 +22,7 @@ import type {
   CreateReportResponse,
   ResolveReportResponse,
 } from "../types/report.type";
+import type { PagedResponse } from "../../../types/pagination.types";
 
 // Query keys for cache management
 export const QUERY_KEYS = {
@@ -95,15 +96,14 @@ export const useReportReasons = () => {
 export interface UseReportsOptions extends GetReportsRequest {
   enabled?: boolean;
 }
-
 export const useReports = (options: UseReportsOptions = {}) => {
   const { enabled = true, ...params } = options;
 
-  return useQuery<Report[]>({
+  return useQuery<PagedResponse<Report>>({
     queryKey: [QUERY_KEYS.REPORTS, params],
     queryFn: async () => {
       const response = await getReports(params);
-      return Array.isArray(response?.items) ? response.items : [];
+      return response.data;
     },
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,

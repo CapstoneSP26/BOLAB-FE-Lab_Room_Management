@@ -1,12 +1,6 @@
 import type { Report } from "../types/report.type";
 import { formatDate } from "../../../utils/formatDate";
 
-function badge(status: boolean) {
-  return status
-    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-200"
-    : "bg-amber-500/15 text-amber-700 dark:text-amber-200";
-}
-
 type Props = {
   loading: boolean;
   rows: Report[];
@@ -58,54 +52,49 @@ export default function ReportListTable({
               </tr>
             ) : (
               rows.map((r) => (
-                <tr key={r.Id} className="bg-white dark:bg-transparent">
+                <tr key={r.id} className="bg-white dark:bg-transparent">
                   <td className="px-4 py-4">
                     <div className="font-semibold text-gray-800 dark:text-white/90">
-                      #{r.Id}
-                    </div>
-                    <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      Schedule: {r.ScheduleId ?? "-"}
+                      #{r.id}
                     </div>
                   </td>
 
                   <td className="px-4 py-4 font-semibold text-gray-800 dark:text-white/90">
-                    {r.ReportType ?? "-"}
+                    {r.reportType ?? "-"}
                   </td>
 
                   <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
-                    {r.UserId}
+                    {r.userName}
                   </td>
 
                   <td className="px-4 py-4">
                     <div
                       className="max-w-[420px] truncate text-gray-700 dark:text-gray-300"
-                      title={r.Description}
+                      title={r.description}
                     >
-                      {r.Description}
+                      {r.description}
                     </div>
                   </td>
 
                   <td className="px-4 py-4">
-                    <span
-                      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${badge(r.IsResolved)}`}
-                    >
-                      {r.IsResolved ? "Resolved" : "PendingApproval"}
+                    <span className="inline-flex rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-200">
+                      Unresolved
                     </span>
                   </td>
 
                   <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
-                    {r.CreatedAt ? formatDate(r.CreatedAt, "DD/MM/YYYY") : "-"}
+                    {r.createdAt ? formatDate(r.createdAt, "DD/MM/YYYY") : "-"}
                   </td>
 
                   <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
-                    {r.UpdatedAt ? formatDate(r.UpdatedAt, "DD/MM/YYYY") : "-"}
+                    {r.updatedAt ? formatDate(r.updatedAt, "DD/MM/YYYY") : "-"}
                   </td>
 
                   <td className="px-4 py-4">
                     <div className="flex justify-end gap-2">
                       <button
                         type="button"
-                        onClick={() => onView(r.Id)}
+                        onClick={() => onView(r.id)}
                         className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-white/[0.04]"
                       >
                         View detail
@@ -114,14 +103,10 @@ export default function ReportListTable({
                       {onToggleResolved && (
                         <button
                           type="button"
-                          onClick={() => onToggleResolved(r.Id, !r.IsResolved)}
-                          className={
-                            r.IsResolved
-                              ? "rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-700"
-                              : "rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700"
-                          }
+                          onClick={() => onToggleResolved(r.id, true)}
+                          className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700"
                         >
-                          {r.IsResolved ? "Resolved" : "Unresolved"}
+                          Resolve
                         </button>
                       )}
                     </div>

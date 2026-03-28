@@ -35,7 +35,7 @@ export default function ReportListFeature() {
   const [roomId, setRoomId] = useState<number | "ALL">("ALL");
 
   const {
-    data: items = [],
+    data: pagedReports,
     isLoading,
     refetch,
     isFetching,
@@ -49,6 +49,9 @@ export default function ReportListFeature() {
     sortBy: "CreatedAt",
     isDescending: true,
   });
+
+  const items = useMemo(() => pagedReports?.items ?? [], [pagedReports?.items]);
+  const totalCount = pagedReports?.totalCount ?? 0;
 
   const resolveMutation = useResolveReport({
     onSuccess: () => {
@@ -104,22 +107,22 @@ export default function ReportListFeature() {
 
   const rows = useMemo(() => {
     return [...items].sort((a, b) =>
-      String(b.CreatedAt ?? "").localeCompare(String(a.CreatedAt ?? "")),
+      String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? "")),
     );
   }, [items]);
 
   const stats = useMemo(() => {
-    const resolved = rows.filter((r) => r.IsResolved).length;
-    const unresolved = rows.filter((r) => !r.IsResolved).length;
+    const resolved = rows.filter((r) => r.isResolved).length;
+    const unresolved = rows.filter((r) => !r.isResolved).length;
 
     return {
-      total: rows.length,
+      total: totalCount,
       resolved,
       unresolved,
       resolutionRate:
-        rows.length > 0 ? Math.round((resolved / rows.length) * 100) : 0,
+        totalCount > 0 ? Math.round((resolved / totalCount) * 100) : 0,
     };
-  }, [rows]);
+  }, [rows, totalCount]);
 
   const hasActiveFilters = useMemo(() => {
     return q.trim() !== "" || buildingId !== "ALL" || roomId !== "ALL";

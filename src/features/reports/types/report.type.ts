@@ -47,23 +47,23 @@ export interface ReportDraft {
 }
 
 export interface Report {
-  Id: string;
-  ScheduleId?: string | null;
-  UserId: string;
+  id: string;
+  userId: string;
+  userName: string;
 
-  ReportType?: string;
-  Description: string;
-  IsResolved: boolean;
+  reportType?: string;
+  description: string;
+  isResolved: boolean;
 
-  LabRoomId?: number;
-  RoomName?: string;
-  BuildingName?: string;
-  Reason?: string;
+  labRoomId?: number;
+  roomName?: string;
+  buildingName?: string;
+  reason?: string;
 
-  CreatedAt: string;
-  UpdatedAt?: string | null;
-  CreatedBy?: string | null;
-  UpdatedBy?: string | null;
+  createdAt: string;
+  updatedAt?: string | null;
+  createdBy?: string | null;
+  updatedBy?: string | null;
 }
 
 export interface ReportImage {
@@ -148,8 +148,10 @@ export interface CreateReportResponse {
   message: string;
   data: Report;
 }
-export type GetReportsResponse = PagedResponse<Report>;
-
+export interface GetReportsResponse {
+  success: boolean;
+  data: PagedResponse<Report>;
+}
 export interface GetReportHistoryResponse {
   data: Report[];
   total?: number;
