@@ -15,10 +15,7 @@ import {
   getSlotTypes,
   updateBookingRequestStatus,
 } from "../api/bookingRequestApi";
-import type {
-  BookingRequest,
-  BookingStatus,
-} from "../../booking/types/booking.type";
+import type { BookingRequest, BookingStatus } from "../types/booking.type";
 
 type SlotTypeFilter = "ALL" | number;
 

@@ -20,8 +20,8 @@ import {
 
 import { norm, statusClass, statusDot } from "../../../utils/status";
 
-import { useScheduleData } from "../../booking-requests/hooks/useBookingData";
-import { useLabManagerBookingModal } from "../../booking-requests/hooks/useLabManagerBookingModal";
+import { useScheduleData } from "../../booking/hooks/useBookingData";
+import { useLabManagerBookingModal } from "../../booking/hooks/useLabManagerBookingModal";
 
 import BookingEditModal from "../../schedules/bookings/components/BookingEditModal";
 import CsvImportModal from "./CSVImportModal";

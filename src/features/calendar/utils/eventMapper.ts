@@ -1,4 +1,4 @@
-import type { ScheduleDto } from "../../booking-requests/types/schedule.type";
+import type { ScheduleDto } from "../../booking/types/bookingRequest.type";
 import type { BookingDto } from "../../booking/types/booking.type";
 import type { CalendarEvent } from "../types/calendar.type";
 

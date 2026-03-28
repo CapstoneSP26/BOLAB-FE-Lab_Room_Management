@@ -31,14 +31,6 @@ export interface GetLabRoomsQuery {
 
 export type RoomStatus = "Available" | "Occupied" | "Maintenance";
 
-export interface GetRoomsRequest {
-  building?: string;
-  search?: string;
-  status?: RoomStatus;
-  page?: number;
-  limit?: number;
-}
-
 export interface Stats {
   totalRooms: number;
   activeRooms: number;
@@ -55,15 +47,4 @@ export interface LabRoomLookupItem {
   roomNo: string;
   buildingId: number;
   buildingName: string;
-}
-
-export type LabRoomLookupApiResponse =
-  | LabRoomLookupItem[]
-  | { data?: LabRoomLookupItem[] };
-
-export interface GetLabRoomsResponse {
-  data: LabRoomDto[];
-  total: number;
-  pageNumber?: number;
-  pageSize?: number;
 }

@@ -4,7 +4,7 @@ import {
   getBookingRequestByScheduleId,
   updateBookingRequestStatus,
 } from "../api/bookingRequestApi";
-import type { BookingRequest } from "../../booking/types/booking.type";
+import type { BookingRequest } from "../types/booking.type";
 import type { EventClickArg } from "@fullcalendar/core";
 
 type Role = "ADMIN" | "LAB_MANAGER" | "LECTURER" | "STUDENT";
@@ -18,7 +18,9 @@ export function useLabManagerBookingModal() {
 
   const [open, setOpen] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<BookingRequest | null>(
+    null,
+  );
   const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(
     null,
   );
@@ -76,7 +78,7 @@ export function useLabManagerBookingModal() {
   );
 
   const renderModal = useCallback(
-    (onUpdated: (scheduleId: string, booking: Booking) => void) => {
+    (onUpdated: (scheduleId: string, booking: BookingRequest) => void) => {
       if (!isLabManager) return null;
 
       return (

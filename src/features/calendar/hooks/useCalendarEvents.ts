@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useBookings } from "../../booking/hooks/useBooking";
-import { useSchedules } from "../../booking-requests/hooks/useSchedules";
+import { useSchedules } from "../../schedules/hooks/useSchedules";
 import type {
   CalendarEvent,
   UseCalendarEventProps,

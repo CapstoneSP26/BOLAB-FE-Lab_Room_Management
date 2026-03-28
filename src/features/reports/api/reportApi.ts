@@ -2,8 +2,12 @@ import axiosInstance from "../../../api/axios";
 import type {
   CreateReportRequest,
   CreateReportResponse,
+  GetReportsRequest,
+  GetReportsResponse,
   GetMyReportsRequest,
   GetMyReportsResponse,
+  GetReportHistoryRequest,
+  GetReportHistoryResponse,
   GetReportDetailRequest,
   GetReportDetailResponse,
   GetReportReasonsResponse,
@@ -14,14 +18,11 @@ import {
   getResponseSuccess,
   normalizeReasonOptions,
 } from "../types/report.mapper";
-import type {
-  LabRoomDto,
-  LabRoomLookupItem,
-} from "../../labroom/types/room.type";
-import { labroomApi } from "../../labroom/api/labroom.api";
 const REPORT_API = {
+  LIST: "/listreports",
   CREATE: "/reports",
   REASONS: "/reports/reasons",
+  HISTORY: "/reports/history",
   MY_REPORTS: "/reports/my-reports",
   DETAIL: (id: string) => `/reports/${id}`,
   RESOLVE: (id: string) => `/reports/${id}/resolve`,
@@ -54,11 +55,32 @@ export const createReport = async (
   return response.data;
 };
 
+export const getReports = async (
+  params: GetReportsRequest = {},
+): Promise<GetReportsResponse> => {
+  const response = await axiosInstance.get<GetReportsResponse>(
+    REPORT_API.LIST,
+    { params },
+  );
+
+  return response.data;
+};
+
 export const getMyReports = async (
   params: GetMyReportsRequest = {},
 ): Promise<GetMyReportsResponse> => {
   const response = await axiosInstance.get<GetMyReportsResponse>(
     REPORT_API.MY_REPORTS,
+    { params },
+  );
+
+  return response.data;
+};
+export const getReportHistory = async (
+  params: GetReportHistoryRequest = {},
+): Promise<GetReportHistoryResponse> => {
+  const response = await axiosInstance.get<GetReportHistoryResponse>(
+    REPORT_API.HISTORY,
     { params },
   );
 
@@ -95,24 +117,4 @@ export const resolveReport = async (
   );
 
   return response.data;
-};
-
-/** Lookup: rooms for report filter */
-export const getRoomOptions = async (): Promise<LabRoomLookupItem[]> => {
-  const response = await labroomApi.getRooms({
-    pageNumber: 1,
-    pageSize: 1000,
-    includeBuilding: true,
-    isDescending: false,
-  });
-
-  const items: LabRoomDto[] = response.items ?? [];
-
-  return items.map((item: LabRoomDto) => ({
-    id: item.id,
-    roomName: item.roomName,
-    roomNo: item.roomNo,
-    buildingId: item.buildingId,
-    buildingName: item.buildingName,
-  }));
 };

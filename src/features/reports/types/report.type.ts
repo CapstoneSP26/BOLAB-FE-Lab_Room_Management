@@ -73,33 +73,9 @@ export interface ReportImage {
   FileType: string;
 }
 
-export interface ReportTypeLookupItem {
-  code: string;
-  name: string;
-}
-
-export interface ReportStatusLookupItem {
-  code: string;
-  name: string;
-}
-
 export interface ReportReasonLookupItem {
   value: string;
   label: string;
-}
-
-export interface GetReportTypeLookupResponse {
-  data: ReportTypeLookupItem[];
-  total?: number;
-  page?: number;
-  limit?: number;
-}
-
-export interface GetReportStatusLookupResponse {
-  data: ReportStatusLookupItem[];
-  total?: number;
-  page?: number;
-  limit?: number;
 }
 
 export interface GetReportReasonLookupResponse {
@@ -131,38 +107,41 @@ export interface GetReportDetailRequest {
 }
 export interface GetReportsRequest {
   q?: string;
+  buildingId?: number;
   roomId?: number;
   reportType?: string;
   isResolved?: boolean;
+  fromDate?: string;
+  toDate?: string;
   page?: number;
   limit?: number;
   sortBy?: string;
   isDescending?: boolean;
-  fromDate?: string;
-  toDate?: string;
 }
 export interface GetReportHistoryRequest {
   q?: string;
+  buildingId?: number;
   roomId?: number;
-  ReportType?: string;
+  reportType?: string;
   isResolved?: boolean;
+  fromDate?: string;
+  toDate?: string;
   page?: number;
   limit?: number;
   sortBy?: string;
   isDescending?: boolean;
-  fromDate?: string;
-  toDate?: string;
 }
+
 export interface ResolveReportRequest {
   isResolved: boolean;
 }
 
+////response
 export interface GetReportReasonsResponse {
   success: boolean;
   data: ReportReasonOption[];
 }
 
-////response
 export interface CreateReportResponse {
   success: boolean;
   message: string;
@@ -195,7 +174,9 @@ export interface GetMyReportsResponse {
 
 export interface GetReportDetailResponse {
   success: boolean;
-  data: Report;
+  data: Report & {
+    images?: ReportImage[];
+  };
 }
 
 export interface ResolveReportResponse {

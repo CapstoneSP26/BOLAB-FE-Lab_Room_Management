@@ -3,7 +3,7 @@ import type { LabRoomLookupItem } from "../../labroom/types/room.type";
 import type {
   BookingStatusLookupItem,
   HistoryStatus,
-} from "../types/schedule.type";
+} from "../types/bookingRequest.type";
 
 type Props = {
   q: string;

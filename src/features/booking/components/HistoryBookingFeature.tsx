@@ -24,8 +24,8 @@ import {
 import type {
   HistoryStatus,
   BookingStatusLookupItem,
-} from "../types/schedule.type";
-import type { BookingRequest } from "../../booking/types/booking.type";
+} from "../types/bookingRequest.type";
+import type { BookingRequest } from "../types/booking.type";
 import type { Building } from "../../building/types/building.type";
 import type { LabRoomLookupItem } from "../../labroom/types/room.type";
 const normText = (s: unknown) =>

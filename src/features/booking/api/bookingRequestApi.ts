@@ -9,7 +9,7 @@ import type {
   UpdateBookingStatusRequest,
   UpdateBookingStatusResponse,
   GetBookingStatusLookupResponse,
-} from "../types/schedule.type";
+} from "../types/bookingRequest.type";
 import type { Building } from "../../building/types/building.type";
 import { buildingApi } from "../../building/api/buildingApi";
 import type {
