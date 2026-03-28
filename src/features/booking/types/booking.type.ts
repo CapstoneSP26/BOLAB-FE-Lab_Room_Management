@@ -23,7 +23,7 @@ export interface BookingDto {
 
 export interface GetBookingsParams {
   searchTerm?: string;
-  status?: string;
+  status?: number;
   labRoomId?: number;
   fromDate?: string;
   toDate?: string;

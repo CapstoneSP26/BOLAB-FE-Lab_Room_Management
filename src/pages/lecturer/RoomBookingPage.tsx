@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Calendar as CalendarIcon,
@@ -19,6 +19,8 @@ import { BuildingSelector } from "../../features/building/components/BuildingSel
 import { FLEXIBLE_ID } from "../../features/slot/constants/slot.constant";
 import { WeeklyCalendar } from "../../features/calendar/components/WeeklyCalendar";
 import { usePurposeTypes } from "../../features/booking/hooks/usePurposeTypes";
+import { useLabPolicies } from "../../features/labroom/hooks/useLabPolicies";
+import { QueryClient, useQueryClient } from "@tanstack/react-query";
 
 type BookingView = "calendar" | "list";
 
@@ -45,6 +47,8 @@ const RoomBookingPage: React.FC = () => {
 
   const [showConfirmPanel, setShowConfirmPanel] = useState(false);
   const [pendingBooking, setPendingBooking] = useState<PendingBooking | null>(null);
+
+  const queryClient = useQueryClient();
 
 
   // Fetch Booking Purpose
@@ -79,6 +83,9 @@ const RoomBookingPage: React.FC = () => {
     setSelectedRoomId(labRoomId);
   };
 
+  // Fetch Policies Data
+  const { data: policies } = useLabPolicies(Number(selectedRoomId));
+
   // Create Booking Hook
   const { mutate: createBooking, isPending } = useCreateBooking();
   const handleFinalConfirm = (formData: any) => {
@@ -94,8 +101,8 @@ const RoomBookingPage: React.FC = () => {
       labRoomId: Number(selectedRoomId),
       slotTypeId: pendingBooking.slotTypeId,
       purposeTypeId: formData.purposeId,
-      startTime: `${pendingBooking.date}T${pendingBooking.startTime}:00Z`,
-      endTime: `${pendingBooking.date}T${pendingBooking.endTime}:00Z`,
+      startTime: new Date(`${pendingBooking.date}T${pendingBooking.startTime}:00`).toISOString(),
+      endTime: new Date(`${pendingBooking.date}T${pendingBooking.endTime}:00`).toISOString(),
       studentCount: formData.studentCount,
       recurringCount: formData.weeks,
       reason: formData.reason,
@@ -105,12 +112,18 @@ const RoomBookingPage: React.FC = () => {
     createBooking(command, {
       onSuccess: (data) => {
         // 1. Lưu ID và thông tin vừa đặt
+        appAlert.success("Đặt lịch thành công!", `Mã đặt chỗ của bạn là: ${data.id}`);
         setLastBookingId(data.id);
         setSuccessData(currentBookingInfo);
 
         setPendingBooking(null)
         setShowConfirmPanel(false);
         setShowSuccessModal(true);
+        queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
+      },
+      onError: (err) => {
+        const message = err.message || "Không thể tạo lịch đặt. Vui lòng kiểm tra lại thời gian.";
+        appAlert.error("Lỗi đặt lịch", message);
       }
     });
   };
@@ -121,8 +134,8 @@ const RoomBookingPage: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] bg-gray-50">
-      <div className="flex flex-1 overflow-hidden">
+    <div className="flex h-[calc(100vh-4rem)] bg-gray-50">
+      <div className="flex flex-col overflow-hidden">
         {/* Left Sidebar - Room Selector & View Toggle */}
         <div className="w-[420px] bg-white flex flex-col border-r-4 border-orange-300 overflow-y-auto shadow-[4px_0_12px_-2px_rgba(251,146,60,0.15)]">
           {/* Header */}
@@ -216,6 +229,7 @@ const RoomBookingPage: React.FC = () => {
           </div>
         ) : activeView === "calendar" ? (
           <WeeklyCalendar
+            policies={policies}
             calendarMode='LAB_SPECIFIC'
             selectedRoomId={selectedRoomId}
             selectedSlotTypeId={selectedSlotTypeId}

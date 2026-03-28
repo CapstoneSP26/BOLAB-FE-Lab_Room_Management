@@ -69,3 +69,10 @@ export const getStartOfDayVNInUTC = (date: Date | string) => {
   // Convert sang UTC ISO string
   return startOfDayLocal.toISOString();
 };
+
+/**
+ * 2026-03-28T11:30:00.000Z -> 2026-03-28T18:30:00 (Giờ VN)
+ */
+export const convertUTCStringToLocal = (utcString: string) => {
+  return format(new Date(utcString), "yyyy-MM-dd'T'HH:mm:ss");
+};

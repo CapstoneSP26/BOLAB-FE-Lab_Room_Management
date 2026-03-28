@@ -20,7 +20,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
 
   initialize: () => {
-    const token = Cookies.get('token'); // Tên cookie tùy vào Backend đặt
+    const token = Cookies.get('accessToken'); // Tên cookie tùy vào Backend đặt
     if (token) {
       try {
         const decoded = jwtDecode<UserPayload>(token);

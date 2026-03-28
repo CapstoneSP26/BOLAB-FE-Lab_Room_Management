@@ -8,13 +8,14 @@ const BOOKING_API = {
   STATS: '/bookings/stats',
   RECENT_REQUESTS: '/booking-requests/recent',
   HISTORY: '/bookings/history',
+  PURPOSE: '/bookings/purposes'
 };
 
 export const bookingApi = {
   getBookings: (params: GetBookingsParams) =>
     axiosInstance.get<PagedResponse<BookingDto>>(BOOKING_API.BOOKS, {
       params,
-    }),
+    }).then(res => res.data),
 
   /**
    * Lấy danh sách lịch booking sắp tới
@@ -61,7 +62,7 @@ export const bookingApi = {
   */
   getPurposes: () =>
     axiosInstance
-      .get<PagedResponse<PurposeTypeDto>>('/Bookings/purposes',)
+      .get<PagedResponse<PurposeTypeDto>>(BOOKING_API.PURPOSE)
       .then(response => response.data),
 }
 

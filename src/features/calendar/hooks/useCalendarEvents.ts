@@ -10,7 +10,7 @@ export const useCalendarEvents = (params: UseCalendarEventProps) => {
     fromDate: params.startDate,
     toDate: params.endDate,
     labRoomId: params.labRoomId,
-    status: 'Pending' // Chỉ lấy những cái chưa duyệt của user hiện tại
+    status: 1 // Chỉ lấy những cái chưa duyệt của user hiện tại (Pending = 1)
   },
     params.calendarMode !== 'PUBLIC' // Chỉ gọi API Booking nếu không phải PUBLIC
   );
@@ -23,8 +23,8 @@ export const useCalendarEvents = (params: UseCalendarEventProps) => {
 
   // 4. Hợp nhất và Chuyển đổi dữ liệu (Data Transformation)
   const events = useMemo((): CalendarEvent[] => {
-    const bookingEvents = bookingsQuery.data?.data?.items?.map(mapBookingToEvent) || [];
-    const scheduleEvents = schedulesQuery.data?.data?.items?.map(mapScheduleToEvent) || [];
+    const bookingEvents = bookingsQuery.data?.items?.map(mapBookingToEvent) || [];
+    const scheduleEvents = schedulesQuery.data?.items?.map(mapScheduleToEvent) || [];
 
     return [...bookingEvents, ...scheduleEvents];
   }, [bookingsQuery.data, schedulesQuery.data]);

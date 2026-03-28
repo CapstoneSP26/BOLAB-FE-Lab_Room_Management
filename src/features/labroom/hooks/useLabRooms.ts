@@ -29,6 +29,7 @@ export const useLabRooms = (params?: GetLabRoomsQuery) => {
     queryFn: () => labroomApi.getRooms(params),
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
+    enabled: !!params?.buildingId
   });
 };
 
