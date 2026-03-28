@@ -25,20 +25,43 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 import {
   useCreateQRSession,
-  useLecturerBookings,
   useQRSession,
   useEndQRSession,
   useAttendanceList,
   useExportAttendance,
+  type QRSession,
   type BookingWithQR,
 } from '../../features/attendance';
-import { useBookingAttendance } from '../../features/booking';
-import type { BookingDto, GetBookingsParams } from '../../features/booking/types/booking.type';
+import { useSchedulesAttendance } from '../../features/schedules/hooks/useSchedulesAttendance';
+import type { GetSchedulesParams, ScheduleDto } from '../../features/schedules/types/schedule.type';
 import { MOCK_LECTURER_BOOKINGS, MOCK_QR_SESSION } from '../../features/attendance/mocks/attendance.mock';
 import { useActiveSession } from '../../context/ActiveSessionContext';
 import { useToast } from '../../hooks/useToast';
 
 const normalizeRoomName = (value: string) => value.trim().toLowerCase();
+
+const getRoomCodeFromName = (roomName: string): string => {
+  const numberMatch = roomName.match(/(\d+)/);
+  return numberMatch ? `L${numberMatch[1]}` : roomName;
+};
+
+const normalizeBookingStatus = (status: string): BookingWithQR['status'] => {
+  const normalizedStatus = status.trim().toLowerCase();
+
+  if (normalizedStatus === 'active') {
+    return 'Active';
+  }
+
+  if (normalizedStatus === 'done') {
+    return 'Done';
+  }
+
+  if (normalizedStatus === 'notyet' || normalizedStatus === 'not_yet' || normalizedStatus === 'not yet') {
+    return 'NotYet';
+  }
+
+  return 'NotYet';
+};
 
 const parseTimeValue = (bookingDate: string, value: string): Date => {
   // Handle API values that already include full datetime.
@@ -60,14 +83,14 @@ const parseTimeValue = (bookingDate: string, value: string): Date => {
   return base;
 };
 
-const isNowInsideBookingWindow = (booking: BookingDto): boolean => {
-  if (!booking.startTime || !booking.endTime) {
+const isNowInsideScheduleWindow = (schedule: ScheduleDto): boolean => {
+  if (!schedule.startTime || !schedule.endTime) {
     return false;
   }
 
   const now = new Date();
-  const start = parseTimeValue(booking.startTime, booking.startTime);
-  const end = parseTimeValue(booking.startTime, booking.endTime);
+  const start = parseTimeValue(schedule.startTime, schedule.startTime);
+  const end = parseTimeValue(schedule.startTime, schedule.endTime);
 
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
     return false;
@@ -88,6 +111,305 @@ const isNowInsideFeatureBookingWindow = (booking: BookingWithQR): boolean => {
   return now >= start && now <= end;
 };
 
+const isBookingPast = (booking: BookingWithQR): boolean => {
+  const now = new Date();
+  const end = parseTimeValue(booking.date, booking.endTime);
+  if (Number.isNaN(end.getTime())) {
+    return booking.isPast;
+  }
+  return end < now;
+};
+
+const isBookingUpcoming = (booking: BookingWithQR): boolean => !isBookingPast(booking);
+
+const getIsoDateTimeParts = (value: string): { dateLabel: string; timeLabel: string } | null => {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  if (!match) {
+    return null;
+  }
+
+  const [, year, month, day, hour, minute] = match;
+  return {
+    dateLabel: `${day}/${month}/${year}`,
+    timeLabel: `${hour}:${minute}`,
+  };
+};
+
+const formatUtcDateLabel = (value: string): string => {
+  const isoParts = getIsoDateTimeParts(value);
+  if (isoParts) {
+    return isoParts.dateLabel;
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  const day = String(parsed.getUTCDate()).padStart(2, '0');
+  const month = String(parsed.getUTCMonth() + 1).padStart(2, '0');
+  const year = parsed.getUTCFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+const formatBookingTimeLabel = (bookingDate: string, value: string): string => {
+  const isoParts = getIsoDateTimeParts(value);
+  if (isoParts) {
+    return isoParts.timeLabel;
+  }
+
+  const parsed = parseTimeValue(bookingDate, value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  const hour = String(parsed.getUTCHours()).padStart(2, '0');
+  const minute = String(parsed.getUTCMinutes()).padStart(2, '0');
+  return `${hour}:${minute}`;
+};
+
+const mapScheduleDtoToAttendanceBooking = (schedule: ScheduleDto): BookingWithQR => {
+  const dateSource = schedule.startTime || schedule.endTime;
+  const start = parseTimeValue(dateSource, schedule.startTime);
+  const end = parseTimeValue(dateSource, schedule.endTime);
+  const now = new Date();
+  const isPast = !Number.isNaN(end.getTime()) ? end < now : false;
+  const hasValidStart = !Number.isNaN(start.getTime());
+
+  return {
+    bookingId: schedule.id,
+    roomName: schedule.labRoomName || 'Unknown Room',
+    roomCode: getRoomCodeFromName(schedule.labRoomName || 'Room'),
+    buildingName: 'Unknown Building',
+    date: hasValidStart ? start.toISOString() : dateSource,
+    startTime: schedule.startTime,
+    endTime: schedule.endTime,
+    status: normalizeBookingStatus(schedule.status),
+    purpose: schedule.subjectCode || 'Schedule session',
+    hasQRSession: false,
+    qrSessionId: undefined,
+    isUpcoming: !isPast,
+    isPast,
+  };
+};
+
+const normalizeQrSessionPayload = (
+  payload: Record<string, unknown>,
+  fallback: QRSession | null
+): QRSession => {
+  const base = fallback || ({} as QRSession);
+
+  const scanUrl =
+    (typeof payload.scanUrl === 'string' ? payload.scanUrl : undefined)
+    || (typeof payload.qrScanUrl === 'string' ? payload.qrScanUrl : undefined)
+    || (typeof payload.url === 'string' ? payload.url : undefined)
+    || (typeof payload.qrUrl === 'string' ? payload.qrUrl : undefined)
+    || (typeof payload.qrContent === 'string' ? payload.qrContent : undefined)
+    || (typeof payload.qrValue === 'string' ? payload.qrValue : undefined)
+    || '';
+
+  const qrImageBase64 =
+    (typeof payload.qrImageBase64 === 'string' ? payload.qrImageBase64 : undefined)
+    || (typeof payload.qrCodeBase64 === 'string' ? payload.qrCodeBase64 : undefined)
+    || (typeof payload.qrCodeImageBase64 === 'string' ? payload.qrCodeImageBase64 : undefined)
+    || (typeof payload.base64Image === 'string' ? payload.base64Image : undefined)
+    || (typeof payload.imageBase64 === 'string' ? payload.imageBase64 : undefined)
+    || base.qrImageBase64;
+
+  const qrImageUrl =
+    (typeof payload.qrImageUrl === 'string' ? payload.qrImageUrl : undefined)
+    || (typeof payload.qrCodeUrl === 'string' ? payload.qrCodeUrl : undefined)
+    || (typeof payload.imageUrl === 'string' ? payload.imageUrl : undefined)
+    || base.qrImageUrl;
+
+  const qrToken =
+    (typeof payload.qrToken === 'string' ? payload.qrToken : undefined)
+    || (typeof payload.token === 'string' ? payload.token : undefined)
+    || (typeof payload.qrCodeToken === 'string' ? payload.qrCodeToken : undefined)
+    || base.qrToken;
+
+  const qrExpiry =
+    (typeof payload.qrExpiry === 'string' ? payload.qrExpiry : undefined)
+    || (typeof payload.expiryTime === 'string' ? payload.expiryTime : undefined)
+    || (typeof payload.expiredAt === 'string' ? payload.expiredAt : undefined)
+    || base.qrExpiry;
+
+  const normalized: QRSession = {
+    ...base,
+    ...payload,
+    id: (payload.id as string) || (payload.qrId as string) || base.id,
+    bookingId: (payload.bookingId as string) || (payload.scheduleId as string) || base.bookingId,
+    roomName: (payload.roomName as string) || (payload.labRoomName as string) || base.roomName,
+    roomCode: (payload.roomCode as string) || base.roomCode,
+    buildingName: (payload.buildingName as string) || base.buildingName,
+    date: (payload.date as string) || base.date,
+    startTime: (payload.startTime as string) || base.startTime,
+    endTime: (payload.endTime as string) || base.endTime,
+    lecturerName: (payload.lecturerName as string) || base.lecturerName,
+    lecturerId: (payload.lecturerId as string) || base.lecturerId,
+    qrToken,
+    qrExpiry,
+    qrImageBase64,
+    qrImageUrl,
+    createdAt: (payload.createdAt as string) || base.createdAt,
+    isActive: typeof payload.isActive === 'boolean' ? payload.isActive : (base.isActive ?? true),
+    totalStudents: (payload.totalStudents as number) ?? base.totalStudents ?? 0,
+    presentCount: (payload.presentCount as number) ?? base.presentCount ?? 0,
+    absentCount: (payload.absentCount as number) ?? base.absentCount ?? 0,
+  };
+
+  if (scanUrl) {
+    (normalized as unknown as Record<string, unknown>).scanUrl = scanUrl;
+  }
+
+  return normalized;
+};
+
+const unwrapSessionPayload = (response: unknown): Record<string, unknown> => {
+  let current: unknown = response;
+
+  for (let i = 0; i < 3; i++) {
+    if (
+      current
+      && typeof current === 'object'
+      && 'data' in (current as Record<string, unknown>)
+      && (current as Record<string, unknown>).data
+      && typeof (current as Record<string, unknown>).data === 'object'
+    ) {
+      current = (current as Record<string, unknown>).data;
+      continue;
+    }
+
+    break;
+  }
+
+  if (typeof current === 'string') {
+    const trimmed = current.trim();
+    const isUrlLike = /^https?:\/\//i.test(trimmed)
+      || trimmed.startsWith('/api/')
+      || trimmed.startsWith('/attendances/')
+      || trimmed.startsWith('api/')
+      || trimmed.startsWith('attendances/');
+
+    return {
+      ...(isUrlLike
+        ? {
+          scanUrl: trimmed,
+          qrValue: trimmed,
+          qrContent: trimmed,
+        }
+        : {
+          qrImageBase64: trimmed,
+          qrCodeBase64: trimmed,
+          base64Image: trimmed,
+        }),
+    };
+  }
+
+  return current && typeof current === 'object'
+    ? (current as Record<string, unknown>)
+    : {};
+};
+
+const getApiBaseOrigin = (): string => {
+  const baseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
+  if (!baseUrl) {
+    return window.location.origin;
+  }
+
+  try {
+    return new URL(baseUrl).origin;
+  } catch {
+    return window.location.origin;
+  }
+};
+
+const normalizePossibleScanUrl = (value: string): string => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return '';
+  }
+
+  const absoluteMatch = trimmed.match(/https?:\/\/[^\s"']+/i);
+  if (absoluteMatch?.[0]) {
+    return absoluteMatch[0];
+  }
+
+  if (trimmed.startsWith('/api/') || trimmed.startsWith('/attendances/')) {
+    return `${getApiBaseOrigin()}${trimmed}`;
+  }
+
+  if (trimmed.startsWith('api/') || trimmed.startsWith('attendances/')) {
+    return `${getApiBaseOrigin()}/${trimmed}`;
+  }
+
+  return '';
+};
+
+const buildBackendScanUrl = (session: QRSession | null): string => {
+  if (!session?.id || !session?.bookingId) {
+    return '';
+  }
+
+  const params = new URLSearchParams({
+    qrId: session.id,
+    scheduleId: session.bookingId,
+    isCheckIn: 'true',
+    studentId: '',
+  });
+
+  return `${getApiBaseOrigin()}/api/attendances/scan-qrcode?${params.toString()}`;
+};
+
+const extractBackendScanUrl = (input: unknown, depth = 0): string => {
+  if (depth > 4 || input == null) {
+    return '';
+  }
+
+  if (typeof input === 'string') {
+    return normalizePossibleScanUrl(input);
+  }
+
+  if (Array.isArray(input)) {
+    for (const item of input) {
+      const found = extractBackendScanUrl(item, depth + 1);
+      if (found) return found;
+    }
+    return '';
+  }
+
+  if (typeof input === 'object') {
+    const record = input as Record<string, unknown>;
+
+    const priorityKeys = [
+      'scanUrl',
+      'qrScanUrl',
+      'url',
+      'qrUrl',
+      'qrContent',
+      'qrValue',
+      'qrCode',
+      'qrCodeUrl',
+      'qrCodeContent',
+      'qrCodeValue',
+      'content',
+      'value',
+    ];
+
+    for (const key of priorityKeys) {
+      const found = extractBackendScanUrl(record[key], depth + 1);
+      if (found) return found;
+    }
+
+    for (const value of Object.values(record)) {
+      const found = extractBackendScanUrl(value, depth + 1);
+      if (found) return found;
+    }
+  }
+
+  return '';
+};
+
 export default function AttendanceManagementPage() {
   const appAlert = useToast();
   const navigate = useNavigate();
@@ -98,9 +420,9 @@ export default function AttendanceManagementPage() {
     return params.get('mockAttendance') === '1' || params.get('testAttendance') === '1';
   }, []);
 
-  const bookingScheduleParams: GetBookingsParams = useMemo(
+  const bookingScheduleParams: GetSchedulesParams = useMemo(
     () => ({
-      status: 'Approved',
+      // status: 'Approved',
       pageNumber: 1,
       pageSize: 100,
       sortBy: 'startTime',
@@ -109,35 +431,54 @@ export default function AttendanceManagementPage() {
     []
   );
 
-  const { data: bookingsData, isLoading: bookingsLoading } = useLecturerBookings();
-  const { data: bookingScheduleData } = useBookingAttendance(bookingScheduleParams, true);
+  const {
+    data: bookingScheduleData,
+    isLoading: bookingScheduleLoading,
+    isFetching: bookingScheduleFetching,
+  } = useSchedulesAttendance(bookingScheduleParams, true);
   const createQrSessionMutation = useCreateQRSession();
   const [isRefreshingQr, setIsRefreshingQr] = useState(false);
   const endSessionMutation = useEndQRSession();
   const exportMutation = useExportAttendance();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'upcoming' | 'past' | 'all'>('upcoming');
+  const [statusFilter, setStatusFilter] = useState<'upcoming' | 'past' | 'all'>('all');
   const [showQRModal, setShowQRModal] = useState(false);
   const [isCreatingQr, setIsCreatingQr] = useState(false);
   const [stoppedQrBySessionId, setStoppedQrBySessionId] = useState<Record<string, boolean>>({});
+  const [latestBackendScanUrl, setLatestBackendScanUrl] = useState('');
 
-  const bookings = bookingsData?.data || (isAttendanceMockMode ? MOCK_LECTURER_BOOKINGS : []);
-  const bookingScheduleItems: BookingDto[] = bookingScheduleData?.data?.items || [];
+  const bookingScheduleItems: ScheduleDto[] =
+    ((bookingScheduleData?.data as { result?: { items?: ScheduleDto[] } })?.result?.items)
+    || bookingScheduleData?.data?.items
+    || [];
+
+  const bookings = useMemo<BookingWithQR[]>(() => {
+    if (bookingScheduleItems.length > 0) {
+      return bookingScheduleItems.map(mapScheduleDtoToAttendanceBooking);
+    }
+
+    // If schedules-attendance has responded, treat it as source of truth for this list.
+    if (bookingScheduleData) {
+      return [];
+    }
+
+    return isAttendanceMockMode ? MOCK_LECTURER_BOOKINGS : [];
+  }, [bookingScheduleData, bookingScheduleItems, isAttendanceMockMode]);
 
   const activeRoomNamesFromSchedule = useMemo(() => {
     if (bookingScheduleItems.length === 0) {
       return new Set(
         bookings
-          .filter(item => item.status === 'Approved' && isNowInsideFeatureBookingWindow(item))
+          .filter(item => item.status === 'Active' && isNowInsideFeatureBookingWindow(item))
           .map(item => normalizeRoomName(item.roomName))
       );
     }
 
     return new Set(
       bookingScheduleItems
-        .filter(isNowInsideBookingWindow)
-        .map(item => normalizeRoomName(item.labRoomName))
+        .filter(isNowInsideScheduleWindow)
+        .map(item => normalizeRoomName(item.labRoomName || ''))
     );
   }, [bookingScheduleItems, bookings]);
 
@@ -155,7 +496,7 @@ export default function AttendanceManagementPage() {
 
   const mockFallbackBooking = useMemo(() => {
     if (!isAttendanceMockMode) return null;
-    return bookings.find(booking => booking.hasQRSession) || bookings.find(booking => booking.status === 'Approved') || null;
+    return bookings.find(booking => booking.hasQRSession) || bookings.find(booking => booking.status === 'Active') || null;
   }, [bookings, isAttendanceMockMode]);
 
   const actionBooking = activeBookingByTime || mockFallbackBooking;
@@ -177,7 +518,9 @@ export default function AttendanceManagementPage() {
     }
 
     if (isMockSession && !sessionData?.data) {
-      setActiveSession(MOCK_QR_SESSION);
+      if (!activeSession || activeSession.id !== MOCK_QR_SESSION.id) {
+        setActiveSession(MOCK_QR_SESSION);
+      }
       return;
     }
 
@@ -186,7 +529,10 @@ export default function AttendanceManagementPage() {
     }
   }, [activeSession, isMockSession, resolvedSessionId, sessionData?.data, setActiveSession]);
 
-  const session = sessionData?.data || (isMockSession ? MOCK_QR_SESSION : activeSession);
+  const session = (activeSession && (!sessionData?.data || activeSession.id === sessionData.data.id))
+    ? activeSession
+    : (sessionData?.data || (isMockSession ? MOCK_QR_SESSION : null));
+
   const activeDisplayRoom = session?.roomName || actionBooking?.roomName || 'Unknown Room';
   const activeDisplayBuilding = session?.buildingName || actionBooking?.buildingName || 'Unknown Building';
   const attendanceStats = attendanceListData?.data?.session || session;
@@ -194,14 +540,32 @@ export default function AttendanceManagementPage() {
   const presentStudents = attendanceStats?.presentCount ?? 0;
   const absentStudents = attendanceStats?.absentCount ?? Math.max(totalStudents - presentStudents, 0);
 
-  const scanUrl = session
+  const sessionRecord = (session || {}) as Record<string, unknown>;
+  const backendScanUrl =
+    (typeof sessionRecord.scanUrl === 'string' ? sessionRecord.scanUrl : '')
+    || (typeof sessionRecord.qrScanUrl === 'string' ? sessionRecord.qrScanUrl : '')
+    || (typeof sessionRecord.url === 'string' ? sessionRecord.url : '')
+    || (typeof sessionRecord.qrUrl === 'string' ? sessionRecord.qrUrl : '')
+    || (typeof sessionRecord.qrContent === 'string' ? sessionRecord.qrContent : '')
+    || (typeof sessionRecord.qrValue === 'string' ? sessionRecord.qrValue : '');
+
+  const derivedBackendScanUrl = buildBackendScanUrl(session);
+
+  const scanUrl =
+    normalizePossibleScanUrl(latestBackendScanUrl)
+    || normalizePossibleScanUrl(backendScanUrl)
+    || derivedBackendScanUrl
+    || (session
     ? `${window.location.origin}/scan-attendance/${session.id}?token=${encodeURIComponent(session.qrToken)}${isAttendanceMockMode ? '&mockAttendance=1' : ''}`
-    : '';
+    : '');
 
   const filteredBookings = useMemo(() => {
     const items = bookings.filter((booking) => {
-      if (statusFilter === 'upcoming' && !booking.isUpcoming) return false;
-      if (statusFilter === 'past' && !booking.isPast) return false;
+      const upcoming = isBookingUpcoming(booking);
+      const past = isBookingPast(booking);
+
+      if (statusFilter === 'upcoming' && !upcoming) return false;
+      if (statusFilter === 'past' && !past) return false;
 
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -230,50 +594,55 @@ export default function AttendanceManagementPage() {
     });
   }, [activeBookingByTime, bookings, searchQuery, statusFilter]);
 
-  const shouldShowBookingsLoading = bookingsLoading && !(isAttendanceMockMode && bookings.length > 0);
+  const shouldShowBookingsLoading =
+    (bookingScheduleLoading || bookingScheduleFetching)
+    && bookings.length === 0
+    && !(isAttendanceMockMode && bookings.length > 0);
 
   const handleRefreshQR = async () => {
-    const bookingIdForRefresh = actionBooking?.bookingId || session?.bookingId;
-    if (!bookingIdForRefresh) {
-      appAlert.warning('No active class', 'No booking is available to generate a new QR.');
-      return;
-    }
-
     setIsRefreshingQr(true);
     try {
-      const response = await createQrSessionMutation.mutateAsync({
+      const bookingIdForRefresh = actionBooking?.bookingId || session?.bookingId;
+      if (!bookingIdForRefresh) {
+        appAlert.warning('No active class', 'No booking is available to generate a new QR.');
+        return;
+      }
+
+      const created = await createQrSessionMutation.mutateAsync({
         scheduleId: bookingIdForRefresh,
         isCheckIn: true,
       });
 
-      setActiveSession(response.data);
+      const nextSession = normalizeQrSessionPayload(
+        unwrapSessionPayload(created),
+        session || null
+      );
+
+      const extractedScanUrl = extractBackendScanUrl(created);
+      if (extractedScanUrl) {
+        setLatestBackendScanUrl(extractedScanUrl);
+      } else {
+        setLatestBackendScanUrl(buildBackendScanUrl(nextSession));
+      }
+
+      const refreshedExpiry = new Date(nextSession.qrExpiry);
+      const refreshedDiff = Math.floor((refreshedExpiry.getTime() - Date.now()) / 1000);
+      setTimeRemaining(refreshedDiff > 0 ? refreshedDiff : 0);
+
+      setActiveSession(nextSession);
+
       setStoppedQrBySessionId(prev => {
         const next = { ...prev };
         if (session?.id) {
           next[session.id] = false;
         }
-        next[response.data.id] = false;
+        next[nextSession.id] = false;
         return next;
       });
 
       appAlert.success('QR refreshed', 'New QR code is ready.');
     } catch {
-      if (isAttendanceMockMode) {
-        const mockSession = {
-          ...MOCK_QR_SESSION,
-          qrToken: `QR_SESSION_TOKEN_${Date.now()}`,
-          qrExpiry: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
-          isActive: true,
-        };
-        setActiveSession(mockSession);
-        setStoppedQrBySessionId(prev => ({
-          ...prev,
-          [mockSession.id]: false,
-        }));
-        appAlert.success('QR refreshed', 'Mock QR code is ready for testing.');
-      } else {
-        appAlert.error('Refresh failed', 'Could not create a new QR from backend.');
-      }
+      appAlert.error('Refresh failed', 'Could not create a new QR from backend.');
     } finally {
       setIsRefreshingQr(false);
     }
@@ -281,6 +650,7 @@ export default function AttendanceManagementPage() {
 
   const handleEndSession = async () => {
     if (!session) return;
+
     const scheduleIdForEnd = actionBooking?.bookingId || session.bookingId;
 
     if (!scheduleIdForEnd) {
@@ -299,6 +669,7 @@ export default function AttendanceManagementPage() {
         scheduleId: scheduleIdForEnd,
         isCheckIn: true,
       });
+      setTimeRemaining(0);
       setStoppedQrBySessionId(prev => ({
         ...prev,
         [session.id]: true,
@@ -332,11 +703,23 @@ export default function AttendanceManagementPage() {
         isCheckIn: true,
       });
 
-      if (response?.data) {
-        setActiveSession(response.data);
+      const nextSession = normalizeQrSessionPayload(
+        unwrapSessionPayload(response),
+        session || null
+      );
+
+      const extractedScanUrl = extractBackendScanUrl(response);
+      if (extractedScanUrl) {
+        setLatestBackendScanUrl(extractedScanUrl);
+      } else {
+        setLatestBackendScanUrl(buildBackendScanUrl(nextSession));
+      }
+
+      if (nextSession?.id) {
+        setActiveSession(nextSession);
         setStoppedQrBySessionId(prev => ({
           ...prev,
-          [response.data.id]: false,
+          [nextSession.id]: false,
         }));
         setShowQRModal(true);
         return;
@@ -344,22 +727,7 @@ export default function AttendanceManagementPage() {
 
       throw new Error('Invalid create QR response');
     } catch {
-      if (isAttendanceMockMode) {
-        const mockSession = {
-          ...MOCK_QR_SESSION,
-          qrToken: `QR_SESSION_TOKEN_${Date.now()}`,
-          qrExpiry: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
-          isActive: true,
-        };
-        setActiveSession(mockSession);
-        setStoppedQrBySessionId(prev => ({
-          ...prev,
-          [mockSession.id]: false,
-        }));
-        setShowQRModal(true);
-      } else {
-        appAlert.error('Create QR failed', 'Cannot create QR from backend for this session.');
-      }
+      appAlert.error('Create QR failed', 'Cannot create QR from backend for this session.');
     } finally {
       setIsCreatingQr(false);
     }
@@ -386,6 +754,11 @@ export default function AttendanceManagementPage() {
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
 
   useEffect(() => {
+    if (session && stoppedQrBySessionId[session.id]) {
+      setTimeRemaining(0);
+      return;
+    }
+
     if (!session?.qrExpiry) {
       setTimeRemaining(null);
       return;
@@ -401,7 +774,7 @@ export default function AttendanceManagementPage() {
     calculateRemaining();
     const interval = setInterval(calculateRemaining, 1000);
     return () => clearInterval(interval);
-  }, [session?.qrExpiry]);
+  }, [session?.id, session?.qrExpiry, stoppedQrBySessionId]);
 
   const formatTimeRemaining = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -626,7 +999,7 @@ export default function AttendanceManagementPage() {
               </div>
               <h3 className="text-2xl font-bold text-slate-900 mb-2">QR Code</h3>
               <p className="text-slate-600 text-sm">
-                {session.roomName} • {new Date(session.date).toLocaleDateString('vi-VN')}
+                {session.roomName} • {formatUtcDateLabel(session.date)}
               </p>
             </div>
 
@@ -641,14 +1014,9 @@ export default function AttendanceManagementPage() {
                     {isQrStopped ? 'QR has been stopped. Refresh QR to generate a new one.' : 'Refresh QR to generate a new code'}
                   </p>
                 </div>
-              ) : session.qrImageBase64 || session.qrImageUrl ? (
+              ) : session.data ? (
                 <img
-                  src={
-                    session.qrImageBase64
-                      ? (session.qrImageBase64.startsWith('data:')
-                        ? session.qrImageBase64
-                        : `data:image/png;base64,${session.qrImageBase64}`)
-                      : session.qrImageUrl
+                  src={`data:image/png;base64,${session.data}`
                   }
                   alt="Session QR"
                   className="w-[280px] h-[280px] object-contain"
@@ -719,11 +1087,9 @@ function BookingCard({ booking }: BookingCardProps) {
   const navigate = useNavigate();
 
   const statusColors: Record<BookingWithQR['status'], string> = {
-    Draft: 'bg-slate-100 text-slate-700 border-slate-200',
-    PendingApproval: 'bg-amber-50 text-amber-700 border-amber-200',
-    Approved: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    Rejected: 'bg-red-50 text-red-700 border-red-200',
-    Cancelled: 'bg-slate-100 text-slate-500 border-slate-200',
+    Active: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    NotYet: 'bg-amber-50 text-amber-700 border-amber-200',
+    Done: 'bg-slate-100 text-slate-700 border-slate-200',
   };
 
   return (
@@ -752,12 +1118,12 @@ function BookingCard({ booking }: BookingCardProps) {
             </div>
             <div className="flex items-center gap-2 text-slate-600">
               <Calendar className="w-4 h-4 flex-shrink-0" />
-              <span className="text-sm">{new Date(booking.date).toLocaleDateString('vi-VN')}</span>
+              <span className="text-sm">{formatUtcDateLabel(booking.startTime || booking.date)}</span>
             </div>
             <div className="flex items-center gap-2 text-slate-600">
               <Clock className="w-4 h-4 flex-shrink-0" />
               <span className="text-sm tabular-nums">
-                {booking.startTime} - {booking.endTime}
+                {formatBookingTimeLabel(booking.date, booking.startTime)} - {formatBookingTimeLabel(booking.date, booking.endTime)}
               </span>
             </div>
           </div>
@@ -776,7 +1142,7 @@ function BookingCard({ booking }: BookingCardProps) {
               <ExternalLink className="w-4 h-4" />
               <span>View Session</span>
             </button>
-          ) : booking.isUpcoming && booking.status === 'Approved' ? (
+          ) : isBookingUpcoming(booking) && booking.status === 'Active' ? (
             <button
               disabled
               className="bg-slate-100 text-slate-500 px-4 py-2.5 rounded-xl font-semibold text-sm cursor-not-allowed border border-slate-200 whitespace-nowrap flex items-center gap-2"

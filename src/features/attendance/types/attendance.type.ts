@@ -3,10 +3,7 @@
  * BOLAB-30: QR Code Attendance System
  */
 
-/**
- * Booking Status (from booking feature)
- */
-export type BookingStatus = 'Draft' | 'PendingApproval' | 'Approved' | 'Rejected' | 'Cancelled';
+import type { ScheduleStatus } from '../../schedules/types/schedule.type';
 
 /**
  * Attendance Status
@@ -180,7 +177,7 @@ export interface BookingWithQR {
   date: string;
   startTime: string;
   endTime: string;
-  status: BookingStatus;
+  status: ScheduleStatus;
   purpose: string;
   hasQRSession: boolean;
   qrSessionId?: string;

@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type {
   CreateQRSessionRequest,
   RefreshQRTokenRequest,
-} from '../types/attendace.type';
+} from '../types/attendance.type';
 import { attendanceApi } from '../api/attendanceApi';
 
 /**
@@ -29,6 +29,8 @@ export const useCreateQRSession = () => {
     onSuccess: () => {
       // Invalidate lecturer bookings to update hasQRSession flag
       queryClient.invalidateQueries({ queryKey: ['lecturer-bookings'] });
+      // Invalidate all QR session queries so refreshed token/image is reflected immediately.
+      queryClient.invalidateQueries({ queryKey: ['qr-session'] });
     },
   });
 };

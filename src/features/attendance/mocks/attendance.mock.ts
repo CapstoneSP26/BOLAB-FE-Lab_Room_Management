@@ -10,7 +10,7 @@ import type { QRSession, BookingWithQR, StudentAttendance } from '../types/atten
  */
 export const MOCK_QR_SESSION: QRSession = {
   id: 'qr-session-001',
-  bookingId: 'booking-001',
+  bookingId: '4ffb7dc4-3aab-40a0-95fd-70f4192ddc76',
   roomName: 'Lab 501',
   roomCode: 'L501',
   buildingName: 'Alpha Building',
@@ -25,8 +25,7 @@ export const MOCK_QR_SESSION: QRSession = {
   isActive: true,
   totalStudents: 30,
   presentCount: 18,
-  absentCount: 8,
-  lateCount: 4,
+  absentCount: 12,
 };
 
 /**
@@ -62,7 +61,7 @@ export const MOCK_STUDENT_ATTENDANCE: StudentAttendance[] = [
     studentEmail: 'phamvand@fpt.edu.vn',
     rollNumber: 'SE160003',
     scanTime: new Date(Date.now() - 18 * 60 * 1000).toISOString(),
-    status: 'late',
+    status: 'present',
     ipAddress: '192.168.1.102',
     deviceInfo: 'Xiaomi 13',
   },
@@ -93,14 +92,14 @@ export const MOCK_STUDENT_ATTENDANCE: StudentAttendance[] = [
 export const MOCK_LECTURER_BOOKINGS: BookingWithQR[] = [
   // Upcoming - Has QR Session
   {
-    bookingId: 'booking-001',
+    bookingId: '4ffb7dc4-3aab-40a0-95fd-70f4192ddc76',
     roomName: 'Lab 501',
     roomCode: 'L501',
     buildingName: 'Alpha Building',
     date: new Date().toISOString(),
     startTime: '08:00',
     endTime: '10:00',
-    status: 'Approved',
+    status: 'Active',
     purpose: 'Lập trình Web - Buổi thực hành 5',
     hasQRSession: true,
     qrSessionId: 'qr-session-001',
@@ -116,7 +115,7 @@ export const MOCK_LECTURER_BOOKINGS: BookingWithQR[] = [
     date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days later
     startTime: '10:15',
     endTime: '12:00',
-    status: 'Approved',
+    status: 'NotYet',
     purpose: 'Cấu trúc dữ liệu và giải thuật',
     hasQRSession: false,
     isUpcoming: true,
@@ -131,7 +130,7 @@ export const MOCK_LECTURER_BOOKINGS: BookingWithQR[] = [
     date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
     startTime: '13:30',
     endTime: '15:30',
-    status: 'PendingApproval',
+    status: 'NotYet',
     purpose: 'Database Management Systems',
     hasQRSession: false,
     isUpcoming: true,
@@ -146,7 +145,7 @@ export const MOCK_LECTURER_BOOKINGS: BookingWithQR[] = [
     date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
     startTime: '08:00',
     endTime: '10:00',
-    status: 'Approved',
+    status: 'Done',
     purpose: 'Mobile Programming - Workshop',
     hasQRSession: true,
     qrSessionId: 'qr-session-past-001',
@@ -162,7 +161,7 @@ export const MOCK_LECTURER_BOOKINGS: BookingWithQR[] = [
     date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
     startTime: '13:00',
     endTime: '15:00',
-    status: 'Approved',
+    status: 'Done',
     purpose: 'Software Engineering Project',
     hasQRSession: false,
     isUpcoming: false,
@@ -177,7 +176,7 @@ export const MOCK_LECTURER_BOOKINGS: BookingWithQR[] = [
     date: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(),
     startTime: '15:45',
     endTime: '17:30',
-    status: 'Cancelled',
+    status: 'Done',
     purpose: 'Cloud Computing Lecture',
     hasQRSession: false,
     isUpcoming: false,
