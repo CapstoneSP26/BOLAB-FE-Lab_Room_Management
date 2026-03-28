@@ -1,27 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  ChevronDown,
-  Filter,
-  X,
-  RefreshCw,
-  AlertTriangle,
-  TrendingUp,
-} from "lucide-react";
+import { ChevronDown, Filter, X, RefreshCw, AlertTriangle } from "lucide-react";
 
-import ReportListFilters from "./ReportListFilters";
-import ReportListTable from "./ReportListTable";
+import ReportHistoryFilter from "./ReportHistoryFilter";
+import ReportHistoryTable from "./ReportHistoryTable";
 
 import { buildingApi } from "../../building/api/buildingApi";
-
 import { labroomApi } from "../../labroom/api/labroom.api";
 import { mapBuildingOptions, mapRoomOptions } from "../types/report.mapper";
 import type { Building } from "../../building/types/building.type";
 import type { LabRoomLookupItem } from "../../labroom/types/room.type";
-import { useReports, useResolveReport } from "../hooks/useReport";
+import { useReports } from "../hooks/useReport";
 
-export default function ReportListFeature() {
+export default function ReportHistoryFeature() {
   const nav = useNavigate();
 
   const [lookupLoading, setLookupLoading] = useState(true);
@@ -37,23 +29,17 @@ export default function ReportListFeature() {
   const {
     data: items = [],
     isLoading,
-    refetch,
     isFetching,
+    refetch,
   } = useReports({
     q: q.trim() || undefined,
     buildingId: buildingId === "ALL" ? undefined : buildingId,
     roomId: roomId === "ALL" ? undefined : roomId,
-    isResolved: false,
+    isResolved: true,
     page: 1,
     limit: 1000,
     sortBy: "CreatedAt",
     isDescending: true,
-  });
-
-  const resolveMutation = useResolveReport({
-    onSuccess: () => {
-      void refetch();
-    },
   });
 
   const loadLookups = useCallback(async () => {
@@ -109,15 +95,8 @@ export default function ReportListFeature() {
   }, [items]);
 
   const stats = useMemo(() => {
-    const resolved = rows.filter((r) => r.IsResolved).length;
-    const unresolved = rows.filter((r) => !r.IsResolved).length;
-
     return {
-      total: rows.length,
-      resolved,
-      unresolved,
-      resolutionRate:
-        rows.length > 0 ? Math.round((resolved / rows.length) * 100) : 0,
+      totalResolved: rows.length,
     };
   }, [rows]);
 
@@ -138,18 +117,7 @@ export default function ReportListFeature() {
     setBuildingId("ALL");
     setRoomId("ALL");
   };
-
-  const onToggleResolved = async (id: string, next: boolean) => {
-    if (!next) return;
-
-    await resolveMutation.mutateAsync({
-      id,
-      isResolved: true,
-    });
-  };
-
   const loading = isLoading || isFetching;
-
   return (
     <div className="space-y-6">
       {/* Hero Header */}
@@ -163,7 +131,7 @@ export default function ReportListFeature() {
               </div>
               <div className="flex-1">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Issue Reports
+                  History Reports
                 </h1>
                 <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                   View and manage all reported issues and problems
@@ -185,30 +153,10 @@ export default function ReportListFeature() {
           </div>
 
           {/* Stats Dashboard */}
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <StatCard
-              label="Total Reports"
-              value={stats.total}
-              icon={
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-              }
-              color="blue"
-            />
-            <StatCard
-              label="Resolved"
-              value={stats.resolved}
+              label="Resolved Reports"
+              value={stats.totalResolved}
               icon={
                 <svg
                   className="h-5 w-5"
@@ -225,32 +173,6 @@ export default function ReportListFeature() {
                 </svg>
               }
               color="emerald"
-            />
-            <StatCard
-              label="Unresolved"
-              value={stats.unresolved}
-              icon={
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              }
-              color="amber"
-            />
-            <StatCard
-              label="Resolution Rate"
-              value={`${stats.resolutionRate}%`}
-              icon={<TrendingUp className="h-5 w-5" />}
-              color="purple"
             />
           </div>
         </div>
@@ -333,7 +255,7 @@ export default function ReportListFeature() {
         >
           <div className="overflow-hidden">
             <div className="border-t border-gray-200 p-6 dark:border-gray-700">
-              <ReportListFilters
+              <ReportHistoryFilter
                 q={q}
                 onQ={setQ}
                 buildingId={buildingId}
@@ -360,11 +282,11 @@ export default function ReportListFeature() {
           <LoadingSkeleton />
         ) : rows.length === 0 ? (
           <EmptyState
-            title="No Reports Found"
+            title="No Resolved Reports Found"
             description={
               hasActiveFilters
-                ? "No reports match your current filters. Try adjusting your search criteria."
-                : "There are no issue reports at the moment. New reports will appear here."
+                ? "No resolved reports match your current filters."
+                : "There are no resolved reports in history yet."
             }
             icon={<EmptyIcon />}
             onReset={hasActiveFilters ? handleReset : undefined}
@@ -428,11 +350,10 @@ export default function ReportListFeature() {
               </div>
             </div>
 
-            <ReportListTable
+            <ReportHistoryTable
               loading={loading}
               rows={rows}
               onView={(id) => nav(`/labmanager/reports/${id}`)}
-              onToggleResolved={onToggleResolved}
             />
           </div>
         )}
@@ -440,8 +361,6 @@ export default function ReportListFeature() {
     </div>
   );
 }
-
-// Stat Card Component
 function StatCard({
   label,
   value,
@@ -462,7 +381,6 @@ function StatCard({
     purple:
       "bg-purple-100 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400",
   };
-
   return (
     <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white/50 p-4 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-800/30">
       <div

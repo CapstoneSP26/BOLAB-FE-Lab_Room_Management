@@ -1,27 +1,48 @@
-import { lazy, type ComponentType, type LazyExoticComponent } from 'react';
+import { lazy, type ComponentType, type LazyExoticComponent } from "react";
 
 export interface AppRoute {
   path: string;
   element: LazyExoticComponent<ComponentType>;
   isPrivate: boolean;
-  layout: 'auth' | 'main' | 'labmanager';
+  layout: "auth" | "main" | "labmanager";
 }
 
-const LoginPage = lazy(() => import('../../pages/user/LoginPage.tsx'));
-const HomePage = lazy(() => import('../../pages/user/HomePage.tsx'));
-const BuildingDetail = lazy(() => import('../../pages/user/BuildingDetail.tsx'));
-const RoomBookingPage = lazy(() => import('../../pages/lecturer/RoomBookingPage.tsx'));
-const LabRoomDetailsPage = lazy(() => import('../../pages/lecturer/LabRoomDetailsPage.tsx'));
-const BookingHistoryPage = lazy(() => import('../../pages/lecturer/BookingHistoryPage.tsx'));
-const NotificationsPage = lazy(() => import('../../pages/lecturer/NotificationsPage.tsx'));
-const AttendanceManagementPage = lazy(() => import('../../pages/lecturer/AttendanceManagementPage.tsx'));
-const QRDisplayPage = lazy(() => import('../../pages/lecturer/QRDisplayPage.tsx'));
-const ScanAttendancePage = lazy(() => import('../../pages/lecturer/ScanAttendancePage.tsx'));
-const ManualAttendancePage = lazy(() => import('../../pages/lecturer/ManualAttendancePage.tsx'));
-const ProfilePage = lazy(() => import('../../pages/lecturer/ProfilePage.tsx'));
-const StudentGroupsPage = lazy(() => import('../../pages/lecturer/StudentGroupsPage.tsx'));
-const GroupOverviewPage = lazy(() => import('../../pages/lecturer/GroupOverviewPage.tsx'));
-
+const LoginPage = lazy(() => import("../../pages/user/LoginPage.tsx"));
+const HomePage = lazy(() => import("../../pages/user/HomePage.tsx"));
+const BuildingDetail = lazy(
+  () => import("../../pages/user/BuildingDetail.tsx"),
+);
+const RoomBookingPage = lazy(
+  () => import("../../pages/lecturer/RoomBookingPage.tsx"),
+);
+const LabRoomDetailsPage = lazy(
+  () => import("../../pages/lecturer/LabRoomDetailsPage.tsx"),
+);
+const BookingHistoryPage = lazy(
+  () => import("../../pages/lecturer/BookingHistoryPage.tsx"),
+);
+const NotificationsPage = lazy(
+  () => import("../../pages/lecturer/NotificationsPage.tsx"),
+);
+const AttendanceManagementPage = lazy(
+  () => import("../../pages/lecturer/AttendanceManagementPage.tsx"),
+);
+const QRDisplayPage = lazy(
+  () => import("../../pages/lecturer/QRDisplayPage.tsx"),
+);
+const ScanAttendancePage = lazy(
+  () => import("../../pages/lecturer/ScanAttendancePage.tsx"),
+);
+const ManualAttendancePage = lazy(
+  () => import("../../pages/lecturer/ManualAttendancePage.tsx"),
+);
+const ProfilePage = lazy(() => import("../../pages/lecturer/ProfilePage.tsx"));
+const StudentGroupsPage = lazy(
+  () => import("../../pages/lecturer/StudentGroupsPage.tsx"),
+);
+const GroupOverviewPage = lazy(
+  () => import("../../pages/lecturer/GroupOverviewPage.tsx"),
+);
 
 const ManagerDashboard = lazy(
   () => import("../../pages/labmanager/ManagerDashboard.tsx"),
@@ -45,95 +66,94 @@ const ReportDetailPage = lazy(
   () => import("../../pages/labmanager/ReportDetailPage.tsx"),
 );
 const IncidentHistoryPage = lazy(
-  () => import("../../pages/labmanager/IncidentHistoryPage.tsx"),
+  () => import("../../pages/labmanager/ReportHistoryPage.tsx"),
 );
 
 export const appRoutes: AppRoute[] = [
   {
-    path: '/login',
+    path: "/login",
     element: LoginPage,
     isPrivate: false,
-    layout: 'auth',
+    layout: "auth",
   },
   {
-    path: '/',
+    path: "/",
     element: HomePage,
     isPrivate: false,
-    layout: 'main',
+    layout: "main",
   },
   {
-    path: '/building/:id',
+    path: "/building/:id",
     element: BuildingDetail,
     isPrivate: false,
-    layout: 'main',
+    layout: "main",
   },
   {
-    path: '/book-room',
+    path: "/book-room",
     element: RoomBookingPage,
     isPrivate: true,
-    layout: 'main',
+    layout: "main",
   },
   {
-    path: '/lab-room/:roomId',
+    path: "/lab-room/:roomId",
     element: LabRoomDetailsPage,
     isPrivate: true,
-    layout: 'main',
+    layout: "main",
   },
   {
-    path: '/my-bookings',
+    path: "/my-bookings",
     element: BookingHistoryPage,
     isPrivate: true,
-    layout: 'main',
+    layout: "main",
   },
   {
-    path: '/notifications',
+    path: "/notifications",
     element: NotificationsPage,
     isPrivate: true,
-    layout: 'main',
+    layout: "main",
   },
   {
-    path: '/attendance',
+    path: "/attendance",
     element: AttendanceManagementPage,
     isPrivate: true,
-    layout: 'main',
+    layout: "main",
   },
   {
-    path: '/qr-display/:sessionId',
+    path: "/qr-display/:sessionId",
     element: QRDisplayPage,
     isPrivate: true,
-    layout: 'auth',
+    layout: "auth",
   },
   {
-    path: '/scan-attendance/:sessionId',
+    path: "/scan-attendance/:sessionId",
     element: ScanAttendancePage,
     isPrivate: false,
-    layout: 'auth',
+    layout: "auth",
   },
   {
-    path: '/attendance/manual/:sessionId',
+    path: "/attendance/manual/:sessionId",
     element: ManualAttendancePage,
     isPrivate: true,
-    layout: 'main',
+    layout: "main",
   },
   {
-    path: '/profile',
+    path: "/profile",
     element: ProfilePage,
     isPrivate: true,
-    layout: 'main',
+    layout: "main",
   },
   {
-    path: '/student-groups',
+    path: "/student-groups",
     element: StudentGroupsPage,
     isPrivate: true,
-    layout: 'main',
+    layout: "main",
   },
   {
-    path: '/student-groups/:groupId',
+    path: "/student-groups/:groupId",
     element: GroupOverviewPage,
     isPrivate: true,
-    layout: 'main',
+    layout: "main",
   },
-
 
   {
     path: "/labmanager/dashboard",

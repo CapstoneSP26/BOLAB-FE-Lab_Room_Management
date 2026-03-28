@@ -89,7 +89,7 @@ export default function ReportListTable({
                     <span
                       className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${badge(r.IsResolved)}`}
                     >
-                      {r.IsResolved ? "Resolved" : "PendingApproval"}
+                      {r.IsResolved ? "Resolved" : "Unresolved"}
                     </span>
                   </td>
 
@@ -111,17 +111,13 @@ export default function ReportListTable({
                         View detail
                       </button>
 
-                      {onToggleResolved && (
+                      {onToggleResolved && !r.IsResolved && (
                         <button
                           type="button"
-                          onClick={() => onToggleResolved(r.Id, !r.IsResolved)}
-                          className={
-                            r.IsResolved
-                              ? "rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-700"
-                              : "rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700"
-                          }
+                          onClick={() => onToggleResolved(r.Id, true)}
+                          className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700"
                         >
-                          {r.IsResolved ? "Resolved" : "Unresolved"}
+                          Resolve
                         </button>
                       )}
                     </div>
