@@ -1,19 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
 import { labroomApi } from "../api/labroom.api";
-import type { PolicyType } from "../types/policy.type";
+import type { PolicyTypeEnum } from "../types/policy.type";
+import { isPolicyType } from "../utils/policy.util";
 
-export const useLabPolicies = (labRoomId?: number) => {
+export const useLabPolicies = (labRoomId: number) => {
   return useQuery({
-    queryKey: ['labPolicies', labRoomId],
-    queryFn: () => labroomApi.getLabPolicies(labRoomId || 0), // Truyền 0 hoặc một giá trị mặc định nếu labRoomId không hợp lệ
+    queryKey: ["labPolicies", labRoomId],
+    queryFn: () => labroomApi.getLabPolicies(labRoomId),
     staleTime: Infinity,
-    enabled: !!labRoomId, // Chỉ chạy query khi có labRoomId hợp lệ
+    enabled: !!labRoomId && labRoomId > 0,
+
     select: (data) => {
-      // Chuyển đổi mảng thành một Object/Map để FE truy xuất nhanh hơn O(1)
       return data.data.reduce((acc, policy) => {
-        acc[policy.policyKey] = policy.value;
+        if (isPolicyType(policy.policyKeyName)) {
+          acc[policy.policyKeyName] = policy.value;
+        }
+
         return acc;
-      }, {} as Record<PolicyType, string>);
-    }
+      }, {} as Record<PolicyTypeEnum, string>);
+    },
   });
 };

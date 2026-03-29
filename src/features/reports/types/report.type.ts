@@ -1,3 +1,4 @@
+import type { PagedResponse } from "../../../types/pagination.types";
 export interface ReportReasonOption {
   value: string;
   label: string;
@@ -11,7 +12,6 @@ export const REPORT_REASON_LABELS: Record<string, string> = {
   lighting_problem: "Vấn đề chiếu sáng",
   furniture_damaged: "Bàn ghế hư hỏng",
   network_issue: "Mất kết nối mạng",
-  projector_problem: "Máy chiếu hỏng",
   door_lock_issue: "Khóa cửa hỏng",
   other: "Khác",
 };
@@ -27,6 +27,19 @@ export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = {
   in_progress: "Đang xử lý",
   resolved: "Đã giải quyết",
   rejected: "Từ chối",
+};
+
+// Map reason string keys to ReportTypeId (1-9)
+export const REPORT_REASON_TYPE_ID_MAP: Record<string, number> = {
+  equipment_damaged: 1,
+  equipment_missing: 2,
+  cleanliness_issue: 3,
+  air_conditioning_problem: 4,
+  lighting_problem: 5,
+  furniture_damaged: 6,
+  network_issue: 7,
+  door_lock_issue: 8,
+  other: 9,
 };
 
 export interface ReportDraft {
@@ -46,23 +59,23 @@ export interface ReportDraft {
 }
 
 export interface Report {
-  Id: string;
-  ScheduleId?: string | null;
-  UserId: string;
+  id: string;
+  userId: string;
+  userName: string;
 
-  ReportType?: string;
-  Description: string;
-  IsResolved: boolean;
+  reportType?: string;
+  description: string;
+  isResolved: boolean;
 
-  LabRoomId?: number;
-  RoomName?: string;
-  BuildingName?: string;
-  Reason?: string;
+  labRoomId?: number;
+  roomName?: string;
+  buildingName?: string;
+  reason?: string;
 
-  CreatedAt: string;
-  UpdatedAt?: string | null;
-  CreatedBy?: string | null;
-  UpdatedBy?: string | null;
+  createdAt: string;
+  updatedAt?: string | null;
+  createdBy?: string | null;
+  updatedBy?: string | null;
 }
 
 export interface ReportImage {
@@ -148,12 +161,9 @@ export interface CreateReportResponse {
   data: Report;
 }
 export interface GetReportsResponse {
-  data: Report[];
-  total?: number;
-  page?: number;
-  limit?: number;
+  success: boolean;
+  data: PagedResponse<Report>;
 }
-
 export interface GetReportHistoryResponse {
   data: Report[];
   total?: number;

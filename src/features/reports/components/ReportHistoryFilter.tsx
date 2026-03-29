@@ -14,7 +14,7 @@ type Props = {
   onReset: () => void;
 };
 
-export default function ReportListFilters({
+export default function ReportHistoryFilter({
   q,
   onQ,
   roomId,
@@ -54,7 +54,7 @@ export default function ReportListFilters({
     <div className="space-y-4">
       <div className="rounded-2xl border border-gray-200/60 bg-white p-6 shadow-lg shadow-gray-200/20 backdrop-blur-sm dark:border-gray-800/60 dark:bg-gray-900/40 dark:shadow-none">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
-          <div className="md:col-span-6">
+          <div className="md:col-span-5">
             <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">
               Search
             </label>
@@ -63,7 +63,7 @@ export default function ReportListFilters({
               <input
                 value={q}
                 onChange={(e) => handleSearchChange(e.target.value)}
-                placeholder="Search reports..."
+                placeholder="Search by id, report id, room, title, status, severity..."
                 className="h-12 w-full rounded-xl border border-gray-300 bg-white pl-11 pr-10 text-sm text-gray-800 placeholder:text-gray-400 transition-all focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-blue-500"
               />
               {q && (
@@ -77,7 +77,6 @@ export default function ReportListFilters({
               )}
             </div>
           </div>
-
           <div className="md:col-span-3">
             <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">
               Building
@@ -118,7 +117,7 @@ export default function ReportListFilters({
             </div>
           </div>
 
-          <div className="md:col-span-2">
+          <div className="md:col-span-3">
             <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">
               Room
             </label>
@@ -131,12 +130,9 @@ export default function ReportListFilters({
                     e.target.value === "ALL" ? "ALL" : Number(e.target.value),
                   )
                 }
-                disabled={buildingId === "ALL"}
-                className="h-12 w-full cursor-pointer appearance-none rounded-xl border border-gray-300 bg-white pl-11 pr-10 text-sm text-gray-800 transition-all focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white dark:focus:border-blue-500 dark:disabled:bg-gray-800 dark:disabled:text-gray-500"
+                className="h-12 w-full cursor-pointer appearance-none rounded-xl border border-gray-300 bg-white pl-11 pr-10 text-sm text-gray-800 transition-all focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white dark:focus:border-blue-500"
               >
-                <option value="ALL">
-                  {buildingId === "ALL" ? "Select building first" : "All rooms"}
-                </option>
+                <option value="ALL">All rooms</option>
                 {roomOptions.map((room) => (
                   <option key={room.id} value={String(room.id)}>
                     {room.roomName}

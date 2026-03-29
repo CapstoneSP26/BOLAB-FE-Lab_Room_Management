@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { formatDate } from '../../../utils/formatDate';
+import { format } from 'date-fns';
 
 interface CalendarNavigationProps {
   weekStart: Date;
@@ -47,7 +47,7 @@ export const CalendarNavigation: React.FC<CalendarNavigationProps> = ({
       <div className="flex items-center gap-3">
         <div className="w-1 h-8 bg-gradient-to-b from-blue-400 to-blue-500 rounded-full"></div>
         <h2 className="text-xl font-bold text-gray-900 tracking-tight">
-          {formatDate(weekStart, 'MMM dd')} – {formatDate(weekEnd, 'MMM dd, yyyy')}
+          {format(weekStart, 'MMM dd')} – {format(weekEnd, 'MMM dd, yyyy')}
         </h2>
       </div>
     </div>

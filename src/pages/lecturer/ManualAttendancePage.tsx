@@ -325,10 +325,10 @@ export default function ManualAttendancePage() {
               onClick={handleSave}
               disabled={isSaving || !isEditable}
               className={`flex items-center gap-2 text-white px-6 py-2.5 rounded-xl font-semibold shadow-md transition-all ${!isEditable
-                  ? 'bg-slate-400 cursor-not-allowed'
-                  : isSaving
-                    ? 'bg-slate-300 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg'
+                ? 'bg-slate-400 cursor-not-allowed'
+                : isSaving
+                  ? 'bg-slate-300 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg'
                 }`}
             >
               {!isEditable ? (
@@ -467,8 +467,8 @@ export default function ManualAttendancePage() {
                 onClick={markAllPresent}
                 disabled={!isEditable}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-colors ${isEditable
-                    ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700'
-                    : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700'
+                  : 'bg-slate-100 text-slate-400 cursor-not-allowed'
                   }`}
               >
                 <CheckCheck className="w-4 h-4" />
@@ -478,8 +478,8 @@ export default function ManualAttendancePage() {
                 onClick={markAllAbsent}
                 disabled={!isEditable}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-colors ${isEditable
-                    ? 'bg-red-100 hover:bg-red-200 text-red-700'
-                    : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  ? 'bg-red-100 hover:bg-red-200 text-red-700'
+                  : 'bg-slate-100 text-slate-400 cursor-not-allowed'
                   }`}
               >
                 <UserX className="w-4 h-4" />
@@ -489,8 +489,8 @@ export default function ManualAttendancePage() {
                 onClick={clearAll}
                 disabled={!isEditable}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-colors ${isEditable
-                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                    : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                  : 'bg-slate-100 text-slate-400 cursor-not-allowed'
                   }`}
               >
                 <RotateCcw className="w-4 h-4" />
@@ -557,10 +557,10 @@ export default function ManualAttendancePage() {
                         onClick={() => handleStatusChange(student.id, 'present')}
                         disabled={!isEditable}
                         className={`flex items-center gap-1.5 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${!isEditable
-                            ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                            : status === 'present'
-                              ? 'bg-emerald-600 text-white shadow-md'
-                              : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
+                          ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                          : status === 'present'
+                            ? 'bg-emerald-600 text-white shadow-md'
+                            : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
                           }`}
                       >
                         <CheckCircle className="w-4 h-4" />
@@ -571,10 +571,10 @@ export default function ManualAttendancePage() {
                         onClick={() => handleStatusChange(student.id, 'absent')}
                         disabled={!isEditable}
                         className={`flex items-center gap-1.5 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${!isEditable
-                            ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                            : status === 'absent'
-                              ? 'bg-red-600 text-white shadow-md'
-                              : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
+                          ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                          : status === 'absent'
+                            ? 'bg-red-600 text-white shadow-md'
+                            : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
                           }`}
                       >
                         <XCircle className="w-4 h-4" />

@@ -18,8 +18,10 @@ import {
   getResponseSuccess,
   normalizeReasonOptions,
 } from "../types/report.mapper";
+import { REPORT_REASON_TYPE_ID_MAP } from "../types/report.type";
+
 const REPORT_API = {
-  LIST: "/listreports",
+  LIST: "/reports/listreports",
   CREATE: "/reports",
   REASONS: "/reports/reasons",
   HISTORY: "/reports/history",
@@ -33,7 +35,11 @@ export const createReport = async (
 ): Promise<CreateReportResponse> => {
   const formData = new FormData();
   formData.append("roomId", data.roomId);
-  formData.append("reason", data.reason);
+  
+  // Convert reason string to reportTypeId (1-9)
+  const reportTypeId = REPORT_REASON_TYPE_ID_MAP[data.reason] || 9;
+  formData.append("reportTypeId", reportTypeId.toString());
+  
   formData.append("description", data.description);
 
   if (data.images?.length) {
@@ -65,7 +71,6 @@ export const getReports = async (
 
   return response.data;
 };
-
 export const getMyReports = async (
   params: GetMyReportsRequest = {},
 ): Promise<GetMyReportsResponse> => {

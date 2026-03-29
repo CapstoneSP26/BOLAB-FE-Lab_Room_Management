@@ -16,7 +16,7 @@ export interface GetBuildingsQuery {
 }
 
 export interface Building {
-  id: string;
+  id: number;
   name: string;
   description: string;
   roomCount: number;

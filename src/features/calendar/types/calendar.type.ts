@@ -18,18 +18,6 @@ export interface CalendarEvent {
   color?: string;
 }
 
-export interface WeeklyCalendarProps {
-  labRoomId?: number;
-  calendarMode: CalendarMode;
-  selectedRoomId: string;
-  onCreateBooking: (data: {
-    date: string;
-    startTime: string;
-    endTime: string;
-  }) => void;
-  weekOffset?: number;
-  onWeekChange: (offset: number) => void;
-}
 
 export type IncidentStatus = "OPEN" | "CLOSED" | "RESOLVED" | string;
 export type IncidentSeverity = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" | string;
