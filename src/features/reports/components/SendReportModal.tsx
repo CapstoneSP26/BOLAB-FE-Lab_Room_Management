@@ -195,10 +195,26 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({
     }
   }, [filteredRooms, selectedRoomId]);
 
-  const reasonOptions =
-    reasonsData && reasonsData.length > 0
-      ? reasonsData
-      : FALLBACK_REPORT_REASONS;
+  const reasonOptions = useMemo(() => {
+    if (!reasonsData || reasonsData.length === 0) {
+      return FALLBACK_REPORT_REASONS;
+    }
+
+    const fallbackMap = new Map(
+      FALLBACK_REPORT_REASONS.map((reason) => [reason.value, reason]),
+    );
+
+    const merged = FALLBACK_REPORT_REASONS.map(
+      (reason) =>
+        reasonsData.find((item) => item.value === reason.value) ?? reason,
+    );
+
+    const extraReasons = reasonsData.filter(
+      (reason) => !fallbackMap.has(reason.value),
+    );
+
+    return [...merged, ...extraReasons];
+  }, [reasonsData]);
 
   const isSubmitting = createReportMutation.isPending;
 

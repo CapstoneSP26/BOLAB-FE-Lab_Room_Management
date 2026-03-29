@@ -11,7 +11,6 @@ export const REPORT_REASON_LABELS: Record<string, string> = {
   lighting_problem: "Vấn đề chiếu sáng",
   furniture_damaged: "Bàn ghế hư hỏng",
   network_issue: "Mất kết nối mạng",
-  projector_problem: "Máy chiếu hỏng",
   door_lock_issue: "Khóa cửa hỏng",
   other: "Khác",
 };
@@ -39,7 +38,6 @@ export const REPORT_REASON_TYPE_ID_MAP: Record<string, number> = {
   furniture_damaged: 6,
   network_issue: 7,
   door_lock_issue: 8,
-  projector_problem: 9, // Map to "Other" (9)
   other: 9,
 };
 
