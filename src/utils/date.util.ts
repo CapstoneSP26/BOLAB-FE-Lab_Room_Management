@@ -6,6 +6,8 @@ import {
   eachDayOfInterval
 } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import type { BookingWithQR } from '../features/attendance/types/attendance.type';
+import type { ScheduleDto } from '../features/schedules/types/schedule.type';
 
 /**
  * Chuyển đổi số giờ (decimal) thành chuỗi HH:mm
@@ -48,4 +50,150 @@ export const formatDateForApi = (date: Date): string => {
  */
 export const formatDisplayDate = (date: Date): string => {
   return format(date, 'eeee, dd/MM', { locale: vi });
+};
+
+const getIsoDateTimeParts = (value: string): { dateLabel: string; timeLabel: string } | null => {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  if (!match) {
+    return null;
+  }
+
+  const [, year, month, day, hour, minute] = match;
+  return {
+    dateLabel: `${day}/${month}/${year}`,
+    timeLabel: `${hour}:${minute}`,
+  };
+};
+
+/**
+ * Parse giá trị thời gian theo 2 định dạng backend đang trả về:
+ * 1) ISO datetime đầy đủ (ví dụ: 2026-03-28T07:30:00Z)
+ * 2) Giờ rút gọn HH:mm (ví dụ: 07:30), sẽ ghép với bookingDate.
+ */
+export const parseTimeValue = (bookingDate: string, value: string): Date => {
+  if (value.includes('T')) {
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+
+  const [hourText, minuteText] = value.split(':');
+  const base = new Date(bookingDate);
+  if (Number.isNaN(base.getTime())) {
+    return new Date(0);
+  }
+
+  base.setHours(Number(hourText || 0), Number(minuteText || 0), 0, 0);
+  return base;
+};
+
+/**
+ * Kiểm tra thời điểm hiện tại có nằm trong khung giờ học của schedule hay không.
+ *
+ * Khung giờ được hiểu là: [startTime, endTime] (bao gồm cả điểm đầu và điểm cuối).
+ * - now >= startTime
+ * - now <= endTime
+ */
+export const isNowInsideScheduleWindow = (schedule: ScheduleDto): boolean => {
+  if (!schedule.startTime || !schedule.endTime) {
+    return false;
+  }
+
+  const now = new Date();
+  const start = parseTimeValue(schedule.startTime, schedule.startTime);
+  const end = parseTimeValue(schedule.startTime, schedule.endTime);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return false;
+  }
+
+  return now >= start && now <= end;
+};
+
+/**
+ * Kiểm tra thời điểm hiện tại có nằm trong khung giờ của booking hay không.
+ *
+ * Khung giờ booking cũng dùng interval đóng: [startTime, endTime].
+ */
+export const isNowInsideFeatureBookingWindow = (booking: BookingWithQR): boolean => {
+  const now = new Date();
+  const start = parseTimeValue(booking.date, booking.startTime);
+  const end = parseTimeValue(booking.date, booking.endTime);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return false;
+  }
+
+  return now >= start && now <= end;
+};
+
+/**
+ * Booking được xem là "past" khi đã qua thời điểm endTime.
+ * Nếu dữ liệu thời gian lỗi, fallback về cờ isPast từ backend.
+ */
+export const isBookingPast = (booking: BookingWithQR): boolean => {
+  const now = new Date();
+  const end = parseTimeValue(booking.date, booking.endTime);
+  if (Number.isNaN(end.getTime())) {
+    return booking.isPast;
+  }
+  return end < now;
+};
+
+export const isBookingUpcoming = (booking: BookingWithQR): boolean => !isBookingPast(booking);
+
+/**
+ * Format nhãn ngày theo dd/MM/yyyy, ưu tiên parse nhanh từ chuỗi ISO.
+ */
+export const formatUtcDateLabel = (value: string): string => {
+  const isoParts = getIsoDateTimeParts(value);
+  if (isoParts) {
+    return isoParts.dateLabel;
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  const day = String(parsed.getUTCDate()).padStart(2, '0');
+  const month = String(parsed.getUTCMonth() + 1).padStart(2, '0');
+  const year = parsed.getUTCFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+/**
+ * Format giờ hiển thị HH:mm cho booking.
+ * - Nếu input đã là ISO thì lấy trực tiếp HH:mm từ chuỗi.
+ * - Nếu input là HH:mm thì parse theo bookingDate rồi chuẩn hóa theo UTC.
+ */
+export const formatBookingTimeLabel = (bookingDate: string, value: string): string => {
+  const isoParts = getIsoDateTimeParts(value);
+  if (isoParts) {
+    return isoParts.timeLabel;
+  }
+
+  const parsed = parseTimeValue(bookingDate, value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  const hour = String(parsed.getUTCHours()).padStart(2, '0');
+  const minute = String(parsed.getUTCMinutes()).padStart(2, '0');
+  return `${hour}:${minute}`;
+};
+
+/**
+ * Quyền chỉnh sửa session chỉ áp dụng khi session cùng ngày hiện tại.
+ * Dùng để bật/tắt trạng thái Read-Only trên UI.
+ */
+export const isSessionEditable = (sessionDate: string): boolean => {
+  const date = new Date(sessionDate);
+  const today = new Date();
+  return (
+    date.getFullYear() === today.getFullYear() &&
+    date.getMonth() === today.getMonth() &&
+    date.getDate() === today.getDate()
+  );
 };
