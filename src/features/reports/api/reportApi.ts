@@ -18,6 +18,7 @@ import {
   getResponseSuccess,
   normalizeReasonOptions,
 } from "../types/report.mapper";
+import { REPORT_REASON_TYPE_ID_MAP } from "../types/report.type";
 
 const REPORT_API = {
   LIST: "/listreports",
@@ -29,20 +30,6 @@ const REPORT_API = {
   RESOLVE: (id: string) => `/reports/${id}/resolve`,
 } as const;
 
-// Map reason string keys to ReportTypeId (1-9)
-const REASON_TO_TYPE_ID: Record<string, number> = {
-  equipment_damaged: 1,
-  equipment_missing: 2,
-  cleanliness_issue: 3,
-  air_conditioning_problem: 4,
-  lighting_problem: 5,
-  furniture_damaged: 6,
-  network_issue: 7,
-  door_lock_issue: 8,
-  projector_problem: 9, // Map to "Other" (9)
-  other: 9,
-};
-
 export const createReport = async (
   data: CreateReportRequest,
 ): Promise<CreateReportResponse> => {
@@ -50,7 +37,7 @@ export const createReport = async (
   formData.append("roomId", data.roomId);
   
   // Convert reason string to reportTypeId (1-9)
-  const reportTypeId = REASON_TO_TYPE_ID[data.reason] || 9;
+  const reportTypeId = REPORT_REASON_TYPE_ID_MAP[data.reason] || 9;
   formData.append("reportTypeId", reportTypeId.toString());
   
   formData.append("description", data.description);
