@@ -1,15 +1,16 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { CALENDAR_CONFIG } from '../constants/calendar.constants';
 import type { CalendarEvent } from '../types/calendar.type';
-import { getPositionStyle } from '../utils/calendar-math.util';
+import { getPositionStyle, timeToPosition } from '../utils/calendar-math.util';
+import { addHours, format, isBefore, startOfHour } from 'date-fns';
 
 interface FlexibleGridViewProps {
   timeSlots: string[];
   weekDays: Date[];
   dragState: any;
   events: CalendarEvent[];
+  minBookingLeadTime: number;
   handleMouseDown: (e: React.MouseEvent, dayIndex: number) => void;
-  conflict: boolean;
 }
 
 export const FlexibleGridView: React.FC<FlexibleGridViewProps> = ({
@@ -17,14 +18,16 @@ export const FlexibleGridView: React.FC<FlexibleGridViewProps> = ({
   weekDays,
   dragState,
   events,
+  minBookingLeadTime,
   handleMouseDown,
-  conflict,
 }) => {
   const { START_HOUR, END_HOUR, CELL_HEIGHT } = CALENDAR_CONFIG;
-
+  const maxHeight = useMemo(() => (END_HOUR - START_HOUR + 1) * CELL_HEIGHT, []);
+  const now = new Date();
+  const minAllowedTime = addHours(now, minBookingLeadTime);
   // Render các Event đã có trên một cột ngày
   const renderColumnEvents = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = format(date, 'yyyy-MM-dd');
 
     return events
       .filter((event) => event.start.startsWith(dateStr))
@@ -66,6 +69,19 @@ export const FlexibleGridView: React.FC<FlexibleGridViewProps> = ({
       <div className="grid grid-cols-7 relative bg-white">
         {weekDays.map((date, dayIndex) => {
           const isDraggingThisColumn = dragState.isActive && dragState.dayIndex === dayIndex;
+          const dateStr = format(date, 'yyyy-MM-dd');
+          const isToday = dateStr === format(now, 'yyyy-MM-dd');
+          const isPastDay = isBefore(date, startOfHour(now)) && !isToday;
+
+          // Tính toán vị trí vùng bị khóa trong ngày hôm nay
+          let lockedOverlayStyle = null;
+          if (isPastDay) {
+            lockedOverlayStyle = { top: 0, height: '100%' };
+          } else if (isToday) {
+            const topPos = 0;
+            const heightPos = Math.min(timeToPosition(format(minAllowedTime, 'HH:mm')), maxHeight);
+            lockedOverlayStyle = { top: topPos, height: `${heightPos}px` };
+          }
 
           return (
             <div
@@ -79,16 +95,30 @@ export const FlexibleGridView: React.FC<FlexibleGridViewProps> = ({
                 <div key={i} className="h-20 border-b border-gray-100 pointer-events-none" />
               ))}
 
+              {/* DESIGN ĐẸP: Vùng bị khóa (Locked Area) */}
+              {lockedOverlayStyle && (
+                <div
+                  className="absolute left-0 right-0 z-0 pointer-events-none opacity-[0.07]"
+                  style={{
+                    ...lockedOverlayStyle,
+                    background: `repeating-linear-gradient(
+                      45deg,
+                      #000,
+                      #000 10px,
+                      transparent 10px,
+                      transparent 20px
+                    )`
+                  }}
+                />
+              )}
+
               {/* Lớp dữ liệu: Hiển thị Events */}
               {renderColumnEvents(date)}
 
               {/* Lớp tương tác: Drag Preview */}
               {isDraggingThisColumn && (
                 <div
-                  className={`absolute left-1 right-1 rounded-xl z-40 border-l-4 shadow-lg pointer-events-none transition-colors overflow-hidden ${conflict
-                    ? 'bg-red-500/20 border-red-600 text-red-900'
-                    : 'bg-blue-600/20 border-blue-600 text-blue-900'
-                    }`}
+                  className={`absolute left-1 right-1 rounded-xl z-40 border-l-4 shadow-lg pointer-events-none transition-colors bg-blue-600/20 border-blue-600 text-blue-900 overflow-hidden`}
                   style={{
                     top: `${Math.min(dragState.startY, dragState.currentY)}px`,
                     height: `${Math.abs(dragState.currentY - dragState.startY)}px`,
@@ -96,7 +126,7 @@ export const FlexibleGridView: React.FC<FlexibleGridViewProps> = ({
                 >
                   <div className="p-3 bg-white/40 backdrop-blur-[2px] h-full">
                     <div className="font-black uppercase text-[9px] tracking-widest opacity-80">
-                      {conflict ? 'Xung đột lịch' : 'Đang chọn'}
+                      {'Đang chọn'}
                     </div>
                     <div className="text-xs font-bold mt-1">
                       {dragState.startTime} - {dragState.endTime}

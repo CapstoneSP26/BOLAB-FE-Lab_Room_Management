@@ -1,4 +1,5 @@
 import { axiosInstance } from "../../../api";
+import type { PagedResponse } from "../../../types/pagination.types";
 import type {
   BuildingDto,
   BuildingResponse,
@@ -15,6 +16,6 @@ export const buildingApi = {
 
   getBuildings: (params?: GetBuildingsQuery) =>
     axiosInstance
-      .get<BuildingDto[]>("/buildings", { params })
+      .get<PagedResponse<BuildingDto>>("/buildings", { params })
       .then((response) => response.data),
 };

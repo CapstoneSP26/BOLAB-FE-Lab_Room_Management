@@ -1,8 +1,7 @@
-import React, { useState, useRef, useMemo } from 'react';
-import type { WeeklyCalendarProps } from '../types/calendar.type';
+import React, { useState, useRef, useMemo, useCallback } from 'react';
+import type { CalendarMode } from '../types/calendar.type';
 import { useCalendarEvents } from '../hooks/useCalendarEvents';
 import { getWeekDaysByOffset } from '../../../utils/date.util';
-import { useLabPolicies } from '../../labroom/hooks/useLabPolicies';
 import { SlotTypeSelector } from '../../slot/components/SlotTypeSelector';
 import { FLEXIBLE_ID } from '../../slot/constants/slot.constant';
 import { CalendarNavigation } from './CalendarNavigation';
@@ -13,6 +12,12 @@ import { FlexibleGridView } from './FlexibleGridView';
 import { useSlotTypes } from '../../slot/hooks/useSlotTypes';
 import { useSlotStore } from '../../../store/slotStore';
 import { FixedGridView } from './FixedGridView';
+import type { PendingBooking } from '../../booking/types/booking.type';
+import { getStartOfDayVNInUTC } from '../../../utils/date.util';
+import { addDays, formatDate } from 'date-fns';
+import { PolicyType, type PolicyTypeEnum } from '../../labroom';
+import { checkLabPolicies } from '../../labroom/utils/policy.util';
+import { useToast } from '../../../hooks/useToast';
 
 interface DragState {
   isActive: boolean;
@@ -23,19 +28,35 @@ interface DragState {
   endTime: string;
 }
 
+
+export interface WeeklyCalendarProps {
+  policies?: Record<PolicyTypeEnum, string>
+  calendarMode: CalendarMode;
+  selectedRoomId: string;
+  onCreateBooking: (data: PendingBooking) => void;
+  selectedSlotTypeId: number;
+  onSlotTypeChange: (id: number) => void
+  weekOffset?: number;
+  onWeekChange: (offset: number) => void;
+}
+
+
 /**
  * 🗓️ Weekly Calendar Grid Component (Google Calendar Style)
  * Click-and-drag to create bookings, resize blocks, visual conflict detection
  */
 export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
-  labRoomId,
+  policies,
   calendarMode,
+  selectedRoomId,
   onCreateBooking,
+  selectedSlotTypeId,
+  onSlotTypeChange,
   weekOffset = 0,
   onWeekChange,
 }) => {
-  const { CELL_HEIGHT } = CALENDAR_CONFIG;
-  const [selectedSlotTypeId, setSelectedSlotTypeId] = useState(FLEXIBLE_ID);
+  const appAlert = useToast();
+  const { CELL_HEIGHT, START_HOUR, END_HOUR } = CALENDAR_CONFIG;
   const [dragState, setDragState] = useState<DragState>({
     isActive: false,
     dayIndex: null,
@@ -46,9 +67,9 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   });
 
   // 1. Fetch dữ liệu slot types khi campus thay đổi
-  const { } = useSlotTypes(0);
-  // Hook này bên trong sẽ tự động gọi useSlotStore.getState().setSlotTypes()
+  const { } = useSlotTypes(1);
 
+  // Hook này bên trong sẽ tự động gọi useSlotStore.getState().setSlotTypes()
   // 2. Lấy thông tin type hiện tại để vẽ Grid
   const { slotTypes } = useSlotStore();
   const currentSlotType = useMemo(() =>
@@ -65,41 +86,25 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     };
   }, [weekOffset]);
 
-  const { data: policies } = useLabPolicies(labRoomId);
+  // Fetch Policies Data
+  const isFreeTimeAllowed = Boolean(policies?.[PolicyType.IsFreeTimeAllowed] ?? true);
+  const maxConcurrentBookings = Number(policies?.[PolicyType.MaxConcurrentBookings] ?? 1);
+  const minBookingLeadTime = Number(policies?.[PolicyType.MinBookingLeadTime] ?? 0)
 
   const { events } = useCalendarEvents({
     calendarMode: calendarMode,
-    startDate: weekStart.toISOString().split('T')[0],
-    endDate: weekEnd.toISOString().split('T')[0]
+    labRoomId: Number(selectedRoomId),
+    startDate: getStartOfDayVNInUTC(weekStart),
+    endDate: getStartOfDayVNInUTC(addDays(weekEnd, 1))
   });
-
 
   const gridRef = useRef<HTMLDivElement>(null);
 
   // Generate time slots (7:00 AM - 10:00 PM, hourly display only)
   const timeSlots: string[] = [];
-  for (let hour = 7; hour <= 22; hour++) {
+  for (let hour = START_HOUR; hour <= END_HOUR; hour++) {
     timeSlots.push(`${hour.toString().padStart(2, '0')}:00`);
   }
-
-  // Check if drag selection has conflict
-  const hasConflict = (): boolean => {
-    if (!dragState.isActive || dragState.dayIndex === null) return false;
-
-    const dateStr = weekDays[dragState.dayIndex].toISOString().split('T')[0];
-    const { startTime, endTime } = dragState;
-
-    return events.some(event => {
-      const eventDate = event.start.split('T')[0];
-      if (eventDate !== dateStr) return false;
-
-      const eventStart = event.start.split('T')[1].substring(0, 5);
-      const eventEnd = event.end.split('T')[1].substring(0, 5);
-
-      // Logic va chạm: StartA < EndB và EndA > StartB
-      return startTime < eventEnd && endTime > eventStart;
-    });
-  };
 
   // Handle clicking on a fixed slot
   const handleSlotClick = (date: string, frame: any) => {
@@ -108,6 +113,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
       date: date,           // Định dạng YYYY-MM-DD
       startTime: frame.startTime,
       endTime: frame.endTime,
+      slotTypeId: selectedSlotTypeId
     });
   };
 
@@ -177,41 +183,43 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   };
 
   // Handle mouse up (complete drag)
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     if (!dragState.isActive || dragState.dayIndex === null) {
-      setDragState({
-        isActive: false,
-        dayIndex: null,
-        startY: null,
-        currentY: null,
-        startTime: '',
-        endTime: '',
-      });
+      resetDragState();
+      return;
+    }
+    // 2. Kiểm tra nếu chỉ là một cú click (không di chuyển chuột đáng kể)
+    const dragDistance = Math.abs((dragState.currentY || 0) - (dragState.startY || 0));
+    if (dragDistance < 5) { // 5px threshold
+      resetDragState();
       return;
     }
 
-    // Don't create booking if there's a conflict
-    if (hasConflict()) {
-      setDragState({
-        isActive: false,
-        dayIndex: null,
-        startY: null,
-        currentY: null,
-        startTime: '',
-        endTime: '',
-      });
-      return;
-    }
-
-    const dayIndex = dragState.dayIndex;
-    const date = weekDays[dayIndex].toISOString().split('T')[0];
-
-    onCreateBooking({
+    const date = formatDate(weekDays[dragState.dayIndex], 'yyyy-MM-dd');
+    const bookingData = {
       date,
       startTime: dragState.startTime,
       endTime: dragState.endTime,
+    };
+    // 3. CHỈ CHECK POLICY CHO CHẾ ĐỘ FLEXIBLE (KÉO THẢ)
+    if (selectedSlotTypeId === FLEXIBLE_ID && policies) {
+      const validation = checkLabPolicies(policies, bookingData);
+
+      if (!validation.isValid) {
+        appAlert.error("Không thể đặt lịch", validation.message);
+        resetDragState();
+        return;
+      }
+    }
+    onCreateBooking({
+      ...bookingData,
+      slotTypeId: selectedSlotTypeId
     });
 
+    resetDragState();
+  }, [dragState, weekDays, selectedSlotTypeId, policies, onCreateBooking]);
+
+  const resetDragState = () => {
     setDragState({
       isActive: false,
       dayIndex: null,
@@ -234,8 +242,6 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     }
   }, [dragState]);
 
-  const conflict = hasConflict();
-
   return (
     <div className="flex flex-col h-full bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
       {/* Week Navigation Header */}
@@ -251,8 +257,8 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
         {/* Booking Mode Toggle */}
         <SlotTypeSelector
           selectedId={selectedSlotTypeId}
-          onSelect={setSelectedSlotTypeId}
-          isFlexibleAllowed={Boolean(policies?.IsFreeTimeAllowed ?? true)}
+          onSelect={onSlotTypeChange}
+          isFlexibleAllowed={isFreeTimeAllowed}
         />
       </div>
 
@@ -267,15 +273,15 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
           <CalendarDayHeader weekDays={weekDays} />
 
           {/* Time slots or Fixed slots - Conditional rendering based on booking mode */}
-          {selectedSlotTypeId === FLEXIBLE_ID ? (
+          {selectedSlotTypeId === FLEXIBLE_ID && isFreeTimeAllowed ? (
             // OutSlot Mode: Show hourly time slots with drag-to-book
             <FlexibleGridView
+              minBookingLeadTime={minBookingLeadTime}
               timeSlots={timeSlots}
               weekDays={weekDays}
               dragState={dragState}
               events={events}
               handleMouseDown={handleMouseDown}
-              conflict={conflict}
             />
           ) : (
             // OldSlot Mode: Show fixed slots (slot 1, slot 2, etc.)
@@ -286,7 +292,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                 activeSlotType={currentSlotType}
                 events={events}
                 onSlotClick={handleSlotClick}
-                maxConcurrent={Number(policies?.MaxConcurrentBookings ?? 1)}
+                maxConcurrent={maxConcurrentBookings}
               />) : null
           )}
         </div>

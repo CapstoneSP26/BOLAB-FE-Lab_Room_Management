@@ -1,14 +1,13 @@
 import { axiosInstance } from "../../../api";
 import type {
-  GetSlotTypesRequest,
   SlotType,
   GetSlotTypeByIdResponse,
 } from "../types/slot.types";
 
 export const slotApi = {
-  getSlotTypes: (params?: GetSlotTypesRequest) =>
+  getSlotTypes: (campusId?: number) =>
     axiosInstance
-      .get<SlotType[]>("/SlotTypes", { params })
+      .get<SlotType[]>("/SlotTypes", { params: { campusId } })
       .then((response) => response.data),
 
   getSlotTypeById: (id: number) =>

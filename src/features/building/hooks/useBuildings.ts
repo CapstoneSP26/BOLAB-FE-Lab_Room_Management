@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
-import type { GetBuildingsRequest } from '../types/building.type';
+import type { GetBuildingsQuery } from '../types/building.type';
 import { buildingApi } from '../api/buildingApi';
 
 interface UseBuildingsOptions {
-  params?: GetBuildingsRequest;
+  params?: GetBuildingsQuery;
   enabled?: boolean;
 }
 

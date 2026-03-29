@@ -21,7 +21,7 @@ const HomePage: React.FC<HomePageProps> = () => {
 
   // Nếu có dữ liệu từ API, map sang format để hiển thị
   // buildingsData = { data: GetBuildingsResponse } from React Query
-  const buildingsList = buildingsData?.data ?? [];
+  const buildingsList = buildingsData?.items ?? [];
   const mappedBuildings = Array.isArray(buildingsList)
     ? buildingsList.map((building: any) => ({
       id: building.id?.toString() || building.buildingName,

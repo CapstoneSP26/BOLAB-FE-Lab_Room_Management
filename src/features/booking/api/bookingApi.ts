@@ -1,6 +1,6 @@
 import { axiosInstance } from "../../../api";
 import type { PagedResponse } from "../../../types/pagination.types";
-import type { BookingDto, GetBookingHistoryRequest, GetBookingHistoryResponse, GetBookingsParams, GetBookingStatsRequest, GetBookingStatsResponse, GetRecentRequestsRequest, GetRecentRequestsResponse, GetUpcomingBookingsRequest, GetUpcomingBookingsResponse } from "../types/booking.type";
+import type { BookingDto, CreateBookingCommand, CreateBookingResponse, GetBookingHistoryRequest, GetBookingHistoryResponse, GetBookingsParams, GetBookingStatsRequest, GetBookingStatsResponse, GetRecentRequestsRequest, GetRecentRequestsResponse, GetUpcomingBookingsRequest, GetUpcomingBookingsResponse, PurposeTypeDto } from "../types/booking.type";
 
 const BOOKING_API = {
   BOOKS: '/bookings',
@@ -9,13 +9,14 @@ const BOOKING_API = {
   STATS: '/bookings/stats',
   RECENT_REQUESTS: '/booking-requests/recent',
   HISTORY: '/bookings/history',
+  PURPOSE: '/bookings/purposes'
 };
 
 export const bookingApi = {
   getBookings: (params: GetBookingsParams) =>
     axiosInstance.get<PagedResponse<BookingDto>>(BOOKING_API.BOOKS, {
       params,
-    }),
+    }).then(res => res.data),
 
   getBookingAttendance: (params: GetBookingsParams) =>
     axiosInstance.get<PagedResponse<BookingDto>>(BOOKING_API.BOOKING_ATTENDANCE, {
@@ -53,6 +54,22 @@ export const bookingApi = {
     axiosInstance.get<GetBookingHistoryResponse>(BOOKING_API.HISTORY, {
       params,
     }).then(res => res.data),
+
+  /**
+  * tạo booking
+  */
+  createBooking: (command: CreateBookingCommand) =>
+    axiosInstance
+      .post<CreateBookingResponse>(BOOKING_API.BOOKS, command)
+      .then(response => response.data),
+
+  /**
+  * Lấy Purposes cho Booking
+  */
+  getPurposes: () =>
+    axiosInstance
+      .get<PagedResponse<PurposeTypeDto>>(BOOKING_API.PURPOSE)
+      .then(response => response.data),
 }
 
 

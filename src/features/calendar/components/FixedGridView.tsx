@@ -42,9 +42,6 @@ export const FixedGridView: React.FC<FixedGridViewProps> = ({
               className="absolute right-0 w-1 bg-blue-500 border-r-2 border-blue-600 z-20"
               style={style}
             >
-              <div className="absolute right-2 top-2 text-[9px] font-black text-blue-600 whitespace-nowrap uppercase opacity-70">
-                Ca {frame.orderIndex}
-              </div>
             </div>
           );
         })}
@@ -56,7 +53,7 @@ export const FixedGridView: React.FC<FixedGridViewProps> = ({
           const dateStr = date.toISOString().split('T')[0];
 
           return (
-            <div key={dayIndex} className="relative border-r border-gray-200 h-full group">
+            <div key={dayIndex} className="relative border-r border-gray-200 h-full">
               {/* Vạch kẻ giờ nền */}
               {timeSlots.map((_, i) => (
                 <div key={i} className="h-20 border-b border-gray-50 pointer-events-none" />

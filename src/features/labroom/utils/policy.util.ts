@@ -3,11 +3,11 @@ import {
   addHours,
   isAfter,
   isBefore,
-  differenceInHours,
   parse,
   isValid
 } from 'date-fns';
-import type { PolicyType, PolicyValidationResult } from '../types/policy.type';
+import type { PolicyTypeEnum, PolicyValidationResult } from '../types/policy.type';
+import { PolicyType } from '../types/policy.type';
 
 /**
  * Kiểm tra các quy định của phòng Lab trước khi cho phép tạo Booking
@@ -15,7 +15,7 @@ import type { PolicyType, PolicyValidationResult } from '../types/policy.type';
  * @param bookingData - Dữ liệu người dùng chọn (Ngày, Giờ bắt đầu, Giờ kết thúc)
  */
 export const checkLabPolicies = (
-  policies: Record<PolicyType, string>, // Dữ liệu đã qua hàm select() của React Query thành dạng Map
+  policies: Record<PolicyTypeEnum, string>, // Dữ liệu đã qua hàm select() của React Query thành dạng Map
   bookingData: { date: string; startTime: string; endTime: string }
 ): PolicyValidationResult => {
   const { date, startTime, endTime } = bookingData;
@@ -32,8 +32,8 @@ export const checkLabPolicies = (
 
   // 2. Duyệt qua các Rule quan trọng
   // Rule: Thời gian đặt trước tối thiểu (MinBookingLeadTime - đơn vị: Giờ)
-  if (policies["MinBookingLeadTime"]) {
-    const minHours = parseInt(policies["MinBookingLeadTime"]);
+  if (policies[PolicyType.MinBookingLeadTime]) {
+    const minHours = parseInt(policies[PolicyType.MinBookingLeadTime]);
     const earliestAllowed = addHours(now, minHours);
     if (isBefore(startDateTime, earliestAllowed)) {
       return {
@@ -44,8 +44,8 @@ export const checkLabPolicies = (
   }
 
   // Rule: Thời gian đặt trước tối đa (MaxBookingAdvance - đơn vị: Ngày)
-  if (policies["MaxBookingAdvance"]) {
-    const maxDays = parseInt(policies["MaxBookingAdvance"]);
+  if (policies[PolicyType.MaxBookingAdvance]) {
+    const maxDays = parseInt(policies[PolicyType.MaxBookingAdvance]);
     const latestAllowed = addDays(now, maxDays);
     if (isAfter(startDateTime, latestAllowed)) {
       return {
@@ -55,21 +55,9 @@ export const checkLabPolicies = (
     }
   }
 
-  // Rule: Thời lượng tối đa cho 1 lần đặt tự do (MaxOutSlotDuration - đơn vị: Giờ)
-  if (policies["MaxOutSlotDuration"]) {
-    const maxDuration = parseFloat(policies["MaxOutSlotDuration"]);
-    const requestedDuration = differenceInHours(endDateTime, startDateTime);
-    if (requestedDuration > maxDuration) {
-      return {
-        isValid: false,
-        message: `Thời lượng đặt tự do tối đa là ${maxDuration} giờ mỗi lần.`
-      };
-    }
-  }
-
   // Rule: Giờ giới nghiêm (CurfewTime - ví dụ: "22:00")
-  if (policies["CurfewTime"]) {
-    const curfewStr = policies["CurfewTime"]; // "22:00"
+  if (policies[PolicyType.CurfewTime]) {
+    const curfewStr = policies[PolicyType.CurfewTime]; // "22:00"
     const curfewDateTime = parse(`${date} ${curfewStr}`, 'yyyy-MM-dd HH:mm', new Date());
 
     if (isAfter(endDateTime, curfewDateTime)) {
@@ -80,12 +68,10 @@ export const checkLabPolicies = (
     }
   }
 
-  // Rule: Cho phép đặt giờ tự do hay không
-  // (Nếu IsFreeTimeAllowed = 0 mà người dùng đang dùng mode OutSlot)
-  if (policies["IsFreeTimeAllowed"] === 'false' || policies["IsFreeTimeAllowed"] === '0') {
-    // Logic này thường dùng để chặn kéo thả (Drag) trên Calendar
-    // return { isValid: false, message: 'Phòng này chỉ cho phép đặt theo Slot cố định.' };
-  }
-
   return { isValid: true };
+};
+
+
+export const isPolicyType = (key: any): key is PolicyTypeEnum => {
+  return Object.values(PolicyType).includes(key);
 };

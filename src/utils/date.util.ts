@@ -49,3 +49,30 @@ export const formatDateForApi = (date: Date): string => {
 export const formatDisplayDate = (date: Date): string => {
   return format(date, 'eeee, dd/MM', { locale: vi });
 };
+
+
+/**
+ * Lấy thời điểm đầu ngày (00:00) theo giờ Việt Nam (UTC+7)
+ * và convert sang UTC ISO string để gửi backend
+ */
+export const getStartOfDayVNInUTC = (date: Date | string) => {
+  const d = new Date(date);
+
+  // Tạo thời điểm 00:00 theo LOCAL (VN)
+  const startOfDayLocal = new Date(
+    d.getFullYear(),
+    d.getMonth(),
+    d.getDate(),
+    0, 0, 0, 0
+  );
+
+  // Convert sang UTC ISO string
+  return startOfDayLocal.toISOString();
+};
+
+/**
+ * 2026-03-28T11:30:00.000Z -> 2026-03-28T18:30:00 (Giờ VN)
+ */
+export const convertUTCStringToLocal = (utcString: string) => {
+  return format(new Date(utcString), "yyyy-MM-dd'T'HH:mm:ss");
+};

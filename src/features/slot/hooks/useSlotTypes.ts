@@ -14,8 +14,8 @@ export const useSlotTypes = (campusId?: number) => {
 
   // Đồng bộ vào Store khi có dữ liệu mới
   useEffect(() => {
-    if (query.data?.data) {
-      setSlotTypes(query.data.data);
+    if (query.data) {
+      setSlotTypes(query.data);
     }
   }, [query.data, setSlotTypes]);
 

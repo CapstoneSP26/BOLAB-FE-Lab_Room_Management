@@ -5,7 +5,7 @@ import {
   createBooking,
   getMyBookings,
 } from "../api/room-bookingApi";
-import type { CreateBookingRequest, GetMyBookingsRequest } from "../types/booking.type";
+import type { GetMyBookingsRequest } from "../types/booking.type";
 import type { GetStudentGroupByLecturerRequest } from "../../groups/types/group.type";
 import type { GetAvailableSlotsRequest } from '../../slot/types/slot.types';
 
@@ -88,26 +88,26 @@ export const useMyBookings = (options: UseMyBookingsOptions = {}) => {
 
 // ===== MUTATIONS =====
 
-interface UseCreateBookingOptions {
-  onSuccess?: (data: any) => void;
-  onError?: (error: any) => void;
-}
+// interface UseCreateBookingOptions {
+//   onSuccess?: (data: any) => void;
+//   onError?: (error: any) => void;
+// }
 
-/**
- * Hook tạo booking request mới
- */
-export const useCreateBooking = (options: UseCreateBookingOptions = {}) => {
-  const queryClient = useQueryClient();
+// /**
+//  * Hook tạo booking request mới
+//  */
+// export const useCreateBooking = (options: UseCreateBookingOptions = {}) => {
+//   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: (request: CreateBookingRequest) => createBooking(request),
-    onSuccess: (data) => {
-      // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.MY_BOOKINGS] });
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.AVAILABLE_SLOTS] });
+//   return useMutation({
+//     mutationFn: (request: CreateBookingRequest) => createBooking(request),
+//     onSuccess: (data) => {
+//       // Invalidate relevant queries
+//       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.MY_BOOKINGS] });
+//       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.AVAILABLE_SLOTS] });
 
-      options.onSuccess?.(data);
-    },
-    onError: options.onError,
-  });
-};
+//       options.onSuccess?.(data);
+//     },
+//     onError: options.onError,
+//   });
+// };

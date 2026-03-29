@@ -5,7 +5,7 @@ import type { LabRoomDto } from '../types/room.type';
 interface RoomSelectorProps {
   rooms: LabRoomDto[];
   isLoading: boolean;
-  selectedRoomId: string;
+  selectedRoomId?: string;
   onSelect: (id: string) => void;
   selectedBuildingId?: string; // Dùng để lock/unlock select
 }
@@ -20,7 +20,7 @@ export const RoomSelector: React.FC<RoomSelectorProps> = ({
   // 1. Tìm thông tin phòng đang được chọn để hiện Detail Card
   // Backend trả về Id là number, nhưng value của select là string, nên dùng == hoặc ép kiểu
   const selectedRoom = useMemo(() =>
-    rooms.find((r) => r.id.toString() === selectedRoomId),
+    rooms.find((r) => r.id === Number(selectedRoomId)),
     [rooms, selectedRoomId]
   );
 
