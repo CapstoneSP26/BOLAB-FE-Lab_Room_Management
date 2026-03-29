@@ -7,7 +7,7 @@ import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { X } from "lucide-react";
 import { useBuildings } from "../../building/hooks/useBuildings";
 import { useLabRooms } from "../../labroom/hooks/useLabRooms";
-import type { Building, BuildingDto } from "../../building/types/building.type";
+import type { BuildingDto } from "../../building/types/building.type";
 import type { LabRoomDto } from "../../labroom/types/room.type";
 
 import { FALLBACK_REPORT_REASONS } from "../types/report.type";
@@ -47,7 +47,7 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({
   const [submittedReport, setSubmittedReport] = useState<Report | null>(null);
 
   // Fetch rooms for dropdown
-  const { data: buildingsData, isLoading: buildingsLoading } = useBuildings({});
+  const { data: buildingsData, isLoading: buildingsLoading } = useBuildings();
   const { data: roomsData, isLoading: roomsLoading } = useLabRooms({});
   const { data: reasonsData, isLoading: reasonsLoading } = useReportReasons();
 
@@ -151,7 +151,7 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({
     });
   };
 
-  const buildings = buildingsData ?? [];
+  const buildings = buildingsData?.items ?? [];
   const selectedBuilding = useMemo(
     () =>
       buildings.find(

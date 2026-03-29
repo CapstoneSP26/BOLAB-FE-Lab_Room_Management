@@ -56,12 +56,7 @@ const RoomBookingPage: React.FC = () => {
   const purposes = useMemo(() => pagedPurposes?.items ?? [], [pagedPurposes]);
 
   // Fetch Buildings data
-  const { data: pagedBuildings, isLoading: buildingsLoading } = useBuildings({
-    params: {
-      campusId: 1
-    },
-    enabled: true
-  })
+  const { data: pagedBuildings, isLoading: buildingsLoading } = useBuildings();
   const buildings = useMemo(() => pagedBuildings?.items ?? [], [pagedBuildings]);
 
   const handleBuildingChange = (buildingId: string) => {

@@ -10,7 +10,7 @@ export const getRoomCodeFromName = (roomName: string): string => {
 };
 
 export const normalizeBookingStatus = (status: string): BookingWithQR['status'] => {
-  const normalizedStatus = status.trim().toLowerCase();
+  const normalizedStatus = status.toString().trim().toLowerCase();
 
   if (normalizedStatus === 'active') {
     return 'Active';
