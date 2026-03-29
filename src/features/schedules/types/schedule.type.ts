@@ -38,6 +38,11 @@ export type BookingStatus =
   | "APPROVED"
   | "REJECTED";
 
+/**
+ * Schedule Status (session state)
+ */
+export type ScheduleStatus = 'Active' | 'NotYet' | 'Done';
+
 export type UpdatableBookingStatus = "APPROVED" | "REJECTED";
 export type BookingSlotTypeCode = "OLD_SLOT" | "NEW_SLOT" | "OUT_SLOT";
 export interface Booking {

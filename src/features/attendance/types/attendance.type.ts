@@ -3,10 +3,7 @@
  * BOLAB-30: QR Code Attendance System
  */
 
-/**
- * Booking Status (from booking feature)
- */
-export type BookingStatus = 'Draft' | 'PendingApproval' | 'Approved' | 'Rejected' | 'Cancelled';
+import type { ScheduleStatus } from '../../schedules/types/schedule.type';
 
 /**
  * Attendance Status
@@ -45,20 +42,21 @@ export interface QRSession {
   lecturerId: string;
   qrToken: string; // Unique token for QR code
   qrExpiry: string; // ISO date string
+  qrImageUrl?: string;
+  qrImageBase64?: string;
   createdAt: string;
   isActive: boolean;
   totalStudents: number;
   presentCount: number;
   absentCount: number;
-  lateCount: number;
 }
 
 /**
  * Create QR Session Request
  */
 export interface CreateQRSessionRequest {
-  bookingId: string;
-  expiryMinutes?: number; // Default: 5 minutes
+  scheduleId: string;
+  isCheckIn: boolean;
 }
 
 /**
@@ -96,6 +94,8 @@ export interface RefreshQRTokenResponse {
   data: {
     qrToken: string;
     qrExpiry: string;
+    qrImageUrl?: string;
+    qrImageBase64?: string;
   };
 }
 
@@ -103,7 +103,8 @@ export interface RefreshQRTokenResponse {
  * End QR Session Request
  */
 export interface EndQRSessionRequest {
-  sessionId: string;
+  scheduleId: string;
+  isCheckIn: boolean;
 }
 
 /**
@@ -176,7 +177,7 @@ export interface BookingWithQR {
   date: string;
   startTime: string;
   endTime: string;
-  status: BookingStatus;
+  status: ScheduleStatus;
   purpose: string;
   hasQRSession: boolean;
   qrSessionId?: string;

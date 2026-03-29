@@ -18,6 +18,13 @@ export default function QRDisplayPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
   const { activeSession } = useActiveSession();
+  const isAttendanceMockMode = (() => {
+    if (typeof window === 'undefined') return false;
+    const params = new URLSearchParams(window.location.search);
+    return params.get('mockAttendance') === '1' || params.get('testAttendance') === '1';
+  })();
+  const isMockSession = isAttendanceMockMode && sessionId === MOCK_QR_SESSION.id;
+  const apiSessionId = isMockSession ? null : (sessionId || null);
   
   // Polling enabled for real-time updates - WITH ERROR HANDLING
   const { 
@@ -25,11 +32,11 @@ export default function QRDisplayPage() {
     isLoading: sessionLoading,
     isError: sessionError,
     error: sessionErrorData,
-  } = useQRSession(sessionId || null, true);
+  } = useQRSession(apiSessionId, true);
   
   const { 
     data: attendanceData,
-  } = useAttendanceList(sessionId || null, true);
+  } = useAttendanceList(apiSessionId, true);
 
   const [currentTime, setCurrentTime] = useState(new Date());
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
@@ -38,9 +45,9 @@ export default function QRDisplayPage() {
   // This ensures real-time sync with Attendance page
   const session = (activeSession && activeSession.id === sessionId) 
     ? activeSession 
-    : (sessionData?.data || MOCK_QR_SESSION);
+    : (sessionData?.data || (isMockSession ? MOCK_QR_SESSION : null));
     
-  const students = attendanceData?.data?.students || MOCK_STUDENT_ATTENDANCE;
+  const students = attendanceData?.data?.students || (isMockSession ? MOCK_STUDENT_ATTENDANCE : []);
   const presentCount = students.filter(s => s.status === 'present').length;
 
   // Generate scan URL for QR code (safe with fallback)
@@ -80,7 +87,7 @@ export default function QRDisplayPage() {
   };
 
   // Loading state
-  if (sessionLoading) {
+  if (sessionLoading && !isMockSession) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
@@ -92,7 +99,7 @@ export default function QRDisplayPage() {
   }
 
   // Error state - Session not found or API error
-  if (sessionError && !sessionData) {
+  if (sessionError && !sessionData && !isMockSession) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 text-center">
@@ -108,6 +115,34 @@ export default function QRDisplayPage() {
             {sessionErrorData instanceof Error 
               ? sessionErrorData.message 
               : 'The QR session you\'re looking for doesn\'t exist or has been deleted.'}
+          </p>
+
+          <button
+            onClick={() => navigate('/attendance')}
+            className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
+          >
+            <Home className="w-4 h-4" />
+            Go to Attendance Page
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 text-center">
+          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <AlertTriangle className="w-10 h-10 text-red-600" />
+          </div>
+
+          <h1 className="text-2xl font-bold text-gray-900 mb-3">
+            Session Not Found
+          </h1>
+
+          <p className="text-gray-600 mb-6">
+            The QR session is unavailable. Please return to attendance and generate a new QR.
           </p>
 
           <button
@@ -327,17 +362,6 @@ export default function QRDisplayPage() {
                   </div>
                   <span className="text-xl font-bold text-emerald-700 tabular-nums">
                     {session.presentCount}
-                  </span>
-                </div>
-
-                {/* Late */}
-                <div className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-                    <span className="text-sm font-semibold text-slate-700">Late</span>
-                  </div>
-                  <span className="text-xl font-bold text-amber-700 tabular-nums">
-                    {session.lateCount}
                   </span>
                 </div>
 

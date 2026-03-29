@@ -10,8 +10,8 @@ export const mapBookingToEvent = (booking: BookingDto): CalendarEvent => ({
   end: convertUTCStringToLocal(booking.endTime),
   type: 'BOOKING',
   status: booking.status,
-  color: '#FF9F43', // Màu cam đặc trưng cho Booking
-  rawOrigin: { ...booking }
+  color: "#FF9F43", // Màu cam đặc trưng cho Booking
+  rawOrigin: { ...booking },
 });
 
 export const mapScheduleToEvent = (schedule: ScheduleDto): CalendarEvent => ({

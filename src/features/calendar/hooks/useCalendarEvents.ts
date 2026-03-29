@@ -1,7 +1,10 @@
 import { useMemo } from "react";
 import { useBookings } from "../../booking/hooks/useBooking";
 import { useSchedules } from "../../schedules/hooks/useSchedules";
-import type { CalendarEvent, UseCalendarEventProps } from "../types/calendar.type";
+import type {
+  CalendarEvent,
+  UseCalendarEventProps,
+} from "../types/calendar.type";
 import { mapBookingToEvent, mapScheduleToEvent } from "../utils/eventMapper";
 
 export const useCalendarEvents = (params: UseCalendarEventProps) => {
@@ -36,6 +39,6 @@ export const useCalendarEvents = (params: UseCalendarEventProps) => {
     refetch: () => {
       bookingsQuery.refetch();
       schedulesQuery.refetch();
-    }
+    },
   };
 };

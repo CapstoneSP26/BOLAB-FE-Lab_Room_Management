@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import type { Report, ReportImage } from "../types/report.type";
-import { reportApi } from "../api/reportApi";
+import { getReportDetail, resolveReport } from "../api/reportApi";
 import ReportImages from "./ReportImages";
-
+import { formatDate, getRelativeTime } from "../../../utils/formatDate";
 function statusConfig(isResolved: boolean) {
   return isResolved
     ? {
@@ -29,7 +30,7 @@ function statusConfig(isResolved: boolean) {
         ),
       }
     : {
-        label: "Pending Approval",
+        label: "Pending",
         bgColor: "bg-amber-100 dark:bg-amber-500/10",
         textColor: "text-amber-700 dark:text-amber-400",
         borderColor: "border-amber-200 dark:border-amber-800",
@@ -52,37 +53,6 @@ function statusConfig(isResolved: boolean) {
       };
 }
 
-function fmt(iso?: string | null) {
-  if (!iso) return "-";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-
-  return d.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function getTimeSince(iso?: string | null) {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-
-  const now = new Date();
-  const diff = now.getTime() - d.getTime();
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const minutes = Math.floor(diff / (1000 * 60));
-
-  if (minutes < 60) return `${minutes}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  if (days < 7) return `${days}d ago`;
-  return null;
-}
-
 export default function ReportDetailFeature() {
   const nav = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -95,33 +65,38 @@ export default function ReportDetailFeature() {
 
   const canLoad = Boolean(id);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!id) return;
+
     setLoading(true);
     setError(null);
+
     try {
-      const r = await reportApi.getById(id);
-      if (!r) {
+      const response = await getReportDetail({ reportId: id });
+      const item = response?.data ?? null;
+
+      if (!item) {
         setReport(null);
         setImages([]);
         setError("Report not found.");
         return;
       }
-      setReport(r);
-      const imgs = await reportApi.listImages(r.Id);
-      setImages(imgs);
+
+      setReport(item);
+      setImages(Array.isArray(item.images) ? item.images : []);
     } catch {
-      setError("Fail to load report detail.");
+      setReport(null);
+      setImages([]);
+      setError("Failed to load report detail.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     if (!canLoad) return;
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+    void load();
+  }, [canLoad, load]);
 
   const status = report ? statusConfig(report.IsResolved) : null;
 
@@ -131,10 +106,8 @@ export default function ReportDetailFeature() {
     return (
       <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 p-6 shadow-sm dark:border-gray-700 dark:from-gray-800/50 dark:to-gray-800/30">
         <div className="flex flex-col gap-6">
-          {/* Top Row: Title + Actions */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-start gap-4">
-              {/* Icon */}
               <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/20">
                 <svg
                   className="h-7 w-7 text-white"
@@ -151,7 +124,6 @@ export default function ReportDetailFeature() {
                 </svg>
               </div>
 
-              {/* Title & Status */}
               <div className="flex-1">
                 <div className="flex flex-wrap items-center gap-3">
                   <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -164,6 +136,7 @@ export default function ReportDetailFeature() {
                     {status.label}
                   </span>
                 </div>
+
                 <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
                   <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
                     <svg
@@ -183,6 +156,7 @@ export default function ReportDetailFeature() {
                       {report.Id}
                     </span>
                   </div>
+
                   <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
                     <svg
                       className="h-4 w-4"
@@ -197,8 +171,11 @@ export default function ReportDetailFeature() {
                         d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
                       />
                     </svg>
-                    <span className="font-semibold">{report.ReportType}</span>
+                    <span className="font-semibold">
+                      {report.ReportType || "-"}
+                    </span>
                   </div>
+
                   <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
                     <svg
                       className="h-4 w-4"
@@ -219,7 +196,6 @@ export default function ReportDetailFeature() {
               </div>
             </div>
 
-            {/* Actions */}
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
@@ -249,17 +225,16 @@ export default function ReportDetailFeature() {
                   if (!report) return;
                   setSaving(true);
                   try {
-                    const updated = await reportApi.setResolved(
-                      report.Id,
-                      !report.IsResolved,
-                    );
-                    setReport(updated);
+                    const response = await resolveReport(report.Id, {
+                      isResolved: !report.IsResolved,
+                    });
+                    setReport(response.data);
                   } finally {
                     setSaving(false);
                   }
                 }}
                 className={`inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 ${
-                  report?.IsResolved
+                  report.IsResolved
                     ? "bg-gradient-to-r from-amber-500 to-amber-600 shadow-amber-500/30 hover:from-amber-600 hover:to-amber-700"
                     : "bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-emerald-500/30 hover:from-emerald-600 hover:to-emerald-700"
                 }`}
@@ -287,7 +262,7 @@ export default function ReportDetailFeature() {
                     </svg>
                     Saving...
                   </>
-                ) : report?.IsResolved ? (
+                ) : report.IsResolved ? (
                   <>
                     <svg
                       className="h-4 w-4"
@@ -326,7 +301,6 @@ export default function ReportDetailFeature() {
             </div>
           </div>
 
-          {/* Quick Info Bar */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <QuickInfo
               icon={
@@ -345,8 +319,8 @@ export default function ReportDetailFeature() {
                 </svg>
               }
               label="Created"
-              value={fmt(report.CreatedAt)}
-              sublabel={getTimeSince(report.CreatedAt)}
+              value={formatDate(report.CreatedAt)}
+              sublabel={getRelativeTime(report.CreatedAt)}
             />
             <QuickInfo
               icon={
@@ -365,8 +339,10 @@ export default function ReportDetailFeature() {
                 </svg>
               }
               label="Last Updated"
-              value={fmt(report.UpdatedAt)}
-              sublabel={getTimeSince(report.UpdatedAt)}
+              value={report.UpdatedAt ? formatDate(report.UpdatedAt) : "-"}
+              sublabel={
+                report.UpdatedAt ? getRelativeTime(report.UpdatedAt) : null
+              }
             />
             <QuickInfo
               icon={
@@ -380,7 +356,7 @@ export default function ReportDetailFeature() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2z"
                   />
                 </svg>
               }
@@ -451,7 +427,7 @@ export default function ReportDetailFeature() {
             <button
               className="mt-4 inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-red-500/30 transition-all hover:bg-red-700 active:scale-[0.98]"
               type="button"
-              onClick={load}
+              onClick={() => void load()}
             >
               <svg
                 className="h-4 w-4"
@@ -502,11 +478,8 @@ export default function ReportDetailFeature() {
     <div className="space-y-6">
       {header}
 
-      {/* Main Content Grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Left Column - Description */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Description */}
+        <div className="space-y-6 lg:col-span-2">
           <ContentCard
             title="Description"
             icon={
@@ -534,7 +507,6 @@ export default function ReportDetailFeature() {
             </p>
           </ContentCard>
 
-          {/* Images */}
           <ContentCard
             title="Attached Images"
             icon={
@@ -558,9 +530,7 @@ export default function ReportDetailFeature() {
           </ContentCard>
         </div>
 
-        {/* Right Column - Timeline & Meta */}
         <div className="space-y-6">
-          {/* Activity Timeline */}
           <ContentCard
             title="Activity Timeline"
             icon={
@@ -597,7 +567,7 @@ export default function ReportDetailFeature() {
                   </svg>
                 }
                 title="Report Created"
-                time={fmt(report.CreatedAt)}
+                time={formatDate(report.CreatedAt)}
                 user={report.CreatedBy}
                 color="blue"
               />
@@ -619,7 +589,7 @@ export default function ReportDetailFeature() {
                     </svg>
                   }
                   title="Report Updated"
-                  time={fmt(report.UpdatedAt)}
+                  time={formatDate(report.UpdatedAt)}
                   user={report.UpdatedBy}
                   color="purple"
                 />
@@ -642,7 +612,8 @@ export default function ReportDetailFeature() {
                     </svg>
                   }
                   title="Report Resolved"
-                  time="Recently"
+                  time={formatDate(report.UpdatedAt ?? report.CreatedAt)}
+                  user={report.UpdatedBy}
                   color="green"
                   isLast
                 />
@@ -650,7 +621,6 @@ export default function ReportDetailFeature() {
             </div>
           </ContentCard>
 
-          {/* Meta Info */}
           <ContentCard
             title="Additional Info"
             icon={
@@ -671,12 +641,15 @@ export default function ReportDetailFeature() {
           >
             <div className="space-y-3">
               <InfoRow label="User ID" value={report.UserId} mono />
-              <InfoRow label="Report Type" value={report.ReportType} />
+              <InfoRow label="Report Type" value={report.ReportType || "-"} />
               <InfoRow
                 label="Schedule ID"
                 value={report.ScheduleId || "Not assigned"}
                 mono
               />
+              <InfoRow label="Room" value={report.RoomName || "-"} />
+              <InfoRow label="Building" value={report.BuildingName || "-"} />
+              <InfoRow label="Reason" value={report.Reason || "-"} />
               <InfoRow
                 label="Status"
                 value={report.IsResolved ? "Resolved" : "Pending"}
@@ -689,14 +662,13 @@ export default function ReportDetailFeature() {
   );
 }
 
-// Helper Components
 function QuickInfo({
   icon,
   label,
   value,
   sublabel,
 }: {
-  icon: React.ReactNode;
+  icon: ReactNode;
   label: string;
   value: string;
   sublabel?: string | null;
@@ -730,9 +702,9 @@ function ContentCard({
   children,
 }: {
   title: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   badge?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800/50">
@@ -766,7 +738,7 @@ function TimelineItem({
   color,
   isLast,
 }: {
-  icon: React.ReactNode;
+  icon: ReactNode;
   title: string;
   time: string;
   user?: string | null;
@@ -844,7 +816,7 @@ function EmptyState({
 }: {
   title: string;
   description: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
 }) {
   return (
     <div className="flex min-h-[400px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50/50 p-12 dark:border-gray-700 dark:bg-gray-800/30">
@@ -864,7 +836,6 @@ function EmptyState({
 function LoadingSkeleton() {
   return (
     <div className="space-y-6">
-      {/* Header skeleton */}
       <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800/50">
         <div className="flex items-start gap-4">
           <div className="h-14 w-14 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700" />
@@ -883,9 +854,8 @@ function LoadingSkeleton() {
         </div>
       </div>
 
-      {/* Content skeleton */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
+        <div className="space-y-6 lg:col-span-2">
           {Array.from({ length: 2 }).map((_, i) => (
             <div
               key={i}

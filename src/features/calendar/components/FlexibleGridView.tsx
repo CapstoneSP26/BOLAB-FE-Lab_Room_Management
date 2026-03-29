@@ -27,7 +27,7 @@ export const FlexibleGridView: React.FC<FlexibleGridViewProps> = ({
   const minAllowedTime = addHours(now, minBookingLeadTime);
   // Render các Event đã có trên một cột ngày
   const renderColumnEvents = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = format(date, 'yyyy-MM-dd');
 
     return events
       .filter((event) => event.start.startsWith(dateStr))

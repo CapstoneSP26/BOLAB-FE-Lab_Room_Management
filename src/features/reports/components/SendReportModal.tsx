@@ -3,35 +3,42 @@
  * Modal for lecturers to send lab room reports with images
  */
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { X } from 'lucide-react';
-import { useBuildings } from '../../building/hooks/useBuildings';
-import { useLabRooms } from '../../labroom/hooks/useLabRooms';
-import type { Building, BuildingDto } from '../../building/types/building.type';
-import type { LabRoomDto } from '../../labroom/types/room.type';
+import React, { useState, useCallback, useEffect, useMemo } from "react";
+import { X } from "lucide-react";
+import { useBuildings } from "../../building/hooks/useBuildings";
+import { useLabRooms } from "../../labroom/hooks/useLabRooms";
+import type { Building, BuildingDto } from "../../building/types/building.type";
+import type { LabRoomDto } from "../../labroom/types/room.type";
 
-import { FALLBACK_REPORT_REASONS } from '../types/report.type';
-import { ImageUploadArea } from './ImageUploadArea';
-import { ReasonSelector } from './ReasonSelector';
-import { ReportSuccessModal } from './ReportSuccessModal';
-import { useCreateReport } from '../hooks/useReport';
-import { useReportReasons } from '../hooks/useReport';
+import { FALLBACK_REPORT_REASONS } from "../types/report.type";
+import { ImageUploadArea } from "./ImageUploadArea";
+import { ReasonSelector } from "./ReasonSelector";
+import { ReportSuccessModal } from "./ReportSuccessModal";
+import { useCreateReport } from "../hooks/useReport";
+import { useReportReasons } from "../hooks/useReport";
 
-import type { Report, CreateReportResponse, ImagePreview } from '../types/report.type';
-import { useToast } from '../../../hooks/useToast';
+import type {
+  Report,
+  CreateReportResponse,
+  ImagePreview,
+} from "../types/report.type";
+import { useToast } from "../../../hooks/useToast";
 
 interface SendReportModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClose }) => {
+export const SendReportModal: React.FC<SendReportModalProps> = ({
+  isOpen,
+  onClose,
+}) => {
   const toast = useToast();
   // Form state
-  const [selectedBuildingId, setSelectedBuildingId] = useState('');
-  const [selectedRoomId, setSelectedRoomId] = useState('');
-  const [reason, setReason] = useState<string | ''>('');
-  const [description, setDescription] = useState('');
+  const [selectedBuildingId, setSelectedBuildingId] = useState("");
+  const [selectedRoomId, setSelectedRoomId] = useState("");
+  const [reason, setReason] = useState<string | "">("");
+  const [description, setDescription] = useState("");
   const [images, setImages] = useState<ImagePreview[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -50,26 +57,26 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClos
       setSubmittedReport(response.data);
       setShowSuccessModal(true);
       toast.success(
-        'Báo cáo đã được gửi!',
-        'Chúng tôi sẽ xem xét và xử lý báo cáo của bạn sớm nhất.'
+        "Báo cáo đã được gửi!",
+        "Chúng tôi sẽ xem xét và xử lý báo cáo của bạn sớm nhất.",
       );
       // Reset form
       resetForm();
     },
     onError: (error: Error) => {
-      console.error('Failed to create report:', error);
+      console.error("Failed to create report:", error);
       toast.error(
-        'Gửi báo cáo thất bại',
-        'Vui lòng kiểm tra lại thông tin và thử lại.'
+        "Gửi báo cáo thất bại",
+        "Vui lòng kiểm tra lại thông tin và thử lại.",
       );
     },
   });
 
   const resetForm = () => {
-    setSelectedBuildingId('');
-    setSelectedRoomId('');
-    setReason('');
-    setDescription('');
+    setSelectedBuildingId("");
+    setSelectedRoomId("");
+    setReason("");
+    setDescription("");
     setImages([]);
     setErrors({});
   };
@@ -107,21 +114,21 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClos
     const newErrors: Record<string, string> = {};
 
     if (!selectedBuildingId) {
-      newErrors.building = 'Vui lòng chọn tòa nhà';
+      newErrors.building = "Vui lòng chọn tòa nhà";
     }
 
     if (!selectedRoomId) {
-      newErrors.room = 'Vui lòng chọn phòng';
+      newErrors.room = "Vui lòng chọn phòng";
     }
 
     if (!reason) {
-      newErrors.reason = 'Vui lòng chọn lý do báo cáo';
+      newErrors.reason = "Vui lòng chọn lý do báo cáo";
     }
 
     if (!description.trim()) {
-      newErrors.description = 'Vui lòng nhập mô tả chi tiết';
+      newErrors.description = "Vui lòng nhập mô tả chi tiết";
     } else if (description.trim().length < 10) {
-      newErrors.description = 'Mô tả phải có ít nhất 10 ký tự';
+      newErrors.description = "Mô tả phải có ít nhất 10 ký tự";
     }
 
     setErrors(newErrors);
@@ -146,8 +153,11 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClos
 
   const buildings = buildingsData?.items || [];
   const selectedBuilding = useMemo(
-    () => buildings.find((item: BuildingDto) => String(item.id) === selectedBuildingId),
-    [buildings, selectedBuildingId]
+    () =>
+      buildings.find(
+        (item: BuildingDto) => String(item.id) === selectedBuildingId,
+      ),
+    [buildings, selectedBuildingId],
   );
 
   const rooms = roomsData?.items || [];
@@ -157,7 +167,9 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClos
     }
 
     const selectedBuildingName = selectedBuilding.buildingName.toLowerCase();
-    const selectedBuildingIdNormalized = String(selectedBuilding.id).toLowerCase();
+    const selectedBuildingIdNormalized = String(
+      selectedBuilding.id,
+    ).toLowerCase();
 
     return rooms.filter((room: LabRoomDto) => {
       const roomBuilding = String(room.buildingName).toLowerCase();
@@ -175,11 +187,11 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClos
     }
 
     const roomExists = filteredRooms.some(
-      (room: LabRoomDto) => String(room.id) === selectedRoomId
+      (room: LabRoomDto) => String(room.id) === selectedRoomId,
     );
 
     if (!roomExists) {
-      setSelectedRoomId('');
+      setSelectedRoomId("");
     }
   }, [filteredRooms, selectedRoomId]);
 
@@ -236,8 +248,8 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClos
                   value={selectedBuildingId}
                   onChange={(e) => {
                     setSelectedBuildingId(e.target.value);
-                    setSelectedRoomId('');
-                    setErrors((prev) => ({ ...prev, building: '', room: '' }));
+                    setSelectedRoomId("");
+                    setErrors((prev) => ({ ...prev, building: "", room: "" }));
                   }}
                   disabled={buildingsLoading || isSubmitting}
                   className={`
@@ -246,7 +258,7 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClos
                   focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent
                   disabled:bg-gray-100 disabled:cursor-not-allowed
                   transition-all duration-200
-                  ${errors.building ? 'border-red-500' : 'border-gray-300'}
+                  ${errors.building ? "border-red-500" : "border-gray-300"}
                 `}
                 >
                   <option value="">-- Chọn tòa nhà --</option>
@@ -258,7 +270,11 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClos
                 </select>
                 {errors.building && (
                   <p className="text-sm text-red-500 flex items-center gap-1">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <svg
+                      className="w-4 h-4"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
                       <path
                         fillRule="evenodd"
                         d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
@@ -279,7 +295,7 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClos
                   value={selectedRoomId}
                   onChange={(e) => {
                     setSelectedRoomId(e.target.value);
-                    setErrors((prev) => ({ ...prev, room: '' }));
+                    setErrors((prev) => ({ ...prev, room: "" }));
                   }}
                   disabled={roomsLoading || isSubmitting || !selectedBuildingId}
                   className={`
@@ -288,11 +304,13 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClos
                   focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent
                   disabled:bg-gray-100 disabled:cursor-not-allowed
                   transition-all duration-200
-                  ${errors.room ? 'border-red-500' : 'border-gray-300'}
+                  ${errors.room ? "border-red-500" : "border-gray-300"}
                 `}
                 >
                   <option value="">
-                    {selectedBuildingId ? '-- Chọn phòng --' : '-- Chọn tòa nhà trước --'}
+                    {selectedBuildingId
+                      ? "-- Chọn phòng --"
+                      : "-- Chọn tòa nhà trước --"}
                   </option>
                   {filteredRooms.map((room: LabRoomDto) => (
                     <option key={room.id} value={room.id}>
@@ -302,7 +320,11 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClos
                 </select>
                 {errors.room && (
                   <p className="text-sm text-red-500 flex items-center gap-1">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <svg
+                      className="w-4 h-4"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
                       <path
                         fillRule="evenodd"
                         d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
@@ -319,7 +341,7 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClos
                 value={reason}
                 onChange={(newReason: string) => {
                   setReason(newReason);
-                  setErrors((prev) => ({ ...prev, reason: '' }));
+                  setErrors((prev) => ({ ...prev, reason: "" }));
                 }}
                 reasons={reasonOptions}
                 isLoading={reasonsLoading && reasonOptions.length === 0}
@@ -336,7 +358,7 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClos
                   value={description}
                   onChange={(e) => {
                     setDescription(e.target.value);
-                    setErrors((prev) => ({ ...prev, description: '' }));
+                    setErrors((prev) => ({ ...prev, description: "" }));
                   }}
                   disabled={isSubmitting}
                   rows={6}
@@ -347,14 +369,18 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClos
                   focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent
                   disabled:bg-gray-100 disabled:cursor-not-allowed
                   transition-all duration-200 resize-none
-                  ${errors.description ? 'border-red-500' : 'border-gray-300'}
+                  ${errors.description ? "border-red-500" : "border-gray-300"}
                 `}
                 />
                 <div className="flex justify-between items-start">
                   <div>
                     {errors.description && (
                       <p className="text-sm text-red-500 flex items-center gap-1">
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <svg
+                          className="w-4 h-4"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
                           <path
                             fillRule="evenodd"
                             d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"

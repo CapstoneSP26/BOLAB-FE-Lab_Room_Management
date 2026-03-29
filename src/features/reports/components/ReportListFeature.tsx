@@ -1,86 +1,171 @@
-import { useEffect, useMemo, useState } from "react";
-import type { Report, ReportType } from "../types/report.type";
-import { reportApi } from "../api/reportApi";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
+import { ChevronDown, ChevronUp } from "lucide-react";
+
+import type { Report, GetReportsRequest } from "../types/report.type";
+import { getReports, resolveReport } from "../api/reportApi";
 import ReportListFilters from "./ReportListFilters";
 import ReportListTable from "./ReportListTable";
-import { useNavigate } from "react-router-dom";
+
+import type { Building, BuildingDto } from "../../building/types/building.type";
+import { buildingApi } from "../../building/api/buildingApi";
+import type {
+  LabRoomDto,
+  LabRoomLookupItem,
+} from "../../labroom/types/room.type";
+import { labroomApi } from "../../labroom/api/labroom.api";
+
+function mapBuildingOptions(items: BuildingDto[]): Building[] {
+  return items.map((item) => ({
+    id: String(item.id),
+    name: item.buildingName,
+    description: item.description ?? "",
+    roomCount: 0,
+    image: item.buildingImageUrl ?? "",
+    color: undefined,
+  }));
+}
+
+function mapRoomOptions(items: LabRoomDto[]): LabRoomLookupItem[] {
+  return items.map((item) => ({
+    id: item.id,
+    roomName: item.roomName,
+    roomNo: item.roomNo,
+    buildingId: item.buildingId,
+    buildingName: item.buildingName,
+  }));
+}
 
 export default function ReportListFeature() {
   const nav = useNavigate();
-  const [showFilters, setShowFilters] = useState(false);
+
   const [loading, setLoading] = useState(true);
+  const [lookupLoading, setLookupLoading] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
+
   const [items, setItems] = useState<Report[]>([]);
+  const [buildingOptions, setBuildingOptions] = useState<Building[]>([]);
+  const [roomOptions, setRoomOptions] = useState<LabRoomLookupItem[]>([]);
 
-  const [reportType, setReportType] = useState<ReportType | "ALL">("ALL");
-  const [resolved, setResolved] = useState<"ALL" | "RESOLVED" | "UNRESOLVED">(
-    "ALL",
-  );
   const [q, setQ] = useState("");
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
+  const [buildingId, setBuildingId] = useState<number | "ALL">("ALL");
+  const [roomId, setRoomId] = useState<number | "ALL">("ALL");
 
-  const load = async () => {
+  const loadLookups = useCallback(async () => {
+    setLookupLoading(true);
+    try {
+      const buildings = await buildingApi.getBuildings({
+        pageNumber: 1,
+        pageSize: 1000,
+      });
+
+      setBuildingOptions(mapBuildingOptions(buildings ?? []));
+      setRoomOptions([]);
+    } finally {
+      setLookupLoading(false);
+    }
+  }, []);
+
+  const reload = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await reportApi.list({
-        reportType,
-        resolved,
-        q,
-        from,
-        to,
-      });
-      setItems(data);
+      const params: GetReportsRequest = {
+        q: q.trim() || undefined,
+        buildingId: buildingId === "ALL" ? undefined : buildingId,
+        roomId: roomId === "ALL" ? undefined : roomId,
+        page: 1,
+        limit: 1000,
+        sortBy: "CreatedAt",
+        isDescending: true,
+      };
+
+      const response = await getReports(params);
+      setItems(Array.isArray(response?.data) ? response.data : []);
     } finally {
       setLoading(false);
     }
-  };
+  }, [q, buildingId, roomId]);
 
   useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    void loadLookups();
+  }, [loadLookups]);
 
-  const rows = useMemo(() => items, [items]);
+  useEffect(() => {
+    const loadRoomsByBuilding = async () => {
+      if (buildingId === "ALL") {
+        setRoomOptions([]);
+        setRoomId("ALL");
+        return;
+      }
 
-  // Calculate statistics
+      try {
+        const response = await labroomApi.getRooms({
+          buildingId,
+          pageNumber: 1,
+          pageSize: 1000,
+          includeBuilding: true,
+          isDescending: false,
+        });
+
+        const rooms = Array.isArray(response?.items) ? response.items : [];
+        setRoomOptions(mapRoomOptions(rooms));
+      } catch {
+        setRoomOptions([]);
+      }
+    };
+
+    void loadRoomsByBuilding();
+  }, [buildingId]);
+
+  useEffect(() => {
+    void reload();
+  }, [reload]);
+
+  const rows = useMemo(() => {
+    return [...items].sort((a, b) =>
+      String(b.CreatedAt ?? "").localeCompare(String(a.CreatedAt ?? "")),
+    );
+  }, [items]);
+
   const stats = useMemo(() => {
-    const resolvedCount = rows.filter((r) => r.IsResolved).length;
-    const unresolvedCount = rows.filter((r) => !r.IsResolved).length;
-
-    // Count by type
-    const typeBreakdown: Record<string, number> = {};
-    rows.forEach((r) => {
-      const type = r.ReportType || "Unknown";
-      typeBreakdown[type] = (typeBreakdown[type] || 0) + 1;
-    });
-
-    const resolutionRate =
-      rows.length > 0 ? Math.round((resolvedCount / rows.length) * 100) : 0;
+    const resolved = rows.filter((r) => r.IsResolved).length;
+    const unresolved = rows.filter((r) => !r.IsResolved).length;
 
     return {
       total: rows.length,
-      resolved: resolvedCount,
-      unresolved: unresolvedCount,
-      resolutionRate,
-      typeBreakdown,
+      resolved,
+      unresolved,
+      resolutionRate:
+        rows.length > 0 ? Math.round((resolved / rows.length) * 100) : 0,
     };
   }, [rows]);
 
-  const onToggleResolved = async (id: string, next: boolean) => {
-    const updated = await reportApi.setResolved(id, next);
-    setItems((prev) => prev.map((x) => (x.Id === updated.Id ? updated : x)));
+  const hasActiveFilters = useMemo(() => {
+    return q.trim() !== "" || buildingId !== "ALL" || roomId !== "ALL";
+  }, [q, buildingId, roomId]);
+
+  const handleReset = () => {
+    setQ("");
+    setBuildingId("ALL");
+    setRoomId("ALL");
   };
 
-  const hasActiveFilters =
-    reportType !== "ALL" ||
-    resolved !== "ALL" ||
-    q.trim() !== "" ||
-    from !== "" ||
-    to !== "";
+  const onToggleResolved = async (id: string, next: boolean) => {
+    if (!next) return;
+
+    const response = await resolveReport(id, { isResolved: true });
+    const updated = response.data;
+
+    setItems((prev) =>
+      prev.map((item) =>
+        String(item.Id) === String(updated.Id) ? updated : item,
+      ),
+    );
+  };
 
   return (
     <div className="space-y-6">
-      {/* Header Card */}
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800/50">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex-1">
@@ -105,7 +190,7 @@ export default function ReportListFeature() {
                   Issue Reports
                 </h1>
                 <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                  View and manage all reported issues and problems
+                  View and manage reported issues
                 </p>
               </div>
             </div>
@@ -114,7 +199,7 @@ export default function ReportListFeature() {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={load}
+              onClick={reload}
               disabled={loading}
               className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition-all hover:bg-gray-50 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
             >
@@ -136,287 +221,148 @@ export default function ReportListFeature() {
           </div>
         </div>
 
-        {/* Stats Grid */}
         <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
           <StatCard
             label="Total Reports"
             value={stats.total}
-            icon={
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-            }
+            icon={<CardIcon />}
             color="blue"
           />
           <StatCard
             label="Resolved"
             value={stats.resolved}
-            icon={
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            }
+            icon={<ResolvedIcon />}
             color="emerald"
           />
           <StatCard
-            label="PendingApproval"
+            label="Unresolved"
             value={stats.unresolved}
-            icon={
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            }
+            icon={<PendingIcon />}
             color="amber"
           />
           <StatCard
             label="Resolution Rate"
             value={`${stats.resolutionRate}%`}
-            icon={
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                />
-              </svg>
-            }
+            icon={<RateIcon />}
             color="purple"
           />
         </div>
-
-        {/* Resolution Progress Bar */}
-        {stats.total > 0 && (
-          <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/30">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
-                Resolution Progress
-              </span>
-              <span className="text-sm font-bold text-gray-900 dark:text-white">
-                {stats.resolved} / {stats.total}
-              </span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-600">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 transition-all duration-500"
-                style={{
-                  width: `${stats.resolutionRate}%`,
-                }}
-              />
-            </div>
-            <div className="mt-2 flex justify-between text-xs text-gray-600 dark:text-gray-400">
-              <span>{stats.unresolved} pending</span>
-              <span>{stats.resolutionRate}% complete</span>
-            </div>
-          </div>
-        )}
-
-        {/* Type Breakdown */}
-        {Object.keys(stats.typeBreakdown).length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {Object.entries(stats.typeBreakdown).map(([type, count]) => (
-              <div
-                key={type}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 dark:border-gray-700 dark:bg-gray-800"
-              >
-                <span className="h-2 w-2 rounded-full bg-blue-500" />
-                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                  {type}
-                </span>
-                <span className="text-xs font-bold text-gray-900 dark:text-white">
-                  {count}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
-      {/* Filters Card */}
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800/50">
-        <button
-          type="button"
-          onClick={() => setShowFilters((prev) => !prev)}
-          className="flex w-full items-center justify-between px-6 py-4 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
-        >
-          <div className="flex items-center gap-2">
-            <svg
-              className="h-5 w-5 text-gray-600 dark:text-gray-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
-              />
-            </svg>
 
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-              Filters & Search
-            </h3>
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800/50">
+        <div className="border-b border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-700 dark:bg-gray-800">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-gray-600 transition-all hover:bg-gray-100 active:scale-95 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                aria-label={showFilters ? "Hide filters" : "Show filters"}
+              >
+                {showFilters ? (
+                  <ChevronUp className="h-5 w-5" />
+                ) : (
+                  <ChevronDown className="h-5 w-5" />
+                )}
+              </button>
 
-            {hasActiveFilters && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
+              <div className="flex items-center gap-2">
                 <svg
-                  className="h-3 w-3"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
+                  className="h-5 w-5 text-gray-600 dark:text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
                 >
                   <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                    clipRule="evenodd"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
                   />
                 </svg>
-                Filters Active
-              </span>
-            )}
-          </div>
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  Filters & Search
+                </h3>
+              </div>
 
-          <svg
-            className={`h-5 w-5 text-gray-500 transition-transform duration-300 ease-in-out dark:text-gray-400 ${
-              showFilters ? "rotate-180" : "rotate-0"
-            }`}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
-        </button>
+              {hasActiveFilters && (
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
+                  <svg
+                    className="h-3 w-3"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  Active
+                </span>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowFilters(!showFilters)}
+              className="text-xs font-semibold text-blue-600 transition-colors hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              {showFilters ? "Hide" : "Show"} Filters
+            </button>
+          </div>
+        </div>
 
         <div
-          className={`grid transition-all duration-300 ease-in-out ${
+          className={`transition-all duration-300 ease-in-out ${
             showFilters
-              ? "grid-rows-[1fr] opacity-100"
-              : "grid-rows-[0fr] opacity-0"
+              ? "max-h-[1000px] opacity-100"
+              : "max-h-0 overflow-hidden opacity-0"
           }`}
         >
-          <div className="overflow-hidden">
-            <div
-              className={`border-t border-gray-200 px-6 pb-6 pt-4 transition-all duration-300 ease-in-out dark:border-gray-700 ${
-                showFilters
-                  ? "translate-y-0 scale-100"
-                  : "-translate-y-2 scale-[0.98]"
-              }`}
-            >
-              <ReportListFilters
-                reportType={reportType}
-                onReportType={setReportType}
-                resolved={resolved}
-                onResolved={setResolved}
-                q={q}
-                onQ={setQ}
-                from={from}
-                to={to}
-                onFrom={setFrom}
-                onTo={setTo}
-                onReset={() => {
-                  setReportType("ALL");
-                  setResolved("ALL");
-                  setQ("");
-                  setFrom("");
-                  setTo("");
-                }}
-                onGenerate={load}
-              />
-            </div>
+          <div className="border-t border-gray-200 p-6 dark:border-gray-700">
+            <ReportListFilters
+              q={q}
+              onQ={setQ}
+              buildingId={buildingId}
+              onBuildingId={(value) => {
+                setBuildingId(value);
+                setRoomId("ALL");
+              }}
+              roomId={roomId}
+              onRoomId={setRoomId}
+              buildingOptions={buildingOptions}
+              roomOptions={roomOptions}
+              onReset={handleReset}
+              onGenerate={reload}
+            />
           </div>
         </div>
       </div>
-      {/* Table Card */}
+
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800/50">
-        {loading && items.length === 0 ? (
+        {(loading || lookupLoading) && items.length === 0 ? (
           <LoadingSkeleton />
         ) : rows.length === 0 ? (
           <EmptyState
             title="No Reports Found"
             description={
               hasActiveFilters
-                ? "No reports match your current filters. Try adjusting your search criteria."
-                : "There are no issue reports at the moment."
+                ? "No reports match your current filters."
+                : "There are no reports at the moment."
             }
-            icon={
-              <svg
-                className="h-16 w-16 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-            }
+            icon={<EmptyIcon />}
           />
         ) : (
           <div className="overflow-hidden">
             <div className="border-b border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-700 dark:bg-gray-800">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Reports ({rows.length})
-                </h3>
-                <div className="flex items-center gap-3 text-xs">
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                    <span className="text-gray-600 dark:text-gray-400">
-                      Resolved: {stats.resolved}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-amber-500" />
-                    <span className="text-gray-600 dark:text-gray-400">
-                      Pending: {stats.unresolved}
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Reports ({rows.length})
+              </h3>
             </div>
+
             <ReportListTable
               loading={loading}
               rows={rows}
@@ -426,44 +372,10 @@ export default function ReportListFeature() {
           </div>
         )}
       </div>
-      {/* Help Card */}
-      <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
-        <div className="flex items-start gap-3">
-          <svg
-            className="h-5 w-5 flex-shrink-0 text-blue-600 dark:text-blue-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <div className="flex-1">
-            <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-200">
-              Managing Reports
-            </h4>
-            <ul className="mt-2 space-y-1 text-sm text-blue-800 dark:text-blue-300">
-              <li>
-                • Click on any report to view detailed information and images
-              </li>
-              <li>
-                • Use filters to find specific reports by type, status, or date
-                range
-              </li>
-              <li>• Toggle resolution status directly from the table</li>
-            </ul>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
 
-// Helper Components
 function StatCard({
   label,
   value,
@@ -472,7 +384,7 @@ function StatCard({
 }: {
   label: string;
   value: number | string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   color: "blue" | "emerald" | "amber" | "purple";
 }) {
   const colorClasses = {
@@ -511,7 +423,7 @@ function EmptyState({
 }: {
   title: string;
   description: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
 }) {
   return (
     <div className="flex flex-col items-center justify-center p-12">
@@ -540,5 +452,95 @@ function LoadingSkeleton() {
         ))}
       </div>
     </div>
+  );
+}
+
+function CardIcon() {
+  return (
+    <svg
+      className="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+      />
+    </svg>
+  );
+}
+
+function ResolvedIcon() {
+  return (
+    <svg
+      className="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+  );
+}
+
+function PendingIcon() {
+  return (
+    <svg
+      className="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+  );
+}
+
+function RateIcon() {
+  return (
+    <svg
+      className="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+      />
+    </svg>
+  );
+}
+
+function EmptyIcon() {
+  return (
+    <svg
+      className="h-16 w-16 text-gray-400"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.5}
+        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+      />
+    </svg>
   );
 }

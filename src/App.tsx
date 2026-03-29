@@ -1,13 +1,13 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { Suspense, useEffect } from 'react';
-import { appRoutes } from './app/router/routes';
-import { ToastContainer } from './components/ui/ToastContainer';
-import { useToastStore } from './hooks/useToast';
-import { QuickActionFAB } from './components/common/QuickActionFAB';
-import { ErrorBoundary } from './components/ui/ErrorBoundary';
-import { LoadingFallback } from './components/ui/LoadingFallback';
-import { AuthLayout, MainLayout } from './layouts';
-import ManagerLayout from './components/layouts/labmanager/ManagerLayout';
+import { Routes, Route, Navigate } from "react-router-dom";
+import { Suspense, useEffect } from "react";
+import { appRoutes } from "./app/router/routes";
+import { ToastContainer } from "./components/ui/ToastContainer";
+import { useToastStore } from "./hooks/useToast";
+import { QuickActionFAB } from "./components/common/QuickActionFAB";
+import { ErrorBoundary } from "./components/ui/ErrorBoundary";
+import { LoadingFallback } from "./components/ui/LoadingFallback";
+import { AuthLayout, MainLayout } from "./layouts";
+import ManagerLayout from "./layouts/labmanager/ManagerLayout";
 import { useAuthStore } from './store/useAuthStore';
 
 export default function App() {
@@ -16,13 +16,13 @@ export default function App() {
   const initializeAuth = useAuthStore((state) => state.initialize);
 
 
-  const getLayout = (layout: 'auth' | 'main' | 'labmanager') => {
+  const getLayout = (layout: "auth" | "main" | "labmanager") => {
     switch (layout) {
-      case 'auth':
+      case "auth":
         return AuthLayout;
-      case 'main':
+      case "main":
         return MainLayout;
-      case 'labmanager':
+      case "labmanager":
         return ManagerLayout;
       default:
         return MainLayout;

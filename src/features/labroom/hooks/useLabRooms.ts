@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import type { GetRoomsRequest, GetLabRoomsQuery } from '../types/room.type';
+import type { GetLabRoomsQuery } from '../types/room.type';
 import { labroomApi } from '../api/labroom.api';
 
 /**
@@ -14,11 +14,6 @@ export const QUERY_KEYS = {
   ROOMS: 'rooms',
   STATS: 'stats',
 } as const;
-
-interface UseRoomsOptions {
-  params?: GetRoomsRequest;
-  enabled?: boolean;
-}
 
 /**
  * Hook lấy danh sách phòng/lab

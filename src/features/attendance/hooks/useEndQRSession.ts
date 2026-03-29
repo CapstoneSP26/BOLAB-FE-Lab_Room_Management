@@ -27,10 +27,10 @@ export const useEndQRSession = (options: UseEndQRSessionOptions = {}) => {
     mutationKey: [QUERY_KEYS.END_QR_SESSION],
     mutationFn: (request: EndQRSessionRequest) => attendanceApi.endQRSession(request),
     onSuccess: (data) => {
-      // Invalidate QR session query to reflect isActive = false
-      queryClient.invalidateQueries({ queryKey: ['qrSession', data.data.sessionId] });
+      // Invalidate all session queries since backend contract may not return sessionId.
+      queryClient.invalidateQueries({ queryKey: ['qr-session'] });
       // Invalidate lecturer bookings
-      queryClient.invalidateQueries({ queryKey: ['lecturerBookings'] });
+      queryClient.invalidateQueries({ queryKey: ['lecturer-bookings'] });
 
       options.onSuccess?.(data);
     },

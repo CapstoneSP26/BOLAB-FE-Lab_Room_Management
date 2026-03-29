@@ -19,19 +19,19 @@ import type {
  * API endpoints
  */
 const ATTENDANCE_API = {
-  CREATE_QR_SESSION: '/attendance/qr-session',
-  GET_QR_SESSION: (sessionId: string) => `/attendance/qr-session/${sessionId}`,
-  REFRESH_QR_TOKEN: '/attendance/qr-session/refresh',
-  END_QR_SESSION: (sessionId: string) => `/attendance/qr-session/${sessionId}/end`,
-  GET_ATTENDANCE_LIST: (sessionId: string) => `/attendance/session/${sessionId}/students`,
-  MARK_ATTENDANCE: '/attendance/mark',
-  GET_LECTURER_BOOKINGS: '/attendance/lecturer-bookings',
-  EXPORT_ATTENDANCE: (sessionId: string) => `/attendance/session/${sessionId}/export`,
+  CREATE_QR_SESSION: '/attendances/generate-qrcode',
+  GET_QR_SESSION: (sessionId: string) => `/attendances/qr-session/${sessionId}`,
+  REFRESH_QR_TOKEN: '/attendances/qr-session/refresh',
+  END_QR_SESSION: '/attendances/remove-qrcode',
+  GET_ATTENDANCE_LIST: (sessionId: string) => `/attendances/session/${sessionId}/students`,
+  MARK_ATTENDANCE: '/attendances/mark',
+  GET_LECTURER_BOOKINGS: '/attendances/lecturer-bookings',
+  EXPORT_ATTENDANCE: (sessionId: string) => `/attendances/session/${sessionId}/export`,
 } as const;
 
 export const attendanceApi = {
   createQRSession: (params: CreateQRSessionRequest) =>
-    axiosInstance.post<CreateQRSessionResponse>(ATTENDANCE_API.CREATE_QR_SESSION, params),
+    axiosInstance.get<CreateQRSessionResponse>(ATTENDANCE_API.CREATE_QR_SESSION, { params }).then(res => res.data),
 
   getQRSession: (sessionId: string) =>
     axiosInstance.get<GetQRSessionResponse>(ATTENDANCE_API.GET_QR_SESSION(sessionId)).then(res => res.data),
@@ -40,13 +40,13 @@ export const attendanceApi = {
     axiosInstance.post<RefreshQRTokenResponse>(ATTENDANCE_API.REFRESH_QR_TOKEN, params).then(res => res.data),
 
   endQRSession: (params: EndQRSessionRequest) =>
-    axiosInstance.post<EndQRSessionResponse>(ATTENDANCE_API.END_QR_SESSION(params.sessionId), {}).then(res => res.data),
+    axiosInstance.get<EndQRSessionResponse>(ATTENDANCE_API.END_QR_SESSION, { params }).then(res => res.data),
 
   getAttendanceList: (params: GetAttendanceListRequest) =>
     axiosInstance.get<GetAttendanceListResponse>(ATTENDANCE_API.GET_ATTENDANCE_LIST(params.sessionId)).then(res => res.data),
 
   markAttendance: (params: MarkAttendanceRequest) =>
-    axiosInstance.post<MarkAttendanceResponse>(ATTENDANCE_API.MARK_ATTENDANCE, params),
+    axiosInstance.post<MarkAttendanceResponse>(ATTENDANCE_API.MARK_ATTENDANCE, params).then(res => res.data),
 
   getLecturerBookings: () =>
     axiosInstance.get<GetLecturerBookingsResponse>(ATTENDANCE_API.GET_LECTURER_BOOKINGS).then(res => res.data),

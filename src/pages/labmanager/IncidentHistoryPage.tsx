@@ -1,5 +1,5 @@
 import PageBreadcrumb from "../../components/common/PageBreadcrumb";
-import IncidentHistoryFeature from "../../features/incident-history/IncidentHistoryFeature";
+import IncidentHistoryFeature from "../../features/reports/components/IncidentHistoryFeature";
 
 export default function IncidentHistoryPage() {
   return (

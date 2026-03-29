@@ -4,6 +4,7 @@ import type { BookingDto, CreateBookingCommand, CreateBookingResponse, GetBookin
 
 const BOOKING_API = {
   BOOKS: '/bookings',
+  BOOKING_ATTENDANCE: '/bookings/booking-attendance',
   UPCOMING: '/bookings/upcoming',
   STATS: '/bookings/stats',
   RECENT_REQUESTS: '/booking-requests/recent',
@@ -16,6 +17,11 @@ export const bookingApi = {
     axiosInstance.get<PagedResponse<BookingDto>>(BOOKING_API.BOOKS, {
       params,
     }).then(res => res.data),
+
+  getBookingAttendance: (params: GetBookingsParams) =>
+    axiosInstance.get<PagedResponse<BookingDto>>(BOOKING_API.BOOKING_ATTENDANCE, {
+      params,
+    }),
 
   /**
    * Lấy danh sách lịch booking sắp tới

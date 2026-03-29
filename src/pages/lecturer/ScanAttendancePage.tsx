@@ -4,7 +4,7 @@
  * Features: Camera access, QR scanning, success/fail notifications
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams } from 'react-router';
 import { CheckCircle, XCircle, Loader2, Camera, SwitchCamera } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
@@ -19,6 +19,14 @@ type CameraFacing = 'front' | 'back';
 export default function ScanAttendancePage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const toast = useToast();
+  const isAttendanceMockMode = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    const params = new URLSearchParams(window.location.search);
+    return params.get('mockAttendance') === '1' || params.get('testAttendance') === '1';
+  }, []);
+
+  const isMockSession = isAttendanceMockMode && sessionId === MOCK_QR_SESSION.id;
+  const apiSessionId = isMockSession ? null : (sessionId || null);
 
   const [scanState, setScanState] = useState<ScanState>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -32,8 +40,8 @@ export default function ScanAttendancePage() {
   const scanAttempts = useRef(0); // Track scan attempts for debugging
 
   // Fetch QR session details (if sessionId provided in URL)
-  const { data: sessionData, isLoading: isLoadingSession } = useQRSession(sessionId || null);
-  const session = sessionData?.data || (sessionId === 'qr-session-001' ? MOCK_QR_SESSION : null);
+  const { data: sessionData, isLoading: isLoadingSession } = useQRSession(apiSessionId);
+  const session = sessionData?.data || (isMockSession ? MOCK_QR_SESSION : null);
 
   // Mark attendance mutation
   const markAttendanceMutation = useMarkAttendance();
@@ -328,13 +336,10 @@ export default function ScanAttendancePage() {
         throw new Error('Invalid QR code format - missing sessionId or token');
       }
 
-      // Mock mode: Simulate API call
-      if (scannedSessionId === 'qr-session-001') {
-        console.log('🎭 Using mock mode for qr-session-001');
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        console.log('✅ Mock attendance marked successfully!');
+      if (isAttendanceMockMode && scannedSessionId === MOCK_QR_SESSION.id) {
+        await new Promise(resolve => setTimeout(resolve, 400));
         setScanState('success');
-        toast.success('Attendance Marked!', 'Your attendance has been recorded successfully', 4000);
+        toast.success('Attendance Marked!', 'Mock attendance has been recorded successfully', 4000);
         provideFeedback('success');
         return;
       }
@@ -645,70 +650,6 @@ export default function ScanAttendancePage() {
                 </div>
               </div>
 
-              {/* Test Buttons - For development */}
-              <div className="mt-4 space-y-3">
-                <p className="text-xs text-slate-300 font-semibold text-center mb-2">🧪 Test Scenarios (Development Only)</p>
-
-                <div className="grid grid-cols-2 gap-3">
-                  {/* Test Success */}
-                  <button
-                    onClick={() => {
-                      const testUrl = `${window.location.origin}/scan-attendance/qr-session-001?token=test-token-123`;
-                      console.log('✅ Testing SUCCESS scenario');
-                      onScanSuccess(testUrl);
-                    }}
-                    className="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-xl transition-all active:scale-95 shadow-lg text-sm"
-                  >
-                    ✅ Valid QR
-                  </button>
-
-                  {/* Test Invalid QR */}
-                  <button
-                    onClick={() => {
-                      console.log('❌ Testing INVALID QR scenario');
-                      const invalidUrl = 'https://invalid-qr-code';
-                      onScanSuccess(invalidUrl);
-                    }}
-                    className="bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-xl transition-all active:scale-95 shadow-lg text-sm"
-                  >
-                    ❌ Invalid QR
-                  </button>
-
-                  {/* Test Already Marked */}
-                  <button
-                    onClick={async () => {
-                      console.log('⚠️ Testing ALREADY MARKED scenario');
-                      setScanState('processing');
-                      await new Promise(resolve => setTimeout(resolve, 1000));
-                      setScanState('error');
-                      setErrorMessage('Attendance already marked for this session');
-                      toast.error('Already Marked', 'Your attendance has already been recorded for this session.', 6000);
-                      provideFeedback('error');
-                    }}
-                    className="bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3 px-4 rounded-xl transition-all active:scale-95 shadow-lg text-sm"
-                  >
-                    ⚠️ Already Marked
-                  </button>
-
-                  {/* Test Network Error */}
-                  <button
-                    onClick={async () => {
-                      console.log('🌐 Testing NETWORK ERROR scenario');
-                      setScanState('processing');
-                      await new Promise(resolve => setTimeout(resolve, 1000));
-                      setScanState('error');
-                      setErrorMessage('Unable to connect to server. Please check your internet connection and try again.');
-                      toast.error('Network Error', 'Unable to connect to server. Please check your internet connection and try again.', 6000);
-                      provideFeedback('error');
-                    }}
-                    className="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-4 rounded-xl transition-all active:scale-95 shadow-lg text-sm"
-                  >
-                    🌐 Network Error
-                  </button>
-                </div>
-
-                <p className="text-xs text-slate-400 text-center mt-2">Test buttons skip camera and simulate different scenarios</p>
-              </div>
             </div>
           </div>
         </div>

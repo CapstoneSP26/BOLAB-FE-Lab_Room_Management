@@ -71,7 +71,7 @@ export default function ReportListTable({
                   </td>
 
                   <td className="px-4 py-4 font-semibold text-gray-800 dark:text-white/90">
-                    {r.ReportType}
+                    {r.ReportType ?? "-"}
                   </td>
 
                   <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
@@ -79,7 +79,10 @@ export default function ReportListTable({
                   </td>
 
                   <td className="px-4 py-4">
-                    <div className="max-w-[420px] truncate text-gray-700 dark:text-gray-300">
+                    <div
+                      className="max-w-[420px] truncate text-gray-700 dark:text-gray-300"
+                      title={r.Description}
+                    >
                       {r.Description}
                     </div>
                   </td>
@@ -118,7 +121,7 @@ export default function ReportListTable({
                             : "rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700"
                         }
                       >
-                        {r.IsResolved ? "Mark pending" : "Resolve"}
+                        {r.IsResolved ? "Resolved" : "Unresolved"}
                       </button>
                     </div>
                   </td>

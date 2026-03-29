@@ -48,6 +48,7 @@ export interface WeeklyCalendarProps {
 export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   policies,
   calendarMode,
+  selectedRoomId,
   onCreateBooking,
   selectedSlotTypeId,
   onSlotTypeChange,
@@ -92,6 +93,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
 
   const { events } = useCalendarEvents({
     calendarMode: calendarMode,
+    labRoomId: Number(selectedRoomId),
     startDate: getStartOfDayVNInUTC(weekStart),
     endDate: getStartOfDayVNInUTC(addDays(weekEnd, 1))
   });
