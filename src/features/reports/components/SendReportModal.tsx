@@ -151,7 +151,9 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({
     });
   };
 
-  const buildings = buildingsData?.items || [];
+  const buildings = Array.isArray(buildingsData)
+    ? buildingsData
+    : buildingsData?.items || [];
   const selectedBuilding = useMemo(
     () =>
       buildings.find(
