@@ -3,25 +3,33 @@
  * React Query hooks for report operations
  */
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createReport,
   getReportReasons,
   getMyReports,
   getReportDetail,
-} from '../api/reportApi';
+  getReports,
+  resolveReport,
+} from "../api/reportApi";
 import type {
   CreateReportRequest,
   GetMyReportsRequest,
   GetReportDetailRequest,
   ReportReasonOption,
-} from '../types/report.type';
+  GetReportsRequest,
+  Report,
+  CreateReportResponse,
+  ResolveReportResponse,
+} from "../types/report.type";
+import type { PagedResponse } from "../../../types/pagination.types";
 
 // Query keys for cache management
 export const QUERY_KEYS = {
-  REPORT_REASONS: 'report-reasons',
-  MY_REPORTS: 'my-reports',
-  REPORT_DETAIL: 'report-detail',
+  REPORT_REASONS: "report-reasons",
+  MY_REPORTS: "my-reports",
+  REPORT_DETAIL: "report-detail",
+  REPORTS: "reports",
 } as const;
 
 // ============================================================================
@@ -81,6 +89,28 @@ export const useReportReasons = () => {
   });
 };
 
+/**
+ * Hook to get reports list
+ * Use for both unresolved list page and resolved history page
+ */
+export interface UseReportsOptions extends GetReportsRequest {
+  enabled?: boolean;
+}
+export const useReports = (options: UseReportsOptions = {}) => {
+  const { enabled = true, ...params } = options;
+
+  return useQuery<PagedResponse<Report>>({
+    queryKey: [QUERY_KEYS.REPORTS, params],
+    queryFn: async () => {
+      const response = await getReports(params);
+      return response.data;
+    },
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    enabled,
+  });
+};
+
 // ============================================================================
 // Mutation Hooks
 // ============================================================================
@@ -89,7 +119,7 @@ export const useReportReasons = () => {
  * Hook to create a new report
  */
 export interface UseCreateReportOptions {
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: CreateReportResponse) => void;
   onError?: (error: Error) => void;
 }
 
@@ -109,6 +139,41 @@ export const useCreateReport = (options: UseCreateReportOptions = {}) => {
     },
     onError: (error: Error) => {
       // Call custom error handler if provided
+      options.onError?.(error);
+    },
+  });
+};
+
+/**
+ * Hook to resolve a report
+ */
+export interface UseResolveReportOptions {
+  onSuccess?: (data: ResolveReportResponse) => void;
+  onError?: (error: Error) => void;
+}
+
+export const useResolveReport = (options: UseResolveReportOptions = {}) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, isResolved }: { id: string; isResolved: boolean }) =>
+      resolveReport(id, { isResolved }),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.REPORTS],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.REPORT_DETAIL],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.MY_REPORTS],
+      });
+
+      options.onSuccess?.(data);
+    },
+    onError: (error: Error) => {
       options.onError?.(error);
     },
   });

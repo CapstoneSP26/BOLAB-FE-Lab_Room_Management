@@ -102,7 +102,7 @@ export const getBuildingOptions = async (): Promise<Building[]> => {
   });
 
   return items.map((item) => ({
-    id: String(item.id),
+    id: item.id,
     name: item.buildingName,
     description: item.description ?? "",
     roomCount: 0,

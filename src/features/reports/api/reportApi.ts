@@ -19,7 +19,7 @@ import {
   normalizeReasonOptions,
 } from "../types/report.mapper";
 const REPORT_API = {
-  LIST: "/listreports",
+  LIST: "/reports/listreports",
   CREATE: "/reports",
   REASONS: "/reports/reasons",
   HISTORY: "/reports/history",
@@ -65,7 +65,6 @@ export const getReports = async (
 
   return response.data;
 };
-
 export const getMyReports = async (
   params: GetMyReportsRequest = {},
 ): Promise<GetMyReportsResponse> => {
