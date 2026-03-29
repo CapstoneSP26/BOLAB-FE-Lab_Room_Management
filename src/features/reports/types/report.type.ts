@@ -12,7 +12,6 @@ export const REPORT_REASON_LABELS: Record<string, string> = {
   lighting_problem: "Vấn đề chiếu sáng",
   furniture_damaged: "Bàn ghế hư hỏng",
   network_issue: "Mất kết nối mạng",
-  projector_problem: "Máy chiếu hỏng",
   door_lock_issue: "Khóa cửa hỏng",
   other: "Khác",
 };
@@ -28,6 +27,19 @@ export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = {
   in_progress: "Đang xử lý",
   resolved: "Đã giải quyết",
   rejected: "Từ chối",
+};
+
+// Map reason string keys to ReportTypeId (1-9)
+export const REPORT_REASON_TYPE_ID_MAP: Record<string, number> = {
+  equipment_damaged: 1,
+  equipment_missing: 2,
+  cleanliness_issue: 3,
+  air_conditioning_problem: 4,
+  lighting_problem: 5,
+  furniture_damaged: 6,
+  network_issue: 7,
+  door_lock_issue: 8,
+  other: 9,
 };
 
 export interface ReportDraft {
