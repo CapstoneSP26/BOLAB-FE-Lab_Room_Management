@@ -14,7 +14,7 @@ import { useSlotStore } from '../../../store/slotStore';
 import { FixedGridView } from './FixedGridView';
 import type { PendingBooking } from '../../booking/types/booking.type';
 import { getStartOfDayVNInUTC } from '../../../utils/date.util';
-import { addDays } from 'date-fns';
+import { addDays, formatDate } from 'date-fns';
 import { PolicyType, type PolicyTypeEnum } from '../../labroom';
 import { checkLabPolicies } from '../../labroom/utils/policy.util';
 import { useToast } from '../../../hooks/useToast';
@@ -95,7 +95,6 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     startDate: getStartOfDayVNInUTC(weekStart),
     endDate: getStartOfDayVNInUTC(addDays(weekEnd, 1))
   });
-  console.log("events : ", events);
 
   const gridRef = useRef<HTMLDivElement>(null);
 
@@ -194,7 +193,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
       return;
     }
 
-    const date = weekDays[dragState.dayIndex].toISOString().split('T')[0];
+    const date = formatDate(weekDays[dragState.dayIndex], 'yyyy-MM-dd');
     const bookingData = {
       date,
       startTime: dragState.startTime,
