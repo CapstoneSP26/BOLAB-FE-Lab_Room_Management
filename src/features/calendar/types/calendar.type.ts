@@ -14,10 +14,30 @@ export interface CalendarEvent {
   end: string;
   type: string;
   status: string;
-  rawOrigin: any; // Giữ lại data gốc nếu cần hiển thị Modal chi tiết
+  rawOrigin: unknown; // Giữ lại data gốc nếu cần hiển thị Modal chi tiết
   color?: string;
 }
 
+export interface Schedule {
+  Id: string;
+  LecturerId: string;
+  LabRoomId: number;
+
+  ScheduleType: string;
+  ScheduleStatus: string;
+  BuildingName: string;
+  StartTime: string;
+  EndTime: string;
+
+  CreatedAt: string;
+  UpdatedAt: string;
+  CreatedBy: string;
+  UpdatedBy: string;
+
+  IsActive: boolean;
+  IsDeleted: boolean;
+  FromAdmin: boolean;
+}
 
 export type IncidentStatus = "OPEN" | "CLOSED" | "RESOLVED" | string;
 export type IncidentSeverity = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" | string;
@@ -74,4 +94,16 @@ export interface AddIncidentFromReportResponse {
 
 export interface RemoveIncidentByReportIdResponse {
   success: boolean;
+}
+
+export interface GetScheduleListResponse {
+  data: Schedule[];
+}
+
+export interface GetScheduleByIdResponse {
+  data: Schedule;
+}
+
+export interface UpdateScheduleStatusResponse {
+  data: Schedule;
 }

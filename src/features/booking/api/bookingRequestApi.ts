@@ -8,21 +8,7 @@ import type {
   GetBookingByScheduleIdResponse,
   UpdateBookingStatusRequest,
   UpdateBookingStatusResponse,
-  GetBookingStatusLookupResponse,
 } from "../types/bookingRequest.type";
-import type { Building } from "../../building/types/building.type";
-import { buildingApi } from "../../building/api/buildingApi";
-import type {
-  LabRoomDto,
-  LabRoomLookupItem,
-} from "../../labroom/types/room.type";
-import { labroomApi } from "../../labroom/api/labroom.api";
-import type {
-  GetSlotTypesRequest,
-  GetSlotTypesResponse,
-  SlotType,
-} from "../../slot/types/slot.types";
-import { slotApi } from "../../slot/api/slotApi";
 
 const BOOKING_REQUEST_API = {
   LIST: "/bookings/get-unchecked-booking-request",
@@ -91,72 +77,3 @@ export const updateBookingRequestStatus = async (
   );
   return response.data;
 };
-
-/** Lookup: buildings
- * Dùng buildingApi để đổ dropdown building
- */
-export const getBuildingOptions = async (): Promise<Building[]> => {
-  const items = await buildingApi.getBuildings({
-    pageNumber: 1,
-    pageSize: 1000,
-  });
-
-  return items.map((item) => ({
-    id: item.id,
-    name: item.buildingName,
-    description: item.description ?? "",
-    roomCount: 0,
-    image: item.buildingImageUrl ?? "",
-    color: undefined,
-  }));
-};
-
-/** Lookup: rooms for booking filter
- * Dùng labroomApi để đổ dropdown room
- */
-export const getRoomOptions = async (
-  buildingId?: string | number,
-): Promise<LabRoomLookupItem[]> => {
-  const response = await labroomApi.getRooms({
-    pageNumber: 1,
-    pageSize: 1000,
-    includeBuilding: true,
-    isDescending: false,
-    buildingId: buildingId ? Number(buildingId) : undefined,
-  });
-
-  const items: LabRoomDto[] = response.items ?? [];
-
-  return items.map((item: LabRoomDto) => ({
-    id: item.id,
-    roomName: item.roomName,
-    roomNo: item.roomNo,
-    buildingId: item.buildingId,
-    buildingName: item.buildingName,
-  }));
-};
-
-/** Lookup: slot types
- * Dùng slotApi để đổ dropdown slot type
- */
-export const getSlotTypes = async (
-  params: GetSlotTypesRequest = {},
-): Promise<GetSlotTypesResponse> => {
-  const items: SlotType[] = await slotApi.getSlotTypes(params);
-
-  return {
-    data: items,
-    total: items.length,
-    page: 1,
-    limit: items.length,
-  };
-};
-
-/** Lookup: booking statuses */
-export const getBookingStatusLookup =
-  async (): Promise<GetBookingStatusLookupResponse> => {
-    const response = await axiosInstance.get<GetBookingStatusLookupResponse>(
-      BOOKING_REQUEST_API.STATUS_LOOKUP,
-    );
-    return response.data;
-  };

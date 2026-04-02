@@ -19,7 +19,7 @@ export interface GetBookingStatusLookupResponse {
 }
 
 // ===== API REQUEST =====
-export interface GetBookingRequestsRequest {
+export interface GetBookingRequests {
   status?: BookingStatus;
   page?: number;
   limit?: number;

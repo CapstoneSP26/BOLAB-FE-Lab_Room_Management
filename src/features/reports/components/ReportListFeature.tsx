@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -14,11 +14,10 @@ import ReportListFilters from "./ReportListFilters";
 import ReportListTable from "./ReportListTable";
 
 import { buildingApi } from "../../building/api/buildingApi";
-
 import { labroomApi } from "../../labroom/api/labroom.api";
-import { mapBuildingOptions, mapRoomOptions } from "../types/report.mapper";
-import type { Building } from "../../building/types/building.type";
-import type { LabRoomLookupItem } from "../../labroom/types/room.type";
+
+import type { BuildingDto } from "../../building/types/building.type";
+import type { LabRoomDto } from "../../labroom/types/room.type";
 import { useReports, useResolveReport } from "../hooks/useReport";
 
 export default function ReportListFeature() {
@@ -27,8 +26,8 @@ export default function ReportListFeature() {
   const [lookupLoading, setLookupLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
 
-  const [buildingOptions, setBuildingOptions] = useState<Building[]>([]);
-  const [roomOptions, setRoomOptions] = useState<LabRoomLookupItem[]>([]);
+  const [buildingOptions, setBuildingOptions] = useState<BuildingDto[]>([]);
+  const [roomOptions, setRoomOptions] = useState<LabRoomDto[]>([]);
 
   const [q, setQ] = useState("");
   const [buildingId, setBuildingId] = useState<number | "ALL">("ALL");
@@ -59,24 +58,27 @@ export default function ReportListFeature() {
     },
   });
 
-  const loadLookups = useCallback(async () => {
-    setLookupLoading(true);
-    try {
-      const buildings = await buildingApi.getBuildings({
-        pageNumber: 1,
-        pageSize: 1000,
-      });
-
-      setBuildingOptions(mapBuildingOptions(buildings ?? []));
-      setRoomOptions([]);
-    } finally {
-      setLookupLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    void loadLookups();
-  }, [loadLookups]);
+    const loadBuildings = async () => {
+      setLookupLoading(true);
+      try {
+        const buildingsResponse = await buildingApi.getBuildings({
+          pageNumber: 1,
+          pageSize: 1000,
+        });
+
+        const buildings = Array.isArray(buildingsResponse?.items)
+          ? buildingsResponse.items
+          : [];
+
+        setBuildingOptions(buildings);
+      } finally {
+        setLookupLoading(false);
+      }
+    };
+
+    void loadBuildings();
+  }, []);
 
   useEffect(() => {
     const loadRoomsByBuilding = async () => {
@@ -96,7 +98,7 @@ export default function ReportListFeature() {
         });
 
         const rooms = Array.isArray(response?.items) ? response.items : [];
-        setRoomOptions(mapRoomOptions(rooms));
+        setRoomOptions(rooms);
       } catch {
         setRoomOptions([]);
       }

@@ -40,11 +40,3 @@ export interface Stats {
 export interface GetStatsResponse {
   data: Stats;
 }
-
-export interface LabRoomLookupItem {
-  id: number;
-  roomName: string;
-  roomNo: string;
-  buildingId: number;
-  buildingName: string;
-}

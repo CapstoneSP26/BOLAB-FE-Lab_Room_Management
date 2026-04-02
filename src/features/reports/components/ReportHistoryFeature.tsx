@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronDown, Filter, X, RefreshCw, AlertTriangle } from "lucide-react";
@@ -8,10 +8,9 @@ import ReportHistoryTable from "./ReportHistoryTable";
 
 import { buildingApi } from "../../building/api/buildingApi";
 import { labroomApi } from "../../labroom/api/labroom.api";
-import { mapBuildingOptions, mapRoomOptions } from "../types/report.mapper";
-import type { Building } from "../../building/types/building.type";
-import type { LabRoomLookupItem } from "../../labroom/types/room.type";
-import { useReports } from "../hooks/useReport";
+import type { BuildingDto } from "../../building/types/building.type";
+import type { LabRoomDto } from "../../labroom/types/room.type";
+import { useReportHistory } from "../hooks/useReport";
 
 export default function ReportHistoryFeature() {
   const nav = useNavigate();
@@ -19,47 +18,50 @@ export default function ReportHistoryFeature() {
   const [lookupLoading, setLookupLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
 
-  const [buildingOptions, setBuildingOptions] = useState<Building[]>([]);
-  const [roomOptions, setRoomOptions] = useState<LabRoomLookupItem[]>([]);
+  const [buildingOptions, setBuildingOptions] = useState<BuildingDto[]>([]);
+  const [roomOptions, setRoomOptions] = useState<LabRoomDto[]>([]);
 
   const [q, setQ] = useState("");
   const [buildingId, setBuildingId] = useState<number | "ALL">("ALL");
   const [roomId, setRoomId] = useState<number | "ALL">("ALL");
 
   const {
-    data: items = [],
+    data: pagedReports,
     isLoading,
-    isFetching,
     refetch,
-  } = useReports({
+    isFetching,
+  } = useReportHistory({
     q: q.trim() || undefined,
     buildingId: buildingId === "ALL" ? undefined : buildingId,
     roomId: roomId === "ALL" ? undefined : roomId,
-    isResolved: true,
     page: 1,
     limit: 1000,
     sortBy: "CreatedAt",
     isDescending: true,
   });
-
-  const loadLookups = useCallback(async () => {
-    setLookupLoading(true);
-    try {
-      const buildings = await buildingApi.getBuildings({
-        pageNumber: 1,
-        pageSize: 1000,
-      });
-
-      setBuildingOptions(mapBuildingOptions(buildings ?? []));
-      setRoomOptions([]);
-    } finally {
-      setLookupLoading(false);
-    }
-  }, []);
+  const items = useMemo(() => pagedReports?.items ?? [], [pagedReports?.items]);
 
   useEffect(() => {
-    void loadLookups();
-  }, [loadLookups]);
+    const loadBuildings = async () => {
+      setLookupLoading(true);
+      try {
+        const buildingsResponse = await buildingApi.getBuildings({
+          pageNumber: 1,
+          pageSize: 1000,
+        });
+
+        const buildings = Array.isArray(buildingsResponse?.items)
+          ? buildingsResponse.items
+          : [];
+
+        setBuildingOptions(buildings);
+      } finally {
+        setLookupLoading(false);
+      }
+    };
+
+    void loadBuildings();
+  }, []);
 
   useEffect(() => {
     const loadRoomsByBuilding = async () => {
@@ -79,7 +81,7 @@ export default function ReportHistoryFeature() {
         });
 
         const rooms = Array.isArray(response?.items) ? response.items : [];
-        setRoomOptions(mapRoomOptions(rooms));
+        setRoomOptions(rooms);
       } catch {
         setRoomOptions([]);
       }
@@ -89,9 +91,11 @@ export default function ReportHistoryFeature() {
   }, [buildingId]);
 
   const rows = useMemo(() => {
-    return [...items].sort((a, b) =>
-      String(b.CreatedAt ?? "").localeCompare(String(a.CreatedAt ?? "")),
-    );
+    return [...items]
+      .filter((item) => item.isResolved)
+      .sort((a, b) =>
+        String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? "")),
+      );
   }, [items]);
 
   const stats = useMemo(() => {

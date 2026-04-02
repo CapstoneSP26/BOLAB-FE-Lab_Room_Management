@@ -58,53 +58,38 @@ export interface PurposeTypeDto {
 }
 
 export interface PendingBooking {
-  date: string;       // YYYY-MM-DD
-  startTime: string;  // HH:mm
-  endTime: string;    // HH:mm
+  date: string; // YYYY-MM-DD
+  startTime: string; // HH:mm
+  endTime: string; // HH:mm
   slotTypeId: number; // Để biết là đang đặt theo ca hay tự do
 }
 
-
 // ===== DOMAIN MODELS =====
 
-export interface Booking {
-  id: string | number;
-  roomId: string | number;
-  roomName: string;
-  buildingName: string;
-  startTime: string;
-  endTime: string;
-  date: string;
-  status: BookingStatus;
-  purpose?: string;
-  userName?: string;
-  lecturerName?: string;
-  scheduleType?: string;
-  studentCount?: number;
-  bookingSource?: "AO_BOOK" | "LECTURER_BOOK";
-}
-
-export type BookingStatus =
-  | "All"
-  | "PendingApproval"
-  | "Approved"
-  | "Rejected"
-  | "Cancelled";
-export type BookingStatusFilter = BookingStatus | "all";
-
 export interface BookingRequest {
-  id: string | number;
-  roomId: string | number;
+  id: string;
+  roomId: number;
   roomName: string;
   buildingName: string;
-  requestedBy: string;
-  requestedAt: string;
+
+  requestedBy?: string;
+  requestedAt?: string;
+
   startTime: string;
   endTime: string;
   date: string;
+
   studentCount?: number;
   status: string;
   purpose?: string;
+
+  userName?: string;
+  lecturerName?: string;
+  scheduleType?: string;
+
+  canApprove?: boolean;
+  canReject?: boolean;
+  isOverdue?: boolean;
 }
 
 export interface BookingStats {
@@ -119,6 +104,8 @@ export interface BookingStats {
 export interface GetUpcomingBookingsRequest {
   page?: number;
   limit?: number;
+  q?: string;
+  status?: string;
   startDate?: string;
   endDate?: string;
 }
@@ -136,7 +123,8 @@ export interface GetRecentRequestsRequest {
 export interface GetBookingHistoryRequest {
   page?: number;
   limit?: number;
-  status?: BookingStatusFilter;
+  q?: string;
+  status?: string;
   startDate?: string;
   endDate?: string;
 }
@@ -144,7 +132,7 @@ export interface GetBookingHistoryRequest {
 // ===== API RESPONSE TYPES =====
 
 export interface GetUpcomingBookingsResponse {
-  data: Booking[];
+  data: BookingRequest[];
   total: number;
   page: number;
   limit: number;
@@ -162,7 +150,7 @@ export interface GetRecentRequestsResponse {
 }
 
 export interface GetBookingHistoryResponse {
-  data: Booking[];
+  data: BookingRequest[];
   total: number;
   page: number;
   limit: number;

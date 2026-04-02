@@ -1,9 +1,4 @@
 import type { ReportReasonOption } from "./report.type";
-import type { Building, BuildingDto } from "../../building/types/building.type";
-import type {
-  LabRoomDto,
-  LabRoomLookupItem,
-} from "../../labroom/types/room.type";
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -48,23 +43,3 @@ export const getResponseSuccess = (payload: unknown): boolean => {
     ? payload.success
     : true;
 };
-export function mapBuildingOptions(items: BuildingDto[]): Building[] {
-  return items.map((item) => ({
-    id: item.id,
-    name: item.buildingName,
-    description: item.description ?? "",
-    roomCount: 0,
-    image: item.buildingImageUrl ?? "",
-    color: undefined,
-  }));
-}
-
-export function mapRoomOptions(items: LabRoomDto[]): LabRoomLookupItem[] {
-  return items.map((item) => ({
-    id: item.id,
-    roomName: item.roomName,
-    roomNo: item.roomNo,
-    buildingId: item.buildingId,
-    buildingName: item.buildingName,
-  }));
-}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ChevronDown,
   Filter,
@@ -26,20 +26,19 @@ import type {
   BookingStatusLookupItem,
 } from "../types/bookingRequest.type";
 import type { BookingRequest } from "../types/booking.type";
-import type { Building } from "../../building/types/building.type";
-import type { LabRoomLookupItem } from "../../labroom/types/room.type";
+import type { BuildingDto } from "../../building/types/building.type";
+import type { LabRoomDto } from "../../labroom/types/room.type";
 const normText = (s: unknown) =>
   String(s ?? "")
     .trim()
     .toLowerCase();
 
 export default function HistoryBookingFeature() {
-  const [loading, setLoading] = useState(true);
   const [lookupLoading, setLookupLoading] = useState(true);
 
   const [items, setItems] = useState<BookingRequest[]>([]);
-  const [buildingOptions, setBuildingOptions] = useState<Building[]>([]);
-  const [roomOptions, setRoomOptions] = useState<LabRoomLookupItem[]>([]);
+  const [buildingOptions, setBuildingOptions] = useState<BuildingDto[]>([]);
+  const [roomOptions, setRoomOptions] = useState<LabRoomDto[]>([]);
   const [statusOptions, setStatusOptions] = useState<BookingStatusLookupItem[]>(
     [],
   );
