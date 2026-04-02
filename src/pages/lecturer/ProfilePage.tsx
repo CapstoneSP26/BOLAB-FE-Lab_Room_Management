@@ -3,7 +3,7 @@
  * Premium design with animations and visual effects
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { 
   User, Mail, Phone, Briefcase, Calendar, Shield,
   Camera, Edit2, Save, X, Bell, Lock, Eye, EyeOff,
@@ -15,14 +15,19 @@ import { QRCodeSVG } from 'qrcode.react';
 import { AnimatedCounter } from '../../components/ui/AnimatedCounter';
 import { RecentActivity, type Activity } from '../../components/common/RecentActivity';
 import { useToast } from '../../hooks/useToast';
+import {
+  useMyProfile,
+  useProfileStats,
+  useRecentActivities,
+  useUpdateMyProfile,
+  useUploadAvatar,
+} from '../../features/profile/hooks/userProfile';
+import { addCacheBuster } from '../../utils/imageCache';
 
 export default function ProfilePage() {
   const appAlert = useToast();
   const [isEditing, setIsEditing] = useState(false);
-  const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
 
   // Notification preferences
@@ -37,31 +42,116 @@ export default function ProfilePage() {
     systemAnnouncements: false,
   });
 
-  // User data - Replace with real data from context/API
-  const [userData, setUserData] = useState({
-    fullName: 'Nguyen Van A',
-    email: 'nguyenvana@fpt.edu.vn',
-    phone: '+84 123 456 789',
-    role: 'Lecturer',
-    department: 'Software Engineering',
-    memberSince: '2020-09-01',
-    avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-    bio: 'Passionate educator specializing in Software Engineering and AI. Committed to fostering innovation.',
+  const { data: profile, isLoading: isProfileLoading } = useMyProfile();
+  const { data: stats, isLoading: isStatsLoading } = useProfileStats();
+  const { data: recentActivitiesData, isLoading: isActivitiesLoading } =
+    useRecentActivities(10);
+
+  const isProfileDataLoading = isProfileLoading && !profile;
+  const isStatsDataLoading = isStatsLoading && !stats;
+  const isActivitiesDataLoading = isActivitiesLoading && !recentActivitiesData;
+
+  const updateProfile = useUpdateMyProfile({
+    onSuccess: () => {
+      setIsEditing(false);
+      appAlert.success('Cập nhật hồ sơ', 'Thông tin đã được lưu.');
+    },
+    onError: (error) => {
+      appAlert.error('Cập nhật thất bại', error.message);
+    },
   });
 
-  // Statistics
-  const stats = {
-    totalBookings: 156,
-    activeBookings: 3,
-    qrSessionsCreated: 89,
-    reportsSubmitted: 12,
-    attendanceRate: 94.5,
-    hoursTeaching: 1240,
-    studentsImpacted: 450,
-  };
+  const uploadAvatar = useUploadAvatar({
+    onSuccess: () => {
+      appAlert.success('Ảnh đại diện', 'Đã cập nhật thành công.');
+    },
+    onError: (error) => {
+      appAlert.error('Tải ảnh thất bại', error.message);
+    },
+  });
 
-  // Profile Completion
-  let profileCompletion = 85; // Calculate based on filled fields
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    department: '',
+    bio: '',
+  });
+
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        fullName: profile.fullName ?? '',
+        email: profile.email ?? '',
+        phone: profile.phone ?? '',
+        department: profile.department ?? '',
+        bio: profile.bio ?? '',
+      });
+    }
+  }, [profile]);
+
+  const completionFields = [
+    profile?.fullName,
+    profile?.email,
+    profile?.role,
+    profile?.department,
+    profile?.phone,
+  ];
+  const filledFields = completionFields.filter(Boolean).length;
+  const profileCompletion = completionFields.length
+    ? Math.round((filledFields / completionFields.length) * 100)
+    : 0;
+
+  const avatarUrl = useMemo(
+    () =>
+      addCacheBuster(
+        profile?.avatarUrl ||
+          profile?.userImageUrl ||
+          '/images/user/default-avatar.png',
+      ),
+    [profile],
+  );
+
+  const memberSinceYear = profile?.createdAt
+    ? new Date(profile.createdAt).getFullYear()
+    : '--';
+
+  const displayName = formData.fullName || profile?.fullName || '—';
+  const displayEmail = formData.email || profile?.email || '—';
+  const displayPhone = formData.phone || profile?.phone || '—';
+  const displayRole = profile?.role || '—';
+  const displayDepartment = formData.department || profile?.department || '—';
+  const displayBio = formData.bio || profile?.bio || 'Cập nhật giới thiệu của bạn.';
+  const shareEmail = profile?.email || formData.email || '';
+
+  const activityItems: Activity[] = useMemo(() => {
+    if (!recentActivitiesData) return [];
+
+    const supportedTypes: Activity['type'][] = [
+      'booking',
+      'qr_generated',
+      'report_sent',
+      'booking_approved',
+      'booking_rejected',
+    ];
+
+    return recentActivitiesData.map((item) => {
+      const mappedType = supportedTypes.includes(
+        item.activityType as Activity['type'],
+      )
+        ? (item.activityType as Activity['type'])
+        : 'booking';
+
+      return {
+        id: item.id,
+        type: mappedType,
+        title: item.title,
+        description: item.description,
+        timestamp: item.timestamp,
+        status: item.status as Activity['status'],
+      };
+    });
+  }, [recentActivitiesData]);
 
   // Activity Heatmap Data (last 12 weeks, 7 days each)
   const generateHeatmapData = () => {
@@ -82,51 +172,21 @@ export default function ProfilePage() {
 
   const heatmapData = generateHeatmapData();
 
-  // Recent activities
-  const recentActivities: Activity[] = [
-    {
-      id: '1',
-      type: 'booking',
-      title: 'Booked Lab A-501',
-      description: 'For Software Engineering class on Mar 10, 2026',
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: '2',
-      type: 'qr_generated',
-      title: 'Generated QR Code',
-      description: 'Lab G-203 - 28 students attended',
-      timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: '3',
-      type: 'report_sent',
-      title: 'Reported Equipment Issue',
-      description: 'Projector malfunction in Lab D-305',
-      timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: '4',
-      type: 'booking_approved',
-      title: 'Booking Approved',
-      description: 'Lab A-101 for Database Management',
-      timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-  ];
-
   const handleSave = () => {
-    setIsEditing(false);
+    updateProfile.mutate({
+      FullName: formData.fullName || undefined,
+      Email: formData.email || undefined,
+      Phone: formData.phone || undefined,
+      Department: formData.department || undefined,
+      Bio: formData.bio || undefined,
+    });
   };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setUserData({ ...userData, avatar: reader.result as string });
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+
+    uploadAvatar.mutate(file);
   };
 
   const handleExportProfile = () => {
@@ -186,82 +246,22 @@ export default function ProfilePage() {
               
               <div className="relative z-10">
                 <div className="text-center">
-                  {/* Avatar with Completion Ring */}
-                  <div className="relative inline-block mb-6">
-                    {/* Completion Ring */}
-                    <svg className="absolute -inset-2 w-36 h-36" viewBox="0 0 100 100">
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="45"
-                        fill="none"
-                        stroke="#e5e7eb"
-                        strokeWidth="4"
-                      />
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="45"
-                        fill="none"
-                        stroke="url(#gradient)"
-                        strokeWidth="4"
-                        strokeLinecap="round"
-                        strokeDasharray={`${2 * Math.PI * 45}`}
-                        strokeDashoffset={`${2 * Math.PI * 45 * (1 - profileCompletion / 100)}`}
-                        transform="rotate(-90 50 50)"
-                        className="transition-all duration-1000"
-                      />
-                      <defs>
-                        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#f97316" />
-                          <stop offset="100%" stopColor="#3b82f6" />
-                        </linearGradient>
-                      </defs>
-                    </svg>
+                  {/* Avatar */}
+                  <div className="inline-block mb-6">
                     <img
-                      src={userData.avatar}
-                      alt={userData.fullName}
+                      src={avatarUrl}
+                      alt={displayName}
                       className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-2xl"
                     />
-                    <label className="absolute bottom-0 right-0 bg-gradient-to-r from-orange-500 to-red-500 text-white p-2.5 rounded-full cursor-pointer shadow-lg hover:scale-110 transition-transform">
-                      <Camera className="w-4 h-4" />
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleAvatarChange}
-                        className="hidden"
-                      />
-                    </label>
                   </div>
 
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">{userData.fullName}</h2>
-                  <p className="text-orange-600 font-semibold mb-1">{userData.role}</p>
-                  <p className="text-sm text-gray-600 mb-4">{userData.department}</p>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    {isProfileDataLoading ? 'Đang tải...' : displayName}
+                  </h2>
+                  <p className="text-orange-600 font-semibold mb-1">{displayRole}</p>
+                  <p className="text-sm text-gray-600 mb-4">{displayDepartment}</p>
 
-                  {/* Profile Completion Badge */}
-                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-100 to-blue-100 rounded-full mb-4">
-                    <div className="flex items-center gap-1">
-                      {profileCompletion === 100 ? (
-                        <Check className="w-4 h-4 text-green-600" />
-                      ) : (
-                        <AlertCircle className="w-4 h-4 text-orange-600" />
-                      )}
-                      <span className="text-sm font-semibold text-gray-900">
-                        <AnimatedCounter value={profileCompletion} suffix="%" /> Complete
-                      </span>
-                    </div>
-                  </div>
 
-                  {/* Bio */}
-                  <p className="text-sm text-gray-600 leading-relaxed mb-6">
-                    {userData.bio}
-                  </p>
-
-                  {/* Member Since */}
-                  <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
-                    <Calendar className="w-4 h-4" />
-                    <span>Member since {new Date(userData.memberSince).getFullYear()}</span>
-                  </div>
                 </div>
 
                 {/* Quick Actions */}
@@ -276,26 +276,21 @@ export default function ProfilePage() {
                     </div>
                     <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-orange-500 transition-colors" />
                   </button>
-                  <button
-                    onClick={() => setShowPasswordChange(!showPasswordChange)}
-                    className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 transition-all group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Lock className="w-5 h-5 text-gray-500 group-hover:text-orange-500 transition-colors" />
-                      <span className="text-gray-700 font-medium">Change Password</span>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-orange-500 transition-colors" />
-                  </button>
                 </div>
               </div>
             </div>
 
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-2 gap-3">
+              {isStatsDataLoading && (
+                <div className="col-span-2 text-xs text-gray-500">
+                  Loading statistics...
+                </div>
+              )}
               <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl p-4 shadow-md hover:scale-105 transition-transform cursor-pointer border border-blue-200">
                 <BookOpen className="w-6 h-6 mb-2 text-blue-600" />
                 <p className="text-2xl font-bold mb-1 text-blue-900">
-                  <AnimatedCounter value={stats.totalBookings} />
+                  <AnimatedCounter value={stats?.totalBookings ?? 0} />
                 </p>
                 <p className="text-xs text-blue-700">Total Bookings</p>
               </div>
@@ -303,25 +298,25 @@ export default function ProfilePage() {
               <div className="bg-gradient-to-br from-green-50 to-emerald-100 rounded-2xl p-4 shadow-md hover:scale-105 transition-transform cursor-pointer border border-green-200">
                 <QrCode className="w-6 h-6 mb-2 text-green-600" />
                 <p className="text-2xl font-bold mb-1 text-green-900">
-                  <AnimatedCounter value={stats.qrSessionsCreated} />
+                  <AnimatedCounter value={stats?.totalQASessions ?? 0} />
                 </p>
-                <p className="text-xs text-green-700">QR Sessions</p>
+                <p className="text-xs text-green-700">QA Sessions</p>
               </div>
 
               <div className="bg-gradient-to-br from-purple-50 to-pink-100 rounded-2xl p-4 shadow-md hover:scale-105 transition-transform cursor-pointer border border-purple-200">
                 <Clock className="w-6 h-6 mb-2 text-purple-600" />
                 <p className="text-2xl font-bold mb-1 text-purple-900">
-                  <AnimatedCounter value={stats.hoursTeaching} />
+                  <AnimatedCounter value={stats?.totalHoursTaught ?? 0} />
                 </p>
-                <p className="text-xs text-purple-700">Hours Teaching</p>
+                <p className="text-xs text-purple-700">Hours Taught</p>
               </div>
 
               <div className="bg-gradient-to-br from-orange-50 to-red-100 rounded-2xl p-4 shadow-md hover:scale-105 transition-transform cursor-pointer border border-orange-200">
                 <User className="w-6 h-6 mb-2 text-orange-600" />
                 <p className="text-2xl font-bold mb-1 text-orange-900">
-                  <AnimatedCounter value={stats.studentsImpacted} />
+                  <AnimatedCounter value={stats?.totalStudentsLed ?? 0} />
                 </p>
-                <p className="text-xs text-orange-700">Students</p>
+                <p className="text-xs text-orange-700">Students Led</p>
               </div>
             </div>
 
@@ -331,7 +326,7 @@ export default function ProfilePage() {
                 <h3 className="font-bold text-gray-900 mb-4">Share Profile</h3>
                 <div className="inline-block p-4 bg-white rounded-xl border-2 border-gray-200">
                   <QRCodeSVG
-                    value={`${window.location.origin}/profile/${userData.email}`}
+                    value={`${window.location.origin}/profile/${shareEmail || 'me'}`}
                     size={180}
                     level="H"
                     includeMargin
@@ -344,41 +339,6 @@ export default function ProfilePage() {
 
           {/* Right Column - Details & Activities */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Activity Heatmap */}
-            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all">
-              <div className="flex items-center gap-2 mb-6">
-                <Flame className="w-6 h-6 text-orange-500" />
-                <h3 className="text-xl font-bold text-gray-900">Activity Overview</h3>
-                <span className="ml-auto text-sm text-gray-500">Last 12 weeks</span>
-              </div>
-
-              <div className="flex gap-1 overflow-x-auto pb-2">
-                {heatmapData.map((week, weekIndex) => (
-                  <div key={weekIndex} className="flex flex-col gap-1">
-                    {week.map((day, dayIndex) => (
-                      <div
-                        key={dayIndex}
-                        className={`w-3 h-3 rounded-sm ${getHeatmapColor(day.count)} transition-all hover:scale-150 cursor-pointer`}
-                        title={`${day.date.toLocaleDateString()}: ${day.count} activities`}
-                      />
-                    ))}
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex items-center justify-end gap-2 mt-4 text-xs text-gray-500">
-                <span>Less</span>
-                <div className="flex gap-1">
-                  <div className="w-3 h-3 rounded-sm bg-gray-100" />
-                  <div className="w-3 h-3 rounded-sm bg-green-200" />
-                  <div className="w-3 h-3 rounded-sm bg-green-300" />
-                  <div className="w-3 h-3 rounded-sm bg-green-400" />
-                  <div className="w-3 h-3 rounded-sm bg-green-500" />
-                  <div className="w-3 h-3 rounded-sm bg-green-600" />
-                </div>
-                <span>More</span>
-              </div>
-            </div>
 
             {/* Personal Information */}
             <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all">
@@ -399,7 +359,8 @@ export default function ProfilePage() {
                   <div className="flex gap-2">
                     <button
                       onClick={handleSave}
-                      className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white hover:from-orange-600 hover:to-red-600 rounded-xl transition-all hover:scale-105 shadow-lg"
+                      disabled={updateProfile.isPending}
+                      className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white hover:from-orange-600 hover:to-red-600 rounded-xl transition-all hover:scale-105 shadow-lg disabled:opacity-60"
                     >
                       <Save className="w-4 h-4" />
                       <span className="text-sm font-medium">Save</span>
@@ -425,12 +386,12 @@ export default function ProfilePage() {
                   {isEditing ? (
                     <input
                       type="text"
-                      value={userData.fullName}
-                      onChange={(e) => setUserData({ ...userData, fullName: e.target.value })}
+                      value={formData.fullName}
+                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
                     />
                   ) : (
-                    <p className="text-gray-900 px-4 py-3 bg-gray-50 rounded-xl">{userData.fullName}</p>
+                    <p className="text-gray-900 px-4 py-3 bg-gray-50 rounded-xl">{displayName}</p>
                   )}
                 </div>
 
@@ -443,31 +404,22 @@ export default function ProfilePage() {
                   {isEditing ? (
                     <input
                       type="email"
-                      value={userData.email}
-                      onChange={(e) => setUserData({ ...userData, email: e.target.value })}
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
                     />
                   ) : (
-                    <p className="text-gray-900 px-4 py-3 bg-gray-50 rounded-xl">{userData.email}</p>
+                    <p className="text-gray-900 px-4 py-3 bg-gray-50 rounded-xl">{displayEmail}</p>
                   )}
                 </div>
 
-                {/* Phone */}
+                {/* Campus ID */}
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                    <Phone className="w-4 h-4 text-gray-500" />
-                    Phone Number
+                    <Shield className="w-4 h-4 text-gray-500" />
+                    Campus ID
                   </label>
-                  {isEditing ? (
-                    <input
-                      type="tel"
-                      value={userData.phone}
-                      onChange={(e) => setUserData({ ...userData, phone: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
-                    />
-                  ) : (
-                    <p className="text-gray-900 px-4 py-3 bg-gray-50 rounded-xl">{userData.phone}</p>
-                  )}
+                  <p className="text-gray-900 px-4 py-3 bg-gray-50 rounded-xl">{profile?.campusId || '—'}</p>
                 </div>
 
                 {/* Role */}
@@ -476,26 +428,10 @@ export default function ProfilePage() {
                     <Shield className="w-4 h-4 text-gray-500" />
                     Role
                   </label>
-                  <p className="text-gray-900 px-4 py-3 bg-gray-50 rounded-xl">{userData.role}</p>
+                  <p className="text-gray-900 px-4 py-3 bg-gray-50 rounded-xl">{displayRole}</p>
                 </div>
 
-                {/* Department */}
-                <div className="md:col-span-2">
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                    <Briefcase className="w-4 h-4 text-gray-500" />
-                    Department
-                  </label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={userData.department}
-                      onChange={(e) => setUserData({ ...userData, department: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
-                    />
-                  ) : (
-                    <p className="text-gray-900 px-4 py-3 bg-gray-50 rounded-xl">{userData.department}</p>
-                  )}
-                </div>
+
               </div>
             </div>
 
@@ -685,78 +621,16 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {/* Change Password Section */}
-            {showPasswordChange && (
-              <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all">
-                <div className="flex items-center gap-2 mb-6">
-                  <Lock className="w-6 h-6 text-orange-500" />
-                  <h3 className="text-xl font-bold text-gray-900">Change Password</h3>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Current Password
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showCurrentPassword ? 'text' : 'password'}
-                        className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
-                        placeholder="Enter current password"
-                      />
-                      <button
-                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
-                      >
-                        {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">
-                      New Password
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showNewPassword ? 'text' : 'password'}
-                        className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
-                        placeholder="Enter new password"
-                      />
-                      <button
-                        onClick={() => setShowNewPassword(!showNewPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
-                      >
-                        {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Confirm New Password
-                    </label>
-                    <input
-                      type="password"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
-                      placeholder="Confirm new password"
-                    />
-                  </div>
-
-                  <button className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 rounded-xl hover:from-orange-600 hover:to-red-600 transition-all font-medium shadow-lg hover:scale-105">
-                    Update Password
-                  </button>
-                </div>
-              </div>
-            )}
-
             {/* Recent Activity */}
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <Clock className="w-6 h-6 text-orange-500" />
                 <h3 className="text-xl font-bold text-gray-900">Recent Activity</h3>
               </div>
-              <RecentActivity activities={recentActivities} maxItems={10} />
+              {isActivitiesDataLoading && (
+                <p className="text-sm text-gray-500 mb-2">Loading activities...</p>
+              )}
+              <RecentActivity activities={activityItems} maxItems={10} />
             </div>
           </div>
         </div>

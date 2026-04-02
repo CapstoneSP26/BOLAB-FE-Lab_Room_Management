@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import {AuthLayout} from "./AuthLayout";
+import { AuthLayout } from "./AuthLayout";
 
 type Form = { email: string; password: string };
 
