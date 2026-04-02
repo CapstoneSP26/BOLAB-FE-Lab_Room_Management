@@ -75,7 +75,6 @@ export default function ProfilePage() {
     email: '',
     phone: '',
     department: '',
-    bio: '',
   });
 
   useEffect(() => {
@@ -85,7 +84,6 @@ export default function ProfilePage() {
         email: profile.email ?? '',
         phone: profile.phone ?? '',
         department: profile.department ?? '',
-        bio: profile.bio ?? '',
       });
     }
   }, [profile]);
@@ -121,7 +119,6 @@ export default function ProfilePage() {
   const displayPhone = formData.phone || profile?.phone || '—';
   const displayRole = profile?.role || '—';
   const displayDepartment = formData.department || profile?.department || '—';
-  const displayBio = formData.bio || profile?.bio || 'Cập nhật giới thiệu của bạn.';
   const shareEmail = profile?.email || formData.email || '';
 
   const activityItems: Activity[] = useMemo(() => {
@@ -174,11 +171,10 @@ export default function ProfilePage() {
 
   const handleSave = () => {
     updateProfile.mutate({
-      FullName: formData.fullName || undefined,
-      Email: formData.email || undefined,
-      Phone: formData.phone || undefined,
-      Department: formData.department || undefined,
-      Bio: formData.bio || undefined,
+      fullName: formData.fullName || undefined,
+      email: formData.email || undefined,
+      phone: formData.phone || undefined,
+      department: formData.department || undefined,
     });
   };
 
@@ -258,9 +254,7 @@ export default function ProfilePage() {
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">
                     {isProfileDataLoading ? 'Đang tải...' : displayName}
                   </h2>
-                  <p className="text-orange-600 font-semibold mb-1">{displayRole}</p>
-                  <p className="text-sm text-gray-600 mb-4">{displayDepartment}</p>
-
+                  <p className="text-orange-600 font-semibold">{displayRole}</p>
 
                 </div>
 
