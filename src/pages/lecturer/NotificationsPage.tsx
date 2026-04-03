@@ -34,11 +34,7 @@ const NotificationsPage: React.FC = () => {
   const notifications = useNotificationStore((state) => state.notifications);
   const markAsRead = useNotificationStore((state) => state.markAsRead);
   const markAllAsRead = useNotificationStore((state) => state.markAllAsRead);
-  const removeNotification = useNotificationStore((state) => state.removeNotification);
   const clearReadNotifications = useNotificationStore((state) => state.clearReadNotifications);
-
-  const unreadCount = notifications.filter((item) => !item.isRead).length;
-  const readCount = notifications.length - unreadCount;
 
   const filteredNotifications = useMemo(() => {
     return notifications.filter((item) => {
@@ -91,21 +87,6 @@ const NotificationsPage: React.FC = () => {
                 <Trash2 className="w-4 h-4" />
                 Clear read
               </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
-            <div className="rounded-xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-wide text-slate-300 font-semibold">Total</p>
-              <p className="text-2xl font-black text-white mt-1">{notifications.length}</p>
-            </div>
-            <div className="rounded-xl border border-amber-300/40 bg-amber-400/15 p-4 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-wide text-amber-200 font-semibold">Unread</p>
-              <p className="text-2xl font-black text-amber-100 mt-1">{unreadCount}</p>
-            </div>
-            <div className="rounded-xl border border-emerald-300/40 bg-emerald-400/15 p-4 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-wide text-emerald-200 font-semibold">Read</p>
-              <p className="text-2xl font-black text-emerald-100 mt-1">{readCount}</p>
             </div>
           </div>
         </section>
@@ -208,12 +189,6 @@ const NotificationsPage: React.FC = () => {
                           Mark read
                         </button>
                       )}
-                      <button
-                        onClick={() => removeNotification(notification.id)}
-                        className="cursor-pointer px-3 py-1.5 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-200 text-xs font-semibold transition-colors"
-                      >
-                        Delete
-                      </button>
                     </div>
                   </div>
                 </div>
