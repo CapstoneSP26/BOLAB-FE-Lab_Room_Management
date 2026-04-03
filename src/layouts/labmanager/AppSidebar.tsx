@@ -8,6 +8,7 @@ import {
   IncidentHistoryIcon,
   ListBookingRequest,
   ListIcon,
+  ImportFileIcon,
 } from "../../components/icon/index.ts";
 
 type IconProps = React.SVGProps<SVGSVGElement> & { size?: number };
@@ -97,6 +98,17 @@ const AppSidebar: React.FC = () => {
               ],
             },
 
+            {
+              icon: ImportFileIcon,
+              name: "Import File",
+              subItems: [
+                {
+                  name: "Import Booking",
+                  path: p("/booking-requests/import"),
+                },
+              ],
+            },
+
             { icon: ListIcon, name: "Report List", path: p("/reports") },
 
             {
@@ -157,6 +169,17 @@ const AppSidebar: React.FC = () => {
               {
                 name: "Approve/Reject History",
                 path: p("/booking-requests/history"),
+              },
+            ],
+          },
+
+          {
+            icon: ImportFileIcon,
+            name: "Import File",
+            subItems: [
+              {
+                name: "Import Booking",
+                path: p("/booking-requests/import"),
               },
             ],
           },
