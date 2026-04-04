@@ -19,17 +19,41 @@ export default function MonthlyBookings({ stats }: MonthlyBookingsProps) {
     [],
   );
 
-  // Check if using real data or fallback
-  const isUsingFallbackData = !stats?.monthlyBookings;
+  const monthlyPoints = stats?.monthlyBookings ?? [];
+  const isUsingFallbackData = monthlyPoints.length === 0;
+
+  const categories = useMemo(
+    () =>
+      monthlyPoints.length > 0
+        ? monthlyPoints.map((point) => point.label.slice(0, 3))
+        : [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+          ],
+    [monthlyPoints],
+  );
 
   const series = useMemo(
     () => [
       {
         name: "Bookings",
-        data: stats?.monthlyBookings || [168, 385, 201, 298, 187, 195, 291, 110, 215, 390, 280, 112],
+        data:
+          monthlyPoints.length > 0
+            ? monthlyPoints.map((point) => point.value)
+            : [168, 385, 201, 298, 187, 195, 291, 110, 215, 390, 280, 112],
       },
     ],
-    [stats?.monthlyBookings],
+    [monthlyPoints],
   );
 
   const options: ApexOptions = useMemo(
@@ -45,26 +69,12 @@ export default function MonthlyBookings({ stats }: MonthlyBookingsProps) {
           horizontal: false,
           columnWidth: "39%",
           borderRadius: 5,
-          //   borderRadiusApplication: "end",
         },
       },
       dataLabels: { enabled: false },
       stroke: { show: true, width: 4, colors: ["transparent"] },
       xaxis: {
-        categories: [
-          "Jan",
-          "Feb",
-          "Mar",
-          "Apr",
-          "May",
-          "Jun",
-          "Jul",
-          "Aug",
-          "Sep",
-          "Oct",
-          "Nov",
-          "Dec",
-        ],
+        categories,
         axisBorder: { show: false },
         axisTicks: { show: false },
       },
@@ -74,7 +84,7 @@ export default function MonthlyBookings({ stats }: MonthlyBookingsProps) {
         horizontalAlign: "left",
         fontFamily: "Outfit",
         markers: {
-          size: 6, // hoặc 8 tuỳ bạn
+          size: 6,
         },
       },
 
@@ -85,7 +95,7 @@ export default function MonthlyBookings({ stats }: MonthlyBookingsProps) {
         y: { formatter: (val: number) => String(val) },
       },
     }),
-    [],
+    [categories],
   );
 
   return (
@@ -119,7 +129,7 @@ export default function MonthlyBookings({ stats }: MonthlyBookingsProps) {
 
       {isUsingFallbackData && (
         <div className="mt-3 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
-          📊 Showing sample data. Backend API needs to implement monthly breakdown.
+          Showing sample data. Monthly bookings are not available yet.
         </div>
       )}
 

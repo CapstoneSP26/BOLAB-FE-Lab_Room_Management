@@ -1,4 +1,32 @@
-import type { DashboardStatsDto, PendingRequestDto, IncidentDto, UserProfileDto } from '../services/dashboardService';
+import type {
+  DashboardStatsDto,
+  IncidentDto,
+  MonthlyDataPointDto,
+  PendingRequestDto,
+  UserProfileDto,
+} from '../services/dashboardService';
+
+const MONTH_LABELS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
+const toMonthlyPoints = (values: number[]): MonthlyDataPointDto[] =>
+  MONTH_LABELS.map((label, index) => ({
+    month: index + 1,
+    label,
+    value: values[index] ?? 0,
+  }));
 
 export const mockDashboardStats: DashboardStatsDto = {
   totalBookings: 182,
@@ -14,8 +42,17 @@ export const mockDashboardStats: DashboardStatsDto = {
   averageBookingDuration: 2.5,
   mostBookedRoom: 'Lab A101',
   busiestHourOfDay: 14,
-  monthlyBookings: [168, 385, 201, 298, 187, 195, 291, 110, 215, 390, 280, 112],
-  monthlyIncidents: [5, 3, 8, 4, 6, 7, 9, 5, 4, 6, 8, 7],
+  year: 2026,
+  monthlyBookings: toMonthlyPoints([
+    168, 385, 201, 298, 187, 195, 291, 110, 215, 390, 280, 112,
+  ]),
+  statistics: {
+    monthlyIncidents: toMonthlyPoints([5, 3, 8, 4, 6, 7, 9, 5, 4, 6, 8, 7]),
+    monthlyApprovedBookings: toMonthlyPoints([
+      160, 180, 190, 210, 170, 200, 220, 205, 215, 230, 240, 225,
+    ]),
+    monthlyPendingBookings: toMonthlyPoints([8, 10, 9, 12, 11, 10, 9, 7, 8, 6, 7, 8]),
+  },
   approvedBookingsToday: 12,
   checkedInBookingsToday: 9,
   noCheckInBookingsToday: 3,
@@ -92,4 +129,5 @@ export const mockUserProfile: UserProfileDto = {
 };
 
 // Delay helper for realistic mock behavior
-export const mockDelay = (ms: number = 500) => new Promise(resolve => setTimeout(resolve, ms));
+export const mockDelay = (ms: number = 500) =>
+  new Promise((resolve) => setTimeout(resolve, ms));

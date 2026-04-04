@@ -27,7 +27,7 @@ export default function ReportHistoryFeature() {
   const [roomId, setRoomId] = useState<number | "ALL">("ALL");
 
   const {
-    data: items = [],
+    data: pagedReports,
     isLoading,
     isFetching,
     refetch,
@@ -41,6 +41,8 @@ export default function ReportHistoryFeature() {
     sortBy: "CreatedAt",
     isDescending: true,
   });
+
+  const items = useMemo(() => pagedReports?.items ?? [], [pagedReports?.items]);
 
   const loadLookups = useCallback(async () => {
     setLookupLoading(true);
@@ -90,7 +92,7 @@ export default function ReportHistoryFeature() {
 
   const rows = useMemo(() => {
     return [...items].sort((a, b) =>
-      String(b.CreatedAt ?? "").localeCompare(String(a.CreatedAt ?? "")),
+      String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? "")),
     );
   }, [items]);
 

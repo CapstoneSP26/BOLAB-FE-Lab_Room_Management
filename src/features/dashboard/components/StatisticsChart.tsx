@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import Chart from "react-apexcharts";
 import type { ApexOptions } from "apexcharts";
 import type { DashboardStatsDto } from "../services/dashboardService";
-import { mockDashboardStats } from "../mocks/dashboardMocks";
 
 type OptionValue = "optionOne" | "optionTwo" | "optionThree";
 
@@ -21,24 +20,57 @@ interface StatisticsChartProps {
   stats?: DashboardStatsDto;
 }
 
+const FALLBACK_CATEGORIES = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
 export default function StatisticsCard({ stats }: StatisticsChartProps) {
   const [selected, setSelected] = useState<OptionValue>("optionOne");
 
-  // Check if using real data or fallback
-  const isUsingFallbackData = !stats?.monthlyBookings || !stats?.monthlyIncidents;
+  const statistics = stats?.statistics;
+  const monthlyApproved = statistics?.monthlyApprovedBookings ?? [];
+  const monthlyIncidents = statistics?.monthlyIncidents ?? [];
+
+  const isUsingFallbackData =
+    monthlyApproved.length === 0 || monthlyIncidents.length === 0;
+
+  const categories = useMemo(
+    () =>
+      monthlyApproved.length > 0
+        ? monthlyApproved.map((point) => point.label.slice(0, 3))
+        : FALLBACK_CATEGORIES,
+    [monthlyApproved],
+  );
 
   const series: Series[] = useMemo(
     () => [
       {
-        name: "Bookings",
-        data: stats?.monthlyBookings || mockDashboardStats.monthlyBookings,
+        name: "Approved Bookings",
+        data:
+          monthlyApproved.length > 0
+            ? monthlyApproved.map((point) => point.value)
+            : [160, 180, 190, 210, 170, 200, 220, 205, 215, 230, 240, 225],
       },
       {
         name: "Incidents",
-        data: stats?.monthlyIncidents || mockDashboardStats.monthlyIncidents,
+        data:
+          monthlyIncidents.length > 0
+            ? monthlyIncidents.map((point) => point.value)
+            : [5, 3, 8, 4, 6, 7, 9, 5, 4, 6, 8, 7],
       },
     ],
-    [stats?.monthlyBookings, stats?.monthlyIncidents],
+    [monthlyApproved, monthlyIncidents],
   );
 
   const chartOptions: ApexOptions = useMemo(
@@ -48,7 +80,6 @@ export default function StatisticsCard({ stats }: StatisticsChartProps) {
         position: "top",
         horizontalAlign: "left",
       },
-      // giữ y như Vue (nếu bạn muốn để mặc định, có thể bỏ dòng colors)
       colors: ["#465FFF", "#9CB9FF"],
       chart: {
         fontFamily: "Outfit, sans-serif",
@@ -74,27 +105,12 @@ export default function StatisticsCard({ stats }: StatisticsChartProps) {
       dataLabels: { enabled: false },
       tooltip: {
         x: {
-          // NOTE: x-axis là category (Jan..Dec), format date không tác dụng.
-          // Mình giữ lại để giống Vue, nhưng có thể bỏ.
           format: "dd MMM yyyy",
         },
       },
       xaxis: {
         type: "category",
-        categories: [
-          "Jan",
-          "Feb",
-          "Mar",
-          "Apr",
-          "May",
-          "Jun",
-          "Jul",
-          "Aug",
-          "Sep",
-          "Oct",
-          "Nov",
-          "Dec",
-        ],
+        categories,
         axisBorder: { show: false },
         axisTicks: { show: false },
         tooltip: { enabled: false },
@@ -105,7 +121,7 @@ export default function StatisticsCard({ stats }: StatisticsChartProps) {
         },
       },
     }),
-    [],
+    [categories],
   );
 
   return (
@@ -117,11 +133,13 @@ export default function StatisticsCard({ stats }: StatisticsChartProps) {
           </h3>
           <p className="mt-1 text-gray-500 text-theme-sm dark:text-gray-400">
             Target you’ve set for each month
-          </p>          {isUsingFallbackData && (
+          </p>
+          {isUsingFallbackData && (
             <div className="mt-3 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
-              📊 Showing sample data. Backend API needs to implement monthly breakdown.
+              Showing sample data. Monthly statistics are not available yet.
             </div>
-          )}        </div>
+          )}
+        </div>
 
         <div className="relative">
           <div className="inline-flex items-center gap-0.5 rounded-lg bg-gray-100 p-0.5 dark:bg-gray-900">
