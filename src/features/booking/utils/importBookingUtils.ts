@@ -210,7 +210,7 @@ export const toScheduleRows = (inputRows: EditableRow[]): ScheduleImportDto[] =>
     SubjectCode: row.SubjectCode.trim(),
     Date: row.Date.trim(),
     SlotOrder: Number.parseInt(row.SlotOrder.trim(), 10),
-    SlotTypeCode: normalizeSlotTypeCode(row.SlotTypeCode),
+    SlotTypeCode: row.SlotTypeCode,
     RoomNo: row.RoomNo.trim(),
     Lecturer: row.Lecturer.trim(),
   }));

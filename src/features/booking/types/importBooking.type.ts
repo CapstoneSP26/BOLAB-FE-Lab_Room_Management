@@ -83,7 +83,9 @@ export interface CommitFlexibleSlotImportRequest {
 
 export interface CommitScheduleImportResponse {
   Success: boolean;
+  TotalProcessed?: number;
   ImportedCount: number;
+  UpdatedCount?: number;
   FailedCount: number;
   Message: string;
 }

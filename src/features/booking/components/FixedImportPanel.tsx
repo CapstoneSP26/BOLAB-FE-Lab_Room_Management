@@ -188,7 +188,7 @@ export default function FixedImportPanel({ onImportComplete }: FixedImportPanelP
     );
 
     setModifiedCells((prev) => ({ ...prev, [key]: true }));
-    
+
     // Reset validation state when cells are modified, forcing user to re-validate
     setCanCommit(false);
     setHasValidated(false);
@@ -209,7 +209,7 @@ export default function FixedImportPanel({ onImportComplete }: FixedImportPanelP
       };
 
       const response = await validateScheduleRows(payload);
-      
+
       // Handle both PascalCase and camelCase response from backend
       const rowsData = (response.Rows ?? (response as any).rows) ?? [];
 
@@ -217,7 +217,7 @@ export default function FixedImportPanel({ onImportComplete }: FixedImportPanelP
         // Backend returns rowNumber as 0, use data.index instead for correct row number
         const rowNum = (rowResult.data?.index ?? rowResult.rowNumber ?? rowResult.RowNumber) ?? 0;
         const errorsData = rowResult.Errors ?? rowResult.errors ?? [];
-        
+        console.log(`Row ${rowNum} validation errors:`, errorsData); // Debug log to inspect errors for each row
         errorsData.forEach((error: any) => {
           const resolvedField =
             resolveFieldFromText(error.FieldName ?? error.fieldName ?? "") ??
@@ -235,7 +235,7 @@ export default function FixedImportPanel({ onImportComplete }: FixedImportPanelP
             pushRowIssue(
               nextErrors,
               nextIssues,
-              String(rowNum),
+              String("row-" + rowNum),
               rowNum,
               resolvedField,
               message
@@ -633,6 +633,9 @@ function TableRow({
   hasValidated,
   onUpdateCell,
 }: TableRowProps) {
+  if (rowNumber === 9) {
+    console.log("Validation errors for row", rowNumber, validationErrors); // Debug log to inspect validation errors for this row
+  }
   return (
     <tr>
       <td className="px-3 py-2 align-top text-gray-500 dark:text-gray-400">
@@ -644,6 +647,10 @@ function TableRow({
         const hasError = Boolean(validationErrors[errorKey]);
         const isModified = Boolean(modifiedCells[errorKey]);
         const isValidatedSuccess = hasValidated && isModified && !hasError;
+        if (rowNumber === 9) {
+          console.log(` Row ${rowNumber} - Field: ${field}, ErrorKey: ${errorKey}, HasError: ${hasError}, IsModified: ${isModified}, IsValidatedSuccess: ${isValidatedSuccess}`); // Debug log to inspect cell state for this row
+          console.log(`row field : ${row} | ValidationErrors:`); // Debug log to inspect validation errors object for this row
+        }
 
         return (
           <td key={`${row.id}-${column}`} className="relative px-2 py-2 align-top">
