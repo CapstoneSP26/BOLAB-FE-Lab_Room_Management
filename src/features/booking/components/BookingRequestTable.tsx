@@ -1,3 +1,4 @@
+import { convertHoursUtcToVN } from "../../../utils/date.util";
 import type { BookingRequest } from "../../booking/types/booking.type";
 
 function badgeClass(status: unknown) {
@@ -58,7 +59,7 @@ export default function BookingTable({
         <table className="w-full min-w-[980px] text-left text-sm">
           <thead className="bg-gray-50 text-xs font-semibold uppercase text-gray-500 dark:bg-white/[0.04] dark:text-gray-400">
             <tr>
-              <th className="px-4 py-3">Booking</th>
+              {/* <th className="px-4 py-3">Booking</th> */}
               <th className="px-4 py-3">Room</th>
               <th className="px-4 py-3">Time</th>
               <th className="px-4 py-3">Group</th>
@@ -92,14 +93,14 @@ export default function BookingTable({
             ) : (
               rows.map((b) => (
                 <tr key={String(b.id)} className="bg-white dark:bg-transparent">
-                  <td className="px-4 py-4">
+                  {/* <td className="px-4 py-4">
                     <div className="font-semibold text-gray-800 dark:text-white/90">
                       #{b.id}
                     </div>
                     <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                       User: {b.requestedBy}
                     </div>
-                  </td>
+                  </td> */}
 
                   <td className="px-4 py-4 font-semibold text-gray-800 dark:text-white/90">
                     {b.roomName}
@@ -109,7 +110,7 @@ export default function BookingTable({
                   </td>
 
                   <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
-                    {formatRange(b.startTime, b.endTime)}
+                    {convertHoursUtcToVN(b.startTime) + " - " + convertHoursUtcToVN(b.endTime)}
                   </td>
 
                   <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
