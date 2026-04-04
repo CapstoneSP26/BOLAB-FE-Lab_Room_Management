@@ -7,6 +7,7 @@ import { FPTLogo } from '../icon/FPTLogo';
 import { Badge } from '../ui/Badge';
 import { Breadcrumb } from '../ui/Breadcrumb';
 import { ActiveSessionIndicator } from '../ui/ActiveSessionIndicator';
+import { LoadingBar } from '../ui/LoadingBar';
 import { useActiveSession } from '../../context/ActiveSessionContext';
 
 const Header: React.FC = () => {
@@ -97,8 +98,12 @@ const Header: React.FC = () => {
           />
         </div>
       </div>
+
+      <div className="absolute inset-x-0 bottom-0 h-1 z-50">
+        <LoadingBar />
+      </div>
     </header>
-    
+
     {/* Breadcrumb below header (only on non-home pages) */}
     {!isHomePage && (
       <div className="bg-gradient-to-r from-orange-50/50 via-white to-red-50/50 border-b border-orange-100 px-6 py-3 shadow-sm">
