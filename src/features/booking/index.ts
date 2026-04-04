@@ -12,7 +12,6 @@ export type {
   BookingStatusFilter,
 } from './types/booking.type';
 export type {
-  BookingImportMode,
   ScheduleImportDto,
   OldNewSlotImportDto,
   FlexibleSlotImportDto,

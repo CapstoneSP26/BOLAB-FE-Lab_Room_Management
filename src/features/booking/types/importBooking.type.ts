@@ -1,7 +1,5 @@
 // ===== Backend API Types (DTO, Request, Response) =====
 
-export type BookingImportMode = "schedule" | "slot" | "flexible";
-
 interface LegacyScheduleImportBaseDto {
   GroupName: string;
   SubjectCode: string;
