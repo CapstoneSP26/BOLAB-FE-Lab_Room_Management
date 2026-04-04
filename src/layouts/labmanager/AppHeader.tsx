@@ -3,7 +3,7 @@ import { useSidebar } from "./sidebarContext";
 
 import ThemeToggler from "../../components/common/ThemeToggler";
 import HeaderLogo from "../HeaderLogo";
-import NotificationMenu from "./header/NotificationMenu";
+import NotificationMenu from "../../features/notifications/components/NotificationMenu";
 import UserMenu from "./header/UserMenu";
 
 export default function AppHeader() {

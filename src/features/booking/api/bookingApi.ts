@@ -18,8 +18,8 @@ import type {
   GetBookingRequestsRequest,
   GetBookingByIdResponse,
   GetBookingByScheduleIdResponse,
-  UpdateBookingStatusRequest,
-  UpdateBookingStatusResponse,
+  ApproveBookingRequestResponse,
+  RejectBookingRequestResponse,
   GetBookingStatusLookupResponse,
 } from "../types/booking.type";
 
@@ -35,12 +35,13 @@ const BOOKING_API = {
 
 const BOOKING_REQUEST_API = {
   LIST: "/bookings/get-unchecked-booking-request",
-  HISTORY: "/booking-requests/history",
-  BY_ID: (id: string) => `/booking-requests/${id}`,
+  HISTORY: "/bookings/history",
+  BY_ID: (id: string) => `/bookings/${id}`,
   BY_SCHEDULE: (scheduleId: string) =>
     `/booking-requests/by-schedule/${scheduleId}`,
-  UPDATE_STATUS: (id: string) => `/booking-requests/${id}/status`,
-  STATUS_LOOKUP: "/booking-requests/status",
+  APPROVE: (id: string) => `/bookings/${id}/approve`,
+  REJECT: (id: string) => `/bookings/${id}/reject`,
+  STATUS_LOOKUP: "/bookings/status",
 };
 
 export const bookingApi = {
@@ -141,13 +142,20 @@ export const bookingRequestApi = {
       )
       .then((res) => res.data),
 
-  updateBookingStatus: (id: string, body: UpdateBookingStatusRequest) =>
+  approveBookingRequest: (id: string) =>
     axiosInstance
-      .patch<UpdateBookingStatusResponse>(
-        BOOKING_REQUEST_API.UPDATE_STATUS(id),
-        body,
-      )
+      .put<ApproveBookingRequestResponse>(BOOKING_REQUEST_API.APPROVE(id), {
+        bookingId: id,
+      })
       .then((res) => res.data),
+
+  rejectBookingRequest: (id: string) =>
+    axiosInstance
+      .put<RejectBookingRequestResponse>(BOOKING_REQUEST_API.REJECT(id), {
+        bookingId: id,
+      })
+      .then((res) => res.data),
+
   getBookingStatusLookup: () =>
     axiosInstance
       .get<GetBookingStatusLookupResponse>(BOOKING_REQUEST_API.STATUS_LOOKUP)

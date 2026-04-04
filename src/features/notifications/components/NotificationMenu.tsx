@@ -1,63 +1,22 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { useNotificationsList } from "../../../features/notifications/hooks/useNotificationsList";
-import type {
-  NotificationItem,
-  NotificationType,
-} from "../../../features/notifications/types/notification.type";
+import { useNotifications } from "../hooks/useNotifications";
+import type { NotificationItem } from "../types/notification.type";
+import {
+  getNotificationFallbackRoute,
+  getTypeBadgeClass,
+  getTypeDotClass,
+  openNotificationTarget,
+} from "../utils/notificationMenu.util";
 import { getErrorMessage } from "../../../utils/error";
-
-const getTypeBadgeClass = (type: NotificationType) => {
-  switch (type) {
-    case "success":
-      return "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300";
-    case "warning":
-      return "bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300";
-    case "error":
-      return "bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300";
-    case "info":
-    default:
-      return "bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300";
-  }
-};
-
-const getTypeDotClass = (type: NotificationType) => {
-  switch (type) {
-    case "success":
-      return "bg-emerald-500";
-    case "warning":
-      return "bg-amber-500";
-    case "error":
-      return "bg-rose-500";
-    case "info":
-    default:
-      return "bg-blue-500";
-  }
-};
-
-const getFallbackRoute = () => "/labmanager/dashboard";
-
-const openNotificationTarget = (
-  navigate: ReturnType<typeof useNavigate>,
-  notification: NotificationItem,
-) => {
-  const target = notification.referencePath || getFallbackRoute();
-
-  if (/^https?:\/\//i.test(target)) {
-    window.location.href = target;
-    return;
-  }
-
-  navigate(target);
-};
 
 export default function NotificationMenu() {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
 
-  const notificationsQuery = useNotificationsList({
+  const notificationsQuery = useNotifications({
     pageNumber: 1,
     pageSize: 8,
   });
@@ -92,7 +51,7 @@ export default function NotificationMenu() {
 
   const handleViewAllClick = () => {
     closeDropdown();
-    navigate(getFallbackRoute());
+    navigate(getNotificationFallbackRoute());
   };
 
   const errorMessage = notificationsQuery.isError
@@ -187,7 +146,9 @@ export default function NotificationMenu() {
                     type="button"
                     onClick={() => handleItemClick(notification)}
                     className={`flex w-full items-start gap-3 rounded-lg border-b border-gray-100 p-3 px-4.5 py-3 text-left hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-white/5 ${
-                      notification.isRead ? "" : "bg-blue-50/50 dark:bg-blue-500/5"
+                      notification.isRead
+                        ? ""
+                        : "bg-blue-50/50 dark:bg-blue-500/5"
                     }`}
                   >
                     <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">

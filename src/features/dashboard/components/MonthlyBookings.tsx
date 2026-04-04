@@ -3,7 +3,7 @@ import Chart from "react-apexcharts";
 import type { ApexOptions } from "apexcharts";
 import DropdownMenu, {
   type DropdownMenuItem,
-} from "../../../components/common/DropdownMenu";
+} from "../../notifications/components/DropdownMenu";
 import type { DashboardStatsDto } from "../types/dashboard.type";
 
 interface MonthlyBookingsProps {

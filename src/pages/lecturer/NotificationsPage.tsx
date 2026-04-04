@@ -1,22 +1,33 @@
-import React, { useMemo, useState } from 'react';
-import { Bell, CheckCheck, ExternalLink, Filter, Search, Trash2, Info, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useNotificationStore } from '../../hooks/useNotifications';
+import React, { useMemo, useState } from "react";
+import {
+  Bell,
+  CheckCheck,
+  ExternalLink,
+  Filter,
+  Search,
+  Trash2,
+  Info,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useNotificationStore } from "../../features/notifications/store/notificationStore";
 
-type FilterMode = 'all' | 'unread' | 'read';
+type FilterMode = "all" | "unread" | "read";
 
 const typeStyles: Record<string, string> = {
-  info: 'bg-sky-100 text-sky-700 border-sky-200',
-  warning: 'bg-amber-100 text-amber-700 border-amber-200',
-  success: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-  error: 'bg-rose-100 text-rose-700 border-rose-200',
+  info: "bg-sky-100 text-sky-700 border-sky-200",
+  warning: "bg-amber-100 text-amber-700 border-amber-200",
+  success: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  error: "bg-rose-100 text-rose-700 border-rose-200",
 };
 
 const typeAccentStyles: Record<string, string> = {
-  info: 'border-l-sky-400',
-  warning: 'border-l-amber-400',
-  success: 'border-l-emerald-400',
-  error: 'border-l-rose-400',
+  info: "border-l-sky-400",
+  warning: "border-l-amber-400",
+  success: "border-l-emerald-400",
+  error: "border-l-rose-400",
 };
 
 const typeIconMap = {
@@ -28,14 +39,18 @@ const typeIconMap = {
 
 const NotificationsPage: React.FC = () => {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterMode, setFilterMode] = useState<FilterMode>('all');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterMode, setFilterMode] = useState<FilterMode>("all");
 
   const notifications = useNotificationStore((state) => state.notifications);
   const markAsRead = useNotificationStore((state) => state.markAsRead);
   const markAllAsRead = useNotificationStore((state) => state.markAllAsRead);
-  const removeNotification = useNotificationStore((state) => state.removeNotification);
-  const clearReadNotifications = useNotificationStore((state) => state.clearReadNotifications);
+  const removeNotification = useNotificationStore(
+    (state) => state.removeNotification,
+  );
+  const clearReadNotifications = useNotificationStore(
+    (state) => state.clearReadNotifications,
+  );
 
   const unreadCount = notifications.filter((item) => !item.isRead).length;
   const readCount = notifications.length - unreadCount;
@@ -43,9 +58,9 @@ const NotificationsPage: React.FC = () => {
   const filteredNotifications = useMemo(() => {
     return notifications.filter((item) => {
       const matchesFilter =
-        filterMode === 'all' ||
-        (filterMode === 'unread' && !item.isRead) ||
-        (filterMode === 'read' && item.isRead);
+        filterMode === "all" ||
+        (filterMode === "unread" && !item.isRead) ||
+        (filterMode === "read" && item.isRead);
 
       const matchesSearch =
         item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -55,7 +70,9 @@ const NotificationsPage: React.FC = () => {
     });
   }, [notifications, filterMode, searchQuery]);
 
-  const displayedUnreadCount = filteredNotifications.filter((item) => !item.isRead).length;
+  const displayedUnreadCount = filteredNotifications.filter(
+    (item) => !item.isRead,
+  ).length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-orange-100/60">
@@ -73,8 +90,13 @@ const NotificationsPage: React.FC = () => {
                 <Bell className="w-3.5 h-3.5" />
                 Lecturer Notifications
               </p>
-              <h1 className="text-3xl lg:text-4xl font-black text-white mt-3">Notification Center</h1>
-              <p className="text-slate-200 mt-1">Keep track of booking, attendance, and system activity in one focused workspace.</p>
+              <h1 className="text-3xl lg:text-4xl font-black text-white mt-3">
+                Notification Center
+              </h1>
+              <p className="text-slate-200 mt-1">
+                Keep track of booking, attendance, and system activity in one
+                focused workspace.
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -96,16 +118,28 @@ const NotificationsPage: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
             <div className="rounded-xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-wide text-slate-300 font-semibold">Total</p>
-              <p className="text-2xl font-black text-white mt-1">{notifications.length}</p>
+              <p className="text-xs uppercase tracking-wide text-slate-300 font-semibold">
+                Total
+              </p>
+              <p className="text-2xl font-black text-white mt-1">
+                {notifications.length}
+              </p>
             </div>
             <div className="rounded-xl border border-amber-300/40 bg-amber-400/15 p-4 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-wide text-amber-200 font-semibold">Unread</p>
-              <p className="text-2xl font-black text-amber-100 mt-1">{unreadCount}</p>
+              <p className="text-xs uppercase tracking-wide text-amber-200 font-semibold">
+                Unread
+              </p>
+              <p className="text-2xl font-black text-amber-100 mt-1">
+                {unreadCount}
+              </p>
             </div>
             <div className="rounded-xl border border-emerald-300/40 bg-emerald-400/15 p-4 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-wide text-emerald-200 font-semibold">Read</p>
-              <p className="text-2xl font-black text-emerald-100 mt-1">{readCount}</p>
+              <p className="text-xs uppercase tracking-wide text-emerald-200 font-semibold">
+                Read
+              </p>
+              <p className="text-2xl font-black text-emerald-100 mt-1">
+                {readCount}
+              </p>
             </div>
           </div>
         </section>
@@ -126,31 +160,31 @@ const NotificationsPage: React.FC = () => {
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-slate-500" />
               <button
-                onClick={() => setFilterMode('all')}
+                onClick={() => setFilterMode("all")}
                 className={`cursor-pointer px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
-                  filterMode === 'all'
-                    ? 'bg-slate-900 text-white'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  filterMode === "all"
+                    ? "bg-slate-900 text-white"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 }`}
               >
                 All ({filteredNotifications.length})
               </button>
               <button
-                onClick={() => setFilterMode('unread')}
+                onClick={() => setFilterMode("unread")}
                 className={`cursor-pointer px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
-                  filterMode === 'unread'
-                    ? 'bg-amber-600 text-white'
-                    : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                  filterMode === "unread"
+                    ? "bg-amber-600 text-white"
+                    : "bg-amber-100 text-amber-700 hover:bg-amber-200"
                 }`}
               >
                 Unread ({displayedUnreadCount})
               </button>
               <button
-                onClick={() => setFilterMode('read')}
+                onClick={() => setFilterMode("read")}
                 className={`cursor-pointer px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
-                  filterMode === 'read'
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                  filterMode === "read"
+                    ? "bg-emerald-600 text-white"
+                    : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
                 }`}
               >
                 Read ({filteredNotifications.length - displayedUnreadCount})
@@ -170,30 +204,42 @@ const NotificationsPage: React.FC = () => {
                   key={notification.id}
                   className={`rounded-xl border border-l-4 p-4 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 ${typeAccentStyles[notification.type]} ${
                     notification.isRead
-                      ? 'border-slate-200 bg-white'
-                      : 'border-orange-200 bg-orange-50/70'
+                      ? "border-slate-200 bg-white"
+                      : "border-orange-200 bg-orange-50/70"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1.5">
                         {React.createElement(typeIconMap[notification.type], {
-                          className: `w-4 h-4 ${notification.isRead ? 'text-slate-500' : 'text-orange-600'}`,
+                          className: `w-4 h-4 ${notification.isRead ? "text-slate-500" : "text-orange-600"}`,
                         })}
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full border text-xs font-semibold ${typeStyles[notification.type]}`}>
+                        <span
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full border text-xs font-semibold ${typeStyles[notification.type]}`}
+                        >
                           {notification.type}
                         </span>
-                        {!notification.isRead && <span className="w-2 h-2 rounded-full bg-orange-500" />}
+                        {!notification.isRead && (
+                          <span className="w-2 h-2 rounded-full bg-orange-500" />
+                        )}
                       </div>
-                      <h3 className="text-base font-bold text-slate-900 truncate">{notification.title}</h3>
-                      <p className="text-sm text-slate-600 mt-1">{notification.message}</p>
-                      <p className="text-xs text-slate-400 mt-2">{notification.time}</p>
+                      <h3 className="text-base font-bold text-slate-900 truncate">
+                        {notification.title}
+                      </h3>
+                      <p className="text-sm text-slate-600 mt-1">
+                        {notification.message}
+                      </p>
+                      <p className="text-xs text-slate-400 mt-2">
+                        {notification.time}
+                      </p>
                     </div>
 
                     <div className="flex items-center gap-2">
                       {notification.relatedPath && (
                         <button
-                          onClick={() => navigate(notification.relatedPath as string)}
+                          onClick={() =>
+                            navigate(notification.relatedPath as string)
+                          }
                           className="cursor-pointer px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-semibold transition-colors inline-flex items-center gap-1"
                         >
                           Open

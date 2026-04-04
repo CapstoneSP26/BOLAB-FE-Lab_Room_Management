@@ -225,10 +225,6 @@ export interface GetBookingByScheduleIdRequest {
   scheduleId: string;
 }
 
-export interface UpdateBookingStatusRequest {
-  status: string;
-}
-
 export interface GetBookingRequestsResponse {
   data: BookingRequest[];
   total?: number;
@@ -244,7 +240,11 @@ export interface GetBookingByScheduleIdResponse {
   data: BookingRequest | null;
 }
 
-export interface UpdateBookingStatusResponse {
+export interface ApproveBookingRequestResponse {
+  data: BookingRequest;
+}
+
+export interface RejectBookingRequestResponse {
   data: BookingRequest;
 }
 

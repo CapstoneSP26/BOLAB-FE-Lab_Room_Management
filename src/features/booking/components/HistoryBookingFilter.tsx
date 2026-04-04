@@ -89,10 +89,13 @@ export default function HistoryBookingFilter({
 
   const handleBuildingChange = (value: number | "ALL") => {
     onBuildingId(value);
+    // Reset room khi đổi building
     if (value === "ALL") {
       onRoomId("ALL");
     }
-    triggerApply();
+    if (onApplyFilters) {
+      setTimeout(() => onApplyFilters(), 0);
+    }
   };
 
   const handleRoomChange = (value: number | "ALL") => {
@@ -178,7 +181,7 @@ export default function HistoryBookingFilter({
               >
                 <option value="ALL">All buildings</option>
                 {buildingOptions.map((b) => (
-                  <option key={String(b.id)} value={String(b.id)}>
+                  <option key={String(b.id)} value={b.id}>
                     {b.buildingName}
                   </option>
                 ))}

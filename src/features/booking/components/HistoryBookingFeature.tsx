@@ -1,10 +1,10 @@
 import {
   ChevronDown,
-  Filter,
   X,
   RefreshCw,
   Calendar,
   TrendingUp,
+  ChevronUp,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -15,9 +15,10 @@ import { ReportStatCard } from "../../../components/ui/ComponentsParts";
 import { bookingRequestApi } from "../api/bookingApi";
 import { labroomApi } from "../../labroom/api/labroom.api";
 import {
+  useApproveBookingRequest,
   useBookingRequestDetail,
   useBookingRequestHistory,
-  useUpdateBookingStatus,
+  useRejectBookingRequest,
 } from "../hooks/useBookingRequest";
 import { buildingApi } from "../../building/api/buildingApi";
 
@@ -83,7 +84,14 @@ export default function HistoryBookingFeature() {
     setSelectedId(null);
   };
 
-  const updateStatusMutation = useUpdateBookingStatus({
+  const approveBookingMutation = useApproveBookingRequest({
+    onSuccess: () => {
+      closeModal();
+      historyQuery.refetch();
+    },
+  });
+
+  const rejectBookingMutation = useRejectBookingRequest({
     onSuccess: () => {
       closeModal();
       historyQuery.refetch();
@@ -111,26 +119,20 @@ export default function HistoryBookingFeature() {
   const handleApprove = async () => {
     if (!selected?.id) return;
 
-    await updateStatusMutation.mutateAsync({
-      id: String(selected.id),
-      body: { status: "APPROVED" },
-    });
+    await approveBookingMutation.mutateAsync(String(selected.id));
   };
 
   const handleReject = async () => {
     if (!selected?.id) return;
 
-    await updateStatusMutation.mutateAsync({
-      id: String(selected.id),
-      body: { status: "REJECTED" },
-    });
+    await rejectBookingMutation.mutateAsync(String(selected.id));
   };
 
   useEffect(() => {
     const loadLookups = async () => {
       setLookupLoading(true);
       try {
-        const [buildingsRes, statusRes] = await Promise.all([
+        const [buildingsRes, statusRes] = await Promise.allSettled([
           buildingApi.getBuildings({
             pageNumber: 1,
             pageSize: 100,
@@ -138,11 +140,19 @@ export default function HistoryBookingFeature() {
           bookingRequestApi.getBookingStatusLookup(),
         ]);
 
-        setBuildingOptions(buildingsRes.items ?? []);
-        setStatusOptions(statusRes.data ?? []);
-      } catch {
-        setBuildingOptions([]);
-        setStatusOptions([]);
+        if (buildingsRes.status === "fulfilled") {
+          setBuildingOptions(buildingsRes.value.items ?? []);
+        } else {
+          setBuildingOptions([]);
+          console.error("Load buildings failed:", buildingsRes.reason);
+        }
+
+        if (statusRes.status === "fulfilled") {
+          setStatusOptions(statusRes.value.data ?? []);
+        } else {
+          setStatusOptions([]);
+          console.error("Load booking statuses failed:", statusRes.reason);
+        }
       } finally {
         setLookupLoading(false);
       }
@@ -349,26 +359,39 @@ export default function HistoryBookingFeature() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all dark:border-gray-700 dark:bg-gray-800/50">
-        <button
-          type="button"
-          onClick={() => setShowFilters(!showFilters)}
-          className="w-full border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100/50 px-6 py-4 text-left transition-all hover:from-gray-100 hover:to-gray-200/50 dark:border-gray-700 dark:from-gray-800 dark:to-gray-800/50 dark:hover:from-gray-700 dark:hover:to-gray-700/50"
-        >
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800/50">
+        <div className="border-b border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-700 dark:bg-gray-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div
-                className={`flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm transition-all dark:bg-gray-700 ${
-                  showFilters ? "rotate-180" : "rotate-0"
-                }`}
+              <button
+                type="button"
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-gray-600 transition-all hover:bg-gray-100 active:scale-95 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                aria-label={showFilters ? "Hide filters" : "Show filters"}
               >
-                <ChevronDown className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-              </div>
+                {showFilters ? (
+                  <ChevronUp className="h-5 w-5" />
+                ) : (
+                  <ChevronDown className="h-5 w-5" />
+                )}
+              </button>
 
               <div className="flex items-center gap-2">
-                <Filter className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                  Advanced Filters
+                <svg
+                  className="h-5 w-5 text-gray-600 dark:text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+                  />
+                </svg>
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  Filters & Search
                 </h3>
               </div>
 
@@ -385,8 +408,7 @@ export default function HistoryBookingFeature() {
               {hasActiveFilters && (
                 <button
                   type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
+                  onClick={() => {
                     clearAllFilters();
                   }}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 transition-all hover:bg-gray-50 active:scale-95 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
@@ -401,38 +423,36 @@ export default function HistoryBookingFeature() {
               </span>
             </div>
           </div>
-        </button>
+        </div>
 
         <div
-          className={`grid transition-all duration-300 ease-in-out ${
+          className={`transition-all duration-300 ease-in-out ${
             showFilters
-              ? "grid-rows-[1fr] opacity-100"
-              : "grid-rows-[0fr] opacity-0"
+              ? "max-h-[1200px] opacity-100"
+              : "max-h-0 overflow-hidden opacity-0"
           }`}
         >
-          <div className="overflow-hidden">
-            <div className="border-t border-gray-200 p-6 dark:border-gray-700">
-              <HistoryBookingFilter
-                q={q}
-                onQ={setQ}
-                buildingId={buildingId}
-                onBuildingId={(value) => {
-                  setBuildingId(value);
-                  setRoomId("ALL");
-                }}
-                buildingOptions={buildingOptions}
-                roomId={roomId}
-                onRoomId={setRoomId}
-                roomOptions={roomOptions}
-                status={status}
-                onStatus={setStatus}
-                statusOptions={statusOptions}
-                from={from}
-                onFrom={setFrom}
-                to={to}
-                onTo={setTo}
-              />
-            </div>
+          <div className="border-t border-gray-200 p-6 dark:border-gray-700">
+            <HistoryBookingFilter
+              q={q}
+              onQ={setQ}
+              buildingId={buildingId}
+              onBuildingId={(value) => {
+                setBuildingId(value);
+                setRoomId("ALL");
+              }}
+              buildingOptions={buildingOptions}
+              roomId={roomId}
+              onRoomId={setRoomId}
+              roomOptions={roomOptions}
+              status={status}
+              onStatus={setStatus}
+              statusOptions={statusOptions}
+              from={from}
+              onFrom={setFrom}
+              to={to}
+              onTo={setTo}
+            />
           </div>
         </div>
       </div>

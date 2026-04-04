@@ -8,8 +8,9 @@ import { buildingApi } from "../../building/api/buildingApi";
 import { labroomApi } from "../../labroom/api/labroom.api";
 import { slotApi } from "../../slot/api/slotApi";
 import {
+  useApproveBookingRequest,
   useBookingRequests,
-  useUpdateBookingStatus,
+  useRejectBookingRequest,
 } from "../hooks/useBookingRequest";
 
 import type { BuildingDto } from "../../building/types/building.type";
@@ -61,7 +62,14 @@ export default function PendingBookingFeature() {
 
   const pendingQuery = useBookingRequests(params);
 
-  const updateStatusMutation = useUpdateBookingStatus({
+  const approveBookingMutation = useApproveBookingRequest({
+    onSuccess: () => {
+      pendingQuery.refetch();
+      closeModal();
+    },
+  });
+
+  const rejectBookingMutation = useRejectBookingRequest({
     onSuccess: () => {
       pendingQuery.refetch();
       closeModal();
@@ -149,20 +157,14 @@ export default function PendingBookingFeature() {
     const ok = window.confirm("Approve this booking?");
     if (!ok) return;
 
-    await updateStatusMutation.mutateAsync({
-      id,
-      body: { status: "APPROVED" },
-    });
+    await approveBookingMutation.mutateAsync(id);
   };
 
   const reject = async (id: string) => {
     const ok = window.confirm("Reject this booking?");
     if (!ok) return;
 
-    await updateStatusMutation.mutateAsync({
-      id,
-      body: { status: "REJECTED" },
-    });
+    await rejectBookingMutation.mutateAsync(id);
   };
 
   return (

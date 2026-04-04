@@ -9,11 +9,14 @@ export const NOTIFICATION_QUERY_KEYS = {
   LIST: "notifications",
 } as const;
 
-export const useNotificationsList = (
-  params: GetNotificationsRequest = {},
-  enabled = true,
-) =>
-  useQuery<GetNotificationsResponse>({
+export interface UseNotificationsOptions extends GetNotificationsRequest {
+  enabled?: boolean;
+}
+
+export const useNotifications = (options: UseNotificationsOptions = {}) => {
+  const { enabled = true, ...params } = options;
+
+  return useQuery<GetNotificationsResponse>({
     queryKey: [NOTIFICATION_QUERY_KEYS.LIST, params],
     queryFn: () => notificationApi.getNotifications(params),
     staleTime: 60 * 1000,
@@ -21,3 +24,4 @@ export const useNotificationsList = (
     refetchInterval: 60 * 1000,
     enabled,
   });
+};

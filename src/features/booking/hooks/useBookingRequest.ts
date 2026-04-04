@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { bookingRequestApi } from "../api/bookingApi";
 import type {
-  GetBookingRequestsRequest,
-  GetBookingRequestsResponse,
+  ApproveBookingRequestResponse,
   GetBookingByIdResponse,
   GetBookingByScheduleIdResponse,
-  UpdateBookingStatusRequest,
-  UpdateBookingStatusResponse,
+  GetBookingRequestsRequest,
+  GetBookingRequestsResponse,
+  RejectBookingRequestResponse,
 } from "../types/booking.type";
 
 export const QUERY_KEYS = {
@@ -20,9 +20,6 @@ export interface UseBookingRequestsOptions extends GetBookingRequestsRequest {
   enabled?: boolean;
 }
 
-/**
- * Hook lấy danh sách booking request chưa xử lý
- */
 export const useBookingRequests = (options: UseBookingRequestsOptions = {}) => {
   const { enabled = true, ...params } = options;
 
@@ -35,9 +32,6 @@ export const useBookingRequests = (options: UseBookingRequestsOptions = {}) => {
   });
 };
 
-/**
- * Hook lấy lịch sử booking request
- */
 export const useBookingRequestHistory = (
   options: UseBookingRequestsOptions = {},
 ) => {
@@ -57,9 +51,6 @@ export interface UseBookingRequestDetailOptions {
   enabled?: boolean;
 }
 
-/**
- * Hook lấy detail booking request theo id
- */
 export const useBookingRequestDetail = (
   options: UseBookingRequestDetailOptions,
 ) => {
@@ -79,9 +70,6 @@ export interface UseBookingRequestByScheduleOptions {
   enabled?: boolean;
 }
 
-/**
- * Hook lấy booking request theo scheduleId
- */
 export const useBookingRequestBySchedule = (
   options: UseBookingRequestByScheduleOptions,
 ) => {
@@ -96,45 +84,54 @@ export const useBookingRequestBySchedule = (
   });
 };
 
-export interface UseUpdateBookingStatusOptions {
-  onSuccess?: (data: UpdateBookingStatusResponse) => void;
+interface BookingRequestMutationOptions<TData> {
+  onSuccess?: (data: TData) => void;
   onError?: (error: Error) => void;
 }
 
-/**
- * Hook cập nhật trạng thái booking request
- */
-export const useUpdateBookingStatus = (
-  options: UseUpdateBookingStatusOptions = {},
+const invalidateBookingRequestQueries = (queryClient: ReturnType<typeof useQueryClient>) => {
+  queryClient.invalidateQueries({
+    queryKey: [QUERY_KEYS.BOOKING_REQUESTS],
+  });
+  queryClient.invalidateQueries({
+    queryKey: [QUERY_KEYS.BOOKING_REQUEST_HISTORY],
+  });
+  queryClient.invalidateQueries({
+    queryKey: [QUERY_KEYS.BOOKING_REQUEST_DETAIL],
+  });
+  queryClient.invalidateQueries({
+    queryKey: [QUERY_KEYS.BOOKING_REQUEST_BY_SCHEDULE],
+  });
+};
+
+export const useApproveBookingRequest = (
+  options: BookingRequestMutationOptions<ApproveBookingRequestResponse> = {},
 ) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      id,
-      body,
-    }: {
-      id: string;
-      body: UpdateBookingStatusRequest;
-    }) => bookingRequestApi.updateBookingStatus(id, body),
-
+    mutationFn: (id: string) => bookingRequestApi.approveBookingRequest(id),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.BOOKING_REQUESTS],
-      });
-      queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.BOOKING_REQUEST_HISTORY],
-      });
-      queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.BOOKING_REQUEST_DETAIL],
-      });
-      queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.BOOKING_REQUEST_BY_SCHEDULE],
-      });
-
+      invalidateBookingRequestQueries(queryClient);
       options.onSuccess?.(data);
     },
+    onError: (error: Error) => {
+      options.onError?.(error);
+    },
+  });
+};
 
+export const useRejectBookingRequest = (
+  options: BookingRequestMutationOptions<RejectBookingRequestResponse> = {},
+) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => bookingRequestApi.rejectBookingRequest(id),
+    onSuccess: (data) => {
+      invalidateBookingRequestQueries(queryClient);
+      options.onSuccess?.(data);
+    },
     onError: (error: Error) => {
       options.onError?.(error);
     },
