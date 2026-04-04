@@ -57,6 +57,8 @@ const headerToField: Record<string, EditableField> = {
   slot: "SlotOrder",
   slottypecode: "SlotTypeCode",
   slottype: "SlotTypeCode",
+  typeslot: "SlotTypeCode",
+  typeslotcode: "SlotTypeCode",
   roomno: "RoomNo",
   lecturer: "Lecturer",
 };
