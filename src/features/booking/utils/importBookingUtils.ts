@@ -78,7 +78,7 @@ const fieldAliasMap: Array<{ field: EditableField; aliases: string[] }> = [
   { field: "SlotOrder", aliases: ["slotorder", "slot"] },
   {
     field: "SlotTypeCode",
-    aliases: ["slottypecode", "slottype", "typeslotcode"],
+    aliases: ["slottypecode", "slottype", "typeslotcode", "typeslot"],
   },
   { field: "RoomNo", aliases: ["roomno"] },
   { field: "Lecturer", aliases: ["lecturer"] },
