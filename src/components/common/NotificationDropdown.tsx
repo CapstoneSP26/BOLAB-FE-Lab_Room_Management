@@ -53,7 +53,13 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isHomePage 
             : 'hover:bg-gray-100'
         }`}
         aria-label="Notifications"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          setIsOpen(!isOpen);
+          // Mark all as read when opening the dropdown
+          if (!isOpen && unreadCount > 0) {
+            markAllAsRead();
+          }
+        }}
       >
         <svg 
           className={`w-6 h-6 transition ${
@@ -89,17 +95,6 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isHomePage 
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
             <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
-            {unreadCount > 0 && (
-              <button 
-                onClick={markAllAsRead}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                </svg>
-                Mark all as read
-              </button>
-            )}
           </div>
 
           {/* Notifications List */}

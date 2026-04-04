@@ -84,7 +84,8 @@ export const parseTimeValue = (bookingDate: string, value: string): Date => {
     return new Date(0);
   }
 
-  base.setHours(Number(hourText || 0), Number(minuteText || 0), 0, 0);
+  // Sử dụng setUTCHours (không phải setHours) để consistent với UTC date
+  base.setUTCHours(Number(hourText || 0), Number(minuteText || 0), 0, 0);
   return base;
 };
 

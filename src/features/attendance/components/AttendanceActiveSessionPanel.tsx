@@ -27,7 +27,7 @@ export function AttendanceActiveSessionPanel({
   onViewQR,
   onExport,
 }: AttendanceActiveSessionPanelProps) {
-  if (!session && !actionBooking) return null;
+  if (!session) return null;
 
   return (
     <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-2 border-slate-200 rounded-2xl p-6 mb-6 shadow-md">
