@@ -21,8 +21,6 @@ export type {
   ImportValidationResult,
   ValidateImportQuery,
   CommitImportCommand,
-  ValidateOldNewSlotImportRequest,
-  CommitOldNewSlotImportRequest,
   ValidateFlexibleSlotImportRequest,
   CommitFlexibleSlotImportRequest,
   CommitScheduleImportResponse,

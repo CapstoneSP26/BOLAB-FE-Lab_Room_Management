@@ -65,20 +65,12 @@ export interface CommitImportCommand {
   Schedules: ScheduleImportDto[];
 }
 
-export interface ValidateOldNewSlotImportRequest {
-  Rows: OldNewSlotImportDto[];
-}
-
-export interface CommitOldNewSlotImportRequest {
-  Rows: OldNewSlotImportDto[];
-}
-
 export interface ValidateFlexibleSlotImportRequest {
-  Rows: FlexibleSlotImportDto[];
+  Schedules: FlexibleSlotImportDto[];
 }
 
 export interface CommitFlexibleSlotImportRequest {
-  Rows: FlexibleSlotImportDto[];
+  Schedules: FlexibleSlotImportDto[];
 }
 
 export interface CommitScheduleImportResponse {
