@@ -22,7 +22,7 @@ const REPORT_API = {
   LIST: "/reports/listreports",
   CREATE: "/reports",
   REASONS: "/reports/reasons",
-  HISTORY: "/reports/history",
+  HISTORY: "/reports/listreports",
   MY_REPORTS: "/reports/my-reports",
   DETAIL: (id: string) => `/reports/${id}`,
   RESOLVE: (id: string) => `/reports/${id}/resolve`,

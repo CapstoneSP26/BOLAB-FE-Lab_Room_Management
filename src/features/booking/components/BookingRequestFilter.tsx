@@ -1,5 +1,5 @@
-import type { Building } from "../../building/types/building.type";
-import type { LabRoomLookupItem } from "../../labroom/types/room.type";
+import type { BuildingDto } from "../../building/types/building.type";
+import type { LabRoomDto } from "../../labroom/types/room.type";
 import type { SlotType } from "../../slot/types/slot.types";
 import { Search, Building2, DoorOpen, Clock, X, RotateCcw } from "lucide-react";
 
@@ -18,8 +18,8 @@ type Props = {
   slotType: SlotTypeFilter;
   onSlotType: (v: SlotTypeFilter) => void;
 
-  roomOptions: LabRoomLookupItem[];
-  buildingOptions: Building[];
+  roomOptions: LabRoomDto[];
+  buildingOptions: BuildingDto[];
   slotOptions: SlotType[];
 
   onApplyFilters?: () => void | Promise<void>;
@@ -134,7 +134,7 @@ export default function BookingFilters({
                 <option value="ALL">All buildings</option>
                 {buildingOptions.map((b) => (
                   <option key={String(b.id)} value={b.id}>
-                    {b.name}
+                    {b.buildingName}
                   </option>
                 ))}
               </select>
@@ -282,8 +282,8 @@ export default function BookingFilters({
               <div className="inline-flex items-center gap-2 rounded-lg bg-purple-100 dark:bg-purple-500/20 px-3 py-1.5 text-xs font-medium text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30">
                 <Building2 className="h-3 w-3" />
                 <span>
-                  {buildingOptions.find((b) => b.id === buildingId)?.name ||
-                    "Building"}
+                  {buildingOptions.find((b) => b.id === buildingId)
+                    ?.buildingName || "Building"}
                 </span>
                 <button
                   onClick={() => handleBuildingChange("ALL")}

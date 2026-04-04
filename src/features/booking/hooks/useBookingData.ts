@@ -10,7 +10,7 @@ import type {
   Schedule,
   ScheduleType,
   ScheduleStatus,
-} from "../../calendar/type";
+} from "../../calendar/types/calendar.type";
 import { labSchedulerApi } from "../../calendar/api/labSchedulerApi";
 
 import { getRole } from "../../../utils/role";

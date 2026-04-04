@@ -1,36 +1,9 @@
 import type { BookingRequest } from "../../booking/types/booking.type";
-
-function badgeClass(status: unknown) {
-  const s = String(status ?? "").toUpperCase();
-  if (s === "PENDING") {
-    return "bg-amber-500/15 text-amber-700 dark:text-amber-200";
-  }
-  if (s === "REJECTED") {
-    return "bg-red-500/15 text-red-700 dark:text-red-200";
-  }
-  return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-200";
-}
-
-function formatRange(start: string, end: string) {
-  const s = new Date(start);
-  const e = new Date(end);
-
-  const fmtTime = (d: Date) => {
-    const h = d.getHours();
-    const m = d.getMinutes();
-    return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, "0")}`;
-  };
-
-  const fmtDate = (d: Date) => {
-    const dd = String(d.getDate()).padStart(2, "0");
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const yyyy = d.getFullYear();
-    return `${dd}/${mm}/${yyyy}`;
-  };
-
-  return `${fmtDate(s)} • ${fmtTime(s)} - ${fmtTime(e)}`;
-}
-
+import {
+  formatUtcDateLabel,
+  formatBookingTimeLabel,
+} from "../../../utils/date.util";
+import { statusClass } from "../../../utils/status";
 type Props = {
   loading: boolean;
   rows: BookingRequest[];
@@ -94,7 +67,7 @@ export default function BookingTable({
                 <tr key={String(b.id)} className="bg-white dark:bg-transparent">
                   <td className="px-4 py-4">
                     <div className="font-semibold text-gray-800 dark:text-white/90">
-                      #{b.id}
+                      {b.purpose ?? "No purpose provided"}
                     </div>
                     <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                       User: {b.requestedBy}
@@ -109,7 +82,11 @@ export default function BookingTable({
                   </td>
 
                   <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
-                    {formatRange(b.startTime, b.endTime)}
+                    <div>{formatUtcDateLabel(b.startTime)}</div>
+                    <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {formatBookingTimeLabel(b.startTime, b.startTime)} -{" "}
+                      {formatBookingTimeLabel(b.startTime, b.endTime)}
+                    </div>
                   </td>
 
                   <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
@@ -124,7 +101,7 @@ export default function BookingTable({
 
                   <td className="px-4 py-4">
                     <span
-                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(
+                      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${statusClass(
                         b.status,
                       )}`}
                     >

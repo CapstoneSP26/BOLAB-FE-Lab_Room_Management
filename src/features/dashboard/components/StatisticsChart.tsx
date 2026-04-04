@@ -1,8 +1,7 @@
 import { useMemo, useState } from "react";
 import Chart from "react-apexcharts";
 import type { ApexOptions } from "apexcharts";
-import type { DashboardStatsDto } from "../services/dashboardService";
-import { mockDashboardStats } from "../mocks/dashboardMocks";
+import type { DashboardStatsDto } from "../types/dashboard.type";
 
 type OptionValue = "optionOne" | "optionTwo" | "optionThree";
 
@@ -24,18 +23,19 @@ interface StatisticsChartProps {
 export default function StatisticsCard({ stats }: StatisticsChartProps) {
   const [selected, setSelected] = useState<OptionValue>("optionOne");
 
-  // Check if using real data or fallback
-  const isUsingFallbackData = !stats?.monthlyBookings || !stats?.monthlyIncidents;
+  const hasData =
+    (stats?.monthlyBookings?.length ?? 0) > 0 ||
+    (stats?.monthlyIncidents?.length ?? 0) > 0;
 
   const series: Series[] = useMemo(
     () => [
       {
         name: "Bookings",
-        data: stats?.monthlyBookings || mockDashboardStats.monthlyBookings,
+        data: stats?.monthlyBookings ?? [],
       },
       {
         name: "Incidents",
-        data: stats?.monthlyIncidents || mockDashboardStats.monthlyIncidents,
+        data: stats?.monthlyIncidents ?? [],
       },
     ],
     [stats?.monthlyBookings, stats?.monthlyIncidents],
@@ -116,12 +116,14 @@ export default function StatisticsCard({ stats }: StatisticsChartProps) {
             Statistics
           </h3>
           <p className="mt-1 text-gray-500 text-theme-sm dark:text-gray-400">
-            Target you’ve set for each month
-          </p>          {isUsingFallbackData && (
-            <div className="mt-3 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
-              📊 Showing sample data. Backend API needs to implement monthly breakdown.
+            Monthly booking and incident trend from backend
+          </p>
+          {!hasData && (
+            <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-300">
+              No monthly statistics available from the API yet.
             </div>
-          )}        </div>
+          )}
+        </div>
 
         <div className="relative">
           <div className="inline-flex items-center gap-0.5 rounded-lg bg-gray-100 p-0.5 dark:bg-gray-900">
@@ -152,12 +154,18 @@ export default function StatisticsCard({ stats }: StatisticsChartProps) {
           id="chartThree"
           className="-ml-4 min-w-[1000px] pl-2 xl:min-w-full"
         >
-          <Chart
-            type="area"
-            height={310}
-            options={chartOptions}
-            series={series}
-          />
+          {hasData ? (
+            <Chart
+              type="area"
+              height={310}
+              options={chartOptions}
+              series={series}
+            />
+          ) : (
+            <div className="flex h-[310px] items-center justify-center rounded-2xl border border-dashed border-gray-300 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+              Waiting for statistics data from backend
+            </div>
+          )}
         </div>
       </div>
     </div>

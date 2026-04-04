@@ -1,4 +1,3 @@
-import { useEffect, useMemo, useState } from "react";
 import {
   ChevronDown,
   Filter,
@@ -7,27 +6,30 @@ import {
   Calendar,
   TrendingUp,
 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 import BookingRequestReviewModal from "./BookingRequestReviewModal";
 import HistoryBookingTable from "./HistoryBookingTable";
 import HistoryBookingFilter from "./HistoryBookingFilter";
-
+import { ReportStatCard } from "../../../components/ui/ComponentsParts";
+import { bookingRequestApi } from "../api/bookingApi";
+import { labroomApi } from "../../labroom/api/labroom.api";
 import {
-  getBookingRequestHistory,
-  getBuildingOptions,
-  getRoomOptions,
-  getBookingRequestById,
-  updateBookingRequestStatus,
-  getBookingStatusLookup,
-} from "../api/bookingRequestApi";
+  useBookingRequestDetail,
+  useBookingRequestHistory,
+  useUpdateBookingStatus,
+} from "../hooks/useBookingRequest";
+import { buildingApi } from "../../building/api/buildingApi";
 
 import type {
-  HistoryStatus,
+  BookingRequest,
+  BookingStatus,
+  GetBookingRequestsRequest,
   BookingStatusLookupItem,
-} from "../types/bookingRequest.type";
-import type { BookingRequest } from "../types/booking.type";
+} from "../types/booking.type";
 import type { BuildingDto } from "../../building/types/building.type";
 import type { LabRoomDto } from "../../labroom/types/room.type";
+
 const normText = (s: unknown) =>
   String(s ?? "")
     .trim()
@@ -35,10 +37,9 @@ const normText = (s: unknown) =>
 
 export default function HistoryBookingFeature() {
   const [lookupLoading, setLookupLoading] = useState(true);
-
-  const [items, setItems] = useState<BookingRequest[]>([]);
   const [buildingOptions, setBuildingOptions] = useState<BuildingDto[]>([]);
   const [roomOptions, setRoomOptions] = useState<LabRoomDto[]>([]);
+
   const [statusOptions, setStatusOptions] = useState<BookingStatusLookupItem[]>(
     [],
   );
@@ -46,90 +47,109 @@ export default function HistoryBookingFeature() {
   const [q, setQ] = useState("");
   const [buildingId, setBuildingId] = useState<number | "ALL">("ALL");
   const [roomId, setRoomId] = useState<number | "ALL">("ALL");
-  const [status, setStatus] = useState<HistoryStatus>("ALL");
+  const [status, setStatus] = useState<BookingStatus>("All");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
 
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState<BookingRequest | null>(null);
-
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+
+  const params: GetBookingRequestsRequest = useMemo(
+    () => ({
+      startDate: from || undefined,
+      endDate: to || undefined,
+      labRoomId: roomId === "ALL" ? undefined : roomId,
+      buildingId: buildingId === "ALL" ? undefined : buildingId,
+      keyword: q.trim() || undefined,
+      status: status === "All" ? undefined : status,
+      page: 1,
+      limit: 100,
+      sortBy: "RequestedAt",
+      isDescending: true,
+    }),
+    [from, to, roomId, buildingId, q, status],
+  );
+
+  const historyQuery = useBookingRequestHistory(params);
+
+  const detailQuery = useBookingRequestDetail({
+    id: selectedId ?? undefined,
+    enabled: open && !!selectedId,
+  });
 
   const closeModal = () => {
     setOpen(false);
-    setSelected(null);
+    setSelectedId(null);
   };
 
-  const loadLookups = useCallback(async () => {
-    setLookupLoading(true);
-    try {
-      const [buildingsResult, statusesResult] = await Promise.allSettled([
-        getBuildingOptions(),
-        getBookingStatusLookup(),
-      ]);
+  const updateStatusMutation = useUpdateBookingStatus({
+    onSuccess: () => {
+      closeModal();
+      historyQuery.refetch();
+    },
+  });
 
-      setBuildingOptions(
-        buildingsResult.status === "fulfilled" ? buildingsResult.value : [],
-      );
+  const items = useMemo(
+    () => historyQuery.data?.data ?? [],
+    [historyQuery.data],
+  );
+  const totalCount = historyQuery.data?.total ?? items.length;
+  const loading = historyQuery.isLoading || historyQuery.isFetching;
+  const selected: BookingRequest | null = detailQuery.data?.data ?? null;
 
-      setStatusOptions(
-        statusesResult.status === "fulfilled" &&
-          Array.isArray(statusesResult.value?.data)
-          ? statusesResult.value.data
-          : [],
-      );
-    } finally {
-      setLookupLoading(false);
-    }
-  }, []);
+  const reload = async () => {
+    await historyQuery.refetch();
+  };
 
-  const handleView = async (b: BookingRequest) => {
-    if (!b.id) return;
-
-    const detail = await getBookingRequestById(String(b.id));
-    setSelected(detail.data);
+  const handleView = async (id: string) => {
+    if (!id) return;
+    setSelectedId(id);
     setOpen(true);
   };
 
   const handleApprove = async () => {
     if (!selected?.id) return;
 
-    await updateBookingRequestStatus(String(selected.id), {
-      status: "APPROVED",
+    await updateStatusMutation.mutateAsync({
+      id: String(selected.id),
+      body: { status: "APPROVED" },
     });
-
-    await reload();
-    closeModal();
   };
 
   const handleReject = async () => {
     if (!selected?.id) return;
 
-    await updateBookingRequestStatus(String(selected.id), {
-      status: "REJECTED",
+    await updateStatusMutation.mutateAsync({
+      id: String(selected.id),
+      body: { status: "REJECTED" },
     });
-
-    await reload();
-    closeModal();
   };
 
-  const reload = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await getBookingRequestHistory({
-        startDate: from || undefined,
-        endDate: to || undefined,
-        labRoomId: roomId === "ALL" ? undefined : roomId,
-        buildingId: buildingId === "ALL" ? undefined : buildingId,
-        keyword: q.trim() || undefined,
-        status: status === "ALL" ? undefined : status,
-      });
+  useEffect(() => {
+    const loadLookups = async () => {
+      setLookupLoading(true);
+      try {
+        const [buildingsRes, statusRes] = await Promise.all([
+          buildingApi.getBuildings({
+            pageNumber: 1,
+            pageSize: 100,
+          }),
+          bookingRequestApi.getBookingStatusLookup(),
+        ]);
 
-      setItems(Array.isArray(data?.data) ? data.data : []);
-    } finally {
-      setLoading(false);
-    }
-  }, [from, to, roomId, buildingId, q, status]);
+        setBuildingOptions(buildingsRes.items ?? []);
+        setStatusOptions(statusRes.data ?? []);
+      } catch {
+        setBuildingOptions([]);
+        setStatusOptions([]);
+      } finally {
+        setLookupLoading(false);
+      }
+    };
+
+    void loadLookups();
+  }, []);
 
   useEffect(() => {
     const loadRoomsByBuilding = async () => {
@@ -140,8 +160,14 @@ export default function HistoryBookingFeature() {
       }
 
       try {
-        const rooms = await getRoomOptions(buildingId);
-        setRoomOptions(rooms);
+        const rooms = await labroomApi.getRooms({
+          buildingId,
+          pageNumber: 1,
+          pageSize: 100,
+          includeBuilding: true,
+        });
+
+        setRoomOptions(rooms.items ?? []);
       } catch {
         setRoomOptions([]);
       }
@@ -149,26 +175,15 @@ export default function HistoryBookingFeature() {
 
     void loadRoomsByBuilding();
   }, [buildingId]);
-  useEffect(() => {
-    void loadLookups();
-  }, [loadLookups]);
 
-  useEffect(() => {
-    void reload();
-  }, [reload]);
-
-  const rows = useMemo(() => {
-    return [...items].sort((a, b) =>
-      (b.requestedAt ?? "").localeCompare(a.requestedAt ?? ""),
-    );
-  }, [items]);
+  const rows = useMemo(() => items, [items]);
 
   const hasActiveFilters = useMemo(() => {
     return (
       q.trim() !== "" ||
       buildingId !== "ALL" ||
       roomId !== "ALL" ||
-      status !== "ALL" ||
+      status !== "All" ||
       from !== "" ||
       to !== ""
     );
@@ -179,7 +194,7 @@ export default function HistoryBookingFeature() {
     if (q.trim() !== "") count++;
     if (buildingId !== "ALL") count++;
     if (roomId !== "ALL") count++;
-    if (status !== "ALL") count++;
+    if (status !== "All") count++;
     if (from !== "") count++;
     if (to !== "") count++;
     return count;
@@ -189,7 +204,7 @@ export default function HistoryBookingFeature() {
     setQ("");
     setBuildingId("ALL");
     setRoomId("ALL");
-    setStatus("ALL");
+    setStatus("All");
     setFrom("");
     setTo("");
   };
@@ -200,9 +215,11 @@ export default function HistoryBookingFeature() {
         normText(item.status) === "approved" ||
         normText(item.status) === "accepted",
     ).length;
+
     const rejected = items.filter(
       (item) => normText(item.status) === "rejected",
     ).length;
+
     const pending = items.filter(
       (item) =>
         normText(item.status) === "pending" ||
@@ -210,14 +227,14 @@ export default function HistoryBookingFeature() {
     ).length;
 
     return {
-      total: items.length,
+      total: totalCount,
       approved,
       rejected,
       pending,
       approvalRate:
-        items.length > 0 ? Math.round((approved / items.length) * 100) : 0,
+        totalCount > 0 ? Math.round((approved / totalCount) * 100) : 0,
     };
-  }, [items]);
+  }, [items, totalCount]);
 
   return (
     <div className="space-y-6">
@@ -252,7 +269,7 @@ export default function HistoryBookingFeature() {
           </div>
 
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-            <StatCard
+            <ReportStatCard
               label="Total Records"
               value={stats.total}
               icon={
@@ -272,7 +289,8 @@ export default function HistoryBookingFeature() {
               }
               color="blue"
             />
-            <StatCard
+
+            <ReportStatCard
               label="Approved"
               value={stats.approved}
               icon={
@@ -290,29 +308,17 @@ export default function HistoryBookingFeature() {
                   />
                 </svg>
               }
-              color="green"
+              color="emerald"
             />
-            <StatCard
+
+            <ReportStatCard
               label="Rejected"
               value={stats.rejected}
-              icon={
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              }
-              color="red"
+              icon={<X className="h-5 w-5" />}
+              color="blue"
             />
-            <StatCard
+
+            <ReportStatCard
               label="Pending"
               value={stats.pending}
               icon={
@@ -332,7 +338,8 @@ export default function HistoryBookingFeature() {
               }
               color="amber"
             />
-            <StatCard
+
+            <ReportStatCard
               label="Approval Rate"
               value={`${stats.approvalRate}%`}
               icon={<TrendingUp className="h-5 w-5" />}
@@ -368,19 +375,6 @@ export default function HistoryBookingFeature() {
               {hasActiveFilters && (
                 <div className="flex items-center gap-2">
                   <span className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 dark:border-blue-800 dark:bg-blue-500/10 dark:text-blue-400">
-                    <svg
-                      className="h-3 w-3"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
                     {activeFilterCount} Active
                   </span>
                 </div>
@@ -477,19 +471,6 @@ export default function HistoryBookingFeature() {
             <div className="flex items-center gap-3">
               {rows.length > 0 && (
                 <span className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm dark:border-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                  <svg
-                    className="h-4 w-4 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                    />
-                  </svg>
                   {rows.length} {rows.length === 1 ? "record" : "records"}
                 </span>
               )}
@@ -513,47 +494,6 @@ export default function HistoryBookingFeature() {
         onApprove={handleApprove}
         onReject={handleReject}
       />
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  icon,
-  color,
-}: {
-  label: string;
-  value: number | string;
-  icon: React.ReactNode;
-  color: "blue" | "green" | "red" | "amber" | "purple";
-}) {
-  const colorClasses = {
-    blue: "bg-blue-100 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
-    green:
-      "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
-    red: "bg-red-100 text-red-600 dark:bg-red-500/10 dark:text-red-400",
-    amber:
-      "bg-amber-100 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400",
-    purple:
-      "bg-purple-100 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400",
-  };
-
-  return (
-    <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white/50 p-4 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-800/30">
-      <div
-        className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg ${colorClasses[color]}`}
-      >
-        {icon}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="text-xs font-medium text-gray-600 dark:text-gray-400">
-          {label}
-        </div>
-        <div className="mt-0.5 text-xl font-bold text-gray-900 dark:text-white">
-          {value}
-        </div>
-      </div>
     </div>
   );
 }

@@ -1,4 +1,8 @@
+import type { ScheduleDto } from "../../schedules/types/schedule.type";
+
 export type CalendarMode = "PERSONAL" | "LAB_SPECIFIC" | "PUBLIC";
+export type ScheduleType = string;
+export type ScheduleStatus = string;
 
 export interface UseCalendarEventProps {
   calendarMode: CalendarMode;
@@ -6,6 +10,38 @@ export interface UseCalendarEventProps {
   startDate?: string;
   endDate?: string;
 }
+
+export type LabCalendarEventProps = {
+  schedule: ScheduleDto;
+  status: string;
+  roomName: string;
+  buildingName: string;
+};
+
+export type RoomLookupItem = {
+  id: number;
+  roomName: string;
+  buildingName: string;
+};
+
+export type ScheduleRoomOption = {
+  roomName: string;
+  buildingName: string;
+  roomId?: number;
+};
+
+export type LabCalendarSelectOption = {
+  value: string;
+  label: string;
+};
+
+export type LabCalendarFilterState = {
+  selectedRoom: string;
+  selectedBuilding: string;
+  selectedTimeRange: string;
+  selectedStatus: string;
+  selectedSlotType: string;
+};
 
 export interface CalendarEvent {
   id: string;
@@ -97,13 +133,13 @@ export interface RemoveIncidentByReportIdResponse {
 }
 
 export interface GetScheduleListResponse {
-  data: Schedule[];
+  data: ScheduleDto[];
 }
 
 export interface GetScheduleByIdResponse {
-  data: Schedule;
+  data: ScheduleDto;
 }
 
 export interface UpdateScheduleStatusResponse {
-  data: Schedule;
+  data: ScheduleDto;
 }

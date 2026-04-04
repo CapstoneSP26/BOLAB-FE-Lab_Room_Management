@@ -15,9 +15,9 @@ const BuildingDetail = lazy(
 const RoomBookingPage = lazy(
   () => import("../../pages/lecturer/RoomBookingPage.tsx"),
 );
-const LabRoomDetailsPage = lazy(
-  () => import("../../pages/lecturer/LabRoomDetailsPage.tsx"),
-);
+// const LabRoomDetailsPage = lazy(
+//   () => import("../../pages/lecturer/LabRoomDetailsPage.tsx"),
+// );
 const BookingHistoryPage = lazy(
   () => import("../../pages/lecturer/BookingHistoryPage.tsx"),
 );
@@ -68,6 +68,9 @@ const ReportDetailPage = lazy(
 const IncidentHistoryPage = lazy(
   () => import("../../pages/labmanager/ReportHistoryPage.tsx"),
 );
+const UserManagementPage = lazy(
+  () => import("../../pages/labmanager/UserManagementPage.tsx"),
+);
 
 export const appRoutes: AppRoute[] = [
   {
@@ -94,12 +97,12 @@ export const appRoutes: AppRoute[] = [
     isPrivate: true,
     layout: "main",
   },
-  {
-    path: "/lab-room/:roomId",
-    element: LabRoomDetailsPage,
-    isPrivate: true,
-    layout: "main",
-  },
+  // {
+  //   path: "/lab-room/:roomId",
+  //   element: LabRoomDetailsPage,
+  //   isPrivate: true,
+  //   layout: "main",
+  // },
   {
     path: "/my-bookings",
     element: BookingHistoryPage,
@@ -200,6 +203,12 @@ export const appRoutes: AppRoute[] = [
   {
     path: "/labmanager/incident-history",
     element: IncidentHistoryPage,
+    isPrivate: false,
+    layout: "labmanager",
+  },
+  {
+    path: "/labmanager/users",
+    element: UserManagementPage,
     isPrivate: false,
     layout: "labmanager",
   },

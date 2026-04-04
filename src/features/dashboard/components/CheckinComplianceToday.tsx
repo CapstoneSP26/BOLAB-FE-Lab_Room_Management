@@ -5,14 +5,17 @@ import type { ApexOptions } from "apexcharts";
 import DropdownMenu, {
   type DropdownMenuItem,
 } from "../../../components/common/DropdownMenu";
-import type { DashboardStatsDto } from "../services/dashboardService";
+import type { DashboardStatsDto } from "../types/dashboard.type";
 
 type MonthlyTargetProps = {
-  value?: number; // default 75.55
+  value?: number;
   stats?: DashboardStatsDto;
 };
 
-export default function MonthlyTarget({ value = 75.55, stats }: MonthlyTargetProps) {
+export default function MonthlyTarget({
+  value = 0,
+  stats,
+}: MonthlyTargetProps) {
   const menuItems: DropdownMenuItem[] = useMemo(
     () => [
       { label: "View More", onClick: () => console.log("View More clicked") },
@@ -117,7 +120,8 @@ export default function MonthlyTarget({ value = 75.55, stats }: MonthlyTargetPro
         </div>
 
         <p className="mx-auto mt-1.5 w-full max-w-[380px] text-center text-sm text-gray-500 sm:text-base">
-          {noCheckInBookingsToday} booking(s) still missing check-in. Review now.
+          {noCheckInBookingsToday} booking(s) still missing check-in. Review
+          now.
         </p>
       </div>
 

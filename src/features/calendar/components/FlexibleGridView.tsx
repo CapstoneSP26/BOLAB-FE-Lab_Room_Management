@@ -1,8 +1,8 @@
-import React, { useMemo } from 'react';
-import { CALENDAR_CONFIG } from '../constants/calendar.constants';
-import type { CalendarEvent } from '../types/calendar.type';
-import { getPositionStyle, timeToPosition } from '../utils/calendar-math.util';
-import { addHours, format, isBefore, startOfHour } from 'date-fns';
+import React, { useMemo } from "react";
+import { CALENDAR_CONFIG } from "../constants/calendar.constants";
+import type { CalendarEvent } from "../types/calendar.type";
+import { getPositionStyle, timeToPosition } from "../utils/calendar-math.util";
+import { addHours, format, isBefore, startOfHour } from "date-fns";
 
 interface FlexibleGridViewProps {
   timeSlots: string[];
@@ -22,33 +22,39 @@ export const FlexibleGridView: React.FC<FlexibleGridViewProps> = ({
   handleMouseDown,
 }) => {
   const { START_HOUR, END_HOUR, CELL_HEIGHT } = CALENDAR_CONFIG;
-  const maxHeight = useMemo(() => (END_HOUR - START_HOUR + 1) * CELL_HEIGHT, []);
+  const maxHeight = useMemo(
+    () => (END_HOUR - START_HOUR + 1) * CELL_HEIGHT,
+    [],
+  );
   const now = new Date();
   const minAllowedTime = addHours(now, minBookingLeadTime);
   // Render các Event đã có trên một cột ngày
   const renderColumnEvents = (date: Date) => {
-    const dateStr = format(date, 'yyyy-MM-dd');
+    const dateStr = format(date, "yyyy-MM-dd");
 
     return events
       .filter((event) => event.start.startsWith(dateStr))
       .map((event) => {
-        const startTime = event.start.split('T')[1].substring(0, 5);
-        const endTime = event.end.split('T')[1].substring(0, 5);
+        const startTime = event.start.split("T")[1].substring(0, 5);
+        const endTime = event.end.split("T")[1].substring(0, 5);
 
         const eventStyle = getPositionStyle(startTime, endTime);
 
         return (
           <div
             key={event.id}
-            className={`absolute left-1 right-1 rounded-lg px-2 py-1 text-[11px] font-bold border-l-4 shadow-sm z-10 select-none overflow-hidden ${event.status === 'Booked' || event.status === 'Approved'
-              ? 'bg-indigo-100 text-indigo-700 border-indigo-500'
-              : 'bg-amber-100 text-amber-700 border-amber-500 border-dashed'
-              }`}
+            className={`absolute left-1 right-1 rounded-lg px-2 py-1 text-[11px] font-bold border-l-4 shadow-sm z-10 select-none overflow-hidden ${
+              event.status === "Booked" || event.status === "Approved"
+                ? "bg-indigo-100 text-indigo-700 border-indigo-500"
+                : "bg-amber-100 text-amber-700 border-amber-500 border-dashed"
+            }`}
             style={eventStyle}
             title={`${event.title} (${startTime} - ${endTime})`}
           >
             <div className="truncate">{event.title}</div>
-            <div className="text-[9px] opacity-70 font-medium">{startTime} - {endTime}</div>
+            <div className="text-[9px] opacity-70 font-medium">
+              {startTime} - {endTime}
+            </div>
           </div>
         );
       });
@@ -59,8 +65,13 @@ export const FlexibleGridView: React.FC<FlexibleGridViewProps> = ({
       {/* 1. Cột trục thời gian bên trái (Sticky) */}
       <div className="bg-gray-50/80 border-r border-gray-200 sticky left-0 z-30 backdrop-blur-sm">
         {timeSlots.map((time) => (
-          <div key={time} className="h-20 border-b border-gray-200 pr-3 pt-2 text-right">
-            <span className="text-xs text-gray-500 font-bold tracking-tighter">{time}</span>
+          <div
+            key={time}
+            className="h-20 border-b border-gray-200 pr-3 pt-2 text-right"
+          >
+            <span className="text-xs text-gray-500 font-bold tracking-tighter">
+              {time}
+            </span>
           </div>
         ))}
       </div>
@@ -68,18 +79,22 @@ export const FlexibleGridView: React.FC<FlexibleGridViewProps> = ({
       {/* 2. Lưới 7 cột ngày */}
       <div className="grid grid-cols-7 relative bg-white">
         {weekDays.map((date, dayIndex) => {
-          const isDraggingThisColumn = dragState.isActive && dragState.dayIndex === dayIndex;
-          const dateStr = format(date, 'yyyy-MM-dd');
-          const isToday = dateStr === format(now, 'yyyy-MM-dd');
+          const isDraggingThisColumn =
+            dragState.isActive && dragState.dayIndex === dayIndex;
+          const dateStr = format(date, "yyyy-MM-dd");
+          const isToday = dateStr === format(now, "yyyy-MM-dd");
           const isPastDay = isBefore(date, startOfHour(now)) && !isToday;
 
           // Tính toán vị trí vùng bị khóa trong ngày hôm nay
           let lockedOverlayStyle = null;
           if (isPastDay) {
-            lockedOverlayStyle = { top: 0, height: '100%' };
+            lockedOverlayStyle = { top: 0, height: "100%" };
           } else if (isToday) {
             const topPos = 0;
-            const heightPos = Math.min(timeToPosition(format(minAllowedTime, 'HH:mm')), maxHeight);
+            const heightPos = Math.min(
+              timeToPosition(format(minAllowedTime, "HH:mm")),
+              maxHeight,
+            );
             lockedOverlayStyle = { top: topPos, height: `${heightPos}px` };
           }
 
@@ -87,12 +102,17 @@ export const FlexibleGridView: React.FC<FlexibleGridViewProps> = ({
             <div
               key={dayIndex}
               className="relative border-r border-gray-200 h-full group"
-              style={{ height: `${(END_HOUR - START_HOUR + 1) * CELL_HEIGHT}px` }}
+              style={{
+                height: `${(END_HOUR - START_HOUR + 1) * CELL_HEIGHT}px`,
+              }}
               onMouseDown={(e) => handleMouseDown(e, dayIndex)}
             >
               {/* Lớp nền: Vạch kẻ ngang mờ */}
               {timeSlots.map((_, i) => (
-                <div key={i} className="h-20 border-b border-gray-100 pointer-events-none" />
+                <div
+                  key={i}
+                  className="h-20 border-b border-gray-100 pointer-events-none"
+                />
               ))}
 
               {/* DESIGN ĐẸP: Vùng bị khóa (Locked Area) */}
@@ -107,7 +127,7 @@ export const FlexibleGridView: React.FC<FlexibleGridViewProps> = ({
                       #000 10px,
                       transparent 10px,
                       transparent 20px
-                    )`
+                    )`,
                   }}
                 />
               )}
@@ -126,7 +146,7 @@ export const FlexibleGridView: React.FC<FlexibleGridViewProps> = ({
                 >
                   <div className="p-3 bg-white/40 backdrop-blur-[2px] h-full">
                     <div className="font-black uppercase text-[9px] tracking-widest opacity-80">
-                      {'Đang chọn'}
+                      {"Đang chọn"}
                     </div>
                     <div className="text-xs font-bold mt-1">
                       {dragState.startTime} - {dragState.endTime}

@@ -4,7 +4,7 @@ import type { ApexOptions } from "apexcharts";
 import DropdownMenu, {
   type DropdownMenuItem,
 } from "../../../components/common/DropdownMenu";
-import type { DashboardStatsDto } from "../services/dashboardService";
+import type { DashboardStatsDto } from "../types/dashboard.type";
 
 interface MonthlyBookingsProps {
   stats?: DashboardStatsDto;
@@ -19,14 +19,13 @@ export default function MonthlyBookings({ stats }: MonthlyBookingsProps) {
     [],
   );
 
-  // Check if using real data or fallback
-  const isUsingFallbackData = !stats?.monthlyBookings;
+  const hasData = (stats?.monthlyBookings?.length ?? 0) > 0;
 
   const series = useMemo(
     () => [
       {
         name: "Bookings",
-        data: stats?.monthlyBookings || [168, 385, 201, 298, 187, 195, 291, 110, 215, 390, 280, 112],
+        data: stats?.monthlyBookings ?? [],
       },
     ],
     [stats?.monthlyBookings],
@@ -117,15 +116,21 @@ export default function MonthlyBookings({ stats }: MonthlyBookingsProps) {
         />
       </div>
 
-      {isUsingFallbackData && (
-        <div className="mt-3 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
-          📊 Showing sample data. Backend API needs to implement monthly breakdown.
+      {!hasData && (
+        <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-300">
+          No monthly booking data available from the API yet.
         </div>
       )}
 
       <div className="max-w-full overflow-x-auto custom-scrollbar">
         <div className="-ml-5 min-w-[650px] pl-2 xl:min-w-full">
-          <Chart type="bar" height={180} options={options} series={series} />
+          {hasData ? (
+            <Chart type="bar" height={180} options={options} series={series} />
+          ) : (
+            <div className="flex h-[180px] items-center justify-center rounded-2xl border border-dashed border-gray-300 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+              Waiting for booking trend data from backend
+            </div>
+          )}
         </div>
       </div>
     </div>
