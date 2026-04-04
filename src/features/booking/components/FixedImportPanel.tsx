@@ -209,39 +209,49 @@ export default function FixedImportPanel({ onImportComplete }: FixedImportPanelP
       };
 
       const response = await validateScheduleRows(payload);
+      
+      // Handle both PascalCase and camelCase response from backend
+      const rowsData = (response.Rows ?? (response as any).rows) ?? [];
 
-      response.Rows.forEach((rowResult: any) => {
-        rowResult.Errors.forEach((error: any) => {
+      rowsData.forEach((rowResult: any) => {
+        // Backend returns rowNumber as 0, use data.index instead for correct row number
+        const rowNum = (rowResult.data?.index ?? rowResult.rowNumber ?? rowResult.RowNumber) ?? 0;
+        const errorsData = rowResult.Errors ?? rowResult.errors ?? [];
+        
+        errorsData.forEach((error: any) => {
           const resolvedField =
-            resolveFieldFromText(error.FieldName ?? "") ??
-            resolveFieldFromText(error.Message);
+            resolveFieldFromText(error.FieldName ?? error.fieldName ?? "") ??
+            resolveFieldFromText(error.Message ?? error.message ?? "");
 
-          const conflictSuffix = error.ConflictWithRows?.length
-            ? ` Conflict with rows: ${error.ConflictWithRows.join(", ")}.`
+          const conflictWithRows = error.ConflictWithRows ?? error.conflictWithRows;
+          const conflictSuffix = conflictWithRows?.length
+            ? ` Conflict with rows: ${conflictWithRows.join(", ")}.`
             : "";
-          const message = `${error.Message}${conflictSuffix}`;
+          const severity = error.Severity ?? error.severity;
+          const message = `${error.Message ?? error.message}${conflictSuffix}`;
 
-          if (resolvedField && error.Severity === 2) {
+          // Always add error to nextIssues for display
+          if (resolvedField && severity === 2) {
             pushRowIssue(
               nextErrors,
               nextIssues,
-              String(rowResult.RowNumber),
-              rowResult.RowNumber,
+              String(rowNum),
+              rowNum,
               resolvedField,
               message
             );
-            return;
+          } else {
+            // Add to issues even if field couldn't be resolved
+            nextIssues.push({
+              row: rowNum,
+              field: error.FieldName ?? error.fieldName ?? (severity === 1 ? "Warning" : "Error"),
+              message,
+            });
           }
-
-          nextIssues.push({
-            row: rowResult.RowNumber,
-            field: error.FieldName ?? (error.Severity === 1 ? "Warning" : "Error"),
-            message,
-          });
         });
       });
 
-      setCanCommit(response.CanCommit);
+      setCanCommit(response.CanCommit ?? (response as any).canCommit);
       setValidationErrors(nextErrors);
       setIssues(nextIssues);
       setHasValidated(true);
