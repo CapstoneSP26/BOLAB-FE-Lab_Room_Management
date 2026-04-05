@@ -71,6 +71,12 @@ const IncidentHistoryPage = lazy(
 const UserManagementPage = lazy(
   () => import("../../pages/labmanager/UserManagementPage.tsx"),
 );
+const RoomManagementPage = lazy(
+  () => import("../../pages/labmanager/RoomManagementPage.tsx"),
+);
+const ScheduleManagementPage = lazy(
+  () => import("../../pages/labmanager/ScheduleManagementPage.tsx"),
+);
 
 export const appRoutes: AppRoute[] = [
   {
@@ -209,6 +215,18 @@ export const appRoutes: AppRoute[] = [
   {
     path: "/labmanager/users",
     element: UserManagementPage,
+    isPrivate: false,
+    layout: "labmanager",
+  },
+  {
+    path: "/labmanager/campus/rooms",
+    element: RoomManagementPage,
+    isPrivate: false,
+    layout: "labmanager",
+  },
+  {
+    path: "/labmanager/slot-management",
+    element: ScheduleManagementPage,
     isPrivate: false,
     layout: "labmanager",
   },

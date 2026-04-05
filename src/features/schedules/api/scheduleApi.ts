@@ -4,11 +4,16 @@ import type { GetSchedulesParams, ScheduleDto } from "../types/schedule.type";
 
 export const scheduleApi = {
   getSchedules: (params: GetSchedulesParams) =>
-    axiosInstance.get<PagedResponse<ScheduleDto>>("/schedules", {
-      params,
-    }).then(res => res.data),
+    axiosInstance
+      .get<PagedResponse<ScheduleDto>>("/schedules", {
+        params,
+      })
+      .then((res) => res.data),
   getScheduleAttendance: (params: GetSchedulesParams) =>
-    axiosInstance.get<PagedResponse<ScheduleDto>>("/schedules/schedule-attendance", {
-      params,
-    }),
+    axiosInstance.get<PagedResponse<ScheduleDto>>(
+      "/schedules/schedule-attendance",
+      {
+        params,
+      },
+    ),
 };

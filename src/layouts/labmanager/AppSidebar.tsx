@@ -153,6 +153,11 @@ const AppSidebar: React.FC = () => {
             path: p("/lab-scheduler"),
           },
           {
+            icon: ListIcon,
+            name: "Schedules & Slots",
+            path: p("/slot-management"),
+          },
+          {
             icon: ListBookingRequest,
             name: "Booking Requests",
             subItems: [

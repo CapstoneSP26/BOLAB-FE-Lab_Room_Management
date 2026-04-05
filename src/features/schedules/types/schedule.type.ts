@@ -1,5 +1,9 @@
 export interface ScheduleDto {
   id: string;
+  /** Khi backend trả kèm — dùng để bind form / cập nhật lịch */
+  labRoomId?: number;
+  /** Id môn học (nếu API trả riêng; nếu không có thể map từ subjectCode) */
+  subjectId?: string;
   subjectCode: string;
   lecturerName: string;
   labRoomName: string;

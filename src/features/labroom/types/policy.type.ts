@@ -1,7 +1,16 @@
-
 export interface LabRoomPolicy {
   policyKey: PolicyTypeEnum;
   policyKeyName: string;
+  value: string;
+}
+
+export interface LabRoomPolicyFormValues {
+  policyKey: PolicyTypeEnum;
+  value: string;
+}
+
+export interface LabRoomPolicyMutationPayload {
+  policyKey: PolicyTypeEnum;
   value: string;
 }
 

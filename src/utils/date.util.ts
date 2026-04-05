@@ -223,3 +223,33 @@ export const getStartOfDayVNInUTC = (date: Date | string) => {
 export const convertUTCStringToLocal = (utcString: string) => {
   return format(new Date(utcString), "yyyy-MM-dd'T'HH:mm:ss");
 };
+
+/**
+ * ISO datetime → giá trị cho input HTML `datetime-local` (yyyy-MM-ddTHH:mm), theo giờ local.
+ * Dùng chung cho form schedule / booking.
+ */
+export const toDatetimeLocalValue = (iso: string): string => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return format(d, "yyyy-MM-dd'T'HH:mm");
+};
+
+/**
+ * Giá trị từ input `datetime-local` → ISO string gửi API.
+ */
+export const fromDatetimeLocalValue = (value: string): string => {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toISOString();
+};
+
+/**
+ * Chuỗi thời gian ISO → nhãn hiển thị trong bảng (dd/MM/yyyy HH:mm).
+ */
+export const formatIsoDateTimeForDisplay = (iso: string): string => {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return format(d, "dd/MM/yyyy HH:mm", { locale: vi });
+};
