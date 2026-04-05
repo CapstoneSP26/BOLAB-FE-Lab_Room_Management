@@ -1,9 +1,7 @@
 import { useRef, useState, useMemo } from "react";
 import type {
   FlexibleEditableRow,
-  ValidationIssue,
   ValidationErrors,
-  UploadResultType,
 } from "../types/importBooking.type";
 import {
   ACCEPTED_EXTENSIONS,
@@ -17,7 +15,16 @@ import {
   createEmptyFlexibleRows,
   toFlexibleValidationKey,
   validateFlexibleRowsLocal,
+  toFlexibleSlotRows,
+  resolveFieldFlexibleFromText,
+  pushFlexibleRowIssue,
 } from "../utils/importBookingUtils";
+import type {
+  ValidateFlexibleSlotImportRequest,
+  CommitFlexibleSlotImportRequest,
+} from "../types/importBooking.type";
+import { useBookingFlexibleImport } from "../hooks/useBookingFlexibleImport";
+import { useToast } from "../../../hooks/useToast";
 
 interface FlexibleImportPanelProps {
   onImportComplete?: () => void;
@@ -28,13 +35,15 @@ const pageSize = 10;
 export default function FlexibleImportPanel({
   onImportComplete,
 }: FlexibleImportPanelProps) {
+  const toast = useToast();
+  const {
+    validateFlexibleScheduleMutation,
+    commitFlexibleScheduleMutation,
+  } = useBookingFlexibleImport();
   const flexibleFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [selectedFlexibleFile, setSelectedFlexibleFile] = useState<File | null>(null);
   const [isDraggingFlexible, setIsDraggingFlexible] = useState(false);
-  const [resultType, setResultType] = useState<UploadResultType>("idle");
-  const [resultMessage, setResultMessage] = useState<string>("");
-  const [issues, setIssues] = useState<ValidationIssue[]>([]);
   const [flexibleRows, setFlexibleRows] = useState<FlexibleEditableRow[]>(
     createEmptyFlexibleRows(6)
   );
@@ -42,6 +51,12 @@ export default function FlexibleImportPanel({
     useState<ValidationErrors>({});
   const [flexibleCurrentPage, setFlexibleCurrentPage] = useState(1);
   const [showFlexibleConfirmPanel, setShowFlexibleConfirmPanel] = useState(false);
+  const [hasValidated, setHasValidated] = useState(false);
+  const [canCommit, setCanCommit] = useState(false);
+  const [flexibleModalError, setFlexibleModalError] = useState<string>("");
+
+  const isValidating = validateFlexibleScheduleMutation.isPending;
+  const isUploading = commitFlexibleScheduleMutation.isPending;
 
   const acceptedDisplay = useMemo(() => ACCEPTED_EXTENSIONS.join(", "), []);
 
@@ -49,6 +64,11 @@ export default function FlexibleImportPanel({
     () => Math.max(1, Math.ceil(flexibleRows.length / pageSize)),
     [flexibleRows.length]
   );
+
+  const paginatedRows = useMemo(() => {
+    const start = (flexibleCurrentPage - 1) * pageSize;
+    return flexibleRows.slice(start, start + pageSize);
+  }, [flexibleRows, flexibleCurrentPage]);
 
   const flexiblePageMeta = useMemo(() => {
     if (flexibleRows.length === 0) return { start: 0, end: 0 };
@@ -72,14 +92,20 @@ export default function FlexibleImportPanel({
   };
 
   const resetFlexibleImportState = () => {
+    setCanCommit(false);
+    setHasValidated(false);
     setFlexibleValidationErrors({});
+    setFlexibleModalError("");
     setShowFlexibleConfirmPanel(false);
+    setFlexibleRows(createEmptyFlexibleRows(6));
+    setFlexibleCurrentPage(1);
+    if (flexibleFileInputRef.current) {
+      flexibleFileInputRef.current.value = "";
+    }
   };
 
   const handleFlexibleFileSelection = (file: File | null) => {
-    setResultType("idle");
-    setResultMessage("");
-    setIssues([]);
+    setFlexibleModalError("");
 
     if (!file) {
       setSelectedFlexibleFile(null);
@@ -89,12 +115,30 @@ export default function FlexibleImportPanel({
     const error = validateFileFormat(file);
     if (error) {
       setSelectedFlexibleFile(null);
-      setResultType("error");
-      setResultMessage(error);
+      setFlexibleModalError(error);
+      return;
+    }
+
+    // Check if same file is selected again
+    if (
+      selectedFlexibleFile &&
+      selectedFlexibleFile.name === file.name &&
+      selectedFlexibleFile.size === file.size &&
+      selectedFlexibleFile.lastModified === file.lastModified
+    ) {
+      toast.info("File trùng", `File "${file.name}" đã được chọn trước đó.`);
+      // Reset file input value to ensure onChange triggers on next file selection
+      if (flexibleFileInputRef.current) {
+        flexibleFileInputRef.current.value = "";
+      }
       return;
     }
 
     setSelectedFlexibleFile(file);
+    // Reset file input value to ensure onChange triggers on next file selection
+    if (flexibleFileInputRef.current) {
+      flexibleFileInputRef.current.value = "";
+    }
   };
 
   const onFlexibleFileInputChange = (
@@ -145,52 +189,140 @@ export default function FlexibleImportPanel({
 
   const openFlexibleEditModal = async () => {
     const file = selectedFlexibleFile;
-    if (!file) return;
+    if (!file || isUploading) return;
 
     resetFlexibleImportState();
 
     try {
       const parsedRows = await parseFlexibleFileToRows(file);
       if (parsedRows.length === 0) {
-        setResultType("error");
-        setResultMessage("No data rows found in the uploaded flexible file.");
+        setFlexibleModalError("No data rows found in the uploaded file.");
+        setShowFlexibleConfirmPanel(true);
         return;
       }
-
       setFlexibleRows(parsedRows);
       setFlexibleCurrentPage(1);
       setShowFlexibleConfirmPanel(true);
-      setResultType("idle");
     } catch {
-      setResultType("error");
-      setResultMessage("Unable to read the flexible file. Please try again.");
+      setFlexibleModalError("Unable to read the file. Please try again.");
+      setShowFlexibleConfirmPanel(true);
     }
   };
 
-  const validateFlexibleRows = () => {
-    const { errors, issues: validationIssues } = validateFlexibleRowsLocal(
+  const closeFlexibleEditModal = () => {
+    setShowFlexibleConfirmPanel(false);
+  };
+
+  const validateFlexibleRows = async () => {
+    const { errors: clientErrors, issues: clientIssues } = validateFlexibleRowsLocal(
       flexibleRows
     );
-    setFlexibleValidationErrors(errors);
-    setIssues(validationIssues);
-    setResultType(validationIssues.length > 0 ? "error" : "success");
-    setResultMessage(
-      validationIssues.length > 0
-        ? "Flexible import has validation issues."
-        : "Flexible import validated locally."
-    );
-    setShowFlexibleConfirmPanel(true);
+    const nextErrors = { ...clientErrors };
+    const nextIssues = [...clientIssues];
+
+    setFlexibleModalError(""); // Clear previous error before validating
+
+    try {
+      const payload: ValidateFlexibleSlotImportRequest = {
+        Schedules: toFlexibleSlotRows(flexibleRows),
+      };
+
+      const response = await validateFlexibleScheduleMutation.mutateAsync(payload);
+
+      // Handle both PascalCase and camelCase response from backend
+      const rowsData = (response.Rows ?? (response as any).rows) ?? [];
+
+      rowsData.forEach((rowResult: any) => {
+        // Backend returns rowNumber as 0, use data.index instead for correct row number
+        const rowNum = (rowResult.data?.index ?? rowResult.rowNumber ?? rowResult.RowNumber) ?? 0;
+        const errorsData = rowResult.Errors ?? rowResult.errors ?? [];
+        console.log(`Processing validation for row ${rowNum}:`, errorsData);
+        errorsData.forEach((error: any) => {
+          const resolvedField =
+            resolveFieldFlexibleFromText(error.FieldName ?? error.fieldName ?? "") ??
+            resolveFieldFlexibleFromText(error.Message ?? error.message ?? "");
+
+          const conflictWithRows = error.ConflictWithRows ?? error.conflictWithRows;
+          const conflictSuffix = conflictWithRows?.length
+            ? ` Conflict with rows: ${conflictWithRows.join(", ")}.`
+            : "";
+          const severity = error.Severity ?? error.severity;
+          const message = `${error.Message ?? error.message}${conflictSuffix}`;
+
+          // Always add error to nextIssues for display
+          if (resolvedField && severity === 2) {
+            pushFlexibleRowIssue(
+              nextErrors,
+              nextIssues,
+              String("flex-row-" + rowNum),
+              rowNum,
+              resolvedField,
+              message
+            );
+          } else {
+            // Add to issues even if field couldn't be resolved
+            nextIssues.push({
+              row: rowNum,
+              field: error.FieldName ?? error.fieldName ?? (severity === 1 ? "Warning" : "Error"),
+              message,
+            });
+          }
+        });
+      });
+
+      setCanCommit(response.CanCommit ?? (response as any).canCommit);
+      setFlexibleValidationErrors(nextErrors);
+      setHasValidated(true);
+
+      const canCommitValue = response.CanCommit ?? (response as any).canCommit;
+
+      if (canCommitValue) {
+        // Can proceed - clear error message
+        setFlexibleModalError("");
+      } else {
+        // Cannot proceed - show critical error
+        setFlexibleModalError("Validation found critical issues. Please fix rows before import.");
+      }
+    } catch {
+      setCanCommit(false);
+      setFlexibleValidationErrors(nextErrors);
+      setHasValidated(true);
+      setFlexibleModalError("Unable to validate import data. Please try again.");
+    }
   };
 
   const confirmFlexibleImport = async () => {
-    setResultType("success");
-    setResultMessage(
-      "Flexible import is reviewed locally. No backend request was sent."
-    );
-    setShowFlexibleConfirmPanel(false);
-    setSelectedFlexibleFile(null);
-    if (onImportComplete) {
-      onImportComplete();
+    if (!selectedFlexibleFile || isUploading || !hasValidated || !canCommit) return;
+
+    try {
+      const payload: CommitFlexibleSlotImportRequest = {
+        Schedules: toFlexibleSlotRows(flexibleRows),
+      };
+
+      const response = await commitFlexibleScheduleMutation.mutateAsync(payload);
+
+      // Handle both PascalCase and camelCase response from backend
+      const isSuccess = (response as any).Success ?? (response as any).success;
+      const message = (response as any).Message ?? (response as any).message;
+
+      if (isSuccess) {
+        toast.success("Import thành công!", "Dữ liệu đã được nhập vào hệ thống.");
+        setFlexibleModalError("");
+        setShowFlexibleConfirmPanel(false);
+        setSelectedFlexibleFile(null);
+        resetFlexibleImportState();
+        if (onImportComplete) {
+          onImportComplete();
+        }
+      } else {
+        const errorMsg = message || "Import thất bại. Vui lòng kiểm tra lại dữ liệu.";
+        setFlexibleModalError(errorMsg);
+        toast.error("Import thất bại", errorMsg);
+      }
+    } catch (error) {
+      const errorMsg = "Import thất bại. Vui lòng kiểm tra lại dữ liệu và thử lại.";
+      setFlexibleModalError(errorMsg);
+      toast.error("Lỗi import", errorMsg);
     }
   };
 
@@ -201,13 +333,12 @@ export default function FlexibleImportPanel({
   ) => {
     if (field === "id") return;
 
-    setFlexibleRows((prev) =>
+    setFlexibleRows((prev: FlexibleEditableRow[]) =>
       prev.map((row) => (row.id === rowId ? { ...row, [field]: value } : row))
     );
-    
-    // Reset validation state when cells are modified
+
+    // Reset validation state when cells are modified, forcing user to re-validate
     setFlexibleValidationErrors({});
-    setIssues([]);
   };
 
   return (
@@ -260,7 +391,7 @@ export default function FlexibleImportPanel({
         <button
           type="button"
           onClick={clearFlexibleSelection}
-          disabled={!selectedFlexibleFile}
+          disabled={!selectedFlexibleFile || isUploading}
           className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
         >
           Cancel
@@ -268,60 +399,32 @@ export default function FlexibleImportPanel({
         <button
           type="button"
           onClick={openFlexibleEditModal}
-          disabled={!selectedFlexibleFile}
+          disabled={!selectedFlexibleFile || isUploading}
           className="rounded-lg bg-brand-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Start Upload
         </button>
       </div>
 
-      {resultType !== "idle" && (
-        <div
-          className={[
-            "mt-4 rounded-xl border p-4",
-            resultType === "success"
-              ? "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20"
-              : "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20",
-          ].join(" ")}
-        >
-          <h3
-            className={[
-              "text-sm font-semibold",
-              resultType === "success"
-                ? "text-green-800 dark:text-green-200"
-                : "text-red-800 dark:text-red-200",
-            ].join(" ")}
-          >
-            Upload Status
-          </h3>
-          <p
-            className={[
-              "mt-1 text-sm",
-              resultType === "success"
-                ? "text-green-700 dark:text-green-300"
-                : "text-red-700 dark:text-red-300",
-            ].join(" ")}
-          >
-            {resultMessage}
-          </p>
-        </div>
-      )}
-
       {showFlexibleConfirmPanel && (
         <FlexibleEditModal
-          rows={flexibleRows}
+          rows={paginatedRows}
           flexiblePageMeta={flexiblePageMeta}
           flexibleTotalPages={flexibleTotalPages}
           flexibleCurrentPage={flexibleCurrentPage}
           onPageChange={setFlexibleCurrentPage}
           validationErrors={flexibleValidationErrors}
+          hasValidated={hasValidated}
+          canCommit={canCommit}
+          isValidating={isValidating}
+          isUploading={isUploading}
           onUpdateCell={updateFlexibleCell}
           onValidate={validateFlexibleRows}
-          onConfirm={confirmFlexibleImport}
-          onClose={() => setShowFlexibleConfirmPanel(false)}
-          issues={issues}
+          onClose={closeFlexibleEditModal}
+          onConfirmImport={confirmFlexibleImport}
           selectedFileName={selectedFlexibleFile?.name ?? ""}
           rowCount={flexibleRows.length}
+          modalError={flexibleModalError}
         />
       )}
     </div>
@@ -335,17 +438,21 @@ interface FlexibleEditModalProps {
   flexibleCurrentPage: number;
   onPageChange: (page: number) => void;
   validationErrors: ValidationErrors;
+  hasValidated: boolean;
+  canCommit: boolean;
+  isValidating: boolean;
+  isUploading: boolean;
   onUpdateCell: (
     rowId: string,
     field: keyof FlexibleEditableRow,
     value: string
   ) => void;
   onValidate: () => void;
-  onConfirm: () => void;
   onClose: () => void;
-  issues: ValidationIssue[];
+  onConfirmImport: () => void;
   selectedFileName: string;
   rowCount: number;
+  modalError: string;
 }
 
 function FlexibleEditModal({
@@ -355,13 +462,17 @@ function FlexibleEditModal({
   flexibleCurrentPage,
   onPageChange,
   validationErrors,
+  hasValidated,
+  canCommit,
+  isValidating,
+  isUploading,
   onUpdateCell,
   onValidate,
-  onConfirm,
   onClose,
-  issues,
+  onConfirmImport,
   selectedFileName,
   rowCount,
+  modalError,
 }: FlexibleEditModalProps) {
   const paginatedRows = rows.slice(
     (flexibleCurrentPage - 1) * pageSize,
@@ -369,89 +480,117 @@ function FlexibleEditModal({
   );
 
   return (
-    <div className="fixed inset-0 z-[99998] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative z-10 w-[92vw] max-w-6xl overflow-hidden rounded-2xl bg-white shadow-xl dark:bg-gray-900">
-        <div className="flex items-start justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Review and Edit Flexible Data
-            </h2>
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              This UI is separated. Only the Fixed Import has a backend contract.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
-          >
-            Close
-          </button>
-        </div>
-
-        <div className="max-h-[60vh] overflow-auto px-6 py-4">
-          <div className="mb-3 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
-            Mode: Flexible Import | File: {selectedFileName} | Rows: {rowCount}
-          </div>
-
-          <FlexibleDataTable
-            rows={paginatedRows}
-            validationErrors={validationErrors}
-            onUpdateCell={onUpdateCell}
-            flexiblePageMeta={flexiblePageMeta}
-          />
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
-          <div className="flex flex-wrap items-center gap-2">
+    <>
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+        <div className="relative z-10 w-[92vw] max-w-6xl overflow-hidden rounded-2xl bg-white shadow-xl dark:bg-gray-900">
+          <div className="flex items-start justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Review and Edit Flexible Schedule Data
+              </h2>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Update imported rows and validate before confirming import.
+              </p>
+            </div>
             <button
               type="button"
-              onClick={() => onPageChange(Math.max(1, flexibleCurrentPage - 1))}
-              disabled={flexibleCurrentPage === 1}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+              onClick={onClose}
+              className="rounded-lg border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
             >
-              Previous
-            </button>
-            <span className="text-xs text-gray-500 dark:text-gray-400">
-              Showing {flexiblePageMeta.start}-{flexiblePageMeta.end} / {rowCount} rows (Page{" "}
-              {flexibleCurrentPage}/{flexibleTotalPages})
-            </span>
-            <button
-              type="button"
-              onClick={() => onPageChange(Math.min(flexibleTotalPages, flexibleCurrentPage + 1))}
-              disabled={flexibleCurrentPage === flexibleTotalPages}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-            >
-              Next
+              Close
             </button>
           </div>
 
-          <div className="text-xs text-gray-500 dark:text-gray-400">
-            {issues.length > 0
-              ? "Flexible import has validation issues."
-              : "Flexible import validated locally."}
+          <div className="max-h-[60vh] overflow-auto px-6 py-4">
+            {isValidating && (
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/20">
+                <div className="flex flex-col items-center gap-3 rounded-lg bg-white p-8 shadow-lg dark:bg-gray-800">
+                  <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-300 border-t-brand-500 dark:border-gray-600 dark:border-t-brand-400" />
+                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                    Validating data...
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="mb-3 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+              Mode: Flexible Import | File: {selectedFileName} | Rows: {rowCount}
+            </div>
+
+            {modalError && (
+              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
+                <p className="text-xs font-semibold text-red-800 dark:text-red-200">
+                  Error
+                </p>
+                <p className="mt-1 text-xs text-red-700 dark:text-red-300">
+                  {modalError}
+                </p>
+              </div>
+            )}
+
+            <FlexibleDataTable
+              rows={paginatedRows}
+              validationErrors={validationErrors}
+              onUpdateCell={onUpdateCell}
+              flexiblePageMeta={flexiblePageMeta}
+            />
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={onValidate}
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-            >
-              Validate
-            </button>
-            <button
-              type="button"
-              onClick={onConfirm}
-              className="rounded-lg bg-brand-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-600"
-            >
-              Confirm
-            </button>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onPageChange(Math.max(1, flexibleCurrentPage - 1))}
+                disabled={flexibleCurrentPage === 1}
+                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+              >
+                Previous
+              </button>
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                Showing {flexiblePageMeta.start}-{flexiblePageMeta.end} / {rowCount} rows (Page{" "}
+                {flexibleCurrentPage}/{flexibleTotalPages})
+              </span>
+              <button
+                type="button"
+                onClick={() => onPageChange(Math.min(flexibleTotalPages, flexibleCurrentPage + 1))}
+                disabled={flexibleCurrentPage === flexibleTotalPages}
+                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+              >
+                Next
+              </button>
+            </div>
+
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              {hasValidated
+                ? canCommit
+                  ? "Validation passed. You can confirm the import."
+                  : "Validation found critical issues. Please fix rows before confirming import."
+                : "Click Validate before confirming import."}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={onValidate}
+                disabled={isValidating || isUploading || rows.length === 0}
+                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+              >
+                {isValidating ? "Validating..." : "Validate"}
+              </button>
+              <button
+                type="button"
+                onClick={onConfirmImport}
+                disabled={!hasValidated || !canCommit || isUploading || isValidating}
+                className="rounded-lg bg-brand-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Confirm Import
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -537,6 +676,7 @@ function FlexibleTableRow({
   validationErrors,
   onUpdateCell,
 }: FlexibleTableRowProps) {
+  console.log("Rendering row:", validationErrors, row);
   return (
     <tr>
       <td className="px-3 py-2 align-top text-gray-500 dark:text-gray-400">

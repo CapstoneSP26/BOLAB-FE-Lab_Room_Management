@@ -18,6 +18,7 @@ import {
 } from "../utils/importBookingUtils";
 import type { ValidateImportQuery, CommitImportCommand } from "../types/importBooking.type";
 import { useBookingImport } from "../hooks/useBookingImport";
+import { useToast } from "../../../hooks/useToast";
 
 interface FixedImportPanelProps {
   onImportComplete?: () => void;
@@ -32,6 +33,7 @@ export default function FixedImportPanel({ onImportComplete }: FixedImportPanelP
     validateScheduleMutation,
     commitScheduleMutation,
   } = useBookingImport();
+  const toast = useToast();
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -92,6 +94,11 @@ export default function FixedImportPanel({ onImportComplete }: FixedImportPanelP
     setModifiedCells({});
     setModalError("");
     setShowConfirmPanel(false);
+    setRows(createEmptyRows(6));
+    setCurrentPage(1);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const handleFileSelection = (file: File | null) => {
@@ -110,7 +117,26 @@ export default function FixedImportPanel({ onImportComplete }: FixedImportPanelP
       return;
     }
 
+    // Check if same file is selected again
+    if (
+      selectedFile &&
+      selectedFile.name === file.name &&
+      selectedFile.size === file.size &&
+      selectedFile.lastModified === file.lastModified
+    ) {
+      toast.info("File trùng", `File "${file.name}" đã được chọn trước đó.`);
+      // Reset file input value to ensure onChange triggers on next file selection
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
+
     setSelectedFile(file);
+    // Reset file input value to ensure onChange triggers on next file selection
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const onFileInputChange = (event: import("react").ChangeEvent<HTMLInputElement>) => {
@@ -178,6 +204,10 @@ export default function FixedImportPanel({ onImportComplete }: FixedImportPanelP
     setShowConfirmPanel(false);
   };
 
+  const closeConfirmPanel = () => {
+    setShowConfirmPanel(false);
+  };
+
   const updateCell = (rowId: string, field: keyof EditableRow, value: string) => {
     if (field === "id") return;
 
@@ -188,7 +218,7 @@ export default function FixedImportPanel({ onImportComplete }: FixedImportPanelP
     );
 
     setModifiedCells((prev) => ({ ...prev, [key]: true }));
-    
+
     // Reset validation state when cells are modified, forcing user to re-validate
     setCanCommit(false);
     setHasValidated(false);
@@ -203,13 +233,15 @@ export default function FixedImportPanel({ onImportComplete }: FixedImportPanelP
     const nextErrors = { ...clientErrors };
     const nextIssues = [...clientIssues];
 
+    setModalError(""); // Clear previous error before validating
+
     try {
       const payload: ValidateImportQuery = {
         Schedules: toScheduleRows(rows),
       };
 
       const response = await validateScheduleRows(payload);
-      
+
       // Handle both PascalCase and camelCase response from backend
       const rowsData = (response.Rows ?? (response as any).rows) ?? [];
 
@@ -217,7 +249,6 @@ export default function FixedImportPanel({ onImportComplete }: FixedImportPanelP
         // Backend returns rowNumber as 0, use data.index instead for correct row number
         const rowNum = (rowResult.data?.index ?? rowResult.rowNumber ?? rowResult.RowNumber) ?? 0;
         const errorsData = rowResult.Errors ?? rowResult.errors ?? [];
-        
         errorsData.forEach((error: any) => {
           const resolvedField =
             resolveFieldFromText(error.FieldName ?? error.fieldName ?? "") ??
@@ -235,7 +266,7 @@ export default function FixedImportPanel({ onImportComplete }: FixedImportPanelP
             pushRowIssue(
               nextErrors,
               nextIssues,
-              String(rowNum),
+              String("row-" + rowNum),
               rowNum,
               resolvedField,
               message
@@ -256,11 +287,13 @@ export default function FixedImportPanel({ onImportComplete }: FixedImportPanelP
       setIssues(nextIssues);
       setHasValidated(true);
 
-      if (response.CanCommit && nextIssues.length === 0) {
+      const canCommitValue = response.CanCommit ?? (response as any).canCommit;
+
+      if (canCommitValue) {
+        // Can proceed - clear error message
         setModalError("");
-      } else if (response.CanCommit && nextIssues.length > 0) {
-        setModalError("Validation found warnings but you can proceed with import.");
       } else {
+        // Cannot proceed - show critical error
         setModalError("Validation found critical issues. Please fix rows before import.");
       }
     } catch {
@@ -282,19 +315,29 @@ export default function FixedImportPanel({ onImportComplete }: FixedImportPanelP
 
       const response = await commitScheduleRows(payload);
 
-      if (response.Success) {
+      // Handle both PascalCase and camelCase response from backend
+      const isSuccess = (response as any).Success ?? (response as any).success;
+      const message = (response as any).Message ?? (response as any).message;
+
+      if (isSuccess) {
+        toast.success("Import thành công!", "Dữ liệu đã được nhập vào hệ thống.");
         setModalError("");
         setShowConfirmPanel(false);
         setIsModalOpen(false);
         setSelectedFile(null);
+        resetImportState();
         if (onImportComplete) {
           onImportComplete();
         }
       } else {
-        setModalError(response.Message);
+        const errorMsg = message || "Import thất bại. Vui lòng kiểm tra lại dữ liệu.";
+        setModalError(errorMsg);
+        toast.error("Import thất bại", errorMsg);
       }
-    } catch {
-      setModalError("Import failed. Please review the data and try again.");
+    } catch (error) {
+      const errorMsg = "Import thất bại. Vui lòng kiểm tra lại dữ liệu và thử lại.";
+      setModalError(errorMsg);
+      toast.error("Lỗi import", errorMsg);
     }
   };
 
@@ -381,6 +424,7 @@ export default function FixedImportPanel({ onImportComplete }: FixedImportPanelP
           onConfirm={() => setShowConfirmPanel(true)}
           onClose={closeEditModal}
           onConfirmImport={confirmImport}
+          onCancelConfirm={closeConfirmPanel}
           showConfirmPanel={showConfirmPanel}
           issues={issues}
           selectedFileName={selectedFile?.name ?? ""}
@@ -409,6 +453,7 @@ interface EditModalProps {
   onConfirm: () => void;
   onClose: () => void;
   onConfirmImport: () => void;
+  onCancelConfirm: () => void;
   showConfirmPanel: boolean;
   issues: ValidationIssue[];
   selectedFileName: string;
@@ -433,6 +478,7 @@ function EditModal({
   onConfirm,
   onClose,
   onConfirmImport,
+  onCancelConfirm,
   showConfirmPanel,
   issues,
   selectedFileName,
@@ -463,6 +509,17 @@ function EditModal({
           </div>
 
           <div className="max-h-[60vh] overflow-auto px-6 py-4">
+            {isValidating && (
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/20">
+                <div className="flex flex-col items-center gap-3 rounded-lg bg-white p-8 shadow-lg dark:bg-gray-800">
+                  <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-300 border-t-brand-500 dark:border-gray-600 dark:border-t-brand-400" />
+                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                    Validating data...
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="mb-3 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
               Mode: Fixed Import | File: {selectedFileName} | Rows: {rowCount}
             </div>
@@ -547,7 +604,7 @@ function EditModal({
           issues={issues}
           isUploading={isUploading}
           onConfirm={onConfirmImport}
-          onClose={onClose}
+          onClose={onCancelConfirm}
         />
       )}
     </>
@@ -633,6 +690,9 @@ function TableRow({
   hasValidated,
   onUpdateCell,
 }: TableRowProps) {
+  if (rowNumber === 9) {
+    console.log("Validation errors for row", rowNumber, validationErrors); // Debug log to inspect validation errors for this row
+  }
   return (
     <tr>
       <td className="px-3 py-2 align-top text-gray-500 dark:text-gray-400">
@@ -644,6 +704,10 @@ function TableRow({
         const hasError = Boolean(validationErrors[errorKey]);
         const isModified = Boolean(modifiedCells[errorKey]);
         const isValidatedSuccess = hasValidated && isModified && !hasError;
+        if (rowNumber === 9) {
+          console.log(` Row ${rowNumber} - Field: ${field}, ErrorKey: ${errorKey}, HasError: ${hasError}, IsModified: ${isModified}, IsValidatedSuccess: ${isValidatedSuccess}`); // Debug log to inspect cell state for this row
+          console.log(`row field : ${row} | ValidationErrors:`); // Debug log to inspect validation errors object for this row
+        }
 
         return (
           <td key={`${row.id}-${column}`} className="relative px-2 py-2 align-top">

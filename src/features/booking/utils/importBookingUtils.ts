@@ -7,6 +7,7 @@ import type {
   ValidationIssue,
   ValidationErrors,
   ScheduleImportDto,
+  FlexibleSlotImportDto,
 } from "../types/importBooking.type";
 import {
   SCHEDULE_COLUMNS,
@@ -48,6 +49,30 @@ export const normalizeHeader = (value: string) =>
 export const normalizeSlotTypeCode = (value: string): string =>
   value.trim().toUpperCase().replace(/[-\s]+/g, "_");
 
+// Convert Excel time format (decimal 0-1) to HH:MM
+export const convertExcelTimeToTimeString = (value: unknown): string => {
+  // Check if value is a number or numeric string
+  const numValue = typeof value === "number" ? value : Number(value);
+
+  // If not a valid number, return string representation
+  if (isNaN(numValue)) {
+    return String(value ?? "").trim();
+  }
+
+  // If value is between 0 and 1, it's likely Excel time format
+  if (numValue >= 0 && numValue < 1) {
+    const totalMinutes = Math.round(numValue * 24 * 60);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+  }
+
+  // If value is between 1 and 100, it might be a time in another format
+  // Return as is (e.g., might already be formatted)
+  return String(value ?? "").trim();
+};
+
 // Header to field mapping
 const headerToField: Record<string, EditableField> = {
   groupname: "GroupName",
@@ -57,6 +82,8 @@ const headerToField: Record<string, EditableField> = {
   slot: "SlotOrder",
   slottypecode: "SlotTypeCode",
   slottype: "SlotTypeCode",
+  typeslot: "SlotTypeCode",
+  typeslotcode: "SlotTypeCode",
   roomno: "RoomNo",
   lecturer: "Lecturer",
 };
@@ -91,9 +118,29 @@ export const resolveFieldFromText = (text: string): EditableField | null => {
       (alias) => normalized === alias || normalized.includes(alias)
     )
   );
-
   return exactMatch?.field ?? null;
 };
+
+const fieldFlexibleAliasMap: Array<{ field: FlexibleField; aliases: string[] }> = [
+  { field: "GroupName", aliases: ["groupname"] },
+  { field: "SubjectCode", aliases: ["subjectcode"] },
+  { field: "Date", aliases: ["date"] },
+  { field: "StartTime", aliases: ["starttime"] },
+  { field: "EndTime", aliases: ["endtime"] },
+  { field: "RoomNo", aliases: ["roomno"] },
+  { field: "Lecturer", aliases: ["lecturer"] },
+];
+
+export const resolveFieldFlexibleFromText = (text: string): FlexibleField | null => {
+  const normalized = text.trim().toLowerCase().replace(/\s+/g, "");
+  const exactMatch = fieldFlexibleAliasMap.find((item) =>
+    item.aliases.some(
+      (alias) => normalized === alias || normalized.includes(alias)
+    )
+  );
+  return exactMatch?.field ?? null;
+};
+
 
 // File parsing
 export const parseFileToRows = async (file: File): Promise<EditableRow[]> => {
@@ -171,7 +218,13 @@ export const parseFlexibleFileToRows = async (
       const normalized = normalizeHeader(key);
       const field = flexibleHeaderToField[normalized];
       if (!field || field === "id") return;
-      mapped[field] = String(value ?? "").trim();
+
+      // Special handling for time fields - convert Excel time format
+      if (field === "StartTime" || field === "EndTime") {
+        mapped[field] = convertExcelTimeToTimeString(value);
+      } else {
+        mapped[field] = String(value ?? "").trim();
+      }
     });
 
     return mapped;
@@ -203,6 +256,23 @@ export const pushRowIssue = (
   });
 };
 
+// Push row issue for flexible fields
+export const pushFlexibleRowIssue = (
+  nextErrors: ValidationErrors,
+  nextIssues: ValidationIssue[],
+  rowId: string,
+  rowNumber: number,
+  field: FlexibleField,
+  message: string
+) => {
+  nextErrors[`${rowId}:${field}`] = message;
+  nextIssues.push({
+    row: rowNumber,
+    field: flexibleColumnLabels[field],
+    message,
+  });
+};
+
 // Row conversion
 export const toScheduleRows = (inputRows: EditableRow[]): ScheduleImportDto[] =>
   inputRows.map((row) => ({
@@ -210,7 +280,20 @@ export const toScheduleRows = (inputRows: EditableRow[]): ScheduleImportDto[] =>
     SubjectCode: row.SubjectCode.trim(),
     Date: row.Date.trim(),
     SlotOrder: Number.parseInt(row.SlotOrder.trim(), 10),
-    SlotTypeCode: normalizeSlotTypeCode(row.SlotTypeCode),
+    SlotTypeCode: row.SlotTypeCode,
+    RoomNo: row.RoomNo.trim(),
+    Lecturer: row.Lecturer.trim(),
+  }));
+
+export const toFlexibleSlotRows = (
+  inputRows: FlexibleEditableRow[]
+): FlexibleSlotImportDto[] =>
+  inputRows.map((row) => ({
+    GroupName: row.GroupName.trim(),
+    SubjectCode: row.SubjectCode.trim(),
+    Date: row.Date.trim(),
+    StartTime: row.StartTime.trim(),
+    EndTime: row.EndTime.trim(),
     RoomNo: row.RoomNo.trim(),
     Lecturer: row.Lecturer.trim(),
   }));
