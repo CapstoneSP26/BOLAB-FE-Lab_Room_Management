@@ -7,6 +7,7 @@ import type {
   ValidationIssue,
   ValidationErrors,
   ScheduleImportDto,
+  FlexibleSlotImportDto,
 } from "../types/importBooking.type";
 import {
   SCHEDULE_COLUMNS,
@@ -213,6 +214,19 @@ export const toScheduleRows = (inputRows: EditableRow[]): ScheduleImportDto[] =>
     Date: row.Date.trim(),
     SlotOrder: Number.parseInt(row.SlotOrder.trim(), 10),
     SlotTypeCode: row.SlotTypeCode,
+    RoomNo: row.RoomNo.trim(),
+    Lecturer: row.Lecturer.trim(),
+  }));
+
+export const toFlexibleSlotRows = (
+  inputRows: FlexibleEditableRow[]
+): FlexibleSlotImportDto[] =>
+  inputRows.map((row) => ({
+    GroupName: row.GroupName.trim(),
+    SubjectCode: row.SubjectCode.trim(),
+    Date: row.Date.trim(),
+    StartTime: row.StartTime.trim(),
+    EndTime: row.EndTime.trim(),
     RoomNo: row.RoomNo.trim(),
     Lecturer: row.Lecturer.trim(),
   }));
