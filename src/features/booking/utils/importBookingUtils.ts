@@ -53,7 +53,7 @@ export const normalizeSlotTypeCode = (value: string): string =>
 export const convertExcelTimeToTimeString = (value: unknown): string => {
   // Check if value is a number or numeric string
   const numValue = typeof value === "number" ? value : Number(value);
-  
+
   // If not a valid number, return string representation
   if (isNaN(numValue)) {
     return String(value ?? "").trim();
@@ -64,7 +64,7 @@ export const convertExcelTimeToTimeString = (value: unknown): string => {
     const totalMinutes = Math.round(numValue * 24 * 60);
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
-    
+
     return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
   }
 
@@ -118,9 +118,29 @@ export const resolveFieldFromText = (text: string): EditableField | null => {
       (alias) => normalized === alias || normalized.includes(alias)
     )
   );
-
   return exactMatch?.field ?? null;
 };
+
+const fieldFlexibleAliasMap: Array<{ field: FlexibleField; aliases: string[] }> = [
+  { field: "GroupName", aliases: ["groupname"] },
+  { field: "SubjectCode", aliases: ["subjectcode"] },
+  { field: "Date", aliases: ["date"] },
+  { field: "StartTime", aliases: ["starttime"] },
+  { field: "EndTime", aliases: ["endtime"] },
+  { field: "RoomNo", aliases: ["roomno"] },
+  { field: "Lecturer", aliases: ["lecturer"] },
+];
+
+export const resolveFieldFlexibleFromText = (text: string): FlexibleField | null => {
+  const normalized = text.trim().toLowerCase().replace(/\s+/g, "");
+  const exactMatch = fieldFlexibleAliasMap.find((item) =>
+    item.aliases.some(
+      (alias) => normalized === alias || normalized.includes(alias)
+    )
+  );
+  return exactMatch?.field ?? null;
+};
+
 
 // File parsing
 export const parseFileToRows = async (file: File): Promise<EditableRow[]> => {
@@ -198,7 +218,7 @@ export const parseFlexibleFileToRows = async (
       const normalized = normalizeHeader(key);
       const field = flexibleHeaderToField[normalized];
       if (!field || field === "id") return;
-      
+
       // Special handling for time fields - convert Excel time format
       if (field === "StartTime" || field === "EndTime") {
         mapped[field] = convertExcelTimeToTimeString(value);
@@ -232,6 +252,23 @@ export const pushRowIssue = (
   nextIssues.push({
     row: rowNumber,
     field: columnLabels[field],
+    message,
+  });
+};
+
+// Push row issue for flexible fields
+export const pushFlexibleRowIssue = (
+  nextErrors: ValidationErrors,
+  nextIssues: ValidationIssue[],
+  rowId: string,
+  rowNumber: number,
+  field: FlexibleField,
+  message: string
+) => {
+  nextErrors[`${rowId}:${field}`] = message;
+  nextIssues.push({
+    row: rowNumber,
+    field: flexibleColumnLabels[field],
     message,
   });
 };

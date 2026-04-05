@@ -16,8 +16,8 @@ import {
   toFlexibleValidationKey,
   validateFlexibleRowsLocal,
   toFlexibleSlotRows,
-  resolveFieldFromText,
-  pushRowIssue,
+  resolveFieldFlexibleFromText,
+  pushFlexibleRowIssue,
 } from "../utils/importBookingUtils";
 import type {
   ValidateFlexibleSlotImportRequest,
@@ -236,10 +236,11 @@ export default function FlexibleImportPanel({
         // Backend returns rowNumber as 0, use data.index instead for correct row number
         const rowNum = (rowResult.data?.index ?? rowResult.rowNumber ?? rowResult.RowNumber) ?? 0;
         const errorsData = rowResult.Errors ?? rowResult.errors ?? [];
+        console.log(`Processing validation for row ${rowNum}:`, errorsData);
         errorsData.forEach((error: any) => {
           const resolvedField =
-            resolveFieldFromText(error.FieldName ?? error.fieldName ?? "") ??
-            resolveFieldFromText(error.Message ?? error.message ?? "");
+            resolveFieldFlexibleFromText(error.FieldName ?? error.fieldName ?? "") ??
+            resolveFieldFlexibleFromText(error.Message ?? error.message ?? "");
 
           const conflictWithRows = error.ConflictWithRows ?? error.conflictWithRows;
           const conflictSuffix = conflictWithRows?.length
@@ -250,7 +251,7 @@ export default function FlexibleImportPanel({
 
           // Always add error to nextIssues for display
           if (resolvedField && severity === 2) {
-            pushRowIssue(
+            pushFlexibleRowIssue(
               nextErrors,
               nextIssues,
               String("flex-row-" + rowNum),
@@ -501,94 +502,94 @@ function FlexibleEditModal({
             </button>
           </div>
 
-        <div className="max-h-[60vh] overflow-auto px-6 py-4">
-          {isValidating && (
-            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/20">
-              <div className="flex flex-col items-center gap-3 rounded-lg bg-white p-8 shadow-lg dark:bg-gray-800">
-                <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-300 border-t-brand-500 dark:border-gray-600 dark:border-t-brand-400" />
-                <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                  Validating data...
+          <div className="max-h-[60vh] overflow-auto px-6 py-4">
+            {isValidating && (
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/20">
+                <div className="flex flex-col items-center gap-3 rounded-lg bg-white p-8 shadow-lg dark:bg-gray-800">
+                  <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-300 border-t-brand-500 dark:border-gray-600 dark:border-t-brand-400" />
+                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                    Validating data...
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="mb-3 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+              Mode: Flexible Import | File: {selectedFileName} | Rows: {rowCount}
+            </div>
+
+            {modalError && (
+              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
+                <p className="text-xs font-semibold text-red-800 dark:text-red-200">
+                  Error
+                </p>
+                <p className="mt-1 text-xs text-red-700 dark:text-red-300">
+                  {modalError}
                 </p>
               </div>
+            )}
+
+            <FlexibleDataTable
+              rows={paginatedRows}
+              validationErrors={validationErrors}
+              onUpdateCell={onUpdateCell}
+              flexiblePageMeta={flexiblePageMeta}
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onPageChange(Math.max(1, flexibleCurrentPage - 1))}
+                disabled={flexibleCurrentPage === 1}
+                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+              >
+                Previous
+              </button>
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                Showing {flexiblePageMeta.start}-{flexiblePageMeta.end} / {rowCount} rows (Page{" "}
+                {flexibleCurrentPage}/{flexibleTotalPages})
+              </span>
+              <button
+                type="button"
+                onClick={() => onPageChange(Math.min(flexibleTotalPages, flexibleCurrentPage + 1))}
+                disabled={flexibleCurrentPage === flexibleTotalPages}
+                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+              >
+                Next
+              </button>
             </div>
-          )}
 
-          <div className="mb-3 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
-            Mode: Flexible Import | File: {selectedFileName} | Rows: {rowCount}
-          </div>
-
-          {modalError && (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
-              <p className="text-xs font-semibold text-red-800 dark:text-red-200">
-                Error
-              </p>
-              <p className="mt-1 text-xs text-red-700 dark:text-red-300">
-                {modalError}
-              </p>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              {hasValidated
+                ? canCommit
+                  ? "Validation passed. You can confirm the import."
+                  : "Validation found critical issues. Please fix rows before confirming import."
+                : "Click Validate before confirming import."}
             </div>
-          )}
 
-          <FlexibleDataTable
-            rows={paginatedRows}
-            validationErrors={validationErrors}
-            onUpdateCell={onUpdateCell}
-            flexiblePageMeta={flexiblePageMeta}
-          />
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => onPageChange(Math.max(1, flexibleCurrentPage - 1))}
-              disabled={flexibleCurrentPage === 1}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-            >
-              Previous
-            </button>
-            <span className="text-xs text-gray-500 dark:text-gray-400">
-              Showing {flexiblePageMeta.start}-{flexiblePageMeta.end} / {rowCount} rows (Page{" "}
-              {flexibleCurrentPage}/{flexibleTotalPages})
-            </span>
-            <button
-              type="button"
-              onClick={() => onPageChange(Math.min(flexibleTotalPages, flexibleCurrentPage + 1))}
-              disabled={flexibleCurrentPage === flexibleTotalPages}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-            >
-              Next
-            </button>
-          </div>
-
-          <div className="text-xs text-gray-500 dark:text-gray-400">
-            {hasValidated
-              ? canCommit
-                ? "Validation passed. You can confirm the import."
-                : "Validation found critical issues. Please fix rows before confirming import."
-              : "Click Validate before confirming import."}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={onValidate}
-              disabled={isValidating || isUploading || rows.length === 0}
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-            >
-              {isValidating ? "Validating..." : "Validate"}
-            </button>
-            <button
-              type="button"
-              onClick={onConfirmImport}
-              disabled={!hasValidated || !canCommit || isUploading || isValidating}
-              className="rounded-lg bg-brand-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Confirm Import
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={onValidate}
+                disabled={isValidating || isUploading || rows.length === 0}
+                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+              >
+                {isValidating ? "Validating..." : "Validate"}
+              </button>
+              <button
+                type="button"
+                onClick={onConfirmImport}
+                disabled={!hasValidated || !canCommit || isUploading || isValidating}
+                className="rounded-lg bg-brand-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Confirm Import
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
     </>
   );
 }
@@ -675,6 +676,7 @@ function FlexibleTableRow({
   validationErrors,
   onUpdateCell,
 }: FlexibleTableRowProps) {
+  console.log("Rendering row:", validationErrors, row);
   return (
     <tr>
       <td className="px-3 py-2 align-top text-gray-500 dark:text-gray-400">
