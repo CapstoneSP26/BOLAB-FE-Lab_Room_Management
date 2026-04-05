@@ -49,6 +49,30 @@ export const normalizeHeader = (value: string) =>
 export const normalizeSlotTypeCode = (value: string): string =>
   value.trim().toUpperCase().replace(/[-\s]+/g, "_");
 
+// Convert Excel time format (decimal 0-1) to HH:MM
+export const convertExcelTimeToTimeString = (value: unknown): string => {
+  // Check if value is a number or numeric string
+  const numValue = typeof value === "number" ? value : Number(value);
+  
+  // If not a valid number, return string representation
+  if (isNaN(numValue)) {
+    return String(value ?? "").trim();
+  }
+
+  // If value is between 0 and 1, it's likely Excel time format
+  if (numValue >= 0 && numValue < 1) {
+    const totalMinutes = Math.round(numValue * 24 * 60);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+  }
+
+  // If value is between 1 and 100, it might be a time in another format
+  // Return as is (e.g., might already be formatted)
+  return String(value ?? "").trim();
+};
+
 // Header to field mapping
 const headerToField: Record<string, EditableField> = {
   groupname: "GroupName",
@@ -174,7 +198,13 @@ export const parseFlexibleFileToRows = async (
       const normalized = normalizeHeader(key);
       const field = flexibleHeaderToField[normalized];
       if (!field || field === "id") return;
-      mapped[field] = String(value ?? "").trim();
+      
+      // Special handling for time fields - convert Excel time format
+      if (field === "StartTime" || field === "EndTime") {
+        mapped[field] = convertExcelTimeToTimeString(value);
+      } else {
+        mapped[field] = String(value ?? "").trim();
+      }
     });
 
     return mapped;
