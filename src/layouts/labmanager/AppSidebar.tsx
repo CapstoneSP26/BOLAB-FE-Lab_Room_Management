@@ -106,6 +106,10 @@ const AppSidebar: React.FC = () => {
                   name: "Import Booking",
                   path: p("/booking-requests/import"),
                 },
+                {
+                  name: "Import User",
+                  path: p("/users/import"),
+                },
               ],
             },
 
@@ -180,6 +184,10 @@ const AppSidebar: React.FC = () => {
               {
                 name: "Import Booking",
                 path: p("/booking-requests/import"),
+              },
+              {
+                name: "Import User",
+                path: p("/users/import"),
               },
             ],
           },

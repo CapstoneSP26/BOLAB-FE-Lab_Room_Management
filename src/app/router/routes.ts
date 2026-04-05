@@ -62,6 +62,9 @@ const BookingRequestsHistoryPage = lazy(
 const ImportBookingPage = lazy(
   () => import("../../pages/labmanager/ImportBookingPage.tsx"),
 );
+const ImportUserPage = lazy(
+  () => import("../../pages/labmanager/ImportUserPage.tsx")
+);
 const ReportListPage = lazy(
   () => import("../../pages/labmanager/ReportListPage.tsx"),
 );
@@ -191,6 +194,18 @@ export const appRoutes: AppRoute[] = [
   {
     path: "/labmanager/booking-requests/import",
     element: ImportBookingPage,
+    isPrivate: false,
+    layout: "labmanager",
+  },
+  {
+    path: "/labmanager/users/import",
+    element: ImportUserPage,
+    isPrivate: false,
+    layout: "labmanager",
+  },
+  {
+    path: "/admin/users/import",
+    element: ImportUserPage,
     isPrivate: false,
     layout: "labmanager",
   },
