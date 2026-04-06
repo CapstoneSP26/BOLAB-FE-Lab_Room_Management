@@ -1,4 +1,3 @@
-import type { StudentGroupInBooking } from '../../groups/types/group.type';
 import type { TimeSlot } from '../../slot/types/slot.types';
 
 interface RoomCatalogItem {
@@ -184,27 +183,6 @@ export const MOCK_BUILDING_DETAIL_ROOMS = ROOM_CATALOG.map((room) => ({
   features: room.features,
   nextAvailable: room.nextAvailable,
 }));
-
-export const MOCK_STUDENT_GROUPS: StudentGroupInBooking[] = [
-  {
-    id: 'g1',
-    name: 'SE1801',
-    courseCode: 'PRN231',
-    studentCount: 36,
-  },
-  {
-    id: 'g2',
-    name: 'SE1802',
-    courseCode: 'SWP391',
-    studentCount: 30,
-  },
-  {
-    id: 'g3',
-    name: 'SE1803',
-    courseCode: 'MAD101',
-    studentCount: 28,
-  },
-];
 
 export const MOCK_TIME_SLOTS: TimeSlot[] = [
   {

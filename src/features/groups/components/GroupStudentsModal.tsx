@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { X, Search, UserPlus, UserMinus, Loader2 } from 'lucide-react';
-import type { StudentGroup, StudentInGroup } from '../types/types';
+import type { Group, GroupMemberDto } from '../types/types';
 
 interface GroupStudentsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  group: StudentGroup | null;
-  students: StudentInGroup[];
+  group: Group | null;
+  students: GroupMemberDto[];
   isLoading?: boolean;
   onAddStudent?: (studentId: string) => Promise<void>;
   onRemoveStudent?: (studentId: string) => Promise<void>;
@@ -47,7 +47,7 @@ export const GroupStudentsModal: React.FC<GroupStudentsModalProps> = ({
     },
   ];
 
-  const existingStudentIds = students.map((s) => s.studentId);
+  const existingStudentIds = students.map((s) => s.userId);
   const availableStudents = mockAvailableStudents.filter(
     (s) => !existingStudentIds.includes(s.studentId)
   );
@@ -89,7 +89,7 @@ export const GroupStudentsModal: React.FC<GroupStudentsModalProps> = ({
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
             <h2 className="text-lg font-semibold text-gray-900">
-              Manage Students - {group.name}
+              Manage Students - {group.groupName}
             </h2>
           </div>
           <button
@@ -138,10 +138,11 @@ export const GroupStudentsModal: React.FC<GroupStudentsModalProps> = ({
                   filteredStudents.map((student) => (
                     <label
                       key={student.studentId}
-                      className={`flex items-center p-3 border border-blue-200 rounded-lg cursor-pointer transition ${selectedStudentId === student.studentId
+                      className={`flex items-center p-3 border border-blue-200 rounded-lg cursor-pointer transition ${
+                        selectedStudentId === student.studentId
                           ? 'bg-blue-50 border-blue-500'
                           : 'hover:bg-blue-50'
-                        }`}
+                      }`}
                     >
                       <input
                         type="radio"
@@ -219,22 +220,22 @@ export const GroupStudentsModal: React.FC<GroupStudentsModalProps> = ({
               </div>
             ) : (
               <div className="space-y-2 max-h-96 overflow-y-auto">
-                {students.map((student) => (
+                {students.map((member) => (
                   <div
-                    key={student.studentId}
+                    key={member.id}
                     className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900">
-                        {student.studentCode}
+                        {member.user?.studentCode}
                       </p>
-                      <p className="text-sm text-gray-600">{student.fullName}</p>
-                      {student.email && (
-                        <p className="text-xs text-gray-500">{student.email}</p>
+                      <p className="text-sm text-gray-600">{member.user?.fullName}</p>
+                      {member.user?.email && (
+                        <p className="text-xs text-gray-500">{member.user.email}</p>
                       )}
                     </div>
                     <button
-                      onClick={() => handleRemoveStudent(student.studentId)}
+                      onClick={() => handleRemoveStudent(member.userId)}
                       disabled={isLoading}
                       className="ml-3 flex-shrink-0 px-3 py-1 text-sm text-red-600 bg-red-50 rounded-lg border border-red-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-red-100 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 disabled:border-gray-300 disabled:transform-none inline-flex items-center gap-1"
                       title="Remove student"

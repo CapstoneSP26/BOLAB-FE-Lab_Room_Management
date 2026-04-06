@@ -1,8 +1,7 @@
 import axiosInstance from '../../../api/axios';
-import type { GetStudentGroupByLecturerRequest, GetStudentGroupsByLecturerResponse } from '../../groups/types/group.type';
 import type { GetAvailableSlotsRequest, GetAvailableSlotsResponse } from '../../slot/types/slot.types';
 import type {
-  CreateBookingRequest,
+  CreateBookingCommand,
   CreateBookingResponse,
   GetMyBookingsRequest,
   GetMyBookingsResponse,
@@ -16,25 +15,11 @@ import type {
  */
 
 const ROOM_BOOKING_API = {
-  STUDENT_GROUPS: '/student-groups',
   AVAILABLE_SLOTS: '/available-slots',
   CREATE_BOOKING: '/bookings',
   MY_BOOKINGS: '/bookings/my-bookings',
   BOOKING: '/bookings',
   SCHEDULE: '/schedules',
-};
-
-/**
- * Lấy danh sách nhóm sinh viên của giảng viên
- */
-export const getStudentGroups = async (
-  params: GetStudentGroupByLecturerRequest = {}
-): Promise<GetStudentGroupsByLecturerResponse> => {
-  const response = await axiosInstance.get<GetStudentGroupsByLecturerResponse>(
-    ROOM_BOOKING_API.STUDENT_GROUPS,
-    { params }
-  );
-  return response.data;
 };
 
 /**
@@ -54,11 +39,11 @@ export const getAvailableSlots = async (
  * Tạo booking request mới
  */
 export const createBooking = async (
-  request: CreateBookingRequest
+  request: CreateBookingCommand
 ): Promise<CreateBookingResponse> => {
   const response = await axiosInstance.post<CreateBookingResponse>(
     ROOM_BOOKING_API.CREATE_BOOKING,
-    request.bookingData
+    request
   );
   return response.data;
 };

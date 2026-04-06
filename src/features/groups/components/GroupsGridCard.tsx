@@ -1,11 +1,11 @@
 import React from 'react';
 import { ArrowRight, GraduationCap, Users } from 'lucide-react';
-import type { StudentGroup, StudentInGroup } from '../types/types';
+import type { Group, GroupMemberDto } from '../types/types';
 
 interface GroupsGridCardProps {
-  groups: StudentGroup[];
+  groups: Group[];
   isLoading?: boolean;
-  onSelectGroup: (group: StudentGroup) => void;
+  onSelectGroup: (group: Group) => void;
 }
 
 export const GroupsGridCard: React.FC<GroupsGridCardProps> = ({
@@ -42,9 +42,9 @@ export const GroupsGridCard: React.FC<GroupsGridCardProps> = ({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {groups.map((group) => {
-        const previewStudents: StudentInGroup[] = group.previewStudents || [];
-        const visibleStudents = previewStudents.slice(0, 4);
-        const remainingStudents = Math.max((group.studentCount || 0) - visibleStudents.length, 0);
+        const previewMembers: GroupMemberDto[] = group.members || [];
+        const visibleMembers = previewMembers.slice(0, 4);
+        const remainingMembers = Math.max((group.memberCount || 0) - visibleMembers.length, 0);
 
         return (
           <div key={group.id}>
@@ -62,17 +62,17 @@ export const GroupsGridCard: React.FC<GroupsGridCardProps> = ({
               >
                 <div className="group/avatars inline-flex items-center">
                   <div className="flex -space-x-2.5">
-                    {visibleStudents.map((student) => (
+                    {visibleMembers.map((member) => (
                       <img
-                        key={student.studentId}
-                        src={student.avatarUrl || getFallbackAvatar(student.studentId, 0)}
-                        alt={student.fullName}
+                        key={member.id}
+                        src={member.user?.avatarUrl || getFallbackAvatar(member.userId, 0)}
+                        alt={member.user?.fullName || 'Student'}
                         className="h-10 w-10 rounded-full border-2 border-white object-cover shadow-theme-sm ring-1 ring-gray-200 transition-transform duration-200 hover:z-10 hover:scale-110"
                       />
                     ))}
-                    {remainingStudents > 0 && (
+                    {remainingMembers > 0 && (
                       <div className="h-10 w-10 rounded-full border-2 border-white bg-gray-200 text-gray-700 text-xs font-bold flex items-center justify-center shadow-theme-sm">
-                        +{remainingStudents}
+                        +{remainingMembers}
                       </div>
                     )}
                   </div>
@@ -82,14 +82,14 @@ export const GroupsGridCard: React.FC<GroupsGridCardProps> = ({
                       Student Preview
                     </p>
                     <div className="mt-2 space-y-2">
-                      {previewStudents.slice(0, 3).map((student) => (
-                        <div key={`${student.studentId}-tooltip`} className="flex items-center gap-2">
+                      {previewMembers.slice(0, 3).map((member) => (
+                        <div key={`${member.id}-tooltip`} className="flex items-center gap-2">
                           <img
-                            src={student.avatarUrl || getFallbackAvatar(student.studentId, 1)}
-                            alt={student.fullName}
+                            src={member.user?.avatarUrl || getFallbackAvatar(member.userId, 1)}
+                            alt={member.user?.fullName || 'Student'}
                             className="h-7 w-7 rounded-full border border-gray-200 object-cover"
                           />
-                          <p className="text-xs font-medium text-gray-700">{student.fullName}</p>
+                          <p className="text-xs font-medium text-gray-700">{member.user?.fullName || 'N/A'}</p>
                         </div>
                       ))}
                     </div>
@@ -100,13 +100,13 @@ export const GroupsGridCard: React.FC<GroupsGridCardProps> = ({
 
               <div className="mt-4 space-y-1 text-left">
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">GROUP NAME</p>
-                <p className="text-xl font-bold text-gray-900 leading-tight">{group.name}</p>
+                <p className="text-xl font-bold text-gray-900 leading-tight">{group.groupName}</p>
               </div>
 
               <div className="mt-5 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                   <Users size={16} className="text-gray-500" />
-                  {group.studentCount} students
+                  {group.memberCount || 0} students
                 </div>
 
                 <div
@@ -124,4 +124,3 @@ export const GroupsGridCard: React.FC<GroupsGridCardProps> = ({
 };
 
 export default GroupsGridCard;
-
