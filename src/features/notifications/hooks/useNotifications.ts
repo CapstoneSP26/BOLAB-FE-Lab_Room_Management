@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { notificationApi } from "../api/notificationApi";
 import type {
   GetNotificationsRequest,
@@ -23,5 +23,31 @@ export const useNotifications = (options: UseNotificationsOptions = {}) => {
     gcTime: 5 * 60 * 1000,
     refetchInterval: 60 * 1000,
     enabled,
+  });
+};
+
+export const useMarkAsReadNotification = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => notificationApi.markAsRead(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [NOTIFICATION_QUERY_KEYS.LIST],
+      });
+    },
+  });
+};
+
+export const useMarkAllReadNotifications = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => notificationApi.markAllRead(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [NOTIFICATION_QUERY_KEYS.LIST],
+      });
+    },
   });
 };

@@ -315,4 +315,12 @@ export const notificationApi = {
 
     return normalizeNotificationsResponse(response.data);
   },
+
+  async markAllRead(): Promise<void> {
+    await axiosInstance.put(`${NOTIFICATION_API.LIST}/read-all`);
+  },
+
+  async markAsRead(id: string): Promise<void> {
+    await axiosInstance.put(`${NOTIFICATION_API.LIST}/${id}/read`);
+  },
 };

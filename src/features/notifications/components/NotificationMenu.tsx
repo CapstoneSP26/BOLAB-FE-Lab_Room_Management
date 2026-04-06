@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { useNotifications } from "../hooks/useNotifications";
+import {
+  useMarkAllReadNotifications,
+  useMarkAsReadNotification,
+  useNotifications,
+} from "../hooks/useNotifications";
 import type { NotificationItem } from "../types/notification.type";
 import {
   getNotificationFallbackRoute,
@@ -21,6 +25,9 @@ export default function NotificationMenu() {
     pageSize: 8,
   });
 
+  const markAllReadMutation = useMarkAllReadNotifications();
+  const markAsReadMutation = useMarkAsReadNotification();
+
   const notifications = notificationsQuery.data?.items ?? [];
   const unreadCount = notifications.filter((item) => !item.isRead).length;
   const notifying = unreadCount > 0;
@@ -28,7 +35,13 @@ export default function NotificationMenu() {
   const closeDropdown = () => setDropdownOpen(false);
 
   const toggleDropdown = () => {
-    setDropdownOpen((value) => !value);
+    const nextOpen = !dropdownOpen;
+
+    if (nextOpen && unreadCount > 0) {
+      markAllReadMutation.mutate();
+    }
+
+    setDropdownOpen(nextOpen);
   };
 
   useEffect(() => {
@@ -46,6 +59,11 @@ export default function NotificationMenu() {
 
   const handleItemClick = (notification: NotificationItem) => {
     closeDropdown();
+
+    if (!notification.isRead) {
+      markAsReadMutation.mutate(notification.id);
+    }
+
     openNotificationTarget(navigate, notification);
   };
 
