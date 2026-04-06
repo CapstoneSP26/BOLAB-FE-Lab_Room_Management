@@ -69,13 +69,13 @@ const IncidentHistoryPage = lazy(
   () => import("../../pages/labmanager/ReportHistoryPage.tsx"),
 );
 const UserManagementPage = lazy(
-  () => import("../../pages/labmanager/UserManagementPage.tsx"),
+  () => import("../../pages/admin/UserManagementPage.tsx"),
 );
 const RoomManagementPage = lazy(
-  () => import("../../pages/labmanager/RoomManagementPage.tsx"),
+  () => import("../../pages/admin/RoomManagementPage.tsx"),
 );
 const ScheduleManagementPage = lazy(
-  () => import("../../pages/labmanager/ScheduleManagementPage.tsx"),
+  () => import("../../pages/admin/ScheduleManagementPage.tsx"),
 );
 
 export const appRoutes: AppRoute[] = [

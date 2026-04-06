@@ -1,5 +1,13 @@
 import { useState, type FormEvent } from "react";
-import { Building2, Cpu, Loader2, MapPin, PencilLine, PlusCircle, X } from "lucide-react";
+import {
+  Building2,
+  Cpu,
+  Loader2,
+  MapPin,
+  PencilLine,
+  PlusCircle,
+  X,
+} from "lucide-react";
 import type { BuildingDto } from "../../building/types/building.type";
 import { getDefaultLabRoomFormValues } from "../types/room.mapper";
 import type { LabRoomDto, LabRoomFormValues } from "../types/room.type";
@@ -8,6 +16,8 @@ type Props = {
   isOpen: boolean;
   mode: "create" | "edit";
   room?: LabRoomDto | null;
+  /** ADMIN: tạo phòng + đổi tòa khi sửa. LAB_MANAGER: chỉ cập nhật thông tin, không đổi building */
+  isAdmin: boolean;
   buildingOptions: BuildingDto[];
   isLoading?: boolean;
   onClose: () => void;
@@ -20,6 +30,7 @@ export default function RoomFormModal({
   isOpen,
   mode,
   room,
+  isAdmin,
   buildingOptions,
   isLoading = false,
   onClose,
@@ -113,14 +124,35 @@ export default function RoomFormModal({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6 p-6">
+          {mode === "edit" && !isAdmin ? (
+            <p className="rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-100">
+              Lab Manager: chỉ được <strong>cập nhật</strong> phòng (không tạo
+              mới, không đổi tòa nhà). Trường Building không đổi; Lab Room ID
+              chỉ đọc.
+            </p>
+          ) : null}
+
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            {mode === "edit" && room != null ? (
+              <div className="md:col-span-2">
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Lab Room ID
+                </label>
+                <div className="h-11 rounded-xl border border-gray-200 bg-gray-50 px-4 font-mono text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-200">
+                  {room.id}
+                </div>
+              </div>
+            ) : null}
+
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Room name *
               </label>
               <input
                 value={values.roomName}
-                onChange={(event) => handleChange("roomName", event.target.value)}
+                onChange={(event) =>
+                  handleChange("roomName", event.target.value)
+                }
                 disabled={isLoading}
                 className="h-11 w-full rounded-xl border border-gray-300 px-4 text-sm text-gray-900 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 disabled:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:disabled:bg-gray-800/60"
                 placeholder="Lab A-501"
@@ -153,14 +185,18 @@ export default function RoomFormModal({
               <div className="relative">
                 <Building2 className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <select
-                  value={values.buildingId === "" ? "" : String(values.buildingId)}
+                  value={
+                    values.buildingId === "" ? "" : String(values.buildingId)
+                  }
                   onChange={(event) =>
                     handleChange(
                       "buildingId",
-                      event.target.value === "" ? "" : Number(event.target.value),
+                      event.target.value === ""
+                        ? ""
+                        : Number(event.target.value),
                     )
                   }
-                  disabled={isLoading}
+                  disabled={isLoading || (mode === "edit" && !isAdmin)}
                   className="h-11 w-full appearance-none rounded-xl border border-gray-300 bg-white pl-11 pr-10 text-sm text-gray-900 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 disabled:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:disabled:bg-gray-800/60"
                 >
                   <option value="">Select building</option>
@@ -171,6 +207,11 @@ export default function RoomFormModal({
                   ))}
                 </select>
               </div>
+              {mode === "edit" && !isAdmin ? (
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Lab Manager không đổi tòa nhà (building).
+                </p>
+              ) : null}
               {errors.buildingId && (
                 <p className="mt-1 text-sm text-red-600">{errors.buildingId}</p>
               )}
@@ -203,7 +244,9 @@ export default function RoomFormModal({
                 <MapPin className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input
                   value={values.location}
-                  onChange={(event) => handleChange("location", event.target.value)}
+                  onChange={(event) =>
+                    handleChange("location", event.target.value)
+                  }
                   disabled={isLoading}
                   className="h-11 w-full rounded-xl border border-gray-300 pl-11 pr-4 text-sm text-gray-900 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 disabled:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:disabled:bg-gray-800/60"
                   placeholder="Floor 5, East Wing"

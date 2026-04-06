@@ -15,7 +15,7 @@ export const useLabPolicies = (labRoomId: number) => {
         const policyKey = policy.policyKeyName || policy.policyKey;
 
         if (isPolicyType(policyKey)) {
-          acc[policyKey] = policy.value;
+          acc[policyKey] = policy.policyValue;
         }
 
         return acc;

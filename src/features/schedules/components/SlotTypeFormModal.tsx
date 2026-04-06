@@ -2,6 +2,7 @@ import { type FormEvent, useEffect, useState } from "react";
 import { Loader2, PencilLine, Plus, PlusCircle, Trash2, X } from "lucide-react";
 import type { SlotType } from "../../slot/types/slot.types";
 import type { UpsertSlotTypePayload } from "../types/scheduleManagement.type";
+import { useCampusSelectOptions } from "../hooks/useCampusSelectOptions";
 
 type FrameRow = {
   id?: number;
@@ -50,8 +51,11 @@ export default function SlotTypeFormModal({
 }: Props) {
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
+  /** Giá trị select: "" hoặc id campus (string) — payload gửi `campusId` số */
   const [campusId, setCampusId] = useState("");
   const [frames, setFrames] = useState<FrameRow[]>(() => defaultFrames(null));
+  const { options: campusOptions, isLoading: campusesLoading } =
+    useCampusSelectOptions();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -172,15 +176,21 @@ export default function SlotTypeFormModal({
 
           <label className="flex flex-col gap-1 text-sm">
             <span className="font-medium text-gray-700 dark:text-gray-300">
-              Campus ID (optional)
+              Campus (optional)
             </span>
-            <input
-              type="number"
-              min={1}
+            <select
               value={campusId}
               onChange={(e) => setCampusId(e.target.value)}
-              className="rounded-lg border border-gray-200 px-3 py-2 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-            />
+              disabled={campusesLoading}
+              className="rounded-lg border border-gray-200 px-3 py-2 text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+            >
+              <option value="">— None —</option>
+              {campusOptions.map((c) => (
+                <option key={c.id} value={String(c.id)}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
           </label>
 
           <div className="space-y-2">

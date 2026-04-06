@@ -9,8 +9,10 @@ import type {
 import type {
   LabRoomPolicy,
   LabRoomPolicyMutationPayload,
+  LabRoomPolicyValuePayload,
 } from "./policy.type";
-import type { PolicyTypeEnum } from "./policy.type";
+import { PolicyType } from "./policy.type";
+import { isPolicyType, normalizePolicyKeyFromApi } from "../utils/policy.util";
 
 type MaybeRecord = Record<string, unknown>;
 
@@ -81,9 +83,7 @@ const getBoolean = (value: unknown, fallback = false) => {
     }
 
     if (
-      ["false", "0", "inactive", "deactivated", "disabled"].includes(
-        normalized,
-      )
+      ["false", "0", "inactive", "deactivated", "disabled"].includes(normalized)
     ) {
       return false;
     }
@@ -124,10 +124,7 @@ export const mapLabRoomDto = (dto: unknown): LabRoomDto => {
     ),
     location: getOptionalString(record.location, record.Location),
     capacity: getNumber(record.capacity ?? record.Capacity, 0),
-    hasEquipment: getBoolean(
-      record.hasEquipment ?? record.HasEquipment,
-      false,
-    ),
+    hasEquipment: getBoolean(record.hasEquipment ?? record.HasEquipment, false),
     description: getOptionalString(record.description, record.Description),
     buildingId: getNumber(
       record.buildingId ?? record.BuildingId ?? asRecord(record.building).id,
@@ -147,10 +144,8 @@ export const mapLabRoomDto = (dto: unknown): LabRoomDto => {
       true,
     ),
     isDeleted: getBoolean(record.isDeleted ?? record.IsDeleted, false),
-    createdAt:
-      getOptionalString(record.createdAt, record.CreatedAt) ?? null,
-    updatedAt:
-      getOptionalString(record.updatedAt, record.UpdatedAt) ?? null,
+    createdAt: getOptionalString(record.createdAt, record.CreatedAt) ?? null,
+    updatedAt: getOptionalString(record.updatedAt, record.UpdatedAt) ?? null,
   };
 };
 
@@ -235,18 +230,37 @@ export const normalizeLabRoomPolicies = (raw: unknown): LabRoomPolicy[] => {
 
   return payload.map((item) => {
     const record = asRecord(item);
-    const policyKey = getString(
+    const rawKey =
+      record.policyKey ??
+      record.PolicyKey ??
+      record.policyKeyName ??
+      record.PolicyKeyName;
+    const keyStr = getString(
       record.policyKey,
       record.PolicyKey,
       record.policyKeyName,
       record.PolicyKeyName,
-    ) as PolicyTypeEnum;
+    );
+    const policyKey =
+      normalizePolicyKeyFromApi(rawKey) ??
+      (isPolicyType(keyStr) ? keyStr : PolicyType.IsFreeTimeAllowed);
 
     return {
+      labRoomId: getNumber(record.labRoomId ?? record.LabRoomId, 0),
       policyKey,
       policyKeyName:
         getString(record.policyKeyName, record.PolicyKeyName) || policyKey,
-      value: getString(record.value, record.Value),
+      policyValue: getString(
+        record.policyValue,
+        record.PolicyValue,
+        record.value,
+        record.Value,
+      ),
+      isActive: getBoolean(record.isActive ?? record.IsActive, true),
+      createdAt: getOptionalString(record.createdAt, record.CreatedAt),
+      updatedAt: getOptionalString(record.updatedAt, record.UpdatedAt) ?? null,
+      createdBy: getOptionalString(record.createdBy, record.CreatedBy) ?? null,
+      updatedBy: getOptionalString(record.updatedBy, record.UpdatedBy) ?? null,
     };
   });
 };
@@ -267,9 +281,16 @@ export const mapLabRoomPayload = (
 export const mapLabRoomPolicyPayload = (
   payload: LabRoomPolicyMutationPayload,
 ) => ({
+  ...(payload.labRoomId != null ? { labRoomId: payload.labRoomId } : {}),
   policyKey: payload.policyKey,
-  policyKeyName: payload.policyKey,
-  value: payload.value.trim(),
+  policyValue: payload.policyValue.trim(),
+});
+
+/** PUT policy: body chỉ có PolicyValue — labRoomId & policyKey trên URL */
+export const mapLabRoomPolicyValuePayload = (
+  payload: LabRoomPolicyValuePayload,
+) => ({
+  policyValue: payload.policyValue.trim(),
 });
 
 export const getDefaultLabRoomFormValues = (

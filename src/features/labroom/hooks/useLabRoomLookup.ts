@@ -24,8 +24,6 @@ export function useResolveLabRoomIdForSchedule(options: ResolveLabRoomOptions) {
     pageNumber: 1,
     pageSize: 50,
     searchTerm: name,
-    q: name,
-    keyword: name,
     includeBuilding: true,
   });
 

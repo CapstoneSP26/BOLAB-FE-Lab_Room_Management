@@ -9,6 +9,7 @@ import type {
 import type {
   LabRoomPolicy,
   LabRoomPolicyMutationPayload,
+  LabRoomPolicyValuePayload,
 } from "../types/policy.type";
 
 /**
@@ -99,13 +100,12 @@ export const useRoomPolicies = (labRoomId: number, enabled = true) =>
     gcTime: 5 * 60 * 1000,
   });
 
-export const useCreateLabRoom = (
-  options: MutationOptions<LabRoomDto> = {},
-) => {
+export const useCreateLabRoom = (options: MutationOptions<LabRoomDto> = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: CreateLabRoomRequest) => labroomApi.createRoom(payload),
+    mutationFn: (payload: CreateLabRoomRequest) =>
+      labroomApi.createRoom(payload),
     onSuccess: (data) => {
       void queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.ROOMS_MANAGEMENT],
@@ -118,9 +118,7 @@ export const useCreateLabRoom = (
   });
 };
 
-export const useUpdateLabRoom = (
-  options: MutationOptions<LabRoomDto> = {},
-) => {
+export const useUpdateLabRoom = (options: MutationOptions<LabRoomDto> = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -218,7 +216,7 @@ export const useUpdateRoomPolicy = (
     }: {
       labRoomId: number;
       policyKey: string;
-      payload: LabRoomPolicyMutationPayload;
+      payload: LabRoomPolicyValuePayload;
     }) => labroomApi.updateLabPolicy(labRoomId, policyKey, payload),
     onSuccess: (data, variables) => {
       void queryClient.invalidateQueries({
@@ -232,9 +230,7 @@ export const useUpdateRoomPolicy = (
   });
 };
 
-export const useDeleteRoomPolicy = (
-  options: MutationOptions<void> = {},
-) => {
+export const useDeleteRoomPolicy = (options: MutationOptions<void> = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -256,4 +252,3 @@ export const useDeleteRoomPolicy = (
     },
   });
 };
-

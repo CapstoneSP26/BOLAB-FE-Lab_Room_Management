@@ -19,6 +19,7 @@ import {
 } from "../../../components/ui/ComponentsParts";
 import { useBuildings } from "../../building/hooks/useBuildings";
 import { getErrorMessage } from "../../../utils/error";
+import { getRole } from "../../../utils/role";
 import {
   useCreateLabRoom,
   useDeleteLabRoom,
@@ -35,13 +36,14 @@ import RoomManagementTable from "./RoomManagementTable";
 const PAGE_SIZE = 10;
 
 export default function RoomManagementFeature() {
+  const isAdmin = getRole() === "ADMIN";
   const toast = useToast();
   const [showFilters, setShowFilters] = useState(true);
   const [search, setSearch] = useState("");
   const [buildingId, setBuildingId] = useState<number | "ALL">("ALL");
   const [status, setStatus] = useState<LabRoomStatusFilter>("ALL");
   const [page, setPage] = useState(1);
-  const [modalMode, setModalMode] = useState<"create" | "edit">("create");
+  const [modalMode, setModalMode] = useState<"create" | "edit">("edit");
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<LabRoomDto | null>(null);
   const [policyRoom, setPolicyRoom] = useState<LabRoomDto | null>(null);
@@ -63,10 +65,7 @@ export default function RoomManagementFeature() {
     isFetching,
     refetch,
   } = useManagedLabRooms({
-    q: deferredSearch || undefined,
-    keyword: deferredSearch || undefined,
     searchTerm: deferredSearch || undefined,
-    roomNo: deferredSearch || undefined,
     buildingId: buildingId === "ALL" ? undefined : buildingId,
     isActive:
       status === "ALL" ? undefined : status === "ACTIVE",
@@ -175,6 +174,7 @@ export default function RoomManagementFeature() {
   };
 
   const handleOpenCreate = () => {
+    if (!isAdmin) return;
     setModalMode("create");
     setSelectedRoom(null);
     setIsRoomModalOpen(true);
@@ -202,7 +202,7 @@ export default function RoomManagementFeature() {
       isActive: values.isActive,
     };
 
-    if (modalMode === "create") {
+    if (modalMode === "create" && isAdmin) {
       await createRoomMutation.mutateAsync(payload);
       return;
     }
@@ -265,7 +265,9 @@ export default function RoomManagementFeature() {
                     Rooms Management
                   </h1>
                   <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                    Manage lab room list, status, building assignment, and room policies.
+                    {isAdmin
+                      ? "ADMIN: create room + update fully (including building change). Policy: create / update value / delete."
+                      : "Lab Manager: only update room (no create; no building change). Policy: only update value (PUT only value)."}
                   </p>
                 </div>
               </div>
@@ -280,15 +282,16 @@ export default function RoomManagementFeature() {
                   <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
                   Refresh
                 </button>
-
-                <button
-                  type="button"
-                  onClick={handleOpenCreate}
-                  className="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-400"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Lab Room
-                </button>
+                {isAdmin ? (
+                  <button
+                    type="button"
+                    onClick={handleOpenCreate}
+                    className="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-400"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Lab Room
+                  </button>
+                ) : null}
               </div>
             </div>
 
@@ -407,7 +410,9 @@ export default function RoomManagementFeature() {
               description={
                 hasActiveFilters
                   ? "No lab rooms match your current filters. Try changing search, building, or status."
-                  : "No lab rooms are available yet. Create a new room to get started."
+                  : isAdmin
+                    ? "No lab rooms are available yet. Create a new room to get started."
+                    : "No lab rooms are available yet."
               }
               icon={<EmptyIcon />}
               onReset={hasActiveFilters ? handleResetFilters : undefined}
@@ -457,12 +462,17 @@ export default function RoomManagementFeature() {
         </div>
       </div>
 
-      {isRoomModalOpen && (
+      {isRoomModalOpen && (isAdmin && modalMode === "create" ? true : !!selectedRoom) && (
         <RoomFormModal
-          key={`${modalMode}:${selectedRoom?.id ?? "new"}`}
+          key={
+            modalMode === "create"
+              ? "create"
+              : `edit:${selectedRoom?.id ?? ""}`
+          }
           isOpen={isRoomModalOpen}
           mode={modalMode}
-          room={selectedRoom}
+          room={modalMode === "edit" ? selectedRoom : null}
+          isAdmin={isAdmin}
           buildingOptions={buildingOptions}
           isLoading={modalLoading}
           onClose={() => {
@@ -480,6 +490,7 @@ export default function RoomManagementFeature() {
         <PolicyManagementModal
           isOpen={!!policyRoom}
           room={policyRoom}
+          isAdmin={isAdmin}
           onClose={() => setPolicyRoom(null)}
         />
       )}

@@ -21,18 +21,15 @@ export interface LabRoomDto {
   updatedAt?: string | null;
 }
 
+/** Query params for GET /LabRoom (same style as booking `GetBookingsParams`). */
 export interface GetLabRoomsQuery {
   buildingId?: number;
   roomNo?: string;
   searchTerm?: string;
-  q?: string;
-  keyword?: string;
   includeImages?: boolean;
   includeBuilding?: boolean;
   isActive?: boolean;
-  page?: number;
   pageNumber?: number;
-  limit?: number;
   pageSize?: number;
   sortBy?: string;
   isDescending?: boolean;

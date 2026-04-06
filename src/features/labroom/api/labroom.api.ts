@@ -2,19 +2,19 @@ import axiosInstance from "../../../api/axios";
 import type {
   LabRoomPolicy,
   LabRoomPolicyMutationPayload,
+  LabRoomPolicyValuePayload,
 } from "../types/policy.type";
 import type {
   CreateLabRoomRequest,
-  GetStatsResponse,
   GetLabRoomsQuery,
-  LabRoomDto,
+  GetStatsResponse,
   UpdateLabRoomRequest,
 } from "../types/room.type";
-import type { PagedResponse } from "../../../types/pagination.types";
 import {
   mapLabRoomDto,
   mapLabRoomPayload,
   mapLabRoomPolicyPayload,
+  mapLabRoomPolicyValuePayload,
   normalizeLabRoomPolicies,
   normalizeLabRoomsPagedResponse,
 } from "../types/room.mapper";
@@ -29,116 +29,94 @@ const LABROOM_API = {
   STATS: "/LabRoom/stats",
 } as const;
 
-const buildRoomListParams = (params: GetLabRoomsQuery = {}) => ({
-  buildingId: params.buildingId,
-  roomNo: params.roomNo,
-  q: params.q ?? params.searchTerm ?? params.roomNo,
-  keyword: params.keyword ?? params.q ?? params.searchTerm ?? params.roomNo,
-  searchTerm: params.searchTerm ?? params.q ?? params.keyword ?? params.roomNo,
-  includeImages: params.includeImages,
-  includeBuilding: params.includeBuilding,
-  isActive: params.isActive,
-  page: params.page ?? params.pageNumber,
-  pageNumber: params.pageNumber ?? params.page,
-  limit: params.limit ?? params.pageSize,
-  pageSize: params.pageSize ?? params.limit,
-  sortBy: params.sortBy,
-  isDescending: params.isDescending,
-});
+const unwrapEnvelopeData = (raw: unknown): unknown => {
+  if (
+    raw &&
+    typeof raw === "object" &&
+    "data" in (raw as object) &&
+    (raw as { data?: unknown }).data !== undefined
+  ) {
+    return (raw as { data: unknown }).data;
+  }
+  return raw;
+};
 
 export const labroomApi = {
-  async getRooms(params?: GetLabRoomsQuery): Promise<PagedResponse<LabRoomDto>> {
-    const response = await axiosInstance.get(LABROOM_API.LIST, {
-      params: buildRoomListParams(params),
-    });
+  getRooms: (params: GetLabRoomsQuery = {}) =>
+    axiosInstance
+      .get(LABROOM_API.LIST, {
+        params,
+      })
+      .then((response) => normalizeLabRoomsPagedResponse(response.data)),
 
-    return normalizeLabRoomsPagedResponse(response.data);
-  },
+  getRoomById: (id: number) =>
+    axiosInstance
+      .get(LABROOM_API.DETAIL(id))
+      .then((response) => mapLabRoomDto(unwrapEnvelopeData(response.data))),
 
-  async getRoomById(id: number): Promise<LabRoomDto> {
-    const response = await axiosInstance.get(LABROOM_API.DETAIL(id));
-    const raw = response.data as unknown;
-    const inner =
-      raw &&
-      typeof raw === "object" &&
-      "data" in (raw as object) &&
-      (raw as { data?: unknown }).data !== undefined
-        ? (raw as { data: unknown }).data
-        : raw;
-    return mapLabRoomDto(inner);
-  },
+  getLabPolicies: (labRoomId: number) =>
+    axiosInstance
+      .get(LABROOM_API.POLICIES(labRoomId))
+      .then((response) => normalizeLabRoomPolicies(response.data)),
 
-  async getLabPolicies(labRoomId: number): Promise<LabRoomPolicy[]> {
-    const response = await axiosInstance.get(LABROOM_API.POLICIES(labRoomId));
-    return normalizeLabRoomPolicies(response.data);
-  },
+  createRoom: (payload: CreateLabRoomRequest) =>
+    axiosInstance
+      .post(LABROOM_API.LIST, mapLabRoomPayload(payload))
+      .then((response) => mapLabRoomDto(response.data)),
 
-  async createRoom(payload: CreateLabRoomRequest): Promise<LabRoomDto> {
-    const response = await axiosInstance.post(
-      LABROOM_API.LIST,
-      mapLabRoomPayload(payload),
-    );
+  updateRoom: (id: number, payload: UpdateLabRoomRequest) =>
+    axiosInstance
+      .put(LABROOM_API.DETAIL(id), mapLabRoomPayload(payload))
+      .then((response) => mapLabRoomDto(response.data)),
 
-    return mapLabRoomDto(response.data);
-  },
+  updateRoomStatus: (id: number, isActive: boolean) =>
+    axiosInstance
+      .patch(LABROOM_API.STATUS(id), { isActive })
+      .then((response) => mapLabRoomDto(response.data)),
 
-  async updateRoom(id: number, payload: UpdateLabRoomRequest): Promise<LabRoomDto> {
-    const response = await axiosInstance.put(
-      LABROOM_API.DETAIL(id),
-      mapLabRoomPayload(payload),
-    );
+  deleteRoom: (id: number) =>
+    axiosInstance.delete(LABROOM_API.DETAIL(id)).then(() => undefined),
 
-    return mapLabRoomDto(response.data);
-  },
-
-  async updateRoomStatus(id: number, isActive: boolean): Promise<LabRoomDto> {
-    const response = await axiosInstance.patch(LABROOM_API.STATUS(id), {
-      isActive,
-    });
-
-    return mapLabRoomDto(response.data);
-  },
-
-  async deleteRoom(id: number): Promise<void> {
-    await axiosInstance.delete(LABROOM_API.DETAIL(id));
-  },
-
-  async createLabPolicy(
+  createLabPolicy: (
     labRoomId: number,
     payload: LabRoomPolicyMutationPayload,
-  ): Promise<LabRoomPolicy> {
-    const response = await axiosInstance.post(
-      LABROOM_API.POLICIES(labRoomId),
-      mapLabRoomPolicyPayload(payload),
-    );
+  ): Promise<LabRoomPolicy> =>
+    axiosInstance
+      .post(LABROOM_API.POLICIES(labRoomId), mapLabRoomPolicyPayload(payload))
+      .then(
+        (response) =>
+          normalizeLabRoomPolicies(response.data)[0] ?? {
+            labRoomId,
+            policyKey: payload.policyKey,
+            policyKeyName: payload.policyKey,
+            policyValue: payload.policyValue,
+          },
+      ),
 
-    return normalizeLabRoomPolicies(response.data)[0] ?? {
-      policyKey: payload.policyKey,
-      policyKeyName: payload.policyKey,
-      value: payload.value,
-    };
-  },
-
-  async updateLabPolicy(
+  updateLabPolicy: (
     labRoomId: number,
     policyKey: string,
-    payload: LabRoomPolicyMutationPayload,
-  ): Promise<LabRoomPolicy> {
-    const response = await axiosInstance.put(
-      LABROOM_API.POLICY_DETAIL(labRoomId, policyKey),
-      mapLabRoomPolicyPayload(payload),
-    );
+    payload: LabRoomPolicyValuePayload,
+  ): Promise<LabRoomPolicy> =>
+    axiosInstance
+      .put(
+        LABROOM_API.POLICY_DETAIL(labRoomId, policyKey),
+        mapLabRoomPolicyValuePayload(payload),
+      )
+      .then(
+        (response) =>
+          normalizeLabRoomPolicies(response.data)[0] ?? {
+            labRoomId,
+            policyKey: policyKey as LabRoomPolicy["policyKey"],
+            policyKeyName: policyKey,
+            policyValue: payload.policyValue,
+          },
+      ),
 
-    return normalizeLabRoomPolicies(response.data)[0] ?? {
-      policyKey: payload.policyKey,
-      policyKeyName: payload.policyKey,
-      value: payload.value,
-    };
-  },
-
-  async deleteLabPolicy(labRoomId: number, policyKey: string): Promise<void> {
-    await axiosInstance.delete(LABROOM_API.POLICY_DETAIL(labRoomId, policyKey));
-  },
+  deleteLabPolicy: (labRoomId: number, policyKey: string) =>
+    axiosInstance
+      .delete(LABROOM_API.POLICY_DETAIL(labRoomId, policyKey))
+      .then(() => undefined),
 
   getStats: () =>
     axiosInstance

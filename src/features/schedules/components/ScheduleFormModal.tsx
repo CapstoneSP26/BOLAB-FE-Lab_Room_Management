@@ -43,7 +43,9 @@ function defaultValues(schedule?: ScheduleDto | null): ScheduleFormValues {
     };
   }
 
-  const uiStatus = mapApiStatusToUi(schedule.status || "") as ScheduleSessionStatus;
+  const uiStatus = mapApiStatusToUi(
+    schedule.status || "",
+  ) as ScheduleSessionStatus;
   const status: ScheduleSessionStatus =
     uiStatus === "NotYet" || uiStatus === "Active" || uiStatus === "Finish"
       ? uiStatus
@@ -53,8 +55,11 @@ function defaultValues(schedule?: ScheduleDto | null): ScheduleFormValues {
     schedule.labRoomId != null && schedule.labRoomId > 0
       ? String(schedule.labRoomId)
       : "";
-  const initialSubjectId =
-    (schedule.subjectId ?? schedule.subjectCode ?? "").trim();
+  const initialSubjectId = (
+    schedule.subjectId ??
+    schedule.subjectCode ??
+    ""
+  ).trim();
 
   return {
     labRoomId: initialLabRoomId,
@@ -77,9 +82,9 @@ export default function ScheduleFormModal({
   const [values, setValues] = useState<ScheduleFormValues>(() =>
     defaultValues(schedule),
   );
-  const [errors, setErrors] = useState<Partial<Record<keyof ScheduleFormValues, string>>>(
-    {},
-  );
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof ScheduleFormValues, string>>
+  >({});
   const lookupAppliedRef = useRef(false);
 
   useEffect(() => {
@@ -197,7 +202,9 @@ export default function ScheduleFormModal({
                 {mode === "create" ? "Add schedule" : "Update schedule"}
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                {mode === "edit" ? `ID: ${schedule?.id ?? ""}` : "Create a new session."}
+                {mode === "edit"
+                  ? `ID: ${schedule?.id ?? ""}`
+                  : "Create a new session."}
               </p>
             </div>
           </div>
@@ -277,7 +284,9 @@ export default function ScheduleFormModal({
                 className="rounded-lg border border-gray-200 px-3 py-2 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
               />
               {errors.startLocal ? (
-                <span className="text-xs text-red-600">{errors.startLocal}</span>
+                <span className="text-xs text-red-600">
+                  {errors.startLocal}
+                </span>
               ) : null}
             </label>
             <label className="flex flex-col gap-1 text-sm">

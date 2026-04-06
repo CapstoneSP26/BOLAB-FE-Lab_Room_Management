@@ -3,6 +3,7 @@ import { Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import type { SlotType } from "../../slot/types/slot.types";
 import { useToast } from "../../../hooks/useToast";
 import { getErrorMessage } from "../../../utils/error";
+import { useCampusSelectOptions } from "../hooks/useCampusSelectOptions";
 import {
   useCreateSlotType,
   useDeleteSlotType,
@@ -14,14 +15,19 @@ import SlotTypeFormModal from "./SlotTypeFormModal";
 
 export default function SlotTypeManagementPanel() {
   const toast = useToast();
-  const [campusFilter, setCampusFilter] = useState("");
-  const campusId = useMemo(() => {
-    const n = Number(campusFilter);
-    return campusFilter.trim() !== "" && Number.isFinite(n) ? n : undefined;
-  }, [campusFilter]);
+  /** "" = tất cả; khác thì là campusId gửi xuống API */
+  const [selectedCampusId, setSelectedCampusId] = useState("");
+  const campusIdForApi = useMemo(() => {
+    if (selectedCampusId.trim() === "") return undefined;
+    const n = Number(selectedCampusId);
+    return Number.isFinite(n) && n > 0 ? n : undefined;
+  }, [selectedCampusId]);
+
+  const { options: campusOptions, isLoading: campusesLoading } =
+    useCampusSelectOptions();
 
   const { data, isLoading, isFetching, refetch } =
-    useSlotTypesForManagement(campusId);
+    useSlotTypesForManagement(campusIdForApi);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
@@ -92,15 +98,20 @@ export default function SlotTypeManagementPanel() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-            Campus ID
-            <input
-              type="number"
-              min={1}
-              value={campusFilter}
-              onChange={(e) => setCampusFilter(e.target.value)}
-              placeholder="All"
-              className="w-28 rounded-lg border border-gray-200 px-2 py-1 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-            />
+            Campus
+            <select
+              value={selectedCampusId}
+              onChange={(e) => setSelectedCampusId(e.target.value)}
+              disabled={campusesLoading}
+              className="min-w-[200px] rounded-lg border border-gray-200 px-2 py-1.5 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+            >
+              <option value="">All campuses</option>
+              {campusOptions.map((c) => (
+                <option key={c.id} value={String(c.id)}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
           </label>
           <button
             type="button"

@@ -51,42 +51,38 @@ export default function RoomManagementTable({
         <table className="w-full min-w-[1120px] text-left text-sm">
           <thead className="bg-gray-50 text-xs font-semibold uppercase text-gray-500 dark:bg-white/[0.04] dark:text-gray-400">
             <tr>
-              <th className="px-4 py-3">Room ID</th>
               <th className="px-4 py-3">Room</th>
               <th className="px-4 py-3">Building</th>
               <th className="px-4 py-3">Capacity</th>
               <th className="px-4 py-3">Equipment</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Updated At</th>
-              <th className="px-4 py-3 text-right">Actions</th>
+              <th className="min-w-[340px] px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
 
           <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
             {loading ? (
               <tr>
-                <td colSpan={8} className="px-4 py-6 text-gray-500 dark:text-gray-400">
+                <td
+                  colSpan={8}
+                  className="px-4 py-6 text-gray-500 dark:text-gray-400"
+                >
                   Loading rooms...
                 </td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-6 text-gray-500 dark:text-gray-400">
+                <td
+                  colSpan={8}
+                  className="px-4 py-6 text-gray-500 dark:text-gray-400"
+                >
                   No lab rooms found.
                 </td>
               </tr>
             ) : (
               rows.map((room) => (
                 <tr key={room.id} className="bg-white dark:bg-transparent">
-                  <td className="px-4 py-4">
-                    <div className="font-semibold text-gray-900 dark:text-white">
-                      #{room.id}
-                    </div>
-                    <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      {room.roomNo || "No room number"}
-                    </div>
-                  </td>
-
                   <td className="px-4 py-4">
                     <div className="font-semibold text-gray-900 dark:text-white">
                       {room.roomName || "-"}
@@ -120,8 +116,8 @@ export default function RoomManagementTable({
                     <span
                       className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
                         room.isActive
-                          ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                          : "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                          ? "bg-sky-500/15 text-sky-800 dark:text-sky-200"
+                          : "bg-slate-400/15 text-slate-700 dark:text-slate-300"
                       }`}
                     >
                       {getLabRoomStatusLabel(room.isActive)}
@@ -136,12 +132,12 @@ export default function RoomManagementTable({
                         : "-"}
                   </td>
 
-                  <td className="px-4 py-4">
-                    <div className="flex justify-end gap-2">
+                  <td className="whitespace-nowrap px-4 py-4">
+                    <div className="flex flex-nowrap items-center justify-end gap-2">
                       <button
                         type="button"
                         onClick={() => onManagePolicies(room)}
-                        className="inline-flex items-center gap-1 rounded-lg border border-sky-300 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-100 dark:border-sky-700/60 dark:bg-sky-500/10 dark:text-sky-300"
+                        className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border border-sky-300/80 bg-white px-3 py-2 text-xs font-semibold text-sky-800 shadow-sm transition hover:bg-sky-50/90 dark:border-sky-700/50 dark:bg-sky-950/20 dark:text-sky-200 dark:hover:bg-sky-900/35"
                       >
                         <ClipboardList className="h-3.5 w-3.5" />
                         Policies
@@ -150,7 +146,7 @@ export default function RoomManagementTable({
                       <button
                         type="button"
                         onClick={() => onEdit(room)}
-                        className="inline-flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-white/[0.04]"
+                        className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-200 dark:hover:bg-slate-800/60"
                       >
                         <Pencil className="h-3.5 w-3.5" />
                         Edit
@@ -160,11 +156,11 @@ export default function RoomManagementTable({
                         type="button"
                         onClick={() => onToggleStatus(room)}
                         disabled={actionLoadingId === room.id}
-                        className={`inline-flex items-center gap-1 rounded-lg px-3 py-2 text-xs font-semibold text-white ${
+                        className={`inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border px-3 py-2 text-xs font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 ${
                           room.isActive
-                            ? "bg-amber-600 hover:bg-amber-700"
-                            : "bg-emerald-600 hover:bg-emerald-700"
-                        } disabled:cursor-not-allowed disabled:opacity-60`}
+                            ? "border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-200 dark:hover:bg-slate-800/70"
+                            : "border-sky-400/45 bg-sky-50/90 text-sky-900 hover:bg-sky-100/80 dark:border-sky-600/45 dark:bg-sky-950/35 dark:text-sky-100 dark:hover:bg-sky-900/45"
+                        }`}
                       >
                         <Power className="h-3.5 w-3.5" />
                         {room.isActive ? "De-activate" : "Activate"}
@@ -174,7 +170,7 @@ export default function RoomManagementTable({
                         type="button"
                         onClick={() => onDelete(room)}
                         disabled={actionLoadingId === room.id}
-                        className="inline-flex items-center gap-1 rounded-lg bg-rose-600 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm transition hover:border-slate-400 hover:bg-slate-100 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-900/30 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                         Delete
@@ -190,9 +186,14 @@ export default function RoomManagementTable({
 
       <div className="flex flex-col gap-4 border-t border-gray-200 bg-gray-50/80 px-4 py-4 sm:flex-row sm:items-center sm:justify-between dark:border-gray-800 dark:bg-gray-900/40">
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Page <span className="font-semibold text-gray-900 dark:text-white">{page}</span>{" "}
+          Page{" "}
+          <span className="font-semibold text-gray-900 dark:text-white">
+            {page}
+          </span>{" "}
           / {Math.max(totalPages, 1)}. Total rooms:{" "}
-          <span className="font-semibold text-gray-900 dark:text-white">{totalCount}</span>
+          <span className="font-semibold text-gray-900 dark:text-white">
+            {totalCount}
+          </span>
         </p>
 
         <div className="flex items-center gap-2">
