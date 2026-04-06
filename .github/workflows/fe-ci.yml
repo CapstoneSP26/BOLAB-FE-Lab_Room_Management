@@ -2,9 +2,9 @@ name: FE CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, Feature/Add_CICD]
   push:
-    branches: [main]
+    branches: [main, Feature/Add_CICD]
 
 jobs:
   quality-check:
