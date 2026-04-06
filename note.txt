@@ -1,0 +1,541 @@
+> bolab-fe-lab-room-management@0.0.0 lint
+> eslint .
+
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/components/common/QuickActionFAB.tsx
+Error:   27:3  error  React Hook "useEffect" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?  react-hooks/rules-of-hooks
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/components/common/RecentActivity.tsx
+  50:17  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/components/common/RecentActivity.tsx:50:17
+  48 |
+  49 |   const getTimeAgo = (timestamp: string): string => {
+> 50 |     const now = Date.now();
+     |                 ^^^^^^^^^^ Cannot call impure function
+  51 |     const time = new Date(timestamp).getTime();
+  52 |     const diff = now - time;
+  53 |  react-hooks/purity
+Error:   85:45  error  'index' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 @typescript-eslint/no-unused-vars
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/components/ui/LoadingBar.tsx
+  59:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/components/ui/LoadingBar.tsx:59:7
+  57 |       startedInBurstRef.current = activeCount;
+  58 |       completedInBurstRef.current = 0;
+> 59 |       setIsVisible(true);
+     |       ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  60 |       setProgress(8);
+  61 |     } else if (activeCount > previousActiveCount) {
+  62 |       startedInBurstRef.current += activeCount - previousActiveCount;  react-hooks/set-state-in-effect
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/context/ActiveSessionContext.tsx
+Error:   27:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/context/BuildingContext.tsx
+Error:   21:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/attendance/components/AttendanceActiveSessionPanel.tsx
+Error:   20:3  error  'actionBooking' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/attendance/hooks/useAttendanceManagementState.ts
+Error:    57:5   error  React Hook "useEffect" is called conditionally. React Hooks must be called in the exact same order in every component render          react-hooks/rules-of-hooks
+Error:    81:39  error  React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render            react-hooks/rules-of-hooks
+Error:    97:31  error  React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render            react-hooks/rules-of-hooks
+Error:   107:31  error  React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render            react-hooks/rules-of-hooks
+Error:   123:33  error  React Hook "useQRSession" is called conditionally. React Hooks must be called in the exact same order in every component render       react-hooks/rules-of-hooks
+Error:   124:40  error  React Hook "useAttendanceList" is called conditionally. React Hooks must be called in the exact same order in every component render  react-hooks/rules-of-hooks
+Error:   126:3   error  React Hook "useEffect" is called conditionally. React Hooks must be called in the exact same order in every component render          react-hooks/rules-of-hooks
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/booking/components/BookingDashboard.tsx
+   55:22  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/booking/components/BookingDashboard.tsx:55:22
+  53 |       startTime: '14:00',
+  54 |       endTime: '16:00',
+> 55 |       date: new Date(Date.now() + 172800000).toISOString(),
+     |                      ^^^^^^^^^^ Cannot call impure function
+  56 |       status: 'PendingApproval' as const,
+  57 |       purpose: 'AI Research Project',
+  58 |       lecturerName: 'Tran Thi B',                                        react-hooks/purity
+   70:22  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/booking/components/BookingDashboard.tsx:70:22
+  68 |       startTime: '10:00',
+  69 |       endTime: '12:00',
+> 70 |       date: new Date(Date.now() + 259200000).toISOString(),
+     |                      ^^^^^^^^^^ Cannot call impure function
+  71 |       status: 'Approved' as const,
+  72 |       purpose: 'Database Design Class',
+  73 |       lecturerName: 'Le Van C',                                               react-hooks/purity
+   87:29  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/booking/components/BookingDashboard.tsx:87:29
+  85 |       buildingName: 'Building Alpha',
+  86 |       requestedBy: 'Nguyen Van A',
+> 87 |       requestedAt: new Date(Date.now() - 1800000).toISOString(),
+     |                             ^^^^^^^^^^ Cannot call impure function
+  88 |       startTime: '08:00',
+  89 |       endTime: '10:00',
+  90 |       date: new Date(Date.now() + 86400000).toISOString(),          react-hooks/purity
+   90:22  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/booking/components/BookingDashboard.tsx:90:22
+  88 |       startTime: '08:00',
+  89 |       endTime: '10:00',
+> 90 |       date: new Date(Date.now() + 86400000).toISOString(),
+     |                      ^^^^^^^^^^ Cannot call impure function
+  91 |       status: 'pending' as const,
+  92 |     },
+  93 |     {                                                                                                            react-hooks/purity
+   99:29  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/booking/components/BookingDashboard.tsx:99:29
+   97 |       buildingName: 'Building Gamma',
+   98 |       requestedBy: 'Tran Thi B',
+>  99 |       requestedAt: new Date(Date.now() - 3600000).toISOString(),
+      |                             ^^^^^^^^^^ Cannot call impure function
+  100 |       startTime: '14:00',
+  101 |       endTime: '16:00',
+  102 |       date: new Date(Date.now() + 172800000).toISOString(),    react-hooks/purity
+  102:22  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/booking/components/BookingDashboard.tsx:102:22
+  100 |       startTime: '14:00',
+  101 |       endTime: '16:00',
+> 102 |       date: new Date(Date.now() + 172800000).toISOString(),
+      |                      ^^^^^^^^^^ Cannot call impure function
+  103 |       status: 'accepted' as const,
+  104 |     },
+  105 |     {                                                                                                  react-hooks/purity
+  111:29  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/booking/components/BookingDashboard.tsx:111:29
+  109 |       buildingName: 'Building Delta',
+  110 |       requestedBy: 'Le Van C',
+> 111 |       requestedAt: new Date(Date.now() - 7200000).toISOString(),
+      |                             ^^^^^^^^^^ Cannot call impure function
+  112 |       startTime: '10:00',
+  113 |       endTime: '12:00',
+  114 |       date: new Date(Date.now() + 259200000).toISOString(),     react-hooks/purity
+  114:22  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/booking/components/BookingDashboard.tsx:114:22
+  112 |       startTime: '10:00',
+  113 |       endTime: '12:00',
+> 114 |       date: new Date(Date.now() + 259200000).toISOString(),
+      |                      ^^^^^^^^^^ Cannot call impure function
+  115 |       status: 'accepted' as const,
+  116 |     },
+  117 |     {                                                                                                  react-hooks/purity
+  123:29  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/booking/components/BookingDashboard.tsx:123:29
+  121 |       buildingName: 'Building Alpha',
+  122 |       requestedBy: 'Pham Thi D',
+> 123 |       requestedAt: new Date(Date.now() - 10800000).toISOString(),
+      |                             ^^^^^^^^^^ Cannot call impure function
+  124 |       startTime: '15:00',
+  125 |       endTime: '17:00',
+  126 |       date: new Date(Date.now() + 345600000).toISOString(),  react-hooks/purity
+  126:22  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/booking/components/BookingDashboard.tsx:126:22
+  124 |       startTime: '15:00',
+  125 |       endTime: '17:00',
+> 126 |       date: new Date(Date.now() + 345600000).toISOString(),
+      |                      ^^^^^^^^^^ Cannot call impure function
+  127 |       status: 'rejected' as const,
+  128 |     },
+  129 |   ];                                                                                                   react-hooks/purity
+  142:27  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/booking/components/BookingDashboard.tsx:142:27
+  140 |       title: 'Đặt phòng Lab A-101',
+  141 |       description: 'Đã đặt phòng cho ngày 25/03/2026',
+> 142 |       timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 minutes ago
+      |                           ^^^^^^^^^^ Cannot call impure function
+  143 |     },
+  144 |     {
+  145 |       id: '2',                                            react-hooks/purity
+  149:27  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/booking/components/BookingDashboard.tsx:149:27
+  147 |       title: 'Booking được chấp nhận',
+  148 |       description: 'Lab G-203 - Web Development Workshop',
+> 149 |       timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+      |                           ^^^^^^^^^^ Cannot call impure function
+  150 |     },
+  151 |     {
+  152 |       id: '3',                                    react-hooks/purity
+  156:27  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/booking/components/BookingDashboard.tsx:156:27
+  154 |       title: 'Tạo mã QR điểm danh',
+  155 |       description: 'Lab A-101 - 12 sinh viên đã điểm danh',
+> 156 |       timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), // 4 hours ago
+      |                           ^^^^^^^^^^ Cannot call impure function
+  157 |     },
+  158 |     {
+  159 |       id: '4',                                      react-hooks/purity
+  163:27  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/booking/components/BookingDashboard.tsx:163:27
+  161 |       title: 'Gửi báo cáo vấn đề',
+  162 |       description: 'Thiết bị hỏng - Lab D-305',
+> 163 |       timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
+      |                           ^^^^^^^^^^ Cannot call impure function
+  164 |     },
+  165 |   ];
+  166 |                                                                    react-hooks/purity
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/booking/components/BookingRequestTable.tsx
+Error:   15:10  error  'formatRange' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/booking/components/BookingStatusBadge.tsx
+Error:   44:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/booking/components/FixedImportPanel.tsx
+Error:   214:45  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   246:55  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   248:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   252:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   285:55  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   290:65  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   319:38  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   319:67  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   320:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   320:65  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   337:14  error  'error' is defined but never used         @typescript-eslint/no-unused-vars
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/booking/components/FlexibleImportPanel.tsx
+Error:   233:55  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   235:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   240:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   273:55  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   277:65  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   305:38  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   305:67  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   306:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   306:65  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   322:14  error  'error' is defined but never used         @typescript-eslint/no-unused-vars
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/booking/components/PendingBookingFeature.tsx
+Error:   16:3  error  'updateBookingRequestStatus' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/booking/hooks/useApproveBooking.ts
+Error:   22:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/booking/hooks/useRejectBooking.ts
+Error:   25:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/booking/hooks/useRoomBooking.ts
+Error:   1:20  error  'useMutation' is defined but never used     @typescript-eslint/no-unused-vars
+Error:   1:33  error  'useQueryClient' is defined but never used  @typescript-eslint/no-unused-vars
+Error:   5:3   error  'createBooking' is defined but never used   @typescript-eslint/no-unused-vars
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/calendar/components/FixedGridView.tsx
+Error:   11:38  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/calendar/components/FlexibleGridView.tsx
+Error:   10:14  error    Unexpected any. Specify a different type                                                                                                      @typescript-eslint/no-explicit-any
+Warning:   25:78  warning  React Hook useMemo has missing dependencies: 'CELL_HEIGHT', 'END_HOUR', and 'START_HOUR'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/calendar/components/WeeklyCalendar.tsx
+Error:    70:9   error    Unexpected empty object pattern                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         no-empty-pattern
+Error:   110:49  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                @typescript-eslint/no-explicit-any
+  188:7   error    Error: Cannot access variable before it is declared
+
+`resetDragState` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/calendar/components/WeeklyCalendar.tsx:188:7
+  186 |   const handleMouseUp = useCallback(() => {
+  187 |     if (!dragState.isActive || dragState.dayIndex === null) {
+> 188 |       resetDragState();
+      |       ^^^^^^^^^^^^^^ `resetDragState` accessed before it is declared
+  189 |       return;
+  190 |     }
+  191 |     // 2. Kiểm tra nếu chỉ là một cú click (không di chuyển chuột đáng kể)
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/calendar/components/WeeklyCalendar.tsx:222:3
+  220 |   }, [dragState, weekDays, selectedSlotTypeId, policies, onCreateBooking]);
+  221 |
+> 222 |   const resetDragState = () => {
+      |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 223 |     setDragState({
+      | ^^^^^^^^^^^^^^^^^^
+> 224 |       isActive: false,
+      | ^^^^^^^^^^^^^^^^^^
+> 225 |       dayIndex: null,
+      | ^^^^^^^^^^^^^^^^^^
+> 226 |       startY: null,
+      | ^^^^^^^^^^^^^^^^^^
+> 227 |       currentY: null,
+      | ^^^^^^^^^^^^^^^^^^
+> 228 |       startTime: '',
+      | ^^^^^^^^^^^^^^^^^^
+> 229 |       endTime: '',
+      | ^^^^^^^^^^^^^^^^^^
+> 230 |     });
+      | ^^^^^^^^^^^^^^^^^^
+> 231 |   };
+      | ^^^^^ `resetDragState` is declared here
+  232 |
+  233 |   // Handle global mouse events
+  234 |   React.useEffect(() => {  react-hooks/immutability
+Warning:   220:6   warning  React Hook useCallback has a missing dependency: 'appAlert'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           react-hooks/exhaustive-deps
+Warning:   243:6   warning  React Hook React.useEffect has missing dependencies: 'handleGlobalMouseMove' and 'handleMouseUp'. Either include them or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    react-hooks/exhaustive-deps
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/calendar/components/WeeklyCalendarGrid.tsx
+Warning:   465:6  warning  React Hook React.useEffect has missing dependencies: 'handleGlobalMouseMove' and 'handleMouseUp'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/calendar/types/calendar.type.ts
+Error:   17:14  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/groups/components/CreateGroupModal.tsx
+  25:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/groups/components/CreateGroupModal.tsx:25:7
+  23 |   useEffect(() => {
+  24 |     if (!isOpen) {
+> 25 |       setName('');
+     |       ^^^^^^^ Avoid calling setState() directly within an effect
+  26 |       setErrors({});
+  27 |     }
+  28 |   }, [isOpen]);  react-hooks/set-state-in-effect
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/groups/components/UpdateGroupModal.tsx
+  30:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/groups/components/UpdateGroupModal.tsx:30:7
+  28 |   useEffect(() => {
+  29 |     if (isOpen && group) {
+> 30 |       setName(group.name);
+     |       ^^^^^^^ Avoid calling setState() directly within an effect
+  31 |       setErrors({});
+  32 |       setShowDeleteConfirm(false);
+  33 |     }  react-hooks/set-state-in-effect
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/groups/hooks/useStudentGroups.ts
+Error:    78:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:    79:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   100:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   101:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   122:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   123:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   144:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   145:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   170:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   171:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/labroom/utils/policy.util.ts
+Error:   75:35  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/reports/components/SendReportModal.tsx
+Error:    47:10  error    'submittedReport' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+Warning:   154:9   warning  The 'buildings' logical expression could make the dependencies of useMemo Hook (at line 160) change on every render. To fix this, wrap the initialization of 'buildings' in its own useMemo() Hook                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            react-hooks/exhaustive-deps
+Warning:   163:9   warning  The 'rooms' logical expression could make the dependencies of useMemo Hook (at line 182) change on every render. Move it inside the useMemo callback. Alternatively, wrap the initialization of 'rooms' in its own useMemo() Hook                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             react-hooks/exhaustive-deps
+  194:7   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/reports/components/SendReportModal.tsx:194:7
+  192 |
+  193 |     if (!roomExists) {
+> 194 |       setSelectedRoomId("");
+      |       ^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  195 |     }
+  196 |   }, [filteredRooms, selectedRoomId]);
+  197 |  react-hooks/set-state-in-effect
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/features/user/components/ImportUserPanel.tsx
+Error:   239:55  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   240:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   243:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   274:55  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   279:65  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   306:38  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   306:67  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   307:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   307:65  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   324:14  error  'error' is defined but never used         @typescript-eslint/no-unused-vars
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/layouts/labmanager/AppSidebar.tsx
+Warning:   208:6  warning  React Hook useMemo has an unnecessary dependency: 'base'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+Warning:   219:6  warning  React Hook useMemo has a missing dependency: 'isActive'. Either include it or remove the dependency array   react-hooks/exhaustive-deps
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/pages/lecturer/AttendanceManagementPage.tsx
+Warning:   148:6  warning  React Hook useEffect has a missing dependency: 'state.session'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/pages/lecturer/BookingHistoryPage.tsx
+  329:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/pages/lecturer/BookingHistoryPage.tsx:329:5
+  327 |
+  328 |   useEffect(() => {
+> 329 |     setCurrentPage(1);
+      |     ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  330 |   }, [searchQuery, statusFilter, dateRange]);
+  331 |
+  332 |   return (  react-hooks/set-state-in-effect
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/pages/lecturer/GroupOverviewPage.tsx
+Error:   37:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+Error:   47:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/pages/lecturer/ProfilePage.tsx
+Error:    64:7   error  'profileCompletion' is never reassigned. Use 'const' instead                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                prefer-const
+   74:26  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/pages/lecturer/ProfilePage.tsx:74:26
+  72 |       for (let day = 0; day < 7; day++) {
+  73 |         weekData.push({
+> 74 |           date: new Date(Date.now() - (weeks - week) * 7 * 24 * 60 * 60 * 1000 + day * 24 * 60 * 60 * 1000),
+     |                          ^^^^^^^^^^ Cannot call impure function
+  75 |           count: Math.floor(Math.random() * 10), // 0-9 activities
+  76 |         });
+  77 |       }  react-hooks/purity
+   75:29  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/pages/lecturer/ProfilePage.tsx:75:29
+  73 |         weekData.push({
+  74 |           date: new Date(Date.now() - (weeks - week) * 7 * 24 * 60 * 60 * 1000 + day * 24 * 60 * 60 * 1000),
+> 75 |           count: Math.floor(Math.random() * 10), // 0-9 activities
+     |                             ^^^^^^^^^^^^^ Cannot call impure function
+  76 |         });
+  77 |       }
+  78 |       data.push(weekData);        react-hooks/purity
+   92:27  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/pages/lecturer/ProfilePage.tsx:92:27
+  90 |       title: 'Booked Lab A-501',
+  91 |       description: 'For Software Engineering class on Mar 10, 2026',
+> 92 |       timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+     |                           ^^^^^^^^^^ Cannot call impure function
+  93 |     },
+  94 |     {
+  95 |       id: '2',                                                           react-hooks/purity
+   99:27  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/pages/lecturer/ProfilePage.tsx:99:27
+   97 |       title: 'Generated QR Code',
+   98 |       description: 'Lab G-203 - 28 students attended',
+>  99 |       timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+      |                           ^^^^^^^^^^ Cannot call impure function
+  100 |     },
+  101 |     {
+  102 |       id: '3',                                                                react-hooks/purity
+  106:27  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/pages/lecturer/ProfilePage.tsx:106:27
+  104 |       title: 'Reported Equipment Issue',
+  105 |       description: 'Projector malfunction in Lab D-305',
+> 106 |       timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+      |                           ^^^^^^^^^^ Cannot call impure function
+  107 |     },
+  108 |     {
+  109 |       id: '4',                                                  react-hooks/purity
+  113:27  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/pages/lecturer/ProfilePage.tsx:113:27
+  111 |       title: 'Booking Approved',
+  112 |       description: 'Lab A-101 for Database Management',
+> 113 |       timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      |                           ^^^^^^^^^^ Cannot call impure function
+  114 |     },
+  115 |   ];
+  116 |                                                                           react-hooks/purity
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/pages/lecturer/RoomBookingPage.tsx
+Error:   10:10  error  'AvailableSlotList' is defined but never used  @typescript-eslint/no-unused-vars
+Error:   23:10  error  'QueryClient' is defined but never used        @typescript-eslint/no-unused-vars
+Error:   86:41  error  Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/pages/lecturer/ScanAttendancePage.tsx
+Error:    64:67  error  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+Error:   299:26  error  '_errorMessage' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/pages/lecturer/StudentGroupsPage.tsx
+Error:   37:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/pages/user/HomePage.tsx
+Error:   26:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/runner/work/BOLAB-FE-Lab_Room_Management/BOLAB-FE-Lab_Room_Management/src/store/useAuthStore.ts
+Error:   28:16  error  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 115 problems (106 errors, 9 warnings)
+  1 error and 0 warnings potentially fixable with the `--fix` option.
+
+Error: Process completed with exit code 1.
