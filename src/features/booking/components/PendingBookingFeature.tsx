@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import BookingRequestReviewModal from "./BookingRequestReviewModal";
 import BookingFilters from "./BookingRequestFilter";
 import BookingTable from "./BookingRequestTable";
+import RejectReasonModal from "./RejectReasonModal";
 import { buildingApi } from "../../building/api/buildingApi";
 import { labroomApi } from "../../labroom/api/labroom.api";
 import { slotApi } from "../../slot/api/slotApi";
@@ -45,6 +46,10 @@ export default function PendingBookingFeature() {
   const [selected, setSelected] = useState<BookingRequest | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
+  // Reject with reason state
+  const [rejectId, setRejectId] = useState<string | null>(null);
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+
   const params: GetBookingRequestsRequest = useMemo(
     () => ({
       status: "PendingApproval" as BookingStatus,
@@ -62,16 +67,21 @@ export default function PendingBookingFeature() {
 
   const pendingQuery = useBookingRequests(params);
 
+  const closeModal = () => {
+    setOpen(false);
+    setSelected(null);
+  };
+
   const approveBookingMutation = useApproveBookingRequest({
     onSuccess: () => {
-      pendingQuery.refetch();
       closeModal();
     },
   });
 
   const rejectBookingMutation = useRejectBookingRequest({
     onSuccess: () => {
-      pendingQuery.refetch();
+      setRejectModalOpen(false);
+      setRejectId(null);
       closeModal();
     },
   });
@@ -82,11 +92,6 @@ export default function PendingBookingFeature() {
   );
   const totalCount = pendingQuery.data?.total ?? items.length;
   const loading = pendingQuery.isLoading || pendingQuery.isFetching;
-
-  const closeModal = () => {
-    setOpen(false);
-    setSelected(null);
-  };
 
   const reload = async () => {
     await pendingQuery.refetch();
@@ -160,11 +165,14 @@ export default function PendingBookingFeature() {
     await approveBookingMutation.mutateAsync(id);
   };
 
-  const reject = async (id: string) => {
-    const ok = window.confirm("Reject this booking?");
-    if (!ok) return;
+  const reject = (id: string) => {
+    setRejectId(id);
+    setRejectModalOpen(true);
+  };
 
-    await rejectBookingMutation.mutateAsync(id);
+  const handleRejectSubmit = async (reason: string) => {
+    if (!rejectId) return;
+    await rejectBookingMutation.mutateAsync({ id: rejectId, reason });
   };
 
   return (
@@ -521,6 +529,13 @@ export default function PendingBookingFeature() {
         onClose={closeModal}
         onApprove={approve}
         onReject={reject}
+      />
+
+      <RejectReasonModal
+        isOpen={rejectModalOpen}
+        onClose={() => setRejectModalOpen(false)}
+        onSubmit={handleRejectSubmit}
+        isLoading={rejectBookingMutation.isPending}
       />
     </div>
   );

@@ -208,7 +208,7 @@ const upsertIntoHistoryResponse = (
     ...response,
     data: mergedItems.slice(0, nextLimit),
     total: existed
-      ? response.total ?? response.data.length
+      ? (response.total ?? response.data.length)
       : (response.total ?? response.data.length) + 1,
   };
 };
@@ -224,12 +224,15 @@ const syncBookingRequestCaches = (
     (current) => removeFromBookingRequestResponse(current, targetId),
   );
 
-  const historyQueries = queryClient.getQueriesData<GetBookingRequestsResponse>({
-    queryKey: [QUERY_KEYS.BOOKING_REQUEST_HISTORY],
-  });
+  const historyQueries = queryClient.getQueriesData<GetBookingRequestsResponse>(
+    {
+      queryKey: [QUERY_KEYS.BOOKING_REQUEST_HISTORY],
+    },
+  );
 
   historyQueries.forEach(([queryKey, response]) => {
-    const params = (queryKey[1] as GetBookingRequestsRequest | undefined) ?? undefined;
+    const params =
+      (queryKey[1] as GetBookingRequestsRequest | undefined) ?? undefined;
 
     if (!matchesHistoryQuery(item, params)) {
       return;
@@ -287,7 +290,8 @@ export const useRejectBookingRequest = (
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => bookingRequestApi.rejectBookingRequest(id),
+    mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
+      bookingRequestApi.rejectBookingRequest(id, reason),
     onSuccess: (data) => {
       syncBookingRequestCaches(queryClient, data.data);
       invalidateBookingRequestQueries(queryClient);

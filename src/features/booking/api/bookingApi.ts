@@ -149,10 +149,11 @@ export const bookingRequestApi = {
       })
       .then((res) => res.data),
 
-  rejectBookingRequest: (id: string) =>
+  rejectBookingRequest: (id: string, reason?: string) =>
     axiosInstance
       .put<RejectBookingRequestResponse>(BOOKING_REQUEST_API.REJECT(id), {
         bookingId: id,
+        reason,
       })
       .then((res) => res.data),
 
