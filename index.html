@@ -3,16 +3,53 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="manifest" href="/manifest.json" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>bolab-fe-lab-room-management</title>
+    <meta name="theme-color" content="#2563eb" />
+    <meta name="description" content="Lab room booking and attendance management system with face recognition" />
+    
+    <!-- PWA Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="BOLAB" />
+    <link rel="apple-touch-icon" href="/pwa-192x192.png" />
+    
+    <!-- Browser Specific -->
+    <meta name="msapplication-TileImage" content="/pwa-192x192.png" />
+    <meta name="msapplication-TileColor" content="#2563eb" />
+    <meta name="msapplication-config" content="/browserconfig.xml" />
+    
+    <!-- Security & Permissions -->
+    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()" />
+    <meta name="referrer" content="no-referrer-when-downgrade" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    
+    <title>BOLAB - Lab Room Management</title>
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <!-- ml5.js - Machine Learning Library -->
+    <script src="https://unpkg.com/ml5@0.12.0/dist/ml5.min.js"></script>
   </head>
   <body class="dark:bg-gray-900">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script></script>
+    
+    <!-- PWA Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js', {
+            scope: '/',
+          }).then((registration) => {
+            console.log('ServiceWorker registered:', registration);
+          }).catch((error) => {
+            console.log('ServiceWorker registration failed:', error);
+          });
+        });
+      }
+    </script>
   </body>
 </html>

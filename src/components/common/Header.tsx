@@ -10,7 +10,7 @@ import { ActiveSessionIndicator } from '../ui/ActiveSessionIndicator';
 import { LoadingBar } from '../ui/LoadingBar';
 import { useActiveSession } from '../../context/ActiveSessionContext';
 
-const Header: React.FC = () => {
+const Header: React.FC<{ showBreadcrumb?: boolean }> = ({ showBreadcrumb = true }) => {
   const location = useLocation();
   const isHomePage = location.pathname === '/';
   const { activeSession } = useActiveSession();
@@ -105,7 +105,7 @@ const Header: React.FC = () => {
     </header>
 
     {/* Breadcrumb below header (only on non-home pages) */}
-    {!isHomePage && (
+    {!isHomePage && showBreadcrumb && (
       <div className="bg-gradient-to-r from-orange-50/50 via-white to-red-50/50 border-b border-orange-100 px-6 py-3 shadow-sm">
         <Breadcrumb />
       </div>

@@ -1,6 +1,7 @@
 /**
  * Attendance Feature Barrel Exports
  * BOLAB-30: QR Code Attendance System
+ * BOLAB-31: Face Recognition Attendance System
  */
 
 // Types
@@ -43,6 +44,20 @@ export {
   useExportAttendance,
   ATTENDANCE_KEYS,
 } from './hooks/useAttendance';
+
+// Face Detection Hooks
+export {
+  useCameraStream,
+} from './hooks/useCameraStream';
+
+export {
+  useMl5FaceDetection,
+} from './hooks/useMl5FaceDetection';
+
+// Components
+export {
+  FaceScanContainer,
+} from './components/FaceScanContainer';
 
 // Mock Data (for testing - remove in production)
 export {

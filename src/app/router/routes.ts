@@ -36,6 +36,9 @@ const ScanAttendancePage = lazy(
 const ManualAttendancePage = lazy(
   () => import("../../pages/lecturer/ManualAttendancePage.tsx"),
 );
+const CameraAttendancePage = lazy(
+  () => import("../../pages/labmanager/CameraAttendancePage.tsx"),
+);
 const ProfilePage = lazy(() => import("../../pages/lecturer/ProfilePage.tsx"));
 const StudentGroupsPage = lazy(
   () => import("../../pages/lecturer/StudentGroupsPage.tsx"),
@@ -136,6 +139,12 @@ export const appRoutes: AppRoute[] = [
   {
     path: "/attendance/manual/:sessionId",
     element: ManualAttendancePage,
+    isPrivate: true,
+    layout: "main",
+  },
+  {
+    path: "/attendance/camera",
+    element: CameraAttendancePage,
     isPrivate: true,
     layout: "main",
   },
