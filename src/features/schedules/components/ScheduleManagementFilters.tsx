@@ -1,18 +1,16 @@
-import { Filter, X } from "lucide-react";
-import type { ScheduleSessionStatus } from "../types/scheduleManagement.type";
-
-export type ScheduleFiltersState = {
-  labRoomId: string;
-  subjectId: string;
-  fromDate: string;
-  toDate: string;
-  status: ScheduleSessionStatus | "";
-  scheduleType: string;
-};
+import { Building2, DoorOpen, Filter, X } from "lucide-react";
+import type {
+  GetSchedulesFilters,
+  ScheduleStatus,
+} from "../types/schedule.type";
+import type { BuildingDto } from "../../building/types/building.type";
+import type { LabRoomDto } from "../../labroom/types/room.type";
 
 type Props = {
-  values: ScheduleFiltersState;
-  onChange: (next: ScheduleFiltersState) => void;
+  values: GetSchedulesFilters;
+  onChange: (next: GetSchedulesFilters) => void;
+  buildingOptions: BuildingDto[];
+  roomOptions: LabRoomDto[];
   onApply: () => void;
   onReset: () => void;
   showFilters: boolean;
@@ -20,8 +18,8 @@ type Props = {
   activeFilterCount: number;
 };
 
-const STATUS_OPTIONS: { value: ScheduleSessionStatus | ""; label: string }[] = [
-  { value: "", label: "All statuses" },
+const STATUS_OPTIONS: { value: ScheduleStatus | ""; label: string }[] = [
+  { value: "", label: "All status" },
   { value: "NotYet", label: "Not yet" },
   { value: "Active", label: "Active" },
   { value: "Finish", label: "Finish" },
@@ -30,13 +28,15 @@ const STATUS_OPTIONS: { value: ScheduleSessionStatus | ""; label: string }[] = [
 export default function ScheduleManagementFilters({
   values,
   onChange,
+  buildingOptions,
+  roomOptions,
   onApply,
   onReset,
   showFilters,
   onToggleFilters,
   activeFilterCount,
 }: Props) {
-  const patch = (partial: Partial<ScheduleFiltersState>) =>
+  const patch = (partial: Partial<GetSchedulesFilters>) =>
     onChange({ ...values, ...partial });
 
   return (
@@ -76,32 +76,60 @@ export default function ScheduleManagementFilters({
 
       {showFilters ? (
         <div className="grid gap-4 rounded-2xl border border-gray-200 bg-gray-50/80 p-4 dark:border-gray-800 dark:bg-white/[0.03] md:grid-cols-2 lg:grid-cols-3">
-          <label className="flex flex-col gap-1.5 text-sm">
+          <div className="flex flex-col gap-1.5 text-sm">
             <span className="font-medium text-gray-700 dark:text-gray-300">
-              Lab room ID
+              Building
             </span>
-            <input
-              type="number"
-              min={1}
-              value={values.labRoomId}
-              onChange={(e) => patch({ labRoomId: e.target.value })}
-              placeholder="e.g. 12"
-              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 shadow-sm outline-none focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-            />
-          </label>
+            <div className="relative">
+              <Building2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <select
+                value={String(values.buildingId)}
+                onChange={(e) => {
+                  const val =
+                    e.target.value === "ALL" ? "ALL" : Number(e.target.value);
+                  patch({ buildingId: val, labRoomId: "ALL" });
+                }}
+                className="w-full appearance-none rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-8 text-gray-900 shadow-sm outline-none transition-all focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+              >
+                <option value="ALL">All buildings</option>
+                {buildingOptions.map((b) => (
+                  <option key={String(b.id)} value={b.id}>
+                    {b.buildingName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
 
-          <label className="flex flex-col gap-1.5 text-sm">
+          <div className="flex flex-col gap-1.5 text-sm">
             <span className="font-medium text-gray-700 dark:text-gray-300">
-              Subject ID
+              Lab room
             </span>
-            <input
-              type="text"
-              value={values.subjectId}
-              onChange={(e) => patch({ subjectId: e.target.value })}
-              placeholder="Subject / course id"
-              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 shadow-sm outline-none focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-            />
-          </label>
+            <div className="relative">
+              <DoorOpen className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <select
+                value={String(values.labRoomId)}
+                onChange={(e) => {
+                  const val =
+                    e.target.value === "ALL" ? "ALL" : Number(e.target.value);
+                  patch({ labRoomId: val });
+                }}
+                disabled={values.buildingId === "ALL"}
+                className="w-full appearance-none rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-8 text-gray-900 shadow-sm outline-none transition-all focus:border-brand-500 disabled:bg-gray-100 disabled:text-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:disabled:bg-gray-700/50"
+              >
+                <option value="ALL">
+                  {values.buildingId === "ALL"
+                    ? "Select building first"
+                    : "All rooms"}
+                </option>
+                {roomOptions.map((r) => (
+                  <option key={r.id} value={String(r.id)}>
+                    {r.roomName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
 
           <label className="flex flex-col gap-1.5 text-sm">
             <span className="font-medium text-gray-700 dark:text-gray-300">
@@ -134,7 +162,7 @@ export default function ScheduleManagementFilters({
             <select
               value={values.status}
               onChange={(e) =>
-                patch({ status: e.target.value as ScheduleSessionStatus | "" })
+                patch({ status: e.target.value as ScheduleStatus | "" })
               }
               className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 shadow-sm outline-none focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
             >

@@ -3,6 +3,7 @@ import type { EventInput } from "@fullcalendar/core";
 
 import { labroomApi } from "../../labroom/api/labroom.api";
 import { useSchedules } from "../../schedules/hooks/useSchedules";
+import { getScheduleTypeValue } from "../../schedules/types/schedule.type";
 import { convertUTCStringToLocal } from "../../../utils/date.util";
 import { getRole } from "../../../utils/role";
 import { norm } from "../../../utils/status";
@@ -121,7 +122,9 @@ export default function LabCalendar() {
   }, [roomMetaMap, schedules]);
 
   const availableBuildings = useMemo(() => {
-    return Array.from(new Set(roomOptions.map((room) => room.buildingName))).sort();
+    return Array.from(
+      new Set(roomOptions.map((room) => room.buildingName)),
+    ).sort();
   }, [roomOptions]);
 
   const statusOptions = useMemo<LabCalendarSelectOption[]>(() => {
@@ -146,7 +149,7 @@ export default function LabCalendar() {
     const slotTypes = Array.from(
       new Set(
         schedules
-          .map((schedule) => buildLabel(schedule.type))
+          .map((schedule) => buildLabel(getScheduleTypeValue(schedule)))
           .filter((type) => type !== "Unknown"),
       ),
     ).sort();
@@ -213,7 +216,7 @@ export default function LabCalendar() {
 
       if (
         filters.selectedSlotType !== "ALL" &&
-        norm(ext.schedule.type) !== filters.selectedSlotType
+        norm(getScheduleTypeValue(ext.schedule)) !== filters.selectedSlotType
       ) {
         return false;
       }

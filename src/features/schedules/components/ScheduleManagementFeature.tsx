@@ -3,36 +3,39 @@ import { CalendarClock, Layers, Plus, RefreshCw } from "lucide-react";
 import { useToast } from "../../../hooks/useToast";
 import { getErrorMessage } from "../../../utils/error";
 import type { ScheduleDto } from "../types/schedule.type";
-import type { ScheduleManagementListParams } from "../types/scheduleManagement.type";
-import { useScheduleManagementList } from "../hooks/useScheduleManagementList";
+import type {
+  GetSchedulesFilters,
+  GetSchedulesParams,
+} from "../types/schedule.type";
 import {
   useCreateSchedule,
   useDeleteSchedule,
   useUpdateSchedule,
-} from "../hooks/useScheduleManagementMutations";
-import type { CreateSchedulePayload } from "../types/scheduleManagement.type";
+  useSchedules,
+} from "../hooks/useSchedules";
+import { useBuildings } from "../../building/hooks/useBuildings";
+import { useManagedLabRooms } from "../../labroom/hooks/useLabRooms";
+import type { CreateScheduleCommand } from "../types/schedule.type";
 import ScheduleFormModal from "./ScheduleFormModal";
-import ScheduleManagementFilters, {
-  type ScheduleFiltersState,
-} from "./ScheduleManagementFilters";
+import ScheduleManagementFilters from "./ScheduleManagementFilters";
 import ScheduleManagementTable from "./ScheduleManagementTable";
-import SlotTypeManagementPanel from "./SlotTypeManagementPanel";
+import SlotTypeManagementPanel from "../../slot/components/SlotTypeManagementPanel";
 
 const PAGE_SIZE = 10;
 
-const emptyFilters = (): ScheduleFiltersState => ({
-  labRoomId: "",
-  subjectId: "",
+const emptyFilters = (): GetSchedulesFilters => ({
+  buildingId: "ALL",
+  labRoomId: "ALL",
   fromDate: "",
   toDate: "",
   status: "",
   scheduleType: "",
 });
 
-function countActive(filters: ScheduleFiltersState): number {
+function countActive(filters: GetSchedulesFilters): number {
   return [
-    filters.labRoomId.trim() !== "",
-    filters.subjectId.trim() !== "",
+    filters.buildingId !== "ALL",
+    filters.labRoomId !== "ALL",
     filters.fromDate !== "",
     filters.toDate !== "",
     filters.status !== "",
@@ -42,21 +45,18 @@ function countActive(filters: ScheduleFiltersState): number {
 
 function toListParams(
   page: number,
-  filters: ScheduleFiltersState,
-): ScheduleManagementListParams {
+  filters: GetSchedulesFilters,
+): GetSchedulesParams {
   const labRoomId =
-    filters.labRoomId.trim() === ""
-      ? undefined
-      : Number(filters.labRoomId);
+    filters.labRoomId === "ALL" ? undefined : filters.labRoomId;
   return {
     pageNumber: page,
     pageSize: PAGE_SIZE,
-    labRoomId: Number.isFinite(labRoomId) ? labRoomId : undefined,
-    subjectId: filters.subjectId.trim() || undefined,
+    labRoomId: labRoomId,
     fromDate: filters.fromDate || undefined,
     toDate: filters.toDate || undefined,
-    status: filters.status || undefined,
-    scheduleType: filters.scheduleType.trim() || undefined,
+    status: filters.status === "" ? undefined : filters.status,
+    type: filters.scheduleType.trim() || undefined,
     sortBy: "startTime",
     isDescending: false,
   };
@@ -66,12 +66,10 @@ export default function ScheduleManagementFeature() {
   const toast = useToast();
   const [tab, setTab] = useState<"schedules" | "slots">("schedules");
   const [showFilters, setShowFilters] = useState(true);
-  const [draftFilters, setDraftFilters] = useState<ScheduleFiltersState>(
-    emptyFilters,
-  );
-  const [appliedFilters, setAppliedFilters] = useState<ScheduleFiltersState>(
-    emptyFilters,
-  );
+  const [draftFilters, setDraftFilters] =
+    useState<GetSchedulesFilters>(emptyFilters);
+  const [appliedFilters, setAppliedFilters] =
+    useState<GetSchedulesFilters>(emptyFilters);
   const [page, setPage] = useState(1);
 
   const deferredApplied = useDeferredValue(appliedFilters);
@@ -81,8 +79,10 @@ export default function ScheduleManagementFeature() {
     [page, deferredApplied],
   );
 
-  const { data, isLoading, isFetching, refetch } =
-    useScheduleManagementList(listParams, tab === "schedules");
+  const { data, isLoading, isFetching, refetch } = useSchedules(
+    listParams,
+    tab === "schedules",
+  );
 
   const rows = data?.items ?? [];
   const totalCount = data?.totalCount ?? 0;
@@ -96,7 +96,21 @@ export default function ScheduleManagementFeature() {
   const [selectedSchedule, setSelectedSchedule] = useState<ScheduleDto | null>(
     null,
   );
+  const [scheduleModalKey, setScheduleModalKey] = useState(0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { data: buildingsData } = useBuildings({
+    params: { pageNumber: 1, pageSize: 100 },
+  });
+  const buildingOptions = buildingsData?.items ?? [];
+
+  const { data: roomsData } = useManagedLabRooms({
+    buildingId:
+      draftFilters.buildingId === "ALL" ? undefined : draftFilters.buildingId,
+    pageNumber: 1,
+    pageSize: 100,
+  });
+  const roomOptions = roomsData?.items ?? [];
 
   const createMut = useCreateSchedule();
   const updateMut = useUpdateSchedule();
@@ -120,15 +134,17 @@ export default function ScheduleManagementFeature() {
     setScheduleModalMode("create");
     setSelectedSchedule(null);
     setScheduleModalOpen(true);
+    setScheduleModalKey((k) => k + 1);
   };
 
   const openEditSchedule = (row: ScheduleDto) => {
     setScheduleModalMode("edit");
     setSelectedSchedule(row);
     setScheduleModalOpen(true);
+    setScheduleModalKey((k) => k + 1);
   };
 
-  const handleSubmitSchedule = async (payload: CreateSchedulePayload) => {
+  const handleSubmitSchedule = async (payload: CreateScheduleCommand) => {
     try {
       if (scheduleModalMode === "create") {
         await createMut.mutateAsync(payload);
@@ -151,11 +167,7 @@ export default function ScheduleManagementFeature() {
   };
 
   const handleDeleteSchedule = async (row: ScheduleDto) => {
-    if (
-      !window.confirm(
-        `Delete schedule ${row.id}? This cannot be undone.`,
-      )
-    ) {
+    if (!window.confirm(`Delete schedule ${row.id}? This cannot be undone.`)) {
       return;
     }
     setDeletingId(row.id);
@@ -241,6 +253,8 @@ export default function ScheduleManagementFeature() {
           <ScheduleManagementFilters
             values={draftFilters}
             onChange={setDraftFilters}
+            buildingOptions={buildingOptions}
+            roomOptions={roomOptions}
             onApply={applyFilters}
             onReset={resetFilters}
             showFilters={showFilters}
@@ -261,9 +275,11 @@ export default function ScheduleManagementFeature() {
           />
 
           <ScheduleFormModal
+            key={scheduleModalKey}
             isOpen={scheduleModalOpen}
             mode={scheduleModalMode}
             schedule={selectedSchedule}
+            roomOptions={roomOptions}
             isLoading={scheduleBusy}
             onClose={() => {
               if (!scheduleBusy) {

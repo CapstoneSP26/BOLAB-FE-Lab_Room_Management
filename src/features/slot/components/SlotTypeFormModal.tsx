@@ -1,8 +1,7 @@
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useState } from "react";
 import { Loader2, PencilLine, Plus, PlusCircle, Trash2, X } from "lucide-react";
-import type { SlotType } from "../../slot/types/slot.types";
-import type { UpsertSlotTypePayload } from "../types/scheduleManagement.type";
-import { useCampusSelectOptions } from "../hooks/useCampusSelectOptions";
+import type { SlotType } from "../types/slot.types";
+import type { UpsertSlotTypePayload } from "../types/slot.types";
 
 type FrameRow = {
   id?: number;
@@ -36,9 +35,7 @@ function defaultFrames(slot?: SlotType | null): FrameRow[] {
       orderIndex: f.orderIndex ?? i,
     }));
   }
-  return [
-    { startTime: "07:00:00", endTime: "08:30:00", orderIndex: 0 },
-  ];
+  return [{ startTime: "07:00:00", endTime: "08:30:00", orderIndex: 0 }];
 }
 
 export default function SlotTypeFormModal({
@@ -49,29 +46,11 @@ export default function SlotTypeFormModal({
   onClose,
   onSubmit,
 }: Props) {
-  const [code, setCode] = useState("");
-  const [name, setName] = useState("");
-  /** Giá trị select: "" hoặc id campus (string) — payload gửi `campusId` số */
-  const [campusId, setCampusId] = useState("");
-  const [frames, setFrames] = useState<FrameRow[]>(() => defaultFrames(null));
-  const { options: campusOptions, isLoading: campusesLoading } =
-    useCampusSelectOptions();
-
-  useEffect(() => {
-    if (!isOpen) return;
-    if (mode === "edit" && slotType) {
-      setCode(slotType.code ?? "");
-      setName(slotType.name ?? "");
-      setCampusId("");
-      setFrames(defaultFrames(slotType));
-    } else {
-      setCode("");
-      setName("");
-      setCampusId("");
-      setFrames(defaultFrames(null));
-    }
-  }, [isOpen, mode, slotType]);
-
+  const [code, setCode] = useState(() => slotType?.code ?? "");
+  const [name, setName] = useState(() => slotType?.name ?? "");
+  const [frames, setFrames] = useState<FrameRow[]>(() =>
+    defaultFrames(slotType),
+  );
   if (!isOpen) return null;
 
   const addFrame = () => {
@@ -100,8 +79,6 @@ export default function SlotTypeFormModal({
     const payload: UpsertSlotTypePayload = {
       code: code.trim(),
       name: name.trim(),
-      campusId:
-        campusId.trim() === "" ? undefined : Number(campusId),
       slotFrames: frames.map((f, i) => ({
         id: f.id,
         startTime: normalizeTime(f.startTime),
@@ -173,25 +150,6 @@ export default function SlotTypeFormModal({
               />
             </label>
           </div>
-
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium text-gray-700 dark:text-gray-300">
-              Campus (optional)
-            </span>
-            <select
-              value={campusId}
-              onChange={(e) => setCampusId(e.target.value)}
-              disabled={campusesLoading}
-              className="rounded-lg border border-gray-200 px-3 py-2 text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-            >
-              <option value="">— None —</option>
-              {campusOptions.map((c) => (
-                <option key={c.id} value={String(c.id)}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">

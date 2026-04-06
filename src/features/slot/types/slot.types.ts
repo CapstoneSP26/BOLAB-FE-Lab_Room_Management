@@ -14,7 +14,7 @@ export interface SlotType {
 
 ///////////////
 export type SlotStatus = "Available" | "Booked" | "Pending" | "Maintenance";
-export type BookingMode = "OldSlot" | "OutSlot";
+export type BookingMode = "OldSlot" | "OutSlot" | "NewSlot";
 
 export interface TimeSlot {
   id: string;
@@ -68,4 +68,18 @@ export interface GetAvailableSlotsRequest {
 export interface GetAvailableSlotsResponse {
   slots: TimeSlot[];
   total: number;
+}
+
+export interface UpsertSlotFramePayload {
+  id?: number;
+  startTime: string;
+  endTime: string;
+  orderIndex: number;
+}
+
+export interface UpsertSlotTypePayload {
+  code: string;
+  name: string;
+  campusId?: number;
+  slotFrames: UpsertSlotFramePayload[];
 }

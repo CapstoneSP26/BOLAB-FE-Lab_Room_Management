@@ -1,5 +1,8 @@
 import type { PagedResponse } from "../../../types/pagination.types";
-import type { ScheduleDto } from "../../schedules/types/schedule.type";
+import {
+  getScheduleTypeValue,
+  type ScheduleDto,
+} from "../../schedules/types/schedule.type";
 import type {
   GetScheduleByIdResponse,
   GetScheduleListResponse,
@@ -11,7 +14,7 @@ export const mapScheduleDtoToCalendarSchedule = (dto: ScheduleDto): Schedule => 
   Id: dto.id,
   LecturerId: dto.userCode ?? "",
   LabRoomId: 0,
-  ScheduleType: dto.type ?? "",
+  ScheduleType: getScheduleTypeValue(dto),
   ScheduleStatus: dto.status ?? "",
   BuildingName: "",
   StartTime: dto.startTime,

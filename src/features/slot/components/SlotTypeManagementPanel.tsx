@@ -1,33 +1,20 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
-import type { SlotType } from "../../slot/types/slot.types";
+import type { SlotType, UpsertSlotTypePayload } from "../types/slot.types";
 import { useToast } from "../../../hooks/useToast";
 import { getErrorMessage } from "../../../utils/error";
-import { useCampusSelectOptions } from "../hooks/useCampusSelectOptions";
 import {
   useCreateSlotType,
   useDeleteSlotType,
   useSlotTypesForManagement,
   useUpdateSlotType,
-} from "../hooks/useSlotTypeManagement";
-import type { UpsertSlotTypePayload } from "../types/scheduleManagement.type";
+} from "../hooks/useSlotType";
 import SlotTypeFormModal from "./SlotTypeFormModal";
 
 export default function SlotTypeManagementPanel() {
   const toast = useToast();
-  /** "" = tất cả; khác thì là campusId gửi xuống API */
-  const [selectedCampusId, setSelectedCampusId] = useState("");
-  const campusIdForApi = useMemo(() => {
-    if (selectedCampusId.trim() === "") return undefined;
-    const n = Number(selectedCampusId);
-    return Number.isFinite(n) && n > 0 ? n : undefined;
-  }, [selectedCampusId]);
 
-  const { options: campusOptions, isLoading: campusesLoading } =
-    useCampusSelectOptions();
-
-  const { data, isLoading, isFetching, refetch } =
-    useSlotTypesForManagement(campusIdForApi);
+  const { data, isLoading, isFetching, refetch } = useSlotTypesForManagement();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
@@ -61,6 +48,7 @@ export default function SlotTypeManagementPanel() {
         await updateMut.mutateAsync({ id: selected.id, payload });
         toast.success("Updated", "Slot type has been updated.");
       }
+
       setModalOpen(false);
       setSelected(null);
     } catch (e) {
@@ -79,6 +67,7 @@ export default function SlotTypeManagementPanel() {
     ) {
       return;
     }
+
     try {
       await deleteMut.mutateAsync(st.id);
       toast.success("Deleted", "Slot type removed.");
@@ -97,22 +86,6 @@ export default function SlotTypeManagementPanel() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-            Campus
-            <select
-              value={selectedCampusId}
-              onChange={(e) => setSelectedCampusId(e.target.value)}
-              disabled={campusesLoading}
-              className="min-w-[200px] rounded-lg border border-gray-200 px-2 py-1.5 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-            >
-              <option value="">All campuses</option>
-              {campusOptions.map((c) => (
-                <option key={c.id} value={String(c.id)}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
           <button
             type="button"
             onClick={() => void refetch()}
@@ -122,6 +95,7 @@ export default function SlotTypeManagementPanel() {
             Refresh
           </button>
         </div>
+
         <button
           type="button"
           onClick={openCreate}
@@ -144,6 +118,7 @@ export default function SlotTypeManagementPanel() {
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
+
             <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
               {loading ? (
                 <tr>
@@ -186,6 +161,7 @@ export default function SlotTypeManagementPanel() {
                           <Pencil className="h-3.5 w-3.5" />
                           Edit
                         </button>
+
                         <button
                           type="button"
                           disabled={deleteMut.isPending}
@@ -206,6 +182,7 @@ export default function SlotTypeManagementPanel() {
       </div>
 
       <SlotTypeFormModal
+        key={`${modalMode}-${selected?.id ?? "create"}-${modalOpen ? "open" : "closed"}`}
         isOpen={modalOpen}
         mode={modalMode}
         slotType={selected}
