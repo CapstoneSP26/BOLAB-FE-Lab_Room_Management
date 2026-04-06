@@ -7,19 +7,11 @@ interface RecognitionResult {
   success: boolean;
   studentId: string;
   date: string;
+  image?: string; // base64 encoded image from backend
 }
 
-interface FaceScanContainerProps {
-  onFaceScanned?: (data: RecognitionResult) => void;
-  onError?: (error: string) => void;
-  isLoading?: boolean;
-  onCaptureComplete?: () => void;
-}
-
-interface RecognitionResult {
-  success: boolean;
-  studentId: string;
-  date: string;
+interface PendingRecognition {
+  result: RecognitionResult;
 }
 
 interface FaceScanContainerProps {
@@ -40,6 +32,7 @@ export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
   const [status, setStatus] = useState<'loading' | 'ready' | 'detecting' | 'error'>('loading');
   const [isProcessing, setIsProcessing] = useState(false);
   const [detectedCount, setDetectedCount] = useState(0);
+  const [pendingRecognition, setPendingRecognition] = useState<PendingRecognition | null>(null);
   const detectionIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastCaptureRef = useRef<number>(0);
   const CAPTURE_COOLDOWN = 500; // ms between detection checks
@@ -151,11 +144,11 @@ export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
               const result: RecognitionResult = await response.json();
               console.log('✅ API Response:', result);
 
-              // Process successful face recognition
+              // Process successful face recognition - show confirmation modal
               if (result.success && result.studentId) {
                 console.log('👤 Student matched:', result.studentId);
-                onFaceScanned?.(result);
-                onCaptureComplete?.();
+                setPendingRecognition({ result });
+                console.log('🖼️ Showing confirmation modal...');
               }
 
               setStatus('ready');
@@ -209,6 +202,25 @@ export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
         return 'Camera error';
       default:
         return 'Unknown status';
+    }
+  };
+
+  const handleConfirmRecognition = () => {
+    if (pendingRecognition) {
+      console.log('✅ Confirmed recognition for:', pendingRecognition.result.studentId);
+      onFaceScanned?.(pendingRecognition.result);
+      onCaptureComplete?.();
+      setPendingRecognition(null);
+    }
+  };
+
+  const handleRejectRecognition = () => {
+    if (pendingRecognition) {
+      console.log('❌ Rejected recognition');
+      setPendingRecognition(null);
+      setStatus('ready');
+      // Allow re-scanning: reset the timeout so we can detect this face again
+      clearTrackedFaces();
     }
   };
 
@@ -283,6 +295,73 @@ export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
           <p className="text-lg font-bold text-green-900">{isStreaming ? 'On' : 'Off'}</p>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      {pendingRecognition && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-2xl max-w-md w-full p-6 space-y-4">
+            {/* Title */}
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-900">Xác nhận nhận diện sinh viên</h3>
+              <button
+                onClick={handleRejectRecognition}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Captured Image */}
+            <div className="rounded-lg overflow-hidden bg-gray-100">
+              <img
+                src={
+                  pendingRecognition.result.image
+                    ? `data:image/png;base64,${pendingRecognition.result.image}`
+                    : 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><rect fill="%23f0f0f0" width="300" height="300"/><text x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%23999">No image</text></svg>'
+                }
+                alt="Captured face"
+                className="w-full h-auto"
+                style={{ maxHeight: '300px', objectFit: 'cover' }}
+              />
+            </div>
+
+            {/* Student Information */}
+            <div className="space-y-3 p-4 bg-blue-50 rounded-lg">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 font-medium">Mã sinh viên:</span>
+                <span className="text-lg font-bold text-blue-600">{pendingRecognition.result.studentId}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 font-medium">Thời gian:</span>
+                <span className="text-sm text-gray-700">
+                  {new Date(pendingRecognition.result.date).toLocaleTimeString()}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 font-medium">Trạng thái:</span>
+                <span className="px-3 py-1 bg-green-200 text-green-800 rounded-full text-sm font-semibold">✓ Thành công</span>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={handleRejectRecognition}
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Bỏ qua
+              </button>
+              <button
+                onClick={handleConfirmRecognition}
+                className="flex-1 px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+              >
+                <CheckCircle size={18} />
+                Xác nhận
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
