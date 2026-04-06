@@ -28,27 +28,23 @@ export const normalizeHeader = (value: string) =>
   value.trim().replace(/\s+/g, "").toLowerCase();
 
 export const normalizeRoleName = (value: string): string =>
-  value.trim().toUpperCase().replace(/[-\s]+/g, "_");
+  value.trim();
 
 // Header to field mapping
 const headerToField: Record<string, UserImportField> = {
   fullname: "FullName",
-  name: "FullName",
   email: "Email",
   usercode: "UserCode",
-  code: "UserCode",
   campuscode: "CampusCode",
-  campus: "CampusCode",
   rolenames: "RoleNames",
-  roles: "RoleNames",
 };
 
 const fieldAliasMap: Array<{ field: UserImportField; aliases: string[] }> = [
-  { field: "FullName", aliases: ["fullname", "name"] },
+  { field: "FullName", aliases: ["fullname"] },
   { field: "Email", aliases: ["email"] },
-  { field: "UserCode", aliases: ["usercode", "code"] },
-  { field: "CampusCode", aliases: ["campuscode", "campus"] },
-  { field: "RoleNames", aliases: ["rolenames", "roles"] },
+  { field: "UserCode", aliases: ["usercode"] },
+  { field: "CampusCode", aliases: ["campuscode"] },
+  { field: "RoleNames", aliases: ["rolenames"] },
 ];
 
 export const resolveFieldFromText = (text: string): UserImportField | null => {

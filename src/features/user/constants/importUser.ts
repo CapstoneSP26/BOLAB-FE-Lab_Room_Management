@@ -29,8 +29,9 @@ export const columnWidths = {
 
 // Common user roles in the system
 export const allowedRoles = new Set([
-  "LECTURER",
-  "LAB_MANAGER",
-  "ADMIN",
-  "STUDENT",
+  "Lecturer",
+  "Manager",
+  "Admin",
+  "Student",
+  "Lecturer,Manager"
 ]);

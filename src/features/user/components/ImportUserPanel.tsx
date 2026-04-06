@@ -237,9 +237,8 @@ export default function ImportUserPanel({ onImportComplete }: ImportUserPanelPro
 
       // Handle both PascalCase and camelCase response from backend
       const rowsData = (response.Rows ?? (response as any).rows) ?? [];
-
       rowsData.forEach((rowResult: any) => {
-        const rowNum = (rowResult.data?.index ?? rowResult.rowNumber ?? rowResult.RowNumber) ?? 0;
+        const rowNum = ((rowResult.data?.index ?? rowResult.rowNumber ?? rowResult.RowNumber) ?? 0) + 1;
         const errorsData = rowResult.Errors ?? rowResult.errors ?? [];
         errorsData.forEach((error: any) => {
           const resolvedField =
