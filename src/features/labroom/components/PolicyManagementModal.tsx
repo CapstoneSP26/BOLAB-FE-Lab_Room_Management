@@ -20,7 +20,7 @@ import {
   useRoomPolicies,
   useUpdateRoomPolicy,
 } from "../hooks/useLabRooms";
-import  type {LabRoomPolicy } from "../types/policy.type";
+import type { LabRoomPolicy } from "../types/policy.type";
 import type { LabRoomDto } from "../types/room.type";
 import { POLICY_META } from "../constants/policyManagementModal.constants";
 type Props = {
@@ -45,6 +45,7 @@ export default function PolicyManagementModal({
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [value, setValue] = useState("");
   const [valueError, setValueError] = useState("");
+  const [active, setActive] = useState(true);
 
   const {
     data: policies = [],
@@ -73,6 +74,7 @@ export default function PolicyManagementModal({
       if (editingKey) {
         setEditingKey(null);
         setValue("");
+        setValueError("");
       }
     },
     onError: (error) => {
@@ -103,6 +105,7 @@ export default function PolicyManagementModal({
     const key = getPolicyKey(policy);
     setEditingKey(key);
     setValue(policy.policyValue);
+    setActive(policy.isActive);
     setValueError("");
   };
 
@@ -110,6 +113,7 @@ export default function PolicyManagementModal({
     setEditingKey(null);
     setValue("");
     setValueError("");
+    setActive(true);
   };
 
   const handleSubmitValue = async (event: FormEvent) => {
@@ -119,7 +123,7 @@ export default function PolicyManagementModal({
     await updatePolicyMutation.mutateAsync({
       labRoomId: roomId,
       policyKey: effectiveEditingKey,
-      payload: { policyValue: value.trim() },
+      payload: { policyValue: value.trim(), isActive: active },
     });
   };
 
@@ -193,15 +197,12 @@ export default function PolicyManagementModal({
                   <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
                     {isAdmin ? (
                       <>
-                        Manage policies:{" "}
+                        You can only{" "}
                         <strong className="text-blue-600 dark:text-blue-400">
-                          update value
-                        </strong>{" "}
-                        and{" "}
-                        <strong className="text-red-600 dark:text-red-400">
-                          delete
-                        </strong>{" "}
-                          — do not create new policies from this interface.
+                          update the policy value
+                        </strong>
+                        . Lab room and policy key are fixed; policy create is
+                        not available from this interface.
                       </>
                     ) : (
                       <>View mode — cannot perform edit operations</>
@@ -241,8 +242,8 @@ export default function PolicyManagementModal({
                       </h3>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         {isAdmin
-                          ? "Nhấn Edit để sửa hoặc Delete để xóa"
-                          : "Xem danh sách các policies đã được cấu hình"}
+                          ? "Edit value or delete an existing policy"
+                          : "Configured policies for this room"}
                       </p>
                     </div>
                     <div className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-500/20 dark:to-purple-500/20 px-3.5 py-2 border border-blue-200 dark:border-blue-500/30">
@@ -278,7 +279,7 @@ export default function PolicyManagementModal({
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
                             {isAdmin
-                              ? "Policy được gán từ hệ thống — không thêm mới tại đây."
+                              ? "Policies are provisioned by the system — none listed for this room yet."
                               : "This room has no active policies"}
                           </p>
                         </div>
@@ -357,7 +358,7 @@ export default function PolicyManagementModal({
                                   className="inline-flex items-center gap-2 rounded-xl border-2 border-blue-200 bg-blue-50 px-4 py-2.5 text-xs font-bold text-blue-700 hover:bg-blue-100 hover:border-blue-300 disabled:opacity-50 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20 transition-all shadow-sm hover:shadow"
                                 >
                                   <Pencil className="h-3.5 w-3.5" />
-                                  Edit
+                                  Edit value
                                 </button>
                                 <button
                                   type="button"
@@ -383,7 +384,7 @@ export default function PolicyManagementModal({
               </div>
             </div>
 
-            {/* Right: Edit form (Admin only — không tạo policy mới) */}
+            {/* Right: Edit form (Admin — update policyValue only) */}
             {isAdmin && (
               <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-gradient-to-br from-gray-50/80 via-white to-gray-50/50 dark:from-gray-800/40 dark:via-gray-900/20 dark:to-gray-800/30 p-6 shadow-sm backdrop-blur-sm sticky top-0">
                 {effectiveEditingKey ? (
@@ -435,6 +436,27 @@ export default function PolicyManagementModal({
                         </div>
                       </div>
                     )}
+
+                    {/* Active Toggle */}
+                    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 p-4 shadow-sm">
+                      <label className="flex items-center justify-between gap-3">
+                        <div>
+                          <div className="text-sm font-bold text-gray-900 dark:text-white">
+                            Active
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            Toggle whether this policy is enabled for the room.
+                          </div>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={active}
+                          onChange={(e) => setActive(e.target.checked)}
+                          disabled={isSubmitting}
+                          className="h-5 w-5 accent-blue-600"
+                        />
+                      </label>
+                    </div>
 
                     {/* Value Input */}
                     <div>

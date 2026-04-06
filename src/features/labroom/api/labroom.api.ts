@@ -1,8 +1,7 @@
 import axiosInstance from "../../../api/axios";
 import type {
   LabRoomPolicy,
-  LabRoomPolicyMutationPayload,
-  LabRoomPolicyValuePayload,
+  LabRoomPolicyUpdatePayload,
 } from "../types/policy.type";
 import type {
   CreateLabRoomRequest,
@@ -13,8 +12,7 @@ import type {
 import {
   mapLabRoomDto,
   mapLabRoomPayload,
-  mapLabRoomPolicyPayload,
-  mapLabRoomPolicyValuePayload,
+  mapLabRoomPolicyUpdatePayload,
   normalizeLabRoomPolicies,
   normalizeLabRoomsPagedResponse,
 } from "../types/room.mapper";
@@ -77,31 +75,15 @@ export const labroomApi = {
   deleteRoom: (id: number) =>
     axiosInstance.delete(LABROOM_API.DETAIL(id)).then(() => undefined),
 
-  createLabPolicy: (
-    labRoomId: number,
-    payload: LabRoomPolicyMutationPayload,
-  ): Promise<LabRoomPolicy> =>
-    axiosInstance
-      .post(LABROOM_API.POLICIES(labRoomId), mapLabRoomPolicyPayload(payload))
-      .then(
-        (response) =>
-          normalizeLabRoomPolicies(response.data)[0] ?? {
-            labRoomId,
-            policyKey: payload.policyKey,
-            policyKeyName: payload.policyKey,
-            policyValue: payload.policyValue,
-          },
-      ),
-
   updateLabPolicy: (
     labRoomId: number,
     policyKey: string,
-    payload: LabRoomPolicyValuePayload,
+    payload: LabRoomPolicyUpdatePayload,
   ): Promise<LabRoomPolicy> =>
     axiosInstance
       .put(
         LABROOM_API.POLICY_DETAIL(labRoomId, policyKey),
-        mapLabRoomPolicyValuePayload(payload),
+        mapLabRoomPolicyUpdatePayload(payload),
       )
       .then(
         (response) =>
@@ -109,7 +91,8 @@ export const labroomApi = {
             labRoomId,
             policyKey: policyKey as LabRoomPolicy["policyKey"],
             policyKeyName: policyKey,
-            policyValue: payload.policyValue,
+            policyValue: payload.policyValue ?? "",
+            isActive: payload.isActive ?? true,
           },
       ),
 

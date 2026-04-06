@@ -6,11 +6,7 @@ import type {
   LabRoomFormValues,
   UpdateLabRoomRequest,
 } from "./room.type";
-import type {
-  LabRoomPolicy,
-  LabRoomPolicyMutationPayload,
-  LabRoomPolicyValuePayload,
-} from "./policy.type";
+import type { LabRoomPolicy, LabRoomPolicyUpdatePayload } from "./policy.type";
 import { PolicyType } from "./policy.type";
 import { isPolicyType, normalizePolicyKeyFromApi } from "../utils/policy.util";
 
@@ -278,19 +274,14 @@ export const mapLabRoomPayload = (
   isActive: payload.isActive ?? true,
 });
 
-export const mapLabRoomPolicyPayload = (
-  payload: LabRoomPolicyMutationPayload,
+/** PUT policy: body contains updatable fields except labRoomId/policyKey (on URL). */
+export const mapLabRoomPolicyUpdatePayload = (
+  payload: LabRoomPolicyUpdatePayload,
 ) => ({
-  ...(payload.labRoomId != null ? { labRoomId: payload.labRoomId } : {}),
-  policyKey: payload.policyKey,
-  policyValue: payload.policyValue.trim(),
-});
-
-/** PUT policy: body chỉ có PolicyValue — labRoomId & policyKey trên URL */
-export const mapLabRoomPolicyValuePayload = (
-  payload: LabRoomPolicyValuePayload,
-) => ({
-  policyValue: payload.policyValue.trim(),
+  ...(payload.policyValue !== undefined
+    ? { policyValue: payload.policyValue.trim() }
+    : {}),
+  ...(payload.isActive !== undefined ? { isActive: payload.isActive } : {}),
 });
 
 export const getDefaultLabRoomFormValues = (
