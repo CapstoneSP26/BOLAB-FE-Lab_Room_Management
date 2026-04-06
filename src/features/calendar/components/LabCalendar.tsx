@@ -12,18 +12,18 @@ import type {
 import { labSchedulerApi } from "../api/labSchedulerApi";
 import type { Schedule } from "../type";
 
-import type { Booking } from "../../schedules/type";
+import type { Booking } from "../../schedules/types/schedule.type";
 import {
   getBookingRequests,
   getBookingRequestHistory,
-} from "../../schedules/api/bookingRequestApi";
+} from "../../booking/api/bookingRequestApi";
 
 import { norm, statusClass, statusDot } from "../../../utils/status";
 
 import { useScheduleData } from "../../booking/hooks/useBookingData";
 import { useLabManagerBookingModal } from "../../booking/hooks/useLabManagerBookingModal";
 
-import BookingEditModal from "../../schedules/bookings/components/BookingEditModal";
+import BookingEditModal from "../../booking/components/BookingEditModal";
 import CsvImportModal from "./CSVImportModal";
 
 type ExtProps = {

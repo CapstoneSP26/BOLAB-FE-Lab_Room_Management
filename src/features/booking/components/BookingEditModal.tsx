@@ -4,7 +4,7 @@ import type {
   ScheduleType,
   ScheduleStatus,
 } from "../../calendar/types/calendar.type";
-import { useToast } from "../../../../hooks/useToast";
+import { useToast } from "../../../hooks/useToast";
 
 type Props = {
   open: boolean;
