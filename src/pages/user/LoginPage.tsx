@@ -27,7 +27,9 @@ export default function LoginPage() {
   };
 
   const LoginGoogle = () => {
-    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/login/google?returnUrl=${encodeURIComponent(window.location.origin)}`;
+    window.location.href =
+      "https://bolab-be-lab-room-management.onrender.com/api/Auth/login/google?returnUrl=" +
+      encodeURIComponent("https://bolab-fe-lab-room-management.vercel.app");
   };
 
   return (
