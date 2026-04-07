@@ -1,99 +1,114 @@
-// ===== DOMAIN MODELS =====
+/**
+ * ===== DOMAIN MODELS (from Backend Entities) =====
+ * These types are aligned with the backend C# entities
+ */
 
-export interface StudentGroup {
-  id: string;
-  name: string;
-  studentCount: number;
-  previewStudents?: StudentInGroup[];
-  createdAt?: string;
+/** Group DTO from backend */
+export interface GroupDto {
+  id: string; // GUID
+  groupName: string;
+  ownerId: string; // GUID - Lecturer ID
+  isDeleted: boolean;
+  createdAt: string;
+  createdBy: string; // GUID
   updatedAt?: string;
+  updatedBy?: string;
 }
 
-export interface StudentInGroup {
-  studentId: string;
-  studentCode: string;
+/** Group with owner details (for listing) */
+export interface Group extends GroupDto {
+  ownerName?: string;
+  memberCount?: number;
+  members?: GroupMemberDto[];
+}
+
+/** GroupMember DTO from backend */
+export interface GroupMemberDto {
+  id: string; // GUID
+  groupId: string; // GUID
+  userId: string; // GUID - Student ID
+  subjectCode?: string; // Teacher's subject code for the student
+  group?: GroupDto;
+  user?: UserInfo;
+}
+
+/** User info embedded in responses */
+export interface UserInfo {
+  id: string; // GUID
   fullName: string;
   email?: string;
   avatarUrl?: string;
+  studentCode?: string; // For students
 }
 
-// ===== API REQUEST/RESPONSE TYPES =====
+/**
+ * ===== API REQUEST TYPES =====
+ */
 
-export interface GetStudentGroupsRequest {
-  lecturerId?: string;
+export interface GetGroupsParams {
   searchQuery?: string;
-  sortBy?: 'name' | 'count';
+  sortBy?: 'name' | 'memberCount' | 'createdAt';
   sortOrder?: 'asc' | 'desc';
+  page?: number;
+  pageSize?: number;
 }
 
-export interface GetStudentGroupsResponse {
-  groups: StudentGroup[];
+export interface CreateGroupRequest {
+  groupName: string;
+}
+
+export interface UpdateGroupRequest {
+  groupId: string;
+  groupName: string;
+}
+
+export interface DeleteGroupRequest {
+  groupId: string;
+}
+
+export interface AddGroupMemberRequest {
+  groupId: string;
+  userId: string;
+  subjectCode?: string;
+}
+
+export interface UpdateGroupMemberRequest {
+  groupId: string;
+  userId: string;
+  subjectCode?: string;
+}
+
+export interface RemoveGroupMemberRequest {
+  groupId: string;
+  userId: string;
+}
+
+/**
+ * ===== API RESPONSE TYPES =====
+ */
+
+export interface ApiResponse<T> {
+  data: T;
+  message?: string;
+  status: number;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
   total: number;
+  pageNumber: number;
+  pageSize: number;
 }
 
-export interface CreateStudentGroupRequest {
-  name: string;
-}
+export type GetGroupsResponse = PaginatedResponse<Group>;
+export type GetGroupMembersResponse = PaginatedResponse<GroupMemberDto>;
 
-export interface CreateStudentGroupResponse {
-  success: boolean;
-  group: StudentGroup;
-  message: string;
-}
-
-export interface UpdateStudentGroupRequest {
-  id: string;
-  name: string;
-}
-
-export interface UpdateStudentGroupResponse {
-  success: boolean;
-  group: StudentGroup;
-  message: string;
-}
-
-export interface DeleteStudentGroupRequest {
-  id: string;
-}
-
-export interface DeleteStudentGroupResponse {
-  success: boolean;
-  message: string;
-}
-
-export interface GetGroupStudentsRequest {
-  groupId: string;
-}
-
-export interface GetGroupStudentsResponse {
-  students: StudentInGroup[];
-  total: number;
-}
-
-export interface AddStudentToGroupRequest {
-  groupId: string;
-  studentId: string;
-}
-
-export interface AddStudentToGroupResponse {
-  success: boolean;
-  message: string;
-}
-
-export interface RemoveStudentFromGroupRequest {
-  groupId: string;
-  studentId: string;
-}
-
-export interface RemoveStudentFromGroupResponse {
-  success: boolean;
-  message: string;
-}
-
-// ===== FILTER & SEARCH STATE =====
+/**
+ * ===== FILTER & SEARCH STATE =====
+ */
 
 export interface GroupFilterState {
-  searchQuery: string;
-  sortBy: 'name' | 'count';
-  sortOrder: 'asc' | 'desc';
+  searchQuery?: string;
+  sortBy?: 'name' | 'memberCount' | 'createdAt';
+  sortOrder?: 'asc' | 'desc';
 }
