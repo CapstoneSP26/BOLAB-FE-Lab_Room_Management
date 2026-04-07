@@ -10,8 +10,29 @@ export type {
   BookingStats,
   BookingStatus,
   BookingStatusFilter,
-  RequestStatus,
 } from './types/booking.type';
+export type {
+  ScheduleImportDto,
+  OldNewSlotImportDto,
+  FlexibleSlotImportDto,
+  ErrorSeverity,
+  RowError,
+  RowResult,
+  ImportValidationResult,
+  ValidateImportQuery,
+  CommitImportCommand,
+  ValidateFlexibleSlotImportRequest,
+  CommitFlexibleSlotImportRequest,
+  CommitScheduleImportResponse,
+  UploadResultType,
+  ValidationIssue,
+  EditableRow,
+  FlexibleEditableRow,
+  EditableField,
+  FlexibleField,
+  ValidationErrors,
+  PageMeta,
+} from './types/importBooking.type';
 
 // Hooks
 export { useBookings } from './hooks/useBooking';
@@ -20,6 +41,7 @@ export { useUpcomingBookings } from './hooks/useUpcomingBookings';
 export { useBookingStats } from './hooks/useBookingStats';
 export { useRecentRequests } from './hooks/useRecentRequests';
 export { useBookingHistory } from './hooks/useBookingHistory';
+export { useBookingImport } from './hooks/useBookingImport';
 
 // Components
 export { UpcomingBookingCard } from './components/UpcomingBookingCard';
@@ -28,3 +50,4 @@ export { RecentRequestCard } from './components/RecentRequestCard';
 export { BookingDashboard } from './components/BookingDashboard';
 export { BookingCalendar } from './components/BookingCalendar';
 export { BookingDetailsModal } from './components/BookingDetailsModal';
+export { ImportBookingFeature, FixedImportPanel, FlexibleImportPanel } from './components';

@@ -50,6 +50,34 @@ export const useAttendanceManagementState = ({
     return isAttendanceMockMode ? MOCK_LECTURER_BOOKINGS : [];
   }, [bookingScheduleData, bookingScheduleItems, isAttendanceMockMode]);
 
+  // MOCK MODE: Simplify - luôn dùng mock session & booking đầu tiên
+  if (isAttendanceMockMode) {
+    const mockBooking = bookings[0];
+
+    useEffect(() => {
+      setActiveSession(MOCK_QR_SESSION);
+    }, [setActiveSession]);
+
+    const session = MOCK_QR_SESSION;
+    const actionBooking = mockBooking || null;
+    const attendanceStats = session;
+    const totalStudents = attendanceStats?.totalStudents ?? 0;
+    const presentStudents = attendanceStats?.presentCount ?? 0;
+    const absentStudents = attendanceStats?.absentCount ?? Math.max(totalStudents - presentStudents, 0);
+    const scanUrl = `${window.location.origin}/scan-attendance/${session.id}?token=${encodeURIComponent(session.qrToken)}&mockAttendance=1`;
+
+    return {
+      bookings,
+      session,
+      actionBooking,
+      scanUrl,
+      totalStudents,
+      presentStudents,
+      absentStudents,
+    };
+  }
+
+  // PRODUCTION MODE: Original complex logic
   const activeRoomNamesFromSchedule = useMemo(() => {
     if (bookingScheduleItems.length === 0) {
       return new Set(

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
-import { useStudentGroups, useGroupStudents, useAddStudentToGroup, useRemoveStudentFromGroup } from '../../features/groups/hooks/useStudentGroups';
+import { useGroups, useGroupMembers, useAddGroupMember, useRemoveGroupMember } from '../../features/groups';
 import GroupStats from '../../features/groups/components/GroupStats';
 import GroupStudentsTable from '../../features/groups/components/GroupStudentsTable';
 import GroupStudentsModal from '../../features/groups/components/GroupStudentsModal';
@@ -14,23 +14,23 @@ const GroupOverviewPage: React.FC = () => {
   const appAlert = useToast();
 
   // Get all groups to find the selected one
-  const { data: groupsData, isLoading: isLoadingGroups } = useStudentGroups({
+  const { data: groupsData, isLoading: isLoadingGroups } = useGroups({
     params: {
       searchQuery: '',
-      sortBy: 'name',
-      sortOrder: 'asc',
+      sortBy: 'name' as const,
+      sortOrder: 'asc' as const,
     },
   });
 
-  const selectedGroup = groupsData?.groups.find((g) => g.id === groupId);
+  const selectedGroup = groupsData?.items.find((g) => g.id === groupId);
 
   // Get students in the group
-  const { data: studentsData, isLoading: isLoadingStudents } = useGroupStudents({
+  const { data: membersData, isLoading: isLoadingStudents } = useGroupMembers({
     groupId: groupId || '',
     enabled: !!groupId,
   });
 
-  const removeStudentMutation = useRemoveStudentFromGroup({
+  const removeStudentMutation = useRemoveGroupMember({
     onSuccess: () => {
       appAlert.success('Success', 'Student removed successfully!');
     },
@@ -39,7 +39,7 @@ const GroupOverviewPage: React.FC = () => {
     },
   });
 
-  const addStudentMutation = useAddStudentToGroup({
+  const addStudentMutation = useAddGroupMember({
     onSuccess: () => {
       appAlert.success('Success', 'Student added successfully!');
       setShowAddStudentModal(false);
@@ -49,14 +49,14 @@ const GroupOverviewPage: React.FC = () => {
     },
   });
 
-  const students = studentsData?.students || [];
+  const students = membersData?.items || [];
 
   const handleRemoveStudent = async (studentId: string): Promise<void> => {
     if (!selectedGroup) return;
 
     await removeStudentMutation.mutateAsync({
       groupId: selectedGroup.id,
-      studentId,
+      userId: studentId,
     });
   };
 
@@ -64,7 +64,7 @@ const GroupOverviewPage: React.FC = () => {
     if (!selectedGroup) return;
     await addStudentMutation.mutateAsync({
       groupId: selectedGroup.id,
-      studentId,
+      userId: studentId,
     });
   };
 
@@ -90,7 +90,7 @@ const GroupOverviewPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Group Overview</h1>
-              <p className="text-gray-600 mt-1">Manage students and view activity for group <strong>{selectedGroup.name}</strong></p>
+              <p className="text-gray-600 mt-1">Manage students and view activity for group <strong>{selectedGroup.groupName}</strong></p>
             </div>
           </div>
         </div>
@@ -105,7 +105,7 @@ const GroupOverviewPage: React.FC = () => {
         <div className="space-y-4">
           <div className="flex items-center justify-between bg-white p-4 rounded-lg border border-gray-200">
             <div>
-              <h2 className="text-xl font-bold text-gray-900">Students in group {selectedGroup.name}</h2>
+              <h2 className="text-xl font-bold text-gray-900">Students in group {selectedGroup.groupName}</h2>
               <p className="text-sm text-gray-600 mt-1">Total: {students.length} students</p>
             </div>
             <div className="flex gap-3">

@@ -16,6 +16,8 @@ import {
   updateBookingRequestStatus,
 } from "../api/bookingRequestApi";
 import type { BookingRequest, BookingStatus } from "../types/booking.type";
+import { useRejectBooking } from "../hooks/useRejectBooking";
+import { useApproveBooking } from "../hooks/useApproveBooking";
 
 type SlotTypeFilter = "ALL" | number;
 
@@ -37,6 +39,9 @@ export default function PendingBookingFeature() {
   const [selected, setSelected] = useState<BookingRequest | null>(null);
 
   const [showFilters, setShowFilters] = useState(false);
+
+  const { mutate: approve } = useApproveBooking();
+  const { mutate: reject } = useRejectBooking();
 
   const closeModal = () => {
     setOpen(false);
@@ -126,20 +131,21 @@ export default function PendingBookingFeature() {
     );
   }, [q, buildingId, roomId, slotType]);
 
-  const approve = async (id: string) => {
+  const HandleApprove = async (id: string) => {
     const ok = window.confirm("Approve this booking?");
     if (!ok) return;
 
-    await updateBookingRequestStatus(id, { status: "APPROVED" });
+    approve(id);
     setItems((prev) => prev.filter((x) => String(x.id) !== id));
     closeModal();
   };
 
-  const reject = async (id: string) => {
+
+
+  const handleConfirmReject = async (id: string) => {
     const ok = window.confirm("Reject this booking?");
     if (!ok) return;
-
-    await updateBookingRequestStatus(id, { status: "REJECTED" });
+    reject({ id: id, "reason": "Rejected by Lab Manager" });
     setItems((prev) => prev.filter((x) => String(x.id) !== id));
     closeModal();
   };
@@ -368,11 +374,10 @@ export default function PendingBookingFeature() {
         </div>
 
         <div
-          className={`transition-all duration-300 ease-in-out ${
-            showFilters
-              ? "max-h-[1000px] opacity-100"
-              : "max-h-0 overflow-hidden opacity-0"
-          }`}
+          className={`transition-all duration-300 ease-in-out ${showFilters
+            ? "max-h-[1000px] opacity-100"
+            : "max-h-0 overflow-hidden opacity-0"
+            }`}
         >
           <div className="border-t border-gray-200 p-6 dark:border-gray-700">
             <BookingFilters
@@ -454,8 +459,8 @@ export default function PendingBookingFeature() {
                 setSelected(b);
                 setOpen(true);
               }}
-              onApprove={approve}
-              onReject={reject}
+              onApprove={HandleApprove}
+              onReject={handleConfirmReject}
             />
           </div>
         )}
@@ -496,8 +501,8 @@ export default function PendingBookingFeature() {
         open={open}
         booking={selected}
         onClose={closeModal}
-        onApprove={approve}
-        onReject={reject}
+        onApprove={HandleApprove}
+        onReject={handleConfirmReject}
       />
     </div>
   );

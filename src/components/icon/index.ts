@@ -4,6 +4,7 @@ import ListIcon from "./ListIcon";
 import UserCircleIcon from "./UserCircleIcon";
 import IncidentHistoryIcon from "./IncidentHistoryIcon";
 import ListBookingRequest from "./ListBookingRequestIcon";
+import ImportFileIcon from "./ImportFileIcon";
 import { FPTLogo } from "./FPTLogo";
 export {
   GridIcon,
@@ -12,5 +13,6 @@ export {
   UserCircleIcon,
   IncidentHistoryIcon,
   ListBookingRequest,
+  ImportFileIcon,
   FPTLogo,
 };

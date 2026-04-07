@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { X, Loader2 } from 'lucide-react';
-import type { StudentGroup } from '../types/types';
+import type { Group } from '../types/types';
 
 interface CreateGroupModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: { name: string }) => Promise<void>;
   isLoading?: boolean;
-  existingGroups?: StudentGroup[];
+  existingGroups?: Group[];
 }
 
 export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
@@ -32,7 +32,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
 
     if (!name.trim()) {
       newErrors.name = 'Group name is required';
-    } else if (existingGroups.some((g) => g.name.toLowerCase() === name.toLowerCase())) {
+    } else if (existingGroups.some((g) => g.groupName.toLowerCase() === name.toLowerCase())) {
       newErrors.name = 'This group name already exists';
     }
 

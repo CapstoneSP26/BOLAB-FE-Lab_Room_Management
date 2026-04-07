@@ -6,7 +6,8 @@
 import type { QRSession, BookingWithQR, StudentAttendance } from '../types/attendance.type';
 
 /**
- * Mock QR Session
+ * Mock QR Session - Thời gian UTC cố định: 00:00 - 23:59 (suốt ngày)
+ * Để test dễ dàng không phụ thuộc vào thời gian hiện tại
  */
 export const MOCK_QR_SESSION: QRSession = {
   id: 'qr-session-001',
@@ -15,8 +16,8 @@ export const MOCK_QR_SESSION: QRSession = {
   roomCode: 'L501',
   buildingName: 'Alpha Building',
   date: new Date().toISOString(),
-  startTime: '08:00',
-  endTime: '10:00',
+  startTime: '00:00',      // UTC 00:00 (suốt ngày)
+  endTime: '23:59',        // UTC 23:59 (suốt ngày)
   lecturerName: 'Nguyễn Văn A',
   lecturerId: 'lecturer-001',
   qrToken: 'QR_SESSION_TOKEN_ABC123XYZ_' + Date.now(), // Unique token
@@ -88,22 +89,23 @@ export const MOCK_STUDENT_ATTENDANCE: StudentAttendance[] = [
 
 /**
  * Mock Lecturer Bookings (with QR status)
+ * Booking đầu tiên có thời gian động - luôn active khi test
  */
 export const MOCK_LECTURER_BOOKINGS: BookingWithQR[] = [
-  // Upcoming - Has QR Session
+  // ACTIVE - Has QR Session (UTC 00:00 - 23:59 - suốt ngày)
   {
     bookingId: '4ffb7dc4-3aab-40a0-95fd-70f4192ddc76',
     roomName: 'Lab 501',
     roomCode: 'L501',
     buildingName: 'Alpha Building',
     date: new Date().toISOString(),
-    startTime: '08:00',
-    endTime: '10:00',
+    startTime: '00:00',      // UTC 00:00
+    endTime: '23:59',        // UTC 23:59
     status: 'Active',
     purpose: 'Lập trình Web - Buổi thực hành 5',
     hasQRSession: true,
     qrSessionId: 'qr-session-001',
-    isUpcoming: true,
+    isUpcoming: false,
     isPast: false,
   },
   // Upcoming - No QR yet

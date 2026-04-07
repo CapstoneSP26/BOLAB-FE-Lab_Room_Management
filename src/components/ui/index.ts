@@ -6,6 +6,7 @@ export { Toast } from './Toast';
 export { ToastContainer } from './ToastContainer';
 export { ErrorBoundary } from './ErrorBoundary';
 export { LoadingFallback } from './LoadingFallback';
+export { LoadingBar } from './LoadingBar';
 export { Breadcrumb } from './Breadcrumb';
 export { RoomStatusBadge } from './RoomStatusBadge';
 export { ActiveSessionIndicator } from './ActiveSessionIndicator';

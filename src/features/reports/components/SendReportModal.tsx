@@ -48,7 +48,11 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({
 
   // Fetch rooms for dropdown
   const { data: buildingsData, isLoading: buildingsLoading } = useBuildings();
-  const { data: roomsData, isLoading: roomsLoading } = useLabRooms({});
+  const { data: roomsData, isLoading: roomsLoading } = useLabRooms(
+    selectedBuildingId 
+      ? { buildingId: parseInt(selectedBuildingId), includeBuilding: true }
+      : undefined
+  );
   const { data: reasonsData, isLoading: reasonsLoading } = useReportReasons();
 
   // Create report mutation

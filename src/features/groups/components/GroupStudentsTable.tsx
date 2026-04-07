@@ -1,9 +1,9 @@
 import React from 'react';
 import { Trash2 } from 'lucide-react';
-import type { StudentInGroup } from '../types/types';
+import type { GroupMemberDto } from '../types/types';
 
 interface GroupStudentsTableProps {
-  students: StudentInGroup[];
+  students: GroupMemberDto[];
   isLoading?: boolean;
   onRemoveStudent?: (studentId: string) => Promise<void>;
 }
@@ -62,32 +62,32 @@ export const GroupStudentsTable: React.FC<GroupStudentsTableProps> = ({
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
-          {students.map((student, index) => (
-            <tr key={student.studentId} className="hover:bg-gray-50 transition">
+          {students.map((member, index) => (
+            <tr key={member.id} className="hover:bg-gray-50 transition">
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                 {index + 1}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                {student.avatarUrl ? (
+                {member.user?.avatarUrl ? (
                   <img
-                    src={student.avatarUrl}
-                    alt={student.fullName}
+                    src={member.user.avatarUrl}
+                    alt={member.user.fullName}
                     className="w-10 h-10 rounded-full object-cover border border-gray-200"
                   />
                 ) : (
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm">
-                    {student.fullName.charAt(0).toUpperCase()}
+                    {member.user?.fullName?.charAt(0)?.toUpperCase()}
                   </div>
                 )}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                {student.fullName}
+                {member.user?.fullName}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                {student.studentCode}
+                {member.user?.studentCode}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                {student.email || '-'}
+                {member.user?.email || '-'}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -96,8 +96,8 @@ export const GroupStudentsTable: React.FC<GroupStudentsTableProps> = ({
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm">
                 <button
-                  onClick={() => handleRemove(student.studentId)}
-                  disabled={isLoading || removingStudentId === student.studentId}
+                  onClick={() => handleRemove(member.userId)}
+                  disabled={isLoading || removingStudentId === member.userId}
                   className="px-3 py-1 text-sm text-red-600 bg-red-50 rounded hover:bg-red-100 transition disabled:cursor-not-allowed disabled:text-gray-400 flex items-center gap-1"
                   title="Remove student"
                 >
