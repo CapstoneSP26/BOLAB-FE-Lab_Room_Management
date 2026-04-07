@@ -12,7 +12,6 @@ import {
 } from "../utils/storage";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string | undefined;
-console.log("VITE_API_BASE_URL =", API_BASE_URL);
 
 const axiosInstance: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -34,9 +33,6 @@ axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = getAccessToken();
 
-    console.log("Request baseURL:", config.baseURL);
-    console.log("Request url:", config.url);
-    console.log("Full request:", `${config.baseURL}${config.url}`);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
