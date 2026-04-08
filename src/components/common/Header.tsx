@@ -9,11 +9,42 @@ import { Breadcrumb } from '../ui/Breadcrumb';
 import { ActiveSessionIndicator } from '../ui/ActiveSessionIndicator';
 import { LoadingBar } from '../ui/LoadingBar';
 import { useActiveSession } from '../../context/ActiveSessionContext';
+import { useMyProfile } from '../../features/profile/hooks/userProfile';
+import { useAuthStore } from '../../store/useAuthStore';
+
+const formatRoleLabel = (role?: string | null) => {
+  if (!role?.trim()) return 'User';
+
+  return role
+    .trim()
+    .toLowerCase()
+    .replace(/[_-]+/g, ' ')
+    .split(' ')
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
 
 const Header: React.FC = () => {
   const location = useLocation();
   const isHomePage = location.pathname === '/';
   const { activeSession } = useActiveSession();
+  const authUser = useAuthStore((state) => state.user);
+  const { data: profile } = useMyProfile(Boolean(authUser));
+
+  const userName =
+    profile?.fullName?.trim() ||
+    authUser?.sub?.trim() ||
+    authUser?.email?.trim() ||
+    'User';
+
+  const rawRole = profile?.role?.trim() || authUser?.role?.trim();
+  const userRole = formatRoleLabel(rawRole);
+
+  const userAvatar =
+    profile?.avatarUrl?.trim() ||
+    profile?.userImageUrl?.trim() ||
+    'https://randomuser.me/api/portraits/men/32.jpg';
   
   // Mock badge counts - Replace with real data from API/state
   const badgeCounts = {
@@ -92,8 +123,9 @@ const Header: React.FC = () => {
         <div className="flex items-center gap-4 text-gray-900">
           <NotificationDropdown isHomePage={false} />
           <ProfileMenu 
-            userName="Lecturer A"
-            userRole="Lecturer"
+            userName={userName}
+            userRole={userRole}
+            userAvatar={userAvatar}
             isHomePage={false}
           />
         </div>

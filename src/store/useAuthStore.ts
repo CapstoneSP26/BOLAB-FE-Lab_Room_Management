@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { jwtDecode } from 'jwt-decode';
 import Cookies from 'js-cookie';
+import { getAccessToken } from '../utils/storage';
 
 interface UserPayload {
   sub: string;
@@ -20,16 +21,22 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
 
   initialize: () => {
-    const token = Cookies.get('accessToken'); // Tên cookie tùy vào Backend đặt
-    if (token) {
-      try {
-        const decoded = jwtDecode<UserPayload>(token);
-        set({ user: decoded, isAuthenticated: true });
-      } catch (error) {
-        console.error("Token invalid or expired");
-        Cookies.remove('token');
-        set({ user: null, isAuthenticated: false });
-      }
+    const cookieToken = Cookies.get('accessToken');
+    const localToken = getAccessToken();
+    const token = localToken || cookieToken;
+
+    if (!token) {
+      set({ user: null, isAuthenticated: false });
+      return;
+    }
+
+    try {
+      const decoded = jwtDecode<UserPayload>(token);
+      set({ user: decoded, isAuthenticated: true });
+    } catch (error) {
+      console.error("Token invalid or expired");
+      Cookies.remove('accessToken');
+      set({ user: null, isAuthenticated: false });
     }
   }
 }));

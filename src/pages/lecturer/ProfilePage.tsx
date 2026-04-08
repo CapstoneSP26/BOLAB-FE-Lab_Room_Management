@@ -3,32 +3,23 @@
  * Premium design with animations and visual effects
  */
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { 
-  User, Mail, Phone, Briefcase, Calendar, Shield,
-  Camera, Edit2, Save, X, Bell, Lock, Eye, EyeOff,
+import { useMemo, useState } from 'react';
+import {
+  User, Mail, Briefcase, Shield, Bell,
   BookOpen, QrCode, Clock,
-  Download, Share2, Flame,
-  ChevronRight, Check, AlertCircle
+  ChevronRight, Check, X, AlertCircle
 } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
 import { AnimatedCounter } from '../../components/ui/AnimatedCounter';
 import { RecentActivity, type Activity } from '../../components/common/RecentActivity';
-import { useToast } from '../../hooks/useToast';
 import {
   useMyProfile,
   useProfileStats,
   useRecentActivities,
-  useUpdateMyProfile,
-  useUploadAvatar,
 } from '../../features/profile/hooks/userProfile';
 import { addCacheBuster } from '../../utils/imageCache';
 
 export default function ProfilePage() {
-  const appAlert = useToast();
-  const [isEditing, setIsEditing] = useState(false);
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
-  const [showQRCode, setShowQRCode] = useState(false);
 
   // Notification preferences
   const [notificationPrefs, setNotificationPrefs] = useState({
@@ -51,54 +42,6 @@ export default function ProfilePage() {
   const isStatsDataLoading = isStatsLoading && !stats;
   const isActivitiesDataLoading = isActivitiesLoading && !recentActivitiesData;
 
-  const updateProfile = useUpdateMyProfile({
-    onSuccess: () => {
-      setIsEditing(false);
-      appAlert.success('Cập nhật hồ sơ', 'Thông tin đã được lưu.');
-    },
-    onError: (error) => {
-      appAlert.error('Cập nhật thất bại', error.message);
-    },
-  });
-
-  const uploadAvatar = useUploadAvatar({
-    onSuccess: () => {
-      appAlert.success('Ảnh đại diện', 'Đã cập nhật thành công.');
-    },
-    onError: (error) => {
-      appAlert.error('Tải ảnh thất bại', error.message);
-    },
-  });
-
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    department: '',
-  });
-
-  useEffect(() => {
-    if (profile) {
-      setFormData({
-        fullName: profile.fullName ?? '',
-        email: profile.email ?? '',
-        phone: profile.phone ?? '',
-        department: profile.department ?? '',
-      });
-    }
-  }, [profile]);
-
-  const completionFields = [
-    profile?.fullName,
-    profile?.email,
-    profile?.role,
-    profile?.department,
-    profile?.phone,
-  ];
-  const filledFields = completionFields.filter(Boolean).length;
-  const profileCompletion = completionFields.length
-    ? Math.round((filledFields / completionFields.length) * 100)
-    : 0;
 
   const avatarUrl = useMemo(
     () =>
@@ -110,16 +53,23 @@ export default function ProfilePage() {
     [profile],
   );
 
-  const memberSinceYear = profile?.createdAt
-    ? new Date(profile.createdAt).getFullYear()
-    : '--';
-
-  const displayName = formData.fullName || profile?.fullName || '—';
-  const displayEmail = formData.email || profile?.email || '—';
-  const displayPhone = formData.phone || profile?.phone || '—';
+  const displayName = profile?.fullName || '—';
+  const displayEmail = profile?.email || '—';
   const displayRole = profile?.role || '—';
-  const displayDepartment = formData.department || profile?.department || '—';
-  const shareEmail = profile?.email || formData.email || '';
+
+  const campusNameById: Record<number, string> = {
+    1: 'Đà Nẵng',
+    2: 'Hà Nội',
+    3: 'TP.HCM',
+    4: 'Quy Nhơn',
+    5: 'Cần Thơ',
+  };
+
+  const displayCampusName =
+    profile?.campusId != null
+      ? (campusNameById[profile.campusId] ?? `Campus ${profile.campusId}`)
+      : '—';
+
 
   const activityItems: Activity[] = useMemo(() => {
     if (!recentActivitiesData) return [];
@@ -150,86 +100,15 @@ export default function ProfilePage() {
     });
   }, [recentActivitiesData]);
 
-  // Activity Heatmap Data (last 12 weeks, 7 days each)
-  const generateHeatmapData = () => {
-    const weeks = 12;
-    const data = [];
-    for (let week = 0; week < weeks; week++) {
-      const weekData = [];
-      for (let day = 0; day < 7; day++) {
-        weekData.push({
-          date: new Date(Date.now() - (weeks - week) * 7 * 24 * 60 * 60 * 1000 + day * 24 * 60 * 60 * 1000),
-          count: Math.floor(Math.random() * 10), // 0-9 activities
-        });
-      }
-      data.push(weekData);
-    }
-    return data;
-  };
-
-  const heatmapData = generateHeatmapData();
-
-  const handleSave = () => {
-    updateProfile.mutate({
-      fullName: formData.fullName || undefined,
-      email: formData.email || undefined,
-      phone: formData.phone || undefined,
-      department: formData.department || undefined,
-    });
-  };
-
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    uploadAvatar.mutate(file);
-  };
-
-  const handleExportProfile = () => {
-    appAlert.info('Export to PDF', 'Coming soon!');
-  };
-
-  const handleShareProfile = () => {
-    setShowQRCode(!showQRCode);
-  };
-
-  const getHeatmapColor = (count: number) => {
-    if (count === 0) return 'bg-gray-100';
-    if (count <= 2) return 'bg-green-200';
-    if (count <= 4) return 'bg-green-300';
-    if (count <= 6) return 'bg-green-400';
-    if (count <= 8) return 'bg-green-500';
-    return 'bg-green-600';
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-8 px-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header with Actions */}
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-              My Profile
-              <span className="text-lg font-normal text-gray-500">✨</span>
-            </h1>
-            <p className="text-gray-600">Manage your account and view your achievements</p>
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={handleShareProfile}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all hover:scale-105 shadow-sm"
-            >
-              <Share2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Share</span>
-            </button>
-            <button
-              onClick={handleExportProfile}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg hover:from-orange-600 hover:to-red-600 transition-all hover:scale-105 shadow-lg"
-            >
-              <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">Export PDF</span>
-            </button>
-          </div>
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+            My Profile
+          </h1>
+          <p className="text-gray-600">Manage your account and view your achievements</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -314,21 +193,6 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Share QR Code */}
-            {showQRCode && (
-              <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 text-center">
-                <h3 className="font-bold text-gray-900 mb-4">Share Profile</h3>
-                <div className="inline-block p-4 bg-white rounded-xl border-2 border-gray-200">
-                  <QRCodeSVG
-                    value={`${window.location.origin}/profile/${shareEmail || 'me'}`}
-                    size={180}
-                    level="H"
-                    includeMargin
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-4">Scan to view profile</p>
-              </div>
-            )}
           </div>
 
           {/* Right Column - Details & Activities */}
@@ -341,33 +205,6 @@ export default function ProfilePage() {
                   <User className="w-6 h-6 text-orange-500" />
                   <h3 className="text-xl font-bold text-gray-900">Personal Information</h3>
                 </div>
-                {!isEditing ? (
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="flex items-center gap-2 px-4 py-2 text-orange-600 hover:bg-orange-50 rounded-xl transition-all hover:scale-105"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                    <span className="text-sm font-medium">Edit</span>
-                  </button>
-                ) : (
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleSave}
-                      disabled={updateProfile.isPending}
-                      className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white hover:from-orange-600 hover:to-red-600 rounded-xl transition-all hover:scale-105 shadow-lg disabled:opacity-60"
-                    >
-                      <Save className="w-4 h-4" />
-                      <span className="text-sm font-medium">Save</span>
-                    </button>
-                    <button
-                      onClick={() => setIsEditing(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl transition-all"
-                    >
-                      <X className="w-4 h-4" />
-                      <span className="text-sm font-medium">Cancel</span>
-                    </button>
-                  </div>
-                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -377,16 +214,7 @@ export default function ProfilePage() {
                     <User className="w-4 h-4 text-gray-500" />
                     Full Name
                   </label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={formData.fullName}
-                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
-                    />
-                  ) : (
-                    <p className="text-gray-900 px-4 py-3 bg-gray-50 rounded-xl">{displayName}</p>
-                  )}
+                  <p className="text-gray-900 px-4 py-3 bg-gray-50 rounded-xl">{displayName}</p>
                 </div>
 
                 {/* Email */}
@@ -395,25 +223,16 @@ export default function ProfilePage() {
                     <Mail className="w-4 h-4 text-gray-500" />
                     Email Address
                   </label>
-                  {isEditing ? (
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
-                    />
-                  ) : (
-                    <p className="text-gray-900 px-4 py-3 bg-gray-50 rounded-xl">{displayEmail}</p>
-                  )}
+                  <p className="text-gray-900 px-4 py-3 bg-gray-50 rounded-xl">{displayEmail}</p>
                 </div>
 
-                {/* Campus ID */}
+                {/* Campus Name */}
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                    <Shield className="w-4 h-4 text-gray-500" />
-                    Campus ID
+                    <Briefcase className="w-4 h-4 text-gray-500" />
+                    Campus
                   </label>
-                  <p className="text-gray-900 px-4 py-3 bg-gray-50 rounded-xl">{profile?.campusId || '—'}</p>
+                  <p className="text-gray-900 px-4 py-3 bg-gray-50 rounded-xl">{displayCampusName}</p>
                 </div>
 
                 {/* Role */}
