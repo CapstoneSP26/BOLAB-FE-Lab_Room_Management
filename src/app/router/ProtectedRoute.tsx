@@ -11,13 +11,11 @@ interface ProtectedRouteProps {
 export const ProtectedRoute = ({ allowedRoles, children }: ProtectedRouteProps) => {
   const { user, isAuthenticated, isLoading } = useAuthStore();
   const location = useLocation();
-
   // 1. TRẠNG THÁI LOADING: Tránh việc bị đá văng ra Login khi đang check session
   if (isLoading) {
     return <LoadingFallback />;
   }
 
-  // 2. CHƯA ĐĂNG NHẬP: Lưu lại trang định vào để sau khi login thì quay lại (state: from)
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }

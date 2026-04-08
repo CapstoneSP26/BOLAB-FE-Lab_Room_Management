@@ -2,6 +2,7 @@ import React from 'react';
 import type { SlotType } from '../../slot/types/slot.types';
 import type { CalendarEvent } from '../types/calendar.type';
 import { getPositionStyle } from '../utils/calendar-math.util';
+import { format } from 'date-fns';
 
 interface FixedGridViewProps {
   timeSlots: string[];
@@ -50,7 +51,7 @@ export const FixedGridView: React.FC<FixedGridViewProps> = ({
       {/* --- LƯỚI NGÀY BÊN PHẢI --- */}
       <div className="grid grid-cols-7 relative">
         {weekDays.map((date, dayIndex) => {
-          const dateStr = date.toISOString().split('T')[0];
+          const dateStr = format(date, 'yyyy-MM-dd');
 
           return (
             <div key={dayIndex} className="relative border-r border-gray-200 h-full">
@@ -65,7 +66,7 @@ export const FixedGridView: React.FC<FixedGridViewProps> = ({
 
                 // Lọc events thuộc Ca này (Khớp ngày và khớp giờ bắt đầu)
                 const concurrentBookings = events.filter(e =>
-                  e.start.startsWith(dateStr) && e.start.includes(frame.startTime)
+                  e.start.startsWith(dateStr) && e.start.includes(frame.startTime) && e.end.includes(frame.endTime) && e.slotName === activeSlotType.name
                 );
 
                 const isFull = concurrentBookings.length >= maxConcurrent;

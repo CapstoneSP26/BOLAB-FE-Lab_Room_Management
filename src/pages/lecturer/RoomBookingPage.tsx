@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Calendar as CalendarIcon,
@@ -7,7 +7,6 @@ import {
   Info,
 } from "lucide-react";
 import { BookingConfirmPanel } from "../../features/booking/components/BookingConfirmPanel";
-import { AvailableSlotList } from "../../features/booking/components/AvailableSlotList";
 import { BookingSuccessModal } from "../../features/booking/components/BookingSuccessModal";
 import { useCreateBooking } from "../../features/booking/hooks/useCreateBooking";
 import { useLabRooms } from "../../features/labroom/hooks/useLabRooms";
@@ -20,7 +19,10 @@ import { FLEXIBLE_ID } from "../../features/slot/constants/slot.constant";
 import { WeeklyCalendar } from "../../features/calendar/components/WeeklyCalendar";
 import { usePurposeTypes } from "../../features/booking/hooks/usePurposeTypes";
 import { useLabPolicies } from "../../features/labroom/hooks/useLabPolicies";
-import { QueryClient, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { PolicyType } from "../../features/labroom";
+import { useSlotTypes } from "../../features/slot/hooks/useSlotTypes";
+import { useSlotStore } from "../../store/slotStore";
 
 type BookingView = "calendar" | "list";
 
@@ -50,6 +52,9 @@ const RoomBookingPage: React.FC = () => {
 
   const queryClient = useQueryClient();
 
+  // Fetch Slot Types for dropdown & calendar rendering
+  const { } = useSlotTypes(1);
+  const { slotTypes } = useSlotStore();
 
   // Fetch Booking Purpose
   const { data: pagedPurposes, isLoading: purposesLoading } = usePurposeTypes();
@@ -127,6 +132,19 @@ const RoomBookingPage: React.FC = () => {
     setPendingBooking(data);
     setShowConfirmPanel(true);
   };
+
+  useEffect(() => {
+    if (policies) {
+      const isFreeTimeAllowed = (policies?.[PolicyType.IsFreeTimeAllowed] ?? 'true') === 'true' ? true : false;
+      if (isFreeTimeAllowed) {
+        setSelectedSlotTypeId(FLEXIBLE_ID);
+      }
+      else if (slotTypes.length > 0) {
+        setSelectedSlotTypeId(slotTypes[0].id);
+      }
+    }
+
+  }, [policies, slotTypes]);
 
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-gray-50">
@@ -232,6 +250,7 @@ const RoomBookingPage: React.FC = () => {
             onCreateBooking={handleCalendarDragComplete}
             weekOffset={weekOffset}
             onWeekChange={setWeekOffset}
+            slotTypes={slotTypes}
           />
         ) : (
           // <div className="flex-1 overflow-auto p-8 bg-gradient-to-b from-white to-gray-50">

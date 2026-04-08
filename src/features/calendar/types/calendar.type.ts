@@ -16,6 +16,7 @@ export interface CalendarEvent {
   status: string;
   rawOrigin: any; // Giữ lại data gốc nếu cần hiển thị Modal chi tiết
   color?: string;
+  slotName?: string; // Tên loại slot, dùng để hiển thị trong tooltip
 }
 
 

@@ -10,8 +10,7 @@ export const mapBookingToEvent = (booking: BookingDto): CalendarEvent => ({
   end: convertUTCStringToLocal(booking.endTime),
   type: 'BOOKING',
   status: booking.status,
-  color: "#FF9F43", // Màu cam đặc trưng cho Booking
-  rawOrigin: { ...booking },
+  rawOrigin: { ...booking, type: 2 },
 });
 
 export const mapScheduleToEvent = (schedule: ScheduleDto): CalendarEvent => ({
@@ -19,8 +18,8 @@ export const mapScheduleToEvent = (schedule: ScheduleDto): CalendarEvent => ({
   title: `${schedule.subjectCode} - ${schedule.lecturerName}`,
   start: convertUTCStringToLocal(schedule.startTime),
   end: convertUTCStringToLocal(schedule.endTime),
-  type: 'SCHEDULE',
-  status: 'Approved',
-  color: '#28C76F', // Màu xanh đặc trưng cho lịch cứng
-  rawOrigin: { ...schedule }
+  type: schedule.type,
+  status: schedule.status,
+  rawOrigin: { ...schedule },
+  slotName: schedule.slotName,
 });
