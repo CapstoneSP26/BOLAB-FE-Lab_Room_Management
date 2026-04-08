@@ -9,8 +9,6 @@ import { CalendarDayHeader } from './CalendarDayHeader';
 import { CALENDAR_CONFIG } from '../constants/calendar.constants';
 import { positionToTime } from '../utils/calendar-math.util';
 import { FlexibleGridView } from './FlexibleGridView';
-import { useSlotTypes } from '../../slot/hooks/useSlotTypes';
-import { useSlotStore } from '../../../store/slotStore';
 import { FixedGridView } from './FixedGridView';
 import type { PendingBooking } from '../../booking/types/booking.type';
 import { getStartOfDayVNInUTC } from '../../../utils/date.util';
@@ -18,6 +16,7 @@ import { addDays, formatDate } from 'date-fns';
 import { PolicyType, type PolicyTypeEnum } from '../../labroom';
 import { checkLabPolicies } from '../../labroom/utils/policy.util';
 import { useToast } from '../../../hooks/useToast';
+import type { SlotType } from '../../slot/types/slot.types';
 
 interface DragState {
   isActive: boolean;
@@ -38,8 +37,8 @@ export interface WeeklyCalendarProps {
   onSlotTypeChange: (id: number) => void
   weekOffset?: number;
   onWeekChange: (offset: number) => void;
+  slotTypes: SlotType[];
 }
-
 
 /**
  * 🗓️ Weekly Calendar Grid Component (Google Calendar Style)
@@ -54,6 +53,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   onSlotTypeChange,
   weekOffset = 0,
   onWeekChange,
+  slotTypes
 }) => {
   const appAlert = useToast();
   const { CELL_HEIGHT, START_HOUR, END_HOUR } = CALENDAR_CONFIG;
@@ -66,12 +66,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     endTime: '',
   });
 
-  // 1. Fetch dữ liệu slot types khi campus thay đổi
-  const { } = useSlotTypes(1);
 
-  // Hook này bên trong sẽ tự động gọi useSlotStore.getState().setSlotTypes()
-  // 2. Lấy thông tin type hiện tại để vẽ Grid
-  const { slotTypes } = useSlotStore();
   const currentSlotType = useMemo(() =>
     slotTypes.find(t => t.id === selectedSlotTypeId),
     [slotTypes, selectedSlotTypeId]
@@ -87,7 +82,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   }, [weekOffset]);
 
   // Fetch Policies Data
-  const isFreeTimeAllowed = Boolean(policies?.[PolicyType.IsFreeTimeAllowed] ?? true);
+  const isFreeTimeAllowed = (policies?.[PolicyType.IsFreeTimeAllowed] ?? 'true') === 'true' ? true : false;
   const maxConcurrentBookings = Number(policies?.[PolicyType.MaxConcurrentBookings] ?? 1);
   const minBookingLeadTime = Number(policies?.[PolicyType.MinBookingLeadTime] ?? 0)
 
@@ -241,6 +236,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
       };
     }
   }, [dragState]);
+
 
   return (
     <div className="flex flex-col h-full bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">

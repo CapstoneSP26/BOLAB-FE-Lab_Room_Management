@@ -8,7 +8,7 @@ export default function LoginPage() {
   const [show, setShow] = useState(false);
   const [err, setErr] = useState("");
   const [form, setForm] = useState<Form>({ email: "", password: "" });
-
+  console.log("RENDER LOGIN");
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
   };
