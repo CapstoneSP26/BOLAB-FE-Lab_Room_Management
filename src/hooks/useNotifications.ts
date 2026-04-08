@@ -1,9 +1,11 @@
 import { create } from 'zustand';
-import { notificationApi } from '../features/notifications/notification.api';
+import { HubConnection, HubConnectionBuilder, HubConnectionState, LogLevel } from '@microsoft/signalr';
+import { notificationApi, type NotificationRealtimePayload } from '../features/notifications/notification.api';
 import {
   getUnreadCountFromItems,
   mapNotificationDto,
   type AppNotification,
+  type NotificationDto,
 } from '../features/notifications/notification.mapper';
 
 interface NotificationStore {
@@ -15,12 +17,38 @@ interface NotificationStore {
   isLoading: boolean;
   error: string | null;
   unreadCount: number;
+  isRealtimeConnected: boolean;
   fetchNotifications: (page?: number, pageSize?: number) => Promise<void>;
   markAsRead: (id: number) => Promise<void>;
   markAllAsRead: () => void;
   removeNotification: (id: number) => void;
   clearReadNotifications: () => void;
+  startRealtime: () => Promise<void>;
+  stopRealtime: () => Promise<void>;
+  pushRealtimeNotification: (payload: NotificationRealtimePayload) => void;
+  fetchLatestByBookingId: (bookingId: string) => Promise<void>;
 }
+
+let notificationHubConnection: HubConnection | null = null;
+
+const toBaseUrl = () => {
+  const raw = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim() || '';
+  return raw.replace(/\/api\/?$/i, '');
+};
+
+const mapRealtimePayloadToDto = (
+  payload: NotificationRealtimePayload,
+): NotificationDto => ({
+  id: payload.id,
+  userId: '',
+  title: payload.title,
+  message: payload.message,
+  type: payload.type,
+  isRead: payload.isRead,
+  createdAt: payload.createdAt,
+  readAt: null,
+  metadata: payload.metadata ?? null,
+});
 
 export const useNotificationStore = create<NotificationStore>((set, get) => ({
   notifications: [],
@@ -31,6 +59,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
   isLoading: false,
   error: null,
   unreadCount: 0,
+  isRealtimeConnected: false,
 
   fetchNotifications: async (page = 1, pageSize = 10) => {
     set({ isLoading: true, error: null });
@@ -116,5 +145,109 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
         unreadCount: getUnreadCountFromItems(next),
       };
     });
+  },
+
+  pushRealtimeNotification: (payload) => {
+    const mapped = mapNotificationDto(mapRealtimePayloadToDto(payload));
+
+    set((state) => {
+      const deduped = state.notifications.filter((item) => item.id !== mapped.id);
+      const next = [mapped, ...deduped].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+
+      return {
+        notifications: next,
+        totalCount: Math.max(state.totalCount, next.length),
+        unreadCount: getUnreadCountFromItems(next),
+      };
+    });
+  },
+
+  fetchLatestByBookingId: async (bookingId) => {
+    try {
+      const dto = await notificationApi.getLatestByBookingId(bookingId);
+      if (!dto) return;
+
+      const mapped = mapNotificationDto(dto);
+
+      set((state) => {
+        const deduped = state.notifications.filter((item) => item.id !== mapped.id);
+        const next = [mapped, ...deduped].sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        );
+
+        return {
+          notifications: next,
+          totalCount: Math.max(state.totalCount, next.length),
+          unreadCount: getUnreadCountFromItems(next),
+        };
+      });
+    } catch {
+      // Silently ignore here because this is an enhancement call after booking success.
+    }
+  },
+
+  startRealtime: async () => {
+    try {
+      if (
+        notificationHubConnection &&
+        notificationHubConnection.state !== HubConnectionState.Disconnected
+      ) {
+        return;
+      }
+
+      const hubUrl = `${toBaseUrl()}/hubs/notifications`;
+      const token = localStorage.getItem('access_token') || '';
+
+      const connection = new HubConnectionBuilder()
+        .withUrl(hubUrl, {
+          accessTokenFactory: () => token,
+          withCredentials: true,
+        })
+        .withAutomaticReconnect()
+        .configureLogging(LogLevel.Warning)
+        .build();
+
+      connection.on('notification.created', (payload: NotificationRealtimePayload) => {
+        get().pushRealtimeNotification(payload);
+      });
+
+      connection.onreconnected(() => {
+        set({ isRealtimeConnected: true, error: null });
+      });
+
+      connection.onreconnecting(() => {
+        set({ isRealtimeConnected: false });
+      });
+
+      connection.onclose(() => {
+        set({ isRealtimeConnected: false });
+      });
+
+      await connection.start();
+      notificationHubConnection = connection;
+
+      set({ isRealtimeConnected: true, error: null });
+    } catch (error) {
+      set({
+        isRealtimeConnected: false,
+        error: error instanceof Error ? error.message : 'Failed to connect realtime notifications',
+      });
+    }
+  },
+
+  stopRealtime: async () => {
+    if (!notificationHubConnection) {
+      set({ isRealtimeConnected: false });
+      return;
+    }
+
+    try {
+      await notificationHubConnection.stop();
+    } finally {
+      notificationHubConnection = null;
+      set({ isRealtimeConnected: false });
+    }
   },
 }));

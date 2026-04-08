@@ -23,14 +23,24 @@ export interface NotificationListResult {
   totalCount: number;
 }
 
+export interface NotificationRealtimePayload {
+  id: number;
+  type: string;
+  title: string;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+  metadata?: Record<string, unknown> | null;
+}
+
 export const notificationApi = {
   async getMyNotifications(page: number = 1, pageSize: number = 10): Promise<NotificationListResult> {
     const response = await axiosInstance.get<ApiResponse<PagedList<NotificationDto>>>(
       '/Profile/notifications',
       {
         params: {
-          Page: page,
-          PageSize: pageSize,
+          page,
+          pageSize,
         },
       },
     );
@@ -49,5 +59,13 @@ export const notificationApi = {
 
   async markAsRead(notificationId: number): Promise<void> {
     await axiosInstance.put(`/Profile/notifications/${notificationId}/read`);
+  },
+
+  async getLatestByBookingId(bookingId: string): Promise<NotificationDto | null> {
+    const response = await axiosInstance.get<ApiResponse<NotificationDto>>(
+      `/booking-notifications/${bookingId}`,
+    );
+
+    return response.data?.data ?? null;
   },
 };

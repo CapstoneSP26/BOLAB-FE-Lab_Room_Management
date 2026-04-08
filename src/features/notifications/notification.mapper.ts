@@ -1,5 +1,11 @@
 export type NotificationType = 'info' | 'warning' | 'success' | 'error';
 
+export type NotificationKind =
+  | 'BookingCreated'
+  | 'BookingApproved'
+  | 'BookingRejected'
+  | 'Unknown';
+
 export interface NotificationDto {
   id: number;
   userId: string;
@@ -9,6 +15,7 @@ export interface NotificationDto {
   isRead: boolean;
   createdAt: string;
   readAt?: string | null;
+  metadata?: Record<string, unknown> | null;
 }
 
 export interface AppNotification {
@@ -18,8 +25,10 @@ export interface AppNotification {
   time: string;
   isRead: boolean;
   type: NotificationType;
+  kind: NotificationKind;
   createdAt: string;
   readAt?: string | null;
+  metadata?: Record<string, unknown> | null;
   relatedPath?: string;
 }
 
@@ -42,35 +51,52 @@ export const toRelativeTime = (isoDate: string): string => {
   return date.toLocaleString();
 };
 
-export const mapNotificationType = (rawType?: string): NotificationType => {
-  const type = (rawType || '').toLowerCase();
+export const mapNotificationKind = (rawType?: string): NotificationKind => {
+  const type = (rawType || '').trim();
 
-  if (type.includes('error') || type.includes('failed') || type.includes('reject')) {
-    return 'error';
-  }
+  if (type === 'BookingCreated') return 'BookingCreated';
+  if (type === 'BookingApproved') return 'BookingApproved';
+  if (type === 'BookingRejected') return 'BookingRejected';
 
-  if (type.includes('warning') || type.includes('alert')) {
-    return 'warning';
-  }
-
-  if (type.includes('success') || type.includes('approve') || type.includes('completed')) {
-    return 'success';
-  }
-
-  return 'info';
+  return 'Unknown';
 };
 
-export const mapNotificationDto = (dto: NotificationDto): AppNotification => ({
-  id: dto.id,
-  title: dto.title,
-  message: dto.message,
-  time: toRelativeTime(dto.createdAt),
-  isRead: dto.isRead,
-  type: mapNotificationType(dto.type),
-  createdAt: dto.createdAt,
-  readAt: dto.readAt ?? null,
-  relatedPath: '/notifications',
-});
+export const mapNotificationType = (rawType?: string): NotificationType => {
+  const kind = mapNotificationKind(rawType);
+
+  switch (kind) {
+    case 'BookingApproved':
+      return 'success';
+    case 'BookingRejected':
+      return 'error';
+    case 'BookingCreated':
+      return 'info';
+    default:
+      return 'warning';
+  }
+};
+
+export const mapNotificationDto = (dto: NotificationDto): AppNotification => {
+  const metadataBookingId = dto.metadata?.bookingId;
+  const bookingId =
+    typeof metadataBookingId === 'string' || typeof metadataBookingId === 'number'
+      ? String(metadataBookingId)
+      : undefined;
+
+  return {
+    id: dto.id,
+    title: dto.title,
+    message: dto.message,
+    time: toRelativeTime(dto.createdAt),
+    isRead: dto.isRead,
+    type: mapNotificationType(dto.type),
+    kind: mapNotificationKind(dto.type),
+    createdAt: dto.createdAt,
+    readAt: dto.readAt ?? null,
+    metadata: dto.metadata ?? null,
+    relatedPath: bookingId ? `/my-bookings?bookingId=${bookingId}` : '/notifications',
+  };
+};
 
 export const getUnreadCountFromItems = (items: AppNotification[]) =>
   items.reduce((count, item) => (item.isRead ? count : count + 1), 0);

@@ -20,7 +20,8 @@ import { FLEXIBLE_ID } from "../../features/slot/constants/slot.constant";
 import { WeeklyCalendar } from "../../features/calendar/components/WeeklyCalendar";
 import { usePurposeTypes } from "../../features/booking/hooks/usePurposeTypes";
 import { useLabPolicies } from "../../features/labroom/hooks/useLabPolicies";
-import { QueryClient, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { useNotificationStore } from "../../hooks/useNotifications";
 
 type BookingView = "calendar" | "list";
 
@@ -49,7 +50,7 @@ const RoomBookingPage: React.FC = () => {
   const [pendingBooking, setPendingBooking] = useState<PendingBooking | null>(null);
 
   const queryClient = useQueryClient();
-
+  const fetchLatestByBookingId = useNotificationStore((state) => state.fetchLatestByBookingId);
 
   // Fetch Booking Purpose
   const { data: pagedPurposes, isLoading: purposesLoading } = usePurposeTypes();
@@ -105,7 +106,7 @@ const RoomBookingPage: React.FC = () => {
     };
 
     createBooking(command, {
-      onSuccess: (data) => {
+      onSuccess: async (data) => {
         // 1. Lưu ID và thông tin vừa đặt
         appAlert.success("Đặt lịch thành công!", `Mã đặt chỗ của bạn là: ${data.id}`);
         setLastBookingId(data.id);
@@ -115,6 +116,9 @@ const RoomBookingPage: React.FC = () => {
         setShowConfirmPanel(false);
         setShowSuccessModal(true);
         queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
+
+        // Push booking-related notification immediately (without waiting polling/realtime).
+        await fetchLatestByBookingId(data.id);
       },
       onError: (err) => {
         const message = err.message || "Không thể tạo lịch đặt. Vui lòng kiểm tra lại thời gian.";

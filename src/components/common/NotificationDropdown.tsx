@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useNotificationStore, type NotificationType } from '../../hooks/useNotifications';
+import { useNotificationStore } from '../../hooks/useNotifications';
+import type { NotificationType } from '../../features/notifications/notification.mapper';
 
 interface NotificationDropdownProps {
   isHomePage?: boolean;
@@ -16,19 +17,26 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isHomePage 
   const fetchNotifications = useNotificationStore((state) => state.fetchNotifications);
   const markAsRead = useNotificationStore((state) => state.markAsRead);
   const markAllAsRead = useNotificationStore((state) => state.markAllAsRead);
+  const startRealtime = useNotificationStore((state) => state.startRealtime);
+  const stopRealtime = useNotificationStore((state) => state.stopRealtime);
+  const isRealtimeConnected = useNotificationStore((state) => state.isRealtimeConnected);
 
   useEffect(() => {
     fetchNotifications(1, 10);
+    startRealtime();
 
-    // Polling fallback because backend has no realtime event stream yet.
+    // Polling fallback when realtime is unavailable.
     const timer = window.setInterval(() => {
-      fetchNotifications(1, 10);
+      if (!isRealtimeConnected) {
+        fetchNotifications(1, 10);
+      }
     }, 30000);
 
     return () => {
       window.clearInterval(timer);
+      stopRealtime();
     };
-  }, [fetchNotifications]);
+  }, [fetchNotifications, isRealtimeConnected, startRealtime, stopRealtime]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
