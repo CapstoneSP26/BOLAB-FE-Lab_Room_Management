@@ -19,24 +19,28 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isHomePage 
   const markAllAsRead = useNotificationStore((state) => state.markAllAsRead);
   const startRealtime = useNotificationStore((state) => state.startRealtime);
   const stopRealtime = useNotificationStore((state) => state.stopRealtime);
-  const isRealtimeConnected = useNotificationStore((state) => state.isRealtimeConnected);
 
   useEffect(() => {
     fetchNotifications(1, 10);
     startRealtime();
 
-    // Polling fallback when realtime is unavailable.
+    return () => {
+      stopRealtime();
+    };
+  }, [fetchNotifications, startRealtime, stopRealtime]);
+
+  useEffect(() => {
+    // Polling fallback only when realtime is unavailable.
     const timer = window.setInterval(() => {
-      if (!isRealtimeConnected) {
-        fetchNotifications(1, 10);
+      if (!useNotificationStore.getState().isRealtimeConnected) {
+        void useNotificationStore.getState().fetchNotifications(1, 10);
       }
     }, 30000);
 
     return () => {
       window.clearInterval(timer);
-      stopRealtime();
     };
-  }, [fetchNotifications, isRealtimeConnected, startRealtime, stopRealtime]);
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
