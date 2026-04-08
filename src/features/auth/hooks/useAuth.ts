@@ -12,10 +12,14 @@ export const useAuth = () => {
   })
 
   useEffect(() => {
+    if (query.isLoading) return;
     if (query.data) {
       setAuth(query.data);
     }
-  }, [query.data, setAuth]);
+    else {
+      setAuth(null);
+    }
+  }, [query.data, setAuth, query.isLoading]);
 
   return query;
 }

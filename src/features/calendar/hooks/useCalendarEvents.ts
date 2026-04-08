@@ -6,6 +6,7 @@ import type {
   UseCalendarEventProps,
 } from "../types/calendar.type";
 import { mapBookingToEvent, mapScheduleToEvent } from "../utils/eventMapper";
+import { usePublicSchedules } from "../../schedules/hooks/usePublicSchedules";
 
 export const useCalendarEvents = (params: UseCalendarEventProps) => {
   // 1. Gọi song song 2 Query
@@ -18,11 +19,17 @@ export const useCalendarEvents = (params: UseCalendarEventProps) => {
     params.calendarMode !== 'PUBLIC' // Chỉ gọi API Booking nếu không phải PUBLIC
   );
 
-  const schedulesQuery = useSchedules({
-    fromDate: params.startDate,
-    toDate: params.endDate,
-    labRoomId: params.labRoomId,
-  });
+  const schedulesQuery = params.calendarMode !== "PUBLIC" ?
+    useSchedules({
+      fromDate: params.startDate,
+      toDate: params.endDate,
+      labRoomId: params.labRoomId,
+    })
+    : usePublicSchedules({
+      fromDate: params.startDate,
+      toDate: params.endDate,
+      labRoomId: params.labRoomId,
+    });
 
   // 4. Hợp nhất và Chuyển đổi dữ liệu (Data Transformation)
   const events = useMemo((): CalendarEvent[] => {

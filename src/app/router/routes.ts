@@ -11,6 +11,7 @@ const UnauthorizedPage = lazy(() => import("../../pages/user/UnauthorizedPage.ts
 const HomePage = lazy(() => import("../../pages/user/HomePage.tsx"));
 const BuildingDetail = lazy(() => import("../../pages/user/BuildingDetail.tsx"));
 const RoomBookingPage = lazy(() => import("../../pages/lecturer/RoomBookingPage.tsx"));
+const CalendarTabletPage = lazy(() => import("../../pages/user/CalendarTabletPage.tsx"));
 // const LabRoomDetailsPage = lazy(
 //   () => import("../../pages/lecturer/LabRoomDetailsPage.tsx"),
 // );
@@ -37,7 +38,8 @@ const IncidentHistoryPage = lazy(() => import("../../pages/labmanager/ReportHist
 
 export const publicRoutes: AppRoute[] = [
   { path: "/login", element: LoginPage },
-  { path: "/unauthorized", element: UnauthorizedPage }
+  { path: "/unauthorized", element: UnauthorizedPage },
+  { path: "/calendar/:labRoomId", element: CalendarTabletPage },
 ];
 
 export const sharedRoutes: AppRoute[] = [

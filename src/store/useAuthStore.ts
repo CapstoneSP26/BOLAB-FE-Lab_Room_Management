@@ -11,7 +11,7 @@ interface AuthState {
   // Hành động kiểm tra trạng thái đăng nhập
   checkAuth: () => Promise<void>;
 
-  setAuth: (user: UserAuth) => void;
+  setAuth: (user: UserAuth | null) => void;
 
   // Hành động Logout
   logout: () => Promise<void>;
@@ -33,8 +33,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  setAuth: (user) => {
-    set({ user, isAuthenticated: true, isLoading: false });
+  setAuth: (user: UserAuth | null) => {
+    set({ user, isAuthenticated: user ? true : false, isLoading: false });
   },
 
   logout: async () => {
