@@ -30,9 +30,6 @@ const AttendanceManagementPage = lazy(
 const QRDisplayPage = lazy(
   () => import("../../pages/lecturer/QRDisplayPage.tsx"),
 );
-const ScanAttendancePage = lazy(
-  () => import("../../pages/lecturer/ScanAttendancePage.tsx"),
-);
 const ManualAttendancePage = lazy(
   () => import("../../pages/lecturer/ManualAttendancePage.tsx"),
 );
@@ -73,6 +70,17 @@ const ReportDetailPage = lazy(
 );
 const IncidentHistoryPage = lazy(
   () => import("../../pages/labmanager/ReportHistoryPage.tsx"),
+);
+
+// Student Pages
+const StudentLandingPage = lazy(
+  () => import("../../pages/student/StudentLandingPage.tsx"),
+);
+const StudentProfilePage = lazy(
+  () => import("../../pages/student/StudentProfilePage.tsx"),
+);
+const StudentAttendanceScanPage = lazy(
+  () => import("../../pages/student/StudentAttendanceScanPage.tsx"),
 );
 
 export const appRoutes: AppRoute[] = [
@@ -131,12 +139,6 @@ export const appRoutes: AppRoute[] = [
     layout: "auth",
   },
   {
-    path: "/scan-attendance/:sessionId",
-    element: ScanAttendancePage,
-    isPrivate: false,
-    layout: "auth",
-  },
-  {
     path: "/attendance/manual/:sessionId",
     element: ManualAttendancePage,
     isPrivate: true,
@@ -159,6 +161,26 @@ export const appRoutes: AppRoute[] = [
     element: GroupOverviewPage,
     isPrivate: true,
     layout: "main",
+  },
+
+  // Student Routes
+  {
+    path: "/student",
+    element: StudentLandingPage,
+    isPrivate: true,
+    layout: "main",
+  },
+  {
+    path: "/student/profile",
+    element: StudentProfilePage,
+    isPrivate: true,
+    layout: "main",
+  },
+  {
+    path: "/student/scan-attendance/:scheduleId",
+    element: StudentAttendanceScanPage,
+    isPrivate: false,
+    layout: "auth",
   },
 
   {

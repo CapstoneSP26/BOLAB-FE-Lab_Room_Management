@@ -1,65 +1,57 @@
 /**
- * Scan Attendance Page - BOLAB-32
+ * StudentAttendanceScanPage - Student QR Code Scanner for Attendance
  * Student scans QR code using device camera to mark attendance
  * Features: Camera access, QR scanning, success/fail notifications
  */
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router';
 import { CheckCircle, XCircle, Loader2, Camera, SwitchCamera } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
-import { useQRSession } from '../../features/attendance/hooks/useQRSession';
-import { useMarkAttendance } from '../../features/attendance/hooks/useAttendance';
-import { MOCK_QR_SESSION } from '../../features/attendance/mocks/attendance.mock';
+import { useScanQRCode } from '../../features/attendance';
 import { useToast } from '../../hooks/useToast';
+import { useAuthStore } from '../../store/useAuthStore';
+import { useProfile } from '../../features/profile';
 
 type ScanState = 'idle' | 'requesting-camera' | 'scanning' | 'processing' | 'success' | 'error' | 'no-camera';
 type CameraFacing = 'front' | 'back';
 
-export default function ScanAttendancePage() {
-  const { sessionId } = useParams<{ sessionId: string }>();
+export default function StudentAttendanceScanPage() {
+  const { scheduleId } = useParams<{ scheduleId: string }>();
   const toast = useToast();
-  const isAttendanceMockMode = useMemo(() => {
-    if (typeof window === 'undefined') return false;
-    const params = new URLSearchParams(window.location.search);
-    return params.get('mockAttendance') === '1' || params.get('testAttendance') === '1';
-  }, []);
-
-  const isMockSession = isAttendanceMockMode && sessionId === MOCK_QR_SESSION.id;
-  const apiSessionId = isMockSession ? null : (sessionId || null);
+  const { user } = useAuthStore();
+  const { data: profileData } = useProfile();
 
   const [scanState, setScanState] = useState<ScanState>('idle');
   const [errorMessage, setErrorMessage] = useState('');
-  const [, setScannedData] = useState(''); // For future use - store decoded QR data
+  const [, setScannedData] = useState('');
   const [cameraFacing, setCameraFacing] = useState<CameraFacing>('back');
   const [availableCameras, setAvailableCameras] = useState<{ id: string; label: string }[]>([]);
-  const [scanCount, setScanCount] = useState(0); // Live counter for UI
-  const [lastDetection, setLastDetection] = useState<string>(''); // Show what was detected
+  const [scanCount, setScanCount] = useState(0);
+  const [lastDetection, setLastDetection] = useState('');
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isScanning = useRef(false);
-  const scanAttempts = useRef(0); // Track scan attempts for debugging
+  const scanAttempts = useRef(0);
 
-  // Fetch QR session details (if sessionId provided in URL)
-  const { data: sessionData, isLoading: isLoadingSession } = useQRSession(apiSessionId);
-  const session = sessionData?.data || (isMockSession ? MOCK_QR_SESSION : null);
+  const scanQRCode = useScanQRCode();
 
-  // Mark attendance mutation
-  const markAttendanceMutation = useMarkAttendance();
+  // Ensure profile data is loaded immediately when component mounts
+  useEffect(() => {
+    console.log('🔄 useProfile hook already called via hook above, data:', profileData);
+  }, [profileData]);
 
   /**
    * Provide haptic/audio feedback on scan
    */
   const provideFeedback = (type: 'success' | 'error') => {
-    // Haptic feedback (mobile devices)
     if ('vibrate' in navigator) {
       if (type === 'success') {
-        navigator.vibrate([100, 50, 100]); // Two short vibrations
+        navigator.vibrate([100, 50, 100]);
       } else {
-        navigator.vibrate(200); // Single long vibration
+        navigator.vibrate(200);
       }
     }
 
-    // Audio feedback
     try {
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       const oscillator = audioContext.createOscillator();
@@ -69,11 +61,9 @@ export default function ScanAttendancePage() {
       gainNode.connect(audioContext.destination);
 
       if (type === 'success') {
-        // Success sound - ascending beeps
         oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
         oscillator.frequency.linearRampToValueAtTime(1200, audioContext.currentTime + 0.1);
       } else {
-        // Error sound - descending beep
         oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
         oscillator.frequency.linearRampToValueAtTime(200, audioContext.currentTime + 0.2);
       }
@@ -84,14 +74,23 @@ export default function ScanAttendancePage() {
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.2);
     } catch (error) {
-      // Audio feedback not supported or failed - silent fail
       console.log('Audio feedback not available:', error);
     }
   };
 
   // Start camera when component mounts
   useEffect(() => {
-    // Small delay to ensure DOM is ready
+    // Don't start scanning until we have user data AND profile data loaded
+    const hasUserData = user?.Id;  // ← Changed from user?.sub to user?.Id
+    const hasProfileData = (profileData as any)?.id;
+    
+    console.log('🔐 Auth state check:', { hasUserData, hasProfileData, user, profileData });
+    
+    if (!hasUserData && !hasProfileData) {
+      console.log('⏳ Waiting for user/profile data before starting camera...');
+      return;
+    }
+
     const timer = setTimeout(() => {
       startScanning();
     }, 100);
@@ -100,13 +99,11 @@ export default function ScanAttendancePage() {
       clearTimeout(timer);
       stopScanning();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user, profileData]);
 
   // Apply mirror effect when camera facing changes or scanner starts
   useEffect(() => {
     if (scanState === 'scanning') {
-      // Small delay to ensure video element is injected by Html5Qrcode
       const timer = setTimeout(() => {
         applyMirrorEffect(cameraFacing === 'front');
       }, 200);
@@ -120,15 +117,12 @@ export default function ScanAttendancePage() {
   const startScanning = async (facing: CameraFacing = cameraFacing) => {
     if (isScanning.current) return;
 
-    // Set to 'scanning' immediately so DOM element renders
     setScanState('scanning');
     setErrorMessage('');
 
-    // Wait for DOM to be ready (increased delay for reliability)
     await new Promise(resolve => setTimeout(resolve, 200));
 
     try {
-      // Check if element exists with retries
       let element = document.getElementById('qr-reader');
       let retries = 0;
       while (!element && retries < 5) {
@@ -144,11 +138,9 @@ export default function ScanAttendancePage() {
         return;
       }
 
-      // Initialize scanner with verbose mode
-      const scanner = new Html5Qrcode('qr-reader', /* verbose= */ true);
+      const scanner = new Html5Qrcode('qr-reader', true);
       scannerRef.current = scanner;
 
-      // Get available cameras
       const cameras = await Html5Qrcode.getCameras();
       console.log(`📷 Detected ${cameras?.length || 0} camera(s):`, cameras);
 
@@ -160,11 +152,9 @@ export default function ScanAttendancePage() {
 
       setAvailableCameras(cameras);
 
-      // Select camera based on facing mode
       let selectedCameraId: string;
 
       if (facing === 'back') {
-        // Try to find back camera (environment-facing)
         const backCamera = cameras.find(cam =>
           cam.label.toLowerCase().includes('back') ||
           cam.label.toLowerCase().includes('rear') ||
@@ -172,7 +162,6 @@ export default function ScanAttendancePage() {
         );
         selectedCameraId = backCamera?.id || cameras[0].id;
       } else {
-        // Try to find front camera (user-facing)
         const frontCamera = cameras.find(cam =>
           cam.label.toLowerCase().includes('front') ||
           cam.label.toLowerCase().includes('user') ||
@@ -185,8 +174,8 @@ export default function ScanAttendancePage() {
       await scanner.start(
         selectedCameraId,
         {
-          fps: 30, // Increased from 10 to 30 for faster scanning
-          qrbox: { width: 350, height: 350 }, // Increased from 250 to 350 for larger scan area
+          fps: 30,
+          qrbox: { width: 350, height: 350 },
           aspectRatio: 1.0,
         },
         onScanSuccess,
@@ -195,12 +184,10 @@ export default function ScanAttendancePage() {
 
       isScanning.current = true;
       setScanState('scanning');
-      console.log('✅ Scanner started successfully! Ready to scan QR codes...');
+      console.log('✅ Scanner started successfully!');
 
-      // Notify user that camera is ready
       toast.success('Camera Ready', 'Position QR code within the frame', 3000);
 
-      // Apply mirror effect for front camera
       applyMirrorEffect(facing === 'front');
     } catch (err) {
       console.error('Camera error:', err);
@@ -220,7 +207,6 @@ export default function ScanAttendancePage() {
    * Apply mirror effect to camera video (for front camera selfie mode)
    */
   const applyMirrorEffect = (mirror: boolean) => {
-    // Find video element injected by Html5Qrcode
     const videoElement = document.querySelector('#qr-reader video') as HTMLVideoElement;
     if (videoElement) {
       videoElement.style.transform = mirror ? 'scaleX(-1)' : 'scaleX(1)';
@@ -233,17 +219,13 @@ export default function ScanAttendancePage() {
   const handleSwitchCamera = async () => {
     if (scanState !== 'scanning') return;
 
-    // Stop current scanner
     await stopScanning();
 
-    // Toggle facing mode
     const newFacing: CameraFacing = cameraFacing === 'back' ? 'front' : 'back';
     setCameraFacing(newFacing);
 
-    // Show notification
     toast.info('Switching Camera', `Activating ${newFacing} camera...`, 2000);
 
-    // Restart with new camera
     setTimeout(() => {
       startScanning(newFacing);
     }, 300);
@@ -270,25 +252,20 @@ export default function ScanAttendancePage() {
   const onScanSuccess = async (decodedText: string) => {
     if (scanState === 'processing' || scanState === 'success') return;
 
-    console.log(`🎯 QR Code detected after ${scanAttempts.current} attempts!`);
+    console.log(`🎯 QR Code detected!`);
     console.log('📱 Decoded text:', decodedText);
-    console.log('📊 Current scan state:', scanState);
 
-    // Provide immediate feedback
     provideFeedback('success');
     toast.info('QR Code Detected', 'Processing attendance...', 2000);
 
-    // Update UI with detection
     setLastDetection(`✅ QR DETECTED! (${decodedText.substring(0, 50)}...)`);
-    scanAttempts.current = 0; // Reset counter
+    scanAttempts.current = 0;
     setScanCount(0);
     setScannedData(decodedText);
 
-    // Stop scanner
     await stopScanning();
     console.log('⏹️ Scanner stopped');
 
-    // Process attendance
     console.log('⏳ Starting attendance marking...');
     await markAttendance(decodedText);
   };
@@ -297,16 +274,13 @@ export default function ScanAttendancePage() {
    * Handle scan failure (not an error, just no QR detected in frame)
    */
   const onScanFailure = (_errorMessage: string) => {
-    // This is called continuously when no QR is detected
-    // Update UI every 10 attempts
     scanAttempts.current++;
     if (scanAttempts.current % 10 === 0) {
       setScanCount(scanAttempts.current);
       setLastDetection(`🔍 Scanning... (${scanAttempts.current} attempts)`);
     }
-    // Log every 100 attempts to console
     if (scanAttempts.current % 100 === 0) {
-      console.log(`🔍 Scanner active - ${scanAttempts.current} scan attempts (no QR detected yet)`);
+      console.log(`🔍 Scanner active - ${scanAttempts.current} scan attempts`);
     }
   };
 
@@ -318,40 +292,79 @@ export default function ScanAttendancePage() {
     setErrorMessage('');
 
     try {
-      console.log('🔍 Parsing QR code:', qrCodeData);
+      console.log('🔍 Raw QR Code Data (decoded URL):', qrCodeData);
+      console.log('📊 QR Data Length:', qrCodeData.length);
+      console.log('📊 QR Data Type:', typeof qrCodeData);
+      console.log('📊 QR Data First 100 chars:', qrCodeData.substring(0, 100));
 
-      // Parse QR code data (should contain sessionId and token)
-      const url = new URL(qrCodeData);
-      console.log('📍 URL pathname:', url.pathname);
-      console.log('🔑 URL params:', url.searchParams.toString());
+      // QR code contains full URL from backend
+      // Format: https://backend/api/attendances/scan-qrcode?qrId=GUID&scheduleId=GUID&isCheckIn=true&studentId=
+      let qrId = '';
+      let decodedScheduleId = '';
+      let isCheckIn = true;
 
-      const pathParts = url.pathname.split('/');
-      const scannedSessionId = pathParts[pathParts.length - 1];
-      const scannedToken = url.searchParams.get('token');
-
-      console.log('🆔 Scanned Session ID:', scannedSessionId);
-      console.log('🎫 Scanned Token:', scannedToken);
-
-      if (!scannedSessionId || !scannedToken) {
-        throw new Error('Invalid QR code format - missing sessionId or token');
+      try {
+        const url = new URL(qrCodeData);
+        console.log('📍 URL extracted from QR');
+        console.log('📍 URL origin:', url.origin);
+        console.log('📍 URL pathname:', url.pathname);
+        console.log('📍 URL search:', url.search);
+        
+        // Extract query parameters
+        qrId = url.searchParams.get('qrId') || '';
+        decodedScheduleId = url.searchParams.get('scheduleId') || '';
+        const checkInParam = url.searchParams.get('isCheckIn');
+        isCheckIn = checkInParam !== 'false'; // Default to true if not specified
+        
+        console.log('🆔 QR ID:', qrId, '| Length:', qrId.length);
+        console.log('📚 Schedule ID from QR:', decodedScheduleId, '| Length:', decodedScheduleId.length);
+        console.log('✓ IsCheckIn:', isCheckIn, '| Type:', typeof isCheckIn);
+      } catch (urlError) {
+        console.log('⚠️ Failed to parse URL, treating as plain qrId...');
+        qrId = qrCodeData.trim();
       }
 
-      if (isAttendanceMockMode && scannedSessionId === MOCK_QR_SESSION.id) {
-        await new Promise(resolve => setTimeout(resolve, 400));
-        setScanState('success');
-        toast.success('Attendance Marked!', 'Mock attendance has been recorded successfully', 4000);
-        provideFeedback('success');
-        return;
+      if (!qrId || qrId.length === 0) {
+        throw new Error('Invalid QR code - could not extract QR ID');
       }
 
-      // Real API call
-      console.log('🌐 Calling real API...');
-      await markAttendanceMutation.mutateAsync({
-        sessionId: scannedSessionId,
-        qrToken: scannedToken,
+      console.log('🌐 Calling API to scan QR code...');
+      
+      // Get studentId: Priority 1 = user.Id from JWT (backend claim), Priority 2 = profile.id from API  
+      let studentId = user?.Id;  // ← Changed from user?.sub to user?.Id
+      
+      // If no user.Id from JWT, try to get from profileData
+      if (!studentId && profileData) {
+        studentId = (profileData as any)?.id;
+        console.log('📌 Using profile.id since user.Id not available:', studentId);
+      }
+      
+      // Final fallback: make sure studentId is not empty
+      if (!studentId) {
+        console.log('❌ FAILED - Both sources empty:', {
+          'user.Id': user?.Id,
+          'profileData.id': (profileData as any)?.id,
+          'user': user,
+          'profileData': profileData
+        });
+        throw new Error(`Student ID not found. Please refresh the page and login again. (JWT: ${user?.Id}, Profile: ${(profileData as any)?.id})`);
+      }
+      
+      console.log('✅ Got Student ID:', studentId);
+      
+      // Use scheduleId from URL params if extracted from QR, otherwise use route param
+      const finalScheduleId = decodedScheduleId || scheduleId || '';
+      
+      console.log('🎯 Final API Params:', { qrId, scheduleId: finalScheduleId, studentId, isCheckIn });
+      
+      await scanQRCode.mutateAsync({
+        qrId: qrId.trim(),
+        scheduleId: finalScheduleId.trim(),
+        studentId: studentId.trim(),
+        isCheckIn,
       });
 
-      console.log('✅ Real API attendance marked successfully!');
+      console.log('✅ Attendance marked successfully!');
       setScanState('success');
       toast.success('Attendance Marked!', 'Your attendance has been recorded successfully', 4000);
       provideFeedback('success');
@@ -359,16 +372,19 @@ export default function ScanAttendancePage() {
       console.error('❌ Error marking attendance:', error);
       setScanState('error');
 
-      // Determine specific error message
       let errorTitle = 'Attendance Failed';
       let errorMsg = 'Failed to mark attendance. Please try again.';
 
       if (error instanceof Error) {
+        errorMsg = error.message;
+        console.error('💥 Error message:', error.message);
+        console.error('💥 Error stack:', error.stack);
+
         const errMsg = error.message.toLowerCase();
 
         if (errMsg.includes('invalid') || errMsg.includes('format')) {
           errorTitle = 'Invalid QR Code';
-          errorMsg = 'This QR code is not valid. Please scan the correct QR code displayed by your lecturer.';
+          errorMsg = error.message;
         } else if (errMsg.includes('expired')) {
           errorTitle = 'QR Code Expired';
           errorMsg = 'This QR code has expired. Please ask your lecturer for a new one.';
@@ -381,15 +397,12 @@ export default function ScanAttendancePage() {
         } else if (errMsg.includes('network') || errMsg.includes('fetch')) {
           errorTitle = 'Network Error';
           errorMsg = 'Unable to connect to server. Please check your internet connection and try again.';
-        } else {
-          errorMsg = error.message;
         }
       }
 
       setErrorMessage(errorMsg);
-      console.error('💥 Error details:', errorMsg);
+      console.error('Final error display:', { title: errorTitle, msg: errorMsg });
 
-      // Show error toast with specific message
       toast.error(errorTitle, errorMsg, 6000);
       provideFeedback('error');
     }
@@ -408,13 +421,26 @@ export default function ScanAttendancePage() {
   // Main render
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Loading session state */}
-      {isLoadingSession && !session && (
+      {/* Wait for profile data to load */}
+      {!user && !profileData && (
         <div className="min-h-screen flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
             <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-            <p className="text-slate-700 font-medium">Loading session...</p>
-            <p className="text-sm text-slate-500 mt-2">Please wait</p>
+            <p className="text-slate-700 font-medium">Loading attendance scanner...</p>
+            <p className="text-sm text-slate-500 mt-2">Please wait while we prepare the camera</p>
+          </div>
+        </div>
+      )}
+
+      {/* Only render scanner when data is ready */}
+      {(user || profileData) && (
+        <>
+      {scanState === 'requesting-camera' && (
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
+            <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+            <p className="text-slate-700 font-medium">Starting camera...</p>
+            <p className="text-sm text-slate-500 mt-2">Please allow camera access if prompted</p>
           </div>
         </div>
       )}
@@ -452,7 +478,7 @@ export default function ScanAttendancePage() {
       )}
 
       {/* Success state */}
-      {scanState === 'success' && session && (
+      {scanState === 'success' && (
         <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-emerald-50 to-emerald-100">
           <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full">
             <div className="flex justify-center mb-4">
@@ -465,18 +491,17 @@ export default function ScanAttendancePage() {
 
             <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-slate-600">Room:</span>
-                <span className="font-semibold text-slate-900">{session.roomName}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-600">Building:</span>
-                <span className="font-semibold text-slate-900">{session.buildingName}</span>
-              </div>
-              <div className="flex justify-between text-sm">
                 <span className="text-slate-600">Time:</span>
                 <span className="font-semibold text-slate-900">{new Date().toLocaleTimeString()}</span>
               </div>
             </div>
+
+            <button
+              onClick={handleRetry}
+              className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+            >
+              Scan Another QR Code
+            </button>
           </div>
         </div>
       )}
@@ -536,7 +561,7 @@ export default function ScanAttendancePage() {
           {/* Header */}
           <div className="bg-slate-800/80 backdrop-blur-sm border-b border-slate-700/50 px-4 py-5">
             <div className="max-w-3xl mx-auto text-center">
-              <h1 className="text-2xl font-bold text-white mb-1.5">Scan QR Code</h1>
+              <h1 className="text-2xl font-bold text-white mb-1.5">Scan QR Code for Attendance</h1>
               <p className="text-sm text-slate-300 flex items-center justify-center gap-2">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -552,29 +577,21 @@ export default function ScanAttendancePage() {
             <div className="max-w-3xl w-full">
               {/* Scanner Container */}
               <div className="relative bg-black rounded-3xl shadow-2xl overflow-hidden border-4 border-blue-500/20" style={{ minHeight: '480px' }}>
-                {/* QR Scanner element - Html5Qrcode injects video here */}
                 <div id="qr-reader" style={{ width: '100%', minHeight: '480px', borderRadius: '1.5rem' }}></div>
 
-                {/* Scanner overlay corners - larger and more prominent */}
+                {/* Scanner overlay corners */}
                 <div className="absolute inset-0 pointer-events-none z-10">
-                  {/* Top left corner */}
                   <div className="absolute top-8 left-8 w-16 h-16 border-t-[6px] border-l-[6px] border-blue-400 rounded-tl-2xl"></div>
-                  {/* Top right corner */}
                   <div className="absolute top-8 right-8 w-16 h-16 border-t-[6px] border-r-[6px] border-blue-400 rounded-tr-2xl"></div>
-                  {/* Bottom left corner */}
                   <div className="absolute bottom-8 left-8 w-16 h-16 border-b-[6px] border-l-[6px] border-blue-400 rounded-bl-2xl"></div>
-                  {/* Bottom right corner */}
                   <div className="absolute bottom-8 right-8 w-16 h-16 border-b-[6px] border-r-[6px] border-blue-400 rounded-br-2xl"></div>
 
-                  {/* Center scanning area indicator - matches qrbox size (350x350) */}
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="w-[350px] h-[350px] border-2 border-green-400/50 rounded-2xl animate-pulse"></div>
-                    {/* Animated scanning line */}
                     <div className="absolute w-[350px] h-[2px] bg-gradient-to-r from-transparent via-green-400 to-transparent animate-scan"></div>
                   </div>
                 </div>
 
-                {/* Add CSS animation for scanning line */}
                 <style>{`
                   @keyframes scan {
                     0%, 100% {
@@ -649,10 +666,11 @@ export default function ScanAttendancePage() {
                   </div>
                 </div>
               </div>
-
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );

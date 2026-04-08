@@ -23,12 +23,12 @@ const Header: React.FC = () => {
   };
   
   // Active sessions from global context (shared with AttendancePage)
-  const activeSessions = activeSession && activeSession.isActive
+  const activeSessions = activeSession && activeSession.isActive && activeSession.qrExpiry
     ? [{
         id: activeSession.id,
         roomName: activeSession.roomName,
         expiresAt: activeSession.qrExpiry,
-        attendeeCount: activeSession.presentCount,
+        attendeeCount: activeSession.presentCount || 0,
       }]
     : [];
   

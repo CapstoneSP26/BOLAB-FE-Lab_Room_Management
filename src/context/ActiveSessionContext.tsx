@@ -1,21 +1,39 @@
 /**
  * Active Session Context
- * Global state management for active QR attendance sessions
+ * Global state management for attendance sessions
+ * 
+ * Note: This context uses a simplified session type.
+ * With the backend API refactor, this context needs to be reimplemented
+ * to work with the new attendance data structure.
  */
 
 import React, { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { QRSession } from '../features/attendance/types/attendace.type';
+
+/**
+ * Session object for displaying active QR codes/attendance
+ * This is a simplified version that works with the current backend API
+ */
+export interface AttendanceSession {
+  id: string;
+  scheduleId?: string;
+  roomName: string;
+  buildingName?: string;
+  isActive: boolean;
+  qrExpiry?: string;
+  presentCount?: number;
+  [key: string]: any;
+}
 
 interface ActiveSessionContextType {
-  activeSession: QRSession | null;
-  setActiveSession: (session: QRSession | null) => void;
+  activeSession: AttendanceSession | null;
+  setActiveSession: (session: AttendanceSession | null) => void;
 }
 
 const ActiveSessionContext = createContext<ActiveSessionContextType | undefined>(undefined);
 
 export const ActiveSessionProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [activeSession, setActiveSession] = useState<QRSession | null>(null);
+  const [activeSession, setActiveSession] = useState<AttendanceSession | null>(null);
 
   return (
     <ActiveSessionContext.Provider value={{ activeSession, setActiveSession }}>

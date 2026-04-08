@@ -1,52 +1,46 @@
 /**
- * Attendance Feature Barrel Exports
+ * Attendance Feature Exports
  * BOLAB-30: QR Code Attendance System
  */
 
 // Types
 export type {
   AttendanceStatus,
-  StudentAttendance,
-  QRSession,
-  CreateQRSessionRequest,
-  CreateQRSessionResponse,
-  GetQRSessionResponse,
-  RefreshQRTokenRequest,
-  RefreshQRTokenResponse,
-  EndQRSessionRequest,
-  EndQRSessionResponse,
+  AttendanceStudentDto,
   GetAttendanceListRequest,
   GetAttendanceListResponse,
-  MarkAttendanceRequest,
-  MarkAttendanceResponse,
-  ExportAttendanceRequest,
+  GenerateQRCodeRequest,
+  GenerateQRCodeResponse,
+  RemoveQRCodeRequest,
+  RemoveQRCodeResponse,
+  ScanQRCodeRequest,
+  ScanQRCodeResponse,
+  SubmitAttendanceCommand,
+  SubmitAttendanceResponse,
   BookingWithQR,
-  GetLecturerBookingsResponse,
 } from './types/attendance.type';
 
-// Hooks
+// Hooks - QR Code Management
 export {
-  useCreateQRSession,
-  useQRSession,
-  useRefreshQRToken,
-  QR_SESSION_KEYS,
+  useGenerateQRCode,
+  useRemoveQRCode,
+  QR_CODE_KEYS,
 } from './hooks/useQRSession';
 
+// Hooks - QR Code Scanning
 export {
-  useEndQRSession,
+  useScanQRCode,
 } from './hooks/useEndQRSession';
 
+// Hooks - Attendance List & Submission
 export {
   useAttendanceList,
-  useMarkAttendance,
-  useLecturerBookings,
-  useExportAttendance,
+  useSubmitAttendance,
   ATTENDANCE_KEYS,
 } from './hooks/useAttendance';
 
-// Mock Data (for testing - remove in production)
+// Hooks - Management State
 export {
-  MOCK_QR_SESSION,
-  MOCK_STUDENT_ATTENDANCE,
-  MOCK_LECTURER_BOOKINGS,
-} from './mocks/attendance.mock';
+  useAttendanceManagementState,
+  DEFAULT_ATTENDANCE_SCHEDULE_PARAMS,
+} from './hooks/useAttendanceManagementState';

@@ -354,3 +354,8 @@
 // };
 
 // export default LabRoomDetailsPage;
+
+// Placeholder export for now - functionality commented out
+export default function LabRoomDetailsPage() {
+  return <div>Lab Room Details Page - Coming Soon</div>;
+}

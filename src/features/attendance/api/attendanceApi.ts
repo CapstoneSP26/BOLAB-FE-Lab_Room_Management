@@ -1,59 +1,78 @@
 import { axiosInstance } from '../../../api';
 import type {
-  CreateQRSessionRequest,
-  CreateQRSessionResponse,
-  GetQRSessionResponse,
-  RefreshQRTokenRequest,
-  RefreshQRTokenResponse,
-  EndQRSessionRequest,
-  EndQRSessionResponse,
   GetAttendanceListRequest,
   GetAttendanceListResponse,
-  MarkAttendanceRequest,
-  MarkAttendanceResponse,
-  GetLecturerBookingsResponse,
-  ExportAttendanceRequest,
+  GenerateQRCodeRequest,
+  GenerateQRCodeResponse,
+  RemoveQRCodeRequest,
+  RemoveQRCodeResponse,
+  ScanQRCodeRequest,
+  ScanQRCodeResponse,
+  SubmitAttendanceCommand,
+  SubmitAttendanceResponse,
 } from '../types/attendance.type';
 
 /**
  * API endpoints
+ * Aligned with Backend API from BookLAB.Api.Controllers.AttendancesController
  */
 const ATTENDANCE_API = {
-  CREATE_QR_SESSION: '/attendances/generate-qrcode',
-  GET_QR_SESSION: (sessionId: string) => `/attendances/qr-session/${sessionId}`,
-  REFRESH_QR_TOKEN: '/attendances/qr-session/refresh',
-  END_QR_SESSION: '/attendances/remove-qrcode',
-  GET_ATTENDANCE_LIST: (sessionId: string) => `/attendances/session/${sessionId}/students`,
-  MARK_ATTENDANCE: '/attendances/mark',
-  GET_LECTURER_BOOKINGS: '/attendances/lecturer-bookings',
-  EXPORT_ATTENDANCE: (sessionId: string) => `/attendances/session/${sessionId}/export`,
+  GET_ATTENDANCE_LIST: (scheduleId: string) => `/attendances/schedule/${scheduleId}`,
+  SUBMIT_ATTENDANCE: '/attendances/submit',
+  GENERATE_QR_CODE: '/attendances/generate-qrcode',
+  SCAN_QR_CODE: '/attendances/scan-qrcode',
+  REMOVE_QR_CODE: '/attendances/remove-qrcode',
 } as const;
 
 export const attendanceApi = {
-  createQRSession: (params: CreateQRSessionRequest) =>
-    axiosInstance.get<CreateQRSessionResponse>(ATTENDANCE_API.CREATE_QR_SESSION, { params }).then(res => res.data),
-
-  getQRSession: (sessionId: string) =>
-    axiosInstance.get<GetQRSessionResponse>(ATTENDANCE_API.GET_QR_SESSION(sessionId)).then(res => res.data),
-
-  refreshQRToken: (params: RefreshQRTokenRequest) =>
-    axiosInstance.post<RefreshQRTokenResponse>(ATTENDANCE_API.REFRESH_QR_TOKEN, params).then(res => res.data),
-
-  endQRSession: (params: EndQRSessionRequest) =>
-    axiosInstance.get<EndQRSessionResponse>(ATTENDANCE_API.END_QR_SESSION, { params }).then(res => res.data),
-
+  /**
+   * Get list of students for attendance based on Schedule
+   * GET /api/attendances/schedule/{scheduleId}
+   */
   getAttendanceList: (params: GetAttendanceListRequest) =>
-    axiosInstance.get<GetAttendanceListResponse>(ATTENDANCE_API.GET_ATTENDANCE_LIST(params.sessionId)).then(res => res.data),
+    axiosInstance.get<GetAttendanceListResponse>(
+      ATTENDANCE_API.GET_ATTENDANCE_LIST(params.scheduleId),
+    ).then(res => res.data),
 
-  markAttendance: (params: MarkAttendanceRequest) =>
-    axiosInstance.post<MarkAttendanceResponse>(ATTENDANCE_API.MARK_ATTENDANCE, params).then(res => res.data),
+  /**
+   * Submit or update the attendance list for a specific schedule
+   * POST /api/attendances/submit
+   */
+  submitAttendance: (command: SubmitAttendanceCommand) =>
+    axiosInstance.post<SubmitAttendanceResponse>(
+      ATTENDANCE_API.SUBMIT_ATTENDANCE,
+      command,
+    ).then(res => res.data),
 
-  getLecturerBookings: () =>
-    axiosInstance.get<GetLecturerBookingsResponse>(ATTENDANCE_API.GET_LECTURER_BOOKINGS).then(res => res.data),
+  /**
+   * Generate a QR code image for attendance
+   * GET /api/attendances/generate-qrcode?scheduleId={scheduleId}&isCheckIn={isCheckIn}
+   */
+  generateQRCode: (params: GenerateQRCodeRequest) =>
+    axiosInstance.get<GenerateQRCodeResponse>(
+      ATTENDANCE_API.GENERATE_QR_CODE,
+      { params },
+    ).then(res => res.data),
 
-  exportAttendance: (params: ExportAttendanceRequest) =>
-    axiosInstance.post<Blob>(ATTENDANCE_API.EXPORT_ATTENDANCE(params.sessionId), params),
+  /**
+   * Scan a QR code for attendance
+   * GET /api/attendances/scan-qrcode?qrId={qrId}&scheduleId={scheduleId}&studentId={studentId}&isCheckIn={isCheckIn}
+   */
+  scanQRCode: (params: ScanQRCodeRequest) =>
+    axiosInstance.get<ScanQRCodeResponse>(
+      ATTENDANCE_API.SCAN_QR_CODE,
+      { params },
+    ).then(res => res.data),
 
+  /**
+   * Remove a QR code (deactivate it)
+   * GET /api/attendances/remove-qrcode?scheduleId={scheduleId}&isCheckIn={isCheckIn}
+   */
+  removeQRCode: (params: RemoveQRCodeRequest) =>
+    axiosInstance.get<RemoveQRCodeResponse>(
+      ATTENDANCE_API.REMOVE_QR_CODE,
+      { params },
+    ).then(res => res.data),
 };
 
 
