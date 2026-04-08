@@ -1,44 +1,10 @@
 import { create } from 'zustand';
-import axiosInstance from '../api/axios';
-
-export type NotificationType = 'info' | 'warning' | 'success' | 'error';
-
-interface NotificationDto {
-  id: number;
-  userId: string;
-  title: string;
-  message: string;
-  type: string;
-  isRead: boolean;
-  createdAt: string;
-  readAt?: string | null;
-}
-
-interface PagedList<T> {
-  items: T[];
-  pageNumber: number;
-  pageSize: number;
-  totalPages: number;
-  totalCount: number;
-}
-
-interface ApiResponse<T> {
-  data: T;
-  message?: string;
-  success?: boolean;
-}
-
-export interface AppNotification {
-  id: number;
-  title: string;
-  message: string;
-  time: string;
-  isRead: boolean;
-  type: NotificationType;
-  createdAt: string;
-  readAt?: string | null;
-  relatedPath?: string;
-}
+import { notificationApi } from '../features/notifications/notification.api';
+import {
+  getUnreadCountFromItems,
+  mapNotificationDto,
+  type AppNotification,
+} from '../features/notifications/notification.mapper';
 
 interface NotificationStore {
   notifications: AppNotification[];
@@ -56,58 +22,6 @@ interface NotificationStore {
   clearReadNotifications: () => void;
 }
 
-const toRelativeTime = (isoDate: string): string => {
-  const date = new Date(isoDate);
-  if (Number.isNaN(date.getTime())) return 'Just now';
-
-  const diffMs = Date.now() - date.getTime();
-  const diffMinutes = Math.floor(diffMs / (1000 * 60));
-
-  if (diffMinutes < 1) return 'Just now';
-  if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
-
-  const diffHours = Math.floor(diffMinutes / 60);
-  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-
-  const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-
-  return date.toLocaleString();
-};
-
-const mapNotificationType = (rawType?: string): NotificationType => {
-  const type = (rawType || '').toLowerCase();
-
-  if (type.includes('error') || type.includes('failed') || type.includes('reject')) {
-    return 'error';
-  }
-
-  if (type.includes('warning') || type.includes('alert')) {
-    return 'warning';
-  }
-
-  if (type.includes('success') || type.includes('approve') || type.includes('completed')) {
-    return 'success';
-  }
-
-  return 'info';
-};
-
-const mapNotificationDto = (dto: NotificationDto): AppNotification => ({
-  id: dto.id,
-  title: dto.title,
-  message: dto.message,
-  time: toRelativeTime(dto.createdAt),
-  isRead: dto.isRead,
-  type: mapNotificationType(dto.type),
-  createdAt: dto.createdAt,
-  readAt: dto.readAt ?? null,
-  relatedPath: '/notifications',
-});
-
-const getUnreadCountFromItems = (items: AppNotification[]) =>
-  items.reduce((count, item) => (item.isRead ? count : count + 1), 0);
-
 export const useNotificationStore = create<NotificationStore>((set, get) => ({
   notifications: [],
   page: 1,
@@ -122,26 +36,15 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const response = await axiosInstance.get<ApiResponse<PagedList<NotificationDto>>>(
-        '/api/Profile/notifications',
-        {
-          params: {
-            Page: page,
-            PageSize: pageSize,
-          },
-        },
-      );
-
-      const payload = response.data?.data;
-      const items = Array.isArray(payload?.items) ? payload.items : [];
-      const mappedItems = items.map(mapNotificationDto);
+      const payload = await notificationApi.getMyNotifications(page, pageSize);
+      const mappedItems = payload.items.map(mapNotificationDto);
 
       set({
         notifications: mappedItems,
-        page: payload?.pageNumber ?? page,
-        pageSize: payload?.pageSize ?? pageSize,
-        totalCount: payload?.totalCount ?? mappedItems.length,
-        totalPages: payload?.totalPages ?? 1,
+        page: payload.pageNumber,
+        pageSize: payload.pageSize,
+        totalCount: payload.totalCount,
+        totalPages: payload.totalPages,
         unreadCount: getUnreadCountFromItems(mappedItems),
         isLoading: false,
       });
@@ -157,7 +60,9 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 
     set((state) => {
       const next = state.notifications.map((item) =>
-        item.id === id ? { ...item, isRead: true, readAt: item.readAt ?? new Date().toISOString() } : item,
+        item.id === id
+          ? { ...item, isRead: true, readAt: item.readAt ?? new Date().toISOString() }
+          : item,
       );
 
       return {
@@ -167,7 +72,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
     });
 
     try {
-      await axiosInstance.put(`/api/Profile/notifications/${id}/read`);
+      await notificationApi.markAsRead(id);
     } catch (error) {
       set({
         notifications: previous,
