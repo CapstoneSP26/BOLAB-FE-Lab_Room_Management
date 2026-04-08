@@ -12,10 +12,23 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isHomePage 
   const navigate = useNavigate();
 
   const notifications = useNotificationStore((state) => state.notifications);
+  const unreadCount = useNotificationStore((state) => state.unreadCount);
+  const fetchNotifications = useNotificationStore((state) => state.fetchNotifications);
   const markAsRead = useNotificationStore((state) => state.markAsRead);
   const markAllAsRead = useNotificationStore((state) => state.markAllAsRead);
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  useEffect(() => {
+    fetchNotifications(1, 10);
+
+    // Polling fallback because backend has no realtime event stream yet.
+    const timer = window.setInterval(() => {
+      fetchNotifications(1, 10);
+    }, 30000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [fetchNotifications]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -113,8 +126,8 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isHomePage 
                   className={`p-4 hover:bg-gray-50 cursor-pointer transition-all ${
                     !notification.isRead ? 'bg-blue-50/50 hover:bg-blue-50' : ''
                   }`}
-                  onClick={() => {
-                    markAsRead(notification.id);
+                  onClick={async () => {
+                    await markAsRead(notification.id);
                     setIsOpen(false);
                     navigate(notification.relatedPath ?? '/notifications');
                   }}

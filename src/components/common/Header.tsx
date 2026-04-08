@@ -30,7 +30,7 @@ const Header: React.FC = () => {
   const isHomePage = location.pathname === '/';
   const { activeSession } = useActiveSession();
   const authUser = useAuthStore((state) => state.user);
-  const { data: profile } = useMyProfile(Boolean(authUser));
+  const { data: profile } = useMyProfile(true);
 
   const userName =
     profile?.fullName?.trim() ||
