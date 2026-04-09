@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 import { MainLayout, AuthLayout } from '../../layouts';
 import ManagerLayout from '../../layouts/labmanager/ManagerLayout';
-import { publicRoutes, sharedRoutes, lecturerRoutes, managerRoutes, adminRoutes } from './Routes';
+import { publicRoutes, sharedRoutes, lecturerRoutes, managerRoutes, adminRoutes } from './routes';
 import { Role } from '../../constants/role';
 
 export const AppRouter = () => {

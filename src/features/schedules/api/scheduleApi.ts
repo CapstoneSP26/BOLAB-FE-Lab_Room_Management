@@ -25,6 +25,13 @@ export const scheduleApi = {
       })
       .then((res) => res.data),
 
+  getPublicSchedules: (params: GetSchedulesParams) =>
+    axiosInstance
+      .get<PagedResponse<ScheduleDto>>("/public/calendar/labroom", {
+        params,
+      })
+      .then((res) => res.data),
+
   getScheduleAttendance: (params: GetSchedulesParams) =>
     axiosInstance
       .get<PagedResponse<ScheduleDto>>("/schedules/schedule-attendance", {

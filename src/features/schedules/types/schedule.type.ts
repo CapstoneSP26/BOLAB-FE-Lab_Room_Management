@@ -1,4 +1,4 @@
-export type ScheduleStatus = "Active" | "NotYet" | "Finish";
+export type ScheduleStatus = "Active" | "InProcess" | "Completed" | "Cancelled";
 
 export interface ScheduleDto {
   id: string;

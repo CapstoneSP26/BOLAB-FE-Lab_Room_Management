@@ -19,8 +19,8 @@ import { usePurposeTypes } from "../../features/booking/hooks/usePurposeTypes";
 import { useLabPolicies } from "../../features/labroom/hooks/useLabPolicies";
 import { useQueryClient } from "@tanstack/react-query";
 import { PolicyType } from "../../features/labroom";
-import { useSlotTypes } from "../../features/slot/hooks/useSlotTypes";
 import { useSlotStore } from "../../store/slotStore";
+import { useSlotTypes } from "../../features/slot/hooks/useSlotType";
 
 type BookingView = "calendar" | "list";
 
@@ -203,8 +203,8 @@ const RoomBookingPage: React.FC = () => {
               <button
                 onClick={() => setActiveView("calendar")}
                 className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all text-sm font-medium ${activeView === "calendar"
-                    ? "bg-white text-orange-600 shadow-sm border border-orange-200"
-                    : "text-gray-600 hover:text-gray-900"
+                  ? "bg-white text-orange-600 shadow-sm border border-orange-200"
+                  : "text-gray-600 hover:text-gray-900"
                   }`}
               >
                 <CalendarIcon className="w-4 h-4" />
@@ -213,8 +213,8 @@ const RoomBookingPage: React.FC = () => {
               <button
                 onClick={() => setActiveView("list")}
                 className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all text-sm font-medium ${activeView === "list"
-                    ? "bg-white text-orange-600 shadow-sm border border-orange-200"
-                    : "text-gray-600 hover:text-gray-900"
+                  ? "bg-white text-orange-600 shadow-sm border border-orange-200"
+                  : "text-gray-600 hover:text-gray-900"
                   }`}
               >
                 <List className="w-4 h-4" />
