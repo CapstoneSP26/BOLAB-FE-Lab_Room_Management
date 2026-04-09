@@ -7,7 +7,38 @@ import {
   isValid
 } from 'date-fns';
 import type { PolicyTypeEnum, PolicyValidationResult } from '../types/policy.type';
-import { PolicyType } from '../types/policy.type';
+import { PolicyType, PolicyTypeEnumValue } from '../types/policy.type';
+
+const POLICY_TYPE_BY_NUMBER: Record<number, PolicyTypeEnum> = Object.fromEntries(
+  (Object.entries(PolicyTypeEnumValue) as [PolicyTypeEnum, number][]).map(
+    ([name, num]) => [num, name],
+  ),
+) as Record<number, PolicyTypeEnum>;
+
+/**
+ * Chuẩn hoá PolicyKey từ API: số (enum BE), tên chuỗi, hoặc chuỗi số "1".."7".
+ */
+export const normalizePolicyKeyFromApi = (raw: unknown): PolicyTypeEnum | undefined => {
+  if (typeof raw === 'number' && Number.isFinite(raw)) {
+    return POLICY_TYPE_BY_NUMBER[raw];
+  }
+
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    if (!trimmed) return undefined;
+
+    const asNum = Number(trimmed);
+    if (Number.isFinite(asNum) && trimmed === String(asNum)) {
+      return POLICY_TYPE_BY_NUMBER[asNum];
+    }
+
+    if (Object.values(PolicyType).includes(trimmed as PolicyTypeEnum)) {
+      return trimmed as PolicyTypeEnum;
+    }
+  }
+
+  return undefined;
+};
 
 /**
  * Kiểm tra các quy định của phòng Lab trước khi cho phép tạo Booking
@@ -72,6 +103,6 @@ export const checkLabPolicies = (
 };
 
 
-export const isPolicyType = (key: any): key is PolicyTypeEnum => {
-  return Object.values(PolicyType).includes(key);
+export const isPolicyType = (key: unknown): key is PolicyTypeEnum => {
+  return Object.values(PolicyType).includes(key as PolicyTypeEnum);
 };

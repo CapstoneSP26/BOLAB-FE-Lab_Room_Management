@@ -5,7 +5,7 @@
 
 import React, { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { QRSession } from '../features/attendance/types/attendace.type';
+import type { QRSession } from '../features/attendance/types/attendance.type';
 
 interface ActiveSessionContextType {
   activeSession: QRSession | null;

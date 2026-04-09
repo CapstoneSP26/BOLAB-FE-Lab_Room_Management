@@ -58,12 +58,11 @@ export interface PurposeTypeDto {
 }
 
 export interface PendingBooking {
-  date: string;       // YYYY-MM-DD
-  startTime: string;  // HH:mm
-  endTime: string;    // HH:mm
+  date: string; // YYYY-MM-DD
+  startTime: string; // HH:mm
+  endTime: string; // HH:mm
   slotTypeId: number; // Để biết là đang đặt theo ca hay tự do
 }
-
 
 // ===== DOMAIN MODELS =====
 
@@ -90,7 +89,6 @@ export type BookingStatus =
   | "Approved"
   | "Rejected"
   | "Cancelled";
-export type BookingStatusFilter = BookingStatus | "all";
 
 export interface BookingRequest {
   id: string | number;
@@ -136,7 +134,7 @@ export interface GetRecentRequestsRequest {
 export interface GetBookingHistoryRequest {
   page?: number;
   limit?: number;
-  status?: BookingStatusFilter;
+  status?: BookingStatus;
   startDate?: string;
   endDate?: string;
 }
@@ -195,6 +193,7 @@ export interface BookingSummary {
 }
 
 // ===== API REQUEST/RESPONSE TYPES =====
+export type BookingStatusFilter = BookingStatus | "all";
 
 export interface GetMyBookingsRequest {
   status?: "Pending" | "Approved" | "Rejected";
@@ -205,4 +204,58 @@ export interface GetMyBookingsRequest {
 export interface GetMyBookingsResponse {
   bookings: BookingSummary[];
   total: number;
+}
+
+export interface GetBookingRequestsRequest {
+  page?: number;
+  limit?: number;
+  startDate?: string;
+  endDate?: string;
+  labRoomId?: number;
+  buildingId?: number;
+  keyword?: string;
+  status?: BookingStatus;
+  slotTypeId?: number;
+  slotTypeCode?: string;
+  sortBy?: string;
+  isDescending?: boolean;
+}
+
+export interface GetBookingByScheduleIdRequest {
+  scheduleId: string;
+}
+
+export interface GetBookingRequestsResponse {
+  data: BookingRequest[];
+  total?: number;
+  page?: number;
+  limit?: number;
+}
+
+export interface GetBookingByIdResponse {
+  data: BookingRequest;
+}
+
+export interface GetBookingByScheduleIdResponse {
+  data: BookingRequest | null;
+}
+
+export interface ApproveBookingRequestResponse {
+  data: BookingRequest;
+}
+
+export interface RejectBookingRequestResponse {
+  data: BookingRequest;
+}
+
+export interface BookingStatusLookupItem {
+  code: string;
+  name: string;
+}
+
+export interface GetBookingStatusLookupResponse {
+  data: BookingStatusLookupItem[];
+  total?: number;
+  page?: number;
+  limit?: number;
 }

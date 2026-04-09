@@ -56,37 +56,6 @@ function UserCircleIcon() {
   );
 }
 
-function InfoCircleIcon() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <path
-        d="M12 22a10 10 0 1 0-10-10 10 10 0 0 0 10 10Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <path
-        d="M12 10.5V17"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <path
-        d="M12 7.5h.01"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
 function LogoutIcon() {
   return (
     <svg
@@ -119,10 +88,16 @@ function LogoutIcon() {
   );
 }
 
+import { useMyProfile } from "../../../features/profile/hooks/userProfile";
+import { useAuthStore } from "../../../store/useAuthStore";
+
 export default function UserMenu() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
+
+  const { data: profile, isLoading } = useMyProfile();
+  const { user } = useAuthStore();
 
   const menuItems = useMemo<MenuItem[]>(
     () => [
@@ -131,7 +106,6 @@ export default function UserMenu() {
         icon: <UserCircleIcon />,
         text: "Profile",
       },
-      { href: "/profile", icon: <InfoCircleIcon />, text: "Support" },
     ],
     [],
   );
@@ -146,6 +120,7 @@ export default function UserMenu() {
   const signOut = () => {
     console.log("Signing out...");
     closeDropdown();
+    // Logic clear auth should be added here
     navigate("/signin");
   };
 
@@ -162,6 +137,9 @@ export default function UserMenu() {
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
+  const displayName = profile?.fullName || user?.email?.split("@")[0] || "User";
+  const userImageUrl = profile?.userImageUrl || "/images/user/owner.jpg";
+
   return (
     <div className="relative" ref={dropdownRef}>
       <button
@@ -170,26 +148,28 @@ export default function UserMenu() {
         type="button"
       >
         <span className="mr-3 h-11 w-11 overflow-hidden rounded-full">
-          <img src="/images/user/owner.jpg" alt="User" />
+          <img src={userImageUrl} alt="User" />
         </span>
 
-        <span className="mr-1 block font-medium text-theme-sm">Thaiha</span>
+        <span className="mr-1 block font-medium text-theme-sm">
+          {isLoading ? "..." : displayName}
+        </span>
 
         <ChevronDownIcon rotated={dropdownOpen} />
       </button>
 
       {dropdownOpen && (
-        <div className="absolute right-0 mt-[17px] flex w-[260px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark">
-          <div>
-            <span className="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">
-              Musharof Chowdhury
+        <div className="absolute right-0 mt-[17px] flex w-[260px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark text-left">
+          <div className="px-3 py-2">
+            <span className="block font-medium text-gray-700 text-theme-sm dark:text-gray-400 truncate">
+              {profile?.fullName || "User"}
             </span>
-            <span className="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
-              randomuser@pimjo.com
+            <span className="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400 truncate">
+              {profile?.email || user?.email || "..."}
             </span>
           </div>
 
-          <ul className="flex flex-col gap-1 border-b border-gray-200 pb-3 pt-4 dark:border-gray-800">
+          <ul className="flex flex-col gap-1 border-b border-gray-200 pb-3 pt-4 dark:border-gray-800 text-left">
             {menuItems.map((item) => (
               <li key={item.href}>
                 <Link

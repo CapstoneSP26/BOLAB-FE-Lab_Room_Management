@@ -1,17 +1,15 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import {
-  Calendar as CalendarIcon,
-  List,
-  Building2,
-  Info,
-} from "lucide-react";
+import { Calendar as CalendarIcon, List, Building2, Info } from "lucide-react";
 import { BookingConfirmPanel } from "../../features/booking/components/BookingConfirmPanel";
 import { BookingSuccessModal } from "../../features/booking/components/BookingSuccessModal";
 import { useCreateBooking } from "../../features/booking/hooks/useCreateBooking";
 import { useLabRooms } from "../../features/labroom/hooks/useLabRooms";
 import { useToast } from "../../hooks/useToast";
-import type { CreateBookingCommand, PendingBooking } from "../../features/booking/types/booking.type";
+import type {
+  CreateBookingCommand,
+  PendingBooking,
+} from "../../features/booking/types/booking.type";
 import { RoomSelector } from "../../features/labroom/components/RoomSelector";
 import { useBuildings } from "../../features/building";
 import { BuildingSelector } from "../../features/building/components/BuildingSelector";
@@ -39,16 +37,22 @@ const RoomBookingPage: React.FC = () => {
   const [activeView, setActiveView] = useState<BookingView>("calendar");
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-  const [successData, setSuccessData] = useState<{ date: string; timeSlot: string } | null>(null);
+  const [successData, setSuccessData] = useState<{
+    date: string;
+    timeSlot: string;
+  } | null>(null);
   const [lastBookingId, setLastBookingId] = useState<string>("");
 
   const [selectedBuildingId, setSelectedBuildingId] = useState<string>();
   const [selectedRoomId, setSelectedRoomId] = useState<string>(roomIdParam);
-  const [selectedSlotTypeId, setSelectedSlotTypeId] = useState<number>(FLEXIBLE_ID);
+  const [selectedSlotTypeId, setSelectedSlotTypeId] =
+    useState<number>(FLEXIBLE_ID);
   const [weekOffset, setWeekOffset] = useState(0);
 
   const [showConfirmPanel, setShowConfirmPanel] = useState(false);
-  const [pendingBooking, setPendingBooking] = useState<PendingBooking | null>(null);
+  const [pendingBooking, setPendingBooking] = useState<PendingBooking | null>(
+    null,
+  );
 
   const queryClient = useQueryClient();
 
@@ -62,7 +66,10 @@ const RoomBookingPage: React.FC = () => {
 
   // Fetch Buildings data
   const { data: pagedBuildings, isLoading: buildingsLoading } = useBuildings();
-  const buildings = useMemo(() => pagedBuildings?.items ?? [], [pagedBuildings]);
+  const buildings = useMemo(
+    () => pagedBuildings?.items ?? [],
+    [pagedBuildings],
+  );
 
   const handleBuildingChange = (buildingId: string) => {
     setSelectedBuildingId(buildingId);
@@ -72,11 +79,11 @@ const RoomBookingPage: React.FC = () => {
   // Fetch Rooms data
   const { data: pagedRooms, isLoading: roomsLoading } = useLabRooms({
     buildingId: Number(selectedBuildingId),
-    includeBuilding: true
+    includeBuilding: true,
   });
-  const rooms = useMemo(() => pagedRooms?.items ?? [], [pagedRooms])
+  const rooms = useMemo(() => pagedRooms?.items ?? [], [pagedRooms]);
   const selectedRoom = useMemo(() => {
-    return rooms.find(room => room.id === Number(selectedRoomId)) || null;
+    return rooms.find((room) => room.id === Number(selectedRoomId)) || null;
   }, [rooms, selectedRoomId]);
 
   const handleRoomChange = (labRoomId: string) => {
@@ -93,7 +100,7 @@ const RoomBookingPage: React.FC = () => {
 
     const currentBookingInfo = {
       date: pendingBooking.date,
-      timeSlot: `${pendingBooking.startTime} - ${pendingBooking.endTime}`
+      timeSlot: `${pendingBooking.startTime} - ${pendingBooking.endTime}`,
     };
 
     // Tại đây mới tạo Object theo đúng kiểu CreateBookingCommand
@@ -106,25 +113,30 @@ const RoomBookingPage: React.FC = () => {
       studentCount: formData.studentCount,
       recurringCount: formData.weeks,
       reason: formData.reason,
-      groupIds: []
+      groupIds: [],
     };
 
     createBooking(command, {
       onSuccess: (data) => {
         // 1. Lưu ID và thông tin vừa đặt
-        appAlert.success("Đặt lịch thành công!", `Mã đặt chỗ của bạn là: ${data.id}`);
+        appAlert.success(
+          "Đặt lịch thành công!",
+          `Mã đặt chỗ của bạn là: ${data.id}`,
+        );
         setLastBookingId(data.id);
         setSuccessData(currentBookingInfo);
 
-        setPendingBooking(null)
+        setPendingBooking(null);
         setShowConfirmPanel(false);
         setShowSuccessModal(true);
-        queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
+        queryClient.invalidateQueries({ queryKey: ["calendar-events"] });
       },
       onError: (err) => {
-        const message = err.message || "Không thể tạo lịch đặt. Vui lòng kiểm tra lại thời gian.";
+        const message =
+          err.message ||
+          "Không thể tạo lịch đặt. Vui lòng kiểm tra lại thời gian.";
         appAlert.error("Lỗi đặt lịch", message);
-      }
+      },
     });
   };
 
@@ -191,8 +203,8 @@ const RoomBookingPage: React.FC = () => {
               <button
                 onClick={() => setActiveView("calendar")}
                 className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all text-sm font-medium ${activeView === "calendar"
-                  ? "bg-white text-orange-600 shadow-sm border border-orange-200"
-                  : "text-gray-600 hover:text-gray-900"
+                    ? "bg-white text-orange-600 shadow-sm border border-orange-200"
+                    : "text-gray-600 hover:text-gray-900"
                   }`}
               >
                 <CalendarIcon className="w-4 h-4" />
@@ -201,8 +213,8 @@ const RoomBookingPage: React.FC = () => {
               <button
                 onClick={() => setActiveView("list")}
                 className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all text-sm font-medium ${activeView === "list"
-                  ? "bg-white text-orange-600 shadow-sm border border-orange-200"
-                  : "text-gray-600 hover:text-gray-900"
+                    ? "bg-white text-orange-600 shadow-sm border border-orange-200"
+                    : "text-gray-600 hover:text-gray-900"
                   }`}
               >
                 <List className="w-4 h-4" />
@@ -243,7 +255,7 @@ const RoomBookingPage: React.FC = () => {
         ) : activeView === "calendar" ? (
           <WeeklyCalendar
             policies={policies}
-            calendarMode='LAB_SPECIFIC'
+            calendarMode="LAB_SPECIFIC"
             selectedRoomId={selectedRoomId}
             selectedSlotTypeId={selectedSlotTypeId}
             onSlotTypeChange={setSelectedSlotTypeId}
@@ -252,8 +264,7 @@ const RoomBookingPage: React.FC = () => {
             onWeekChange={setWeekOffset}
             slotTypes={slotTypes}
           />
-        ) : (
-          // <div className="flex-1 overflow-auto p-8 bg-gradient-to-b from-white to-gray-50">
+        ) : // <div className="flex-1 overflow-auto p-8 bg-gradient-to-b from-white to-gray-50">
           //   <div className="max-w-6xl mx-auto">
           //     <AvailableSlotList
           //       slots={displaySlots}
@@ -271,8 +282,7 @@ const RoomBookingPage: React.FC = () => {
           //     />
           //   </div>
           // </div>
-          null
-        )}
+          null}
       </div>
       {/* Panel xác nhận nhanh (Slide-in từ bên phải) */}
       {pendingBooking && (
@@ -307,7 +317,6 @@ const RoomBookingPage: React.FC = () => {
         }}
       />
     </div>
-
   );
 };
 

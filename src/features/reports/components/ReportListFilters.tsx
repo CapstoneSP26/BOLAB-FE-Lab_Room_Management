@@ -1,5 +1,5 @@
-import type { LabRoomLookupItem } from "../../labroom/types/room.type";
-import type { Building } from "../../building/types/building.type";
+import type { LabRoomDto } from "../../labroom/types/room.type";
+import type { BuildingDto } from "../../building/types/building.type";
 import { Search, Building2, DoorOpen, X, RotateCcw } from "lucide-react";
 
 type Props = {
@@ -9,8 +9,8 @@ type Props = {
   onRoomId: (v: number | "ALL") => void;
   buildingId: number | "ALL";
   onBuildingId: (v: number | "ALL") => void;
-  roomOptions: LabRoomLookupItem[];
-  buildingOptions: Building[];
+  roomOptions: LabRoomDto[];
+  buildingOptions: BuildingDto[];
   onReset: () => void;
 };
 
@@ -96,7 +96,7 @@ export default function ReportListFilters({
                 <option value="ALL">All buildings</option>
                 {buildingOptions.map((building) => (
                   <option key={building.id} value={String(building.id)}>
-                    {building.name}
+                    {building.buildingName}
                   </option>
                 ))}
               </select>
@@ -201,7 +201,7 @@ export default function ReportListFilters({
             {selectedBuilding && (
               <div className="inline-flex items-center gap-2 rounded-lg bg-purple-100 px-3 py-1.5 text-xs font-medium text-purple-700 dark:bg-purple-500/20 dark:text-purple-300">
                 <Building2 className="h-3 w-3" />
-                <span>{selectedBuilding.name}</span>
+                <span>{selectedBuilding.buildingName}</span>
                 <button
                   type="button"
                   onClick={() => handleBuildingChange("ALL")}

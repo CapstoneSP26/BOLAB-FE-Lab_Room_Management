@@ -2,12 +2,10 @@ import axiosInstance from "../../../api/axios";
 import type {
   CreateReportRequest,
   CreateReportResponse,
-  GetReportsRequest,
-  GetReportsResponse,
+  GetReportListResponse,
   GetMyReportsRequest,
   GetMyReportsResponse,
-  GetReportHistoryRequest,
-  GetReportHistoryResponse,
+  GetReportListRequest,
   GetReportDetailRequest,
   GetReportDetailResponse,
   GetReportReasonsResponse,
@@ -24,7 +22,7 @@ const REPORT_API = {
   LIST: "/reports/listreports",
   CREATE: "/reports",
   REASONS: "/reports/reasons",
-  HISTORY: "/reports/history",
+  HISTORY: "/reports/listreports",
   MY_REPORTS: "/reports/my-reports",
   DETAIL: (id: string) => `/reports/${id}`,
   RESOLVE: (id: string) => `/reports/${id}/resolve`,
@@ -35,11 +33,11 @@ export const createReport = async (
 ): Promise<CreateReportResponse> => {
   const formData = new FormData();
   formData.append("roomId", data.roomId);
-  
+
   // Convert reason string to reportTypeId (1-9)
   const reportTypeId = REPORT_REASON_TYPE_ID_MAP[data.reason] || 9;
   formData.append("reportTypeId", reportTypeId.toString());
-  
+
   formData.append("description", data.description);
 
   if (data.images?.length) {
@@ -62,9 +60,9 @@ export const createReport = async (
 };
 
 export const getReports = async (
-  params: GetReportsRequest = {},
-): Promise<GetReportsResponse> => {
-  const response = await axiosInstance.get<GetReportsResponse>(
+  params: GetReportListRequest = {},
+): Promise<GetReportListResponse> => {
+  const response = await axiosInstance.get<GetReportListResponse>(
     REPORT_API.LIST,
     { params },
   );
@@ -82,9 +80,9 @@ export const getMyReports = async (
   return response.data;
 };
 export const getReportHistory = async (
-  params: GetReportHistoryRequest = {},
-): Promise<GetReportHistoryResponse> => {
-  const response = await axiosInstance.get<GetReportHistoryResponse>(
+  params: GetReportListRequest = {},
+): Promise<GetReportListResponse> => {
+  const response = await axiosInstance.get<GetReportListResponse>(
     REPORT_API.HISTORY,
     { params },
   );

@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { Search, X, Filter, Upload, Plus } from 'lucide-react';
-import type { GroupFilterState } from '../types/types';
+import type { GroupFilterState } from '../types/group.type';
 
 interface GroupSearchFilterProps {
   onFilterChange: (filters: GroupFilterState) => void;
