@@ -80,7 +80,7 @@ export default function ManualAttendancePage() {
 
     // Pre-fill with existing attendance records from API
     attendanceArray.forEach((record: any) => {
-      initial[record.userId] = record.status === 0 ? 'Absent' : 'Present';
+      initial[record.userId] = record.status === 0 ? 'Present' : 'Absent';
     });
 
     setAttendanceRecords(initial);
@@ -171,14 +171,14 @@ export default function ManualAttendancePage() {
 
       const alreadyMarkedPresent = new Set(
         attendanceArray
-          .filter((record: any) => record.status === 1 || record.status === 'Present')
+          .filter((record: any) => record.status === 0 || record.status === 'Present')
           .map((record: any) => record.userId)
       );
 
       // Build attendance payload - use student.id (userId only)
       const attendancePayload = students.map(student => ({
         userId: student.id,  // Must be userId (not studentId)
-        status: attendanceRecords[student.id] as AttendanceStatus,  // Already 'Present' or 'Absent'
+        status: attendanceRecords[student.id] === 'Present' ? 0 : 1,  // Convert to API format: 0=Present, 1=Absent
       }));
 
       // Call API to submit attendance

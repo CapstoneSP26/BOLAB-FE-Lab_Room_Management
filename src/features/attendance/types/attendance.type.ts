@@ -95,7 +95,7 @@ export interface SubmitAttendanceCommand {
   scheduleId: string;
   attendanceItems: Array<{
     userId: string;  // Changed from studentId to userId
-    status: AttendanceStatus;
+    status: number;  // 0 = Present, 1 = Absent
   }>;
 }
 
