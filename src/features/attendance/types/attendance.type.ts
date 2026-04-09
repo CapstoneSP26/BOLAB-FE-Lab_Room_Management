@@ -93,8 +93,8 @@ export interface ScanQRCodeResponse {
  */
 export interface SubmitAttendanceCommand {
   scheduleId: string;
-  attendance: Array<{
-    studentId: string;
+  attendanceItems: Array<{
+    userId: string;  // Changed from studentId to userId
     status: AttendanceStatus;
   }>;
 }

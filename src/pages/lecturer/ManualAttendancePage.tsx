@@ -22,7 +22,7 @@ import {
   AlertCircle,
   MapPin,
 } from 'lucide-react';
-import { useAttendanceList } from '../../features/attendance';
+import { useAttendanceList, useSubmitAttendance } from '../../features/attendance';
 import type { AttendanceStatus } from '../../features/attendance/types/attendance.type';
 
 import { useToast } from '../../hooks/useToast';
@@ -43,6 +43,10 @@ export default function ManualAttendancePage() {
 
   // Fetch attendance list for this schedule
   const { data: attendanceData, isLoading: sessionLoading } = useAttendanceList(scheduleId || null);
+  const submitAttendance = useSubmitAttendance();
+
+  // Get attendance data array (handle both direct array and wrapped object)
+  const attendanceArray = Array.isArray(attendanceData) ? attendanceData : (attendanceData?.data || []);
 
   // Local state
   const [searchQuery, setSearchQuery] = useState('');
@@ -51,11 +55,11 @@ export default function ManualAttendancePage() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Get students from API response (now just an array of AttendanceStudentDto)
-  const students: Student[] = (attendanceData?.data || []).map((student: any) => ({
-    id: student.studentId || '',
-    studentId: student.studentId || '',
-    name: student.studentName || 'Unknown',
+  // Get students from API response
+  const students: Student[] = attendanceArray.map((student: any) => ({
+    id: student.userId,  // Only userId is allowed as studentId
+    studentId: student.studentCode || '',
+    name: student.fullName || 'Unknown',
     email: student.email || '',
     avatar: undefined,
   }));
@@ -73,20 +77,20 @@ export default function ManualAttendancePage() {
     });
 
     // Pre-fill with existing attendance records from API
-    const apiStudents = attendanceData?.data || [];
+    const apiStudents = attendanceArray;
     apiStudents.forEach((record: any) => {
       const matchedStudent = students.find(
-        student => student.studentId === record.studentId
+        student => student.id === record.userId
       );
 
       if (matchedStudent) {
-        initial[matchedStudent.id] = record.status === 'absent' ? 'absent' : 'present';
+        initial[matchedStudent.id] = record.status === 0 ? 'absent' : 'present';
       }
     });
 
     setAttendanceRecords(initial);
     setIsInitialized(true);
-  }, [attendanceData?.data, isInitialized, students]);
+  }, [attendanceArray, isInitialized, students]);
 
   // Filter students by search query
   const filteredStudents = useMemo(() => {
@@ -171,22 +175,24 @@ export default function ManualAttendancePage() {
       }
 
       const alreadyMarkedPresent = new Set(
-        (attendanceData?.data || [])
-          .filter((record: any) => record.status === 'present')
-          .map((record: any) => record.studentId)
+        attendanceArray
+          .filter((record: any) => record.status === 1 || record.status === 'present')
+          .map((record: any) => record.userId)
       );
 
-      const studentsToMarkPresent = students.filter(
-        student =>
-          attendanceRecords[student.id] === 'present' &&
-          !alreadyMarkedPresent.has(student.studentId)
-      );
+      // Build attendance payload - use student.id (userId only)
+      const attendancePayload = students.map(student => ({
+        userId: student.id,  // Must be userId (not studentId)
+        status: attendanceRecords[student.id] as AttendanceStatus,
+      }));
 
-      // Simplified: just log for now since we don't have individual mark API
-      // In real scenario, you'd call submitAttendance or similar
-      console.log(`Marking ${studentsToMarkPresent.length} students as present for schedule ${scheduleId}`);
+      // Call API to submit attendance
+      await submitAttendance.mutateAsync({
+        scheduleId: scheduleId,
+        attendanceItems: attendancePayload,  // BE expects AttendanceItems, not attendance
+      });
 
-      appAlert.success('Attendance saved', `Marked ${studentsToMarkPresent.length} student(s) successfully.`);
+      appAlert.success('Attendance saved', 'Attendance marked successfully.');
     } catch {
       appAlert.error('Save failed', 'Could not save attendance to backend. Please try again.');
     } finally {
@@ -215,8 +221,29 @@ export default function ManualAttendancePage() {
     );
   }
 
-  // No students found
-  if (!students || students.length === 0) {
+  // Check if sessionId is missing
+  if (!scheduleId) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-lg border border-red-200 p-8 max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-8 h-8 text-red-600" />
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">Invalid URL</h1>
+          <p className="text-slate-600 mb-4">Session ID is missing from the URL.</p>
+          <button
+            onClick={() => navigate('/attendance')}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl font-semibold"
+          >
+            Back to Attendance
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // No students found (after loading is complete)
+  if (!sessionLoading && (!students || students.length === 0)) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-lg border border-red-200 p-8 max-w-md w-full text-center">

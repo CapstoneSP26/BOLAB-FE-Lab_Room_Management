@@ -14,7 +14,7 @@ import type {
 
 /**
  * API endpoints
- * Aligned with Backend API from BookLAB.Api.Controllers.AttendancesController
+ * Aligned with Backend API
  */
 const ATTENDANCE_API = {
   GET_ATTENDANCE_LIST: (scheduleId: string) => `/attendances/schedule/${scheduleId}`,

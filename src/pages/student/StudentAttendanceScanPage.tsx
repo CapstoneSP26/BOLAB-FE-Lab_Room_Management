@@ -375,30 +375,38 @@ export default function StudentAttendanceScanPage() {
       let errorTitle = 'Attendance Failed';
       let errorMsg = 'Failed to mark attendance. Please try again.';
 
-      if (error instanceof Error) {
-        errorMsg = error.message;
+      // Extract message from Axios error or JavaScript Error
+      let rawErrorMessage = '';
+      if ((error as any)?.response?.data) {
+        const responseData = (error as any).response.data;
+        // Handle both string message and object with message property
+        if (typeof responseData === 'string') {
+          rawErrorMessage = responseData;
+        } else if (responseData?.message) {
+          rawErrorMessage = responseData.message;
+        }
+        console.error('💥 Backend message:', rawErrorMessage);
+      } else if (error instanceof Error) {
+        // JavaScript Error
+        rawErrorMessage = error.message;
         console.error('💥 Error message:', error.message);
         console.error('💥 Error stack:', error.stack);
+      }
 
-        const errMsg = error.message.toLowerCase();
+      errorMsg = rawErrorMessage;
+      const errMsg = (rawErrorMessage || '').toLowerCase();
 
         if (errMsg.includes('invalid') || errMsg.includes('format')) {
           errorTitle = 'Invalid QR Code';
-          errorMsg = error.message;
         } else if (errMsg.includes('expired')) {
           errorTitle = 'QR Code Expired';
-          errorMsg = 'This QR code has expired. Please ask your lecturer for a new one.';
         } else if (errMsg.includes('already') || errMsg.includes('duplicate')) {
           errorTitle = 'Already Marked';
-          errorMsg = 'Your attendance has already been recorded for this session.';
         } else if (errMsg.includes('session') || errMsg.includes('not found')) {
           errorTitle = 'Session Not Found';
-          errorMsg = 'The session for this QR code could not be found. Please check with your lecturer.';
         } else if (errMsg.includes('network') || errMsg.includes('fetch')) {
           errorTitle = 'Network Error';
-          errorMsg = 'Unable to connect to server. Please check your internet connection and try again.';
         }
-      }
 
       setErrorMessage(errorMsg);
       console.error('Final error display:', { title: errorTitle, msg: errorMsg });
@@ -516,7 +524,7 @@ export default function StudentAttendanceScanPage() {
               </div>
             </div>
             <h2 className="text-xl font-bold text-slate-900 text-center mb-2">Scan Failed</h2>
-            <p className="text-slate-600 text-center mb-6">{errorMessage}</p>
+            <p className="text-base font-semibold text-red-700 text-center mb-6">{errorMessage}</p>
 
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
               <p className="text-sm font-semibold text-red-900 mb-2">Possible issues:</p>
