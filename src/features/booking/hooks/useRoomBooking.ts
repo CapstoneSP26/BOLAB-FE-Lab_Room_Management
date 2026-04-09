@@ -1,12 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
-  getStudentGroups,
   getAvailableSlots,
-  createBooking,
   getMyBookings,
 } from "../api/room-bookingApi";
 import type { GetMyBookingsRequest } from "../types/booking.type";
-import type { GetStudentGroupByLecturerRequest } from "../../groups/types/group.type";
 import type { GetAvailableSlotsRequest } from '../../slot/types/slot.types';
 
 /**
@@ -19,32 +16,11 @@ import type { GetAvailableSlotsRequest } from '../../slot/types/slot.types';
 
 export const QUERY_KEYS = {
   LAB_ROOMS: "lab-rooms",
-  STUDENT_GROUPS: "student-groups",
   AVAILABLE_SLOTS: "available-slots",
   MY_BOOKINGS: "my-bookings",
 } as const;
 
 // ===== QUERIES =====
-
-interface UseStudentGroupsOptions {
-  params?: GetStudentGroupByLecturerRequest;
-  enabled?: boolean;
-}
-
-/**
- * Hook lấy danh sách nhóm sinh viên
- */
-export const useStudentGroups = (options: UseStudentGroupsOptions = {}) => {
-  const { params, enabled = true } = options;
-
-  return useQuery({
-    queryKey: [QUERY_KEYS.STUDENT_GROUPS, params],
-    queryFn: () => getStudentGroups(params),
-    enabled,
-    staleTime: 10 * 60 * 1000, // 10 phút
-    gcTime: 30 * 60 * 1000, // 30 phút
-  });
-};
 
 interface UseAvailableSlotsOptions {
   params: GetAvailableSlotsRequest;

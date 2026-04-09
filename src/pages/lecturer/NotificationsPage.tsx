@@ -161,31 +161,28 @@ const NotificationsPage: React.FC = () => {
               <Filter className="w-4 h-4 text-slate-500" />
               <button
                 onClick={() => setFilterMode("all")}
-                className={`cursor-pointer px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
-                  filterMode === "all"
+                className={`cursor-pointer px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${filterMode === "all"
                     ? "bg-slate-900 text-white"
                     : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                }`}
+                  }`}
               >
                 All ({filteredNotifications.length})
               </button>
               <button
                 onClick={() => setFilterMode("unread")}
-                className={`cursor-pointer px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
-                  filterMode === "unread"
+                className={`cursor-pointer px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${filterMode === "unread"
                     ? "bg-amber-600 text-white"
                     : "bg-amber-100 text-amber-700 hover:bg-amber-200"
-                }`}
+                  }`}
               >
                 Unread ({displayedUnreadCount})
               </button>
               <button
                 onClick={() => setFilterMode("read")}
-                className={`cursor-pointer px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
-                  filterMode === "read"
+                className={`cursor-pointer px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${filterMode === "read"
                     ? "bg-emerald-600 text-white"
                     : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
-                }`}
+                  }`}
               >
                 Read ({filteredNotifications.length - displayedUnreadCount})
               </button>
@@ -202,11 +199,10 @@ const NotificationsPage: React.FC = () => {
               {filteredNotifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`rounded-xl border border-l-4 p-4 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 ${typeAccentStyles[notification.type]} ${
-                    notification.isRead
+                  className={`rounded-xl border border-l-4 p-4 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 ${typeAccentStyles[notification.type]} ${notification.isRead
                       ? "border-slate-200 bg-white"
                       : "border-orange-200 bg-orange-50/70"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
@@ -254,12 +250,6 @@ const NotificationsPage: React.FC = () => {
                           Mark read
                         </button>
                       )}
-                      <button
-                        onClick={() => removeNotification(notification.id)}
-                        className="cursor-pointer px-3 py-1.5 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-200 text-xs font-semibold transition-colors"
-                      >
-                        Delete
-                      </button>
                     </div>
                   </div>
                 </div>

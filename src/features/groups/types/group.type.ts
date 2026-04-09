@@ -1,37 +1,114 @@
-export interface StudentGroupInBooking {
-  id: string;
-  name: string;
-  courseCode: string;
-  studentCount: number;
+/**
+ * ===== DOMAIN MODELS (from Backend Entities) =====
+ * These types are aligned with the backend C# entities
+ */
+
+/** Group DTO from backend */
+export interface GroupDto {
+  id: string; // GUID
+  groupName: string;
+  ownerId: string; // GUID - Lecturer ID
+  isDeleted: boolean;
+  createdAt: string;
+  createdBy: string; // GUID
+  updatedAt?: string;
+  updatedBy?: string;
 }
 
-export interface GetStudentGroupByLecturerRequest {
-  lecturerId?: string;
+/** Group with owner details (for listing) */
+export interface Group extends GroupDto {
+  ownerName?: string;
+  memberCount?: number;
+  members?: GroupMemberDto[];
 }
 
-export interface GetStudentGroupsByLecturerResponse {
-  groups: StudentGroupInBooking[];
-  total: number;
+/** GroupMember DTO from backend */
+export interface GroupMemberDto {
+  id: string; // GUID
+  groupId: string; // GUID
+  userId: string; // GUID - Student ID
+  subjectCode?: string; // Teacher's subject code for the student
+  group?: GroupDto;
+  user?: UserInfo;
 }
 
-//////////
-export interface BookingStudent {
-  studentId: string;
-  studentCode: string;
+/** User info embedded in responses */
+export interface UserInfo {
+  id: string; // GUID
   fullName: string;
+  email?: string;
   avatarUrl?: string;
+  studentCode?: string; // For students
 }
 
-export interface SelectedGroupBucket {
-  id: string;
-  name: string;
-  courseCode: string;
-  isCustom: boolean;
-  students: BookingStudent[];
+/**
+ * ===== API REQUEST TYPES =====
+ */
+
+export interface GetGroupsParams {
+  searchQuery?: string;
+  sortBy?: 'name' | 'memberCount' | 'createdAt';
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  pageSize?: number;
 }
 
-export type ManualStudentDraft = {
-  fullName: string;
-  studentCode: string;
-};
+export interface CreateGroupRequest {
+  groupName: string;
+}
 
+export interface UpdateGroupRequest {
+  groupId: string;
+  groupName: string;
+}
+
+export interface DeleteGroupRequest {
+  groupId: string;
+}
+
+export interface AddGroupMemberRequest {
+  groupId: string;
+  userId: string;
+  subjectCode?: string;
+}
+
+export interface UpdateGroupMemberRequest {
+  groupId: string;
+  userId: string;
+  subjectCode?: string;
+}
+
+export interface RemoveGroupMemberRequest {
+  groupId: string;
+  userId: string;
+}
+
+/**
+ * ===== API RESPONSE TYPES =====
+ */
+
+export interface ApiResponse<T> {
+  data: T;
+  message?: string;
+  status: number;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  pageNumber: number;
+  pageSize: number;
+}
+
+export type GetGroupsResponse = PaginatedResponse<Group>;
+export type GetGroupMembersResponse = PaginatedResponse<GroupMemberDto>;
+
+/**
+ * ===== FILTER & SEARCH STATE =====
+ */
+
+export interface GroupFilterState {
+  searchQuery?: string;
+  sortBy?: 'name' | 'memberCount' | 'createdAt';
+  sortOrder?: 'asc' | 'desc';
+}

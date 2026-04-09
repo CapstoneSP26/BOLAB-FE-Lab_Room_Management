@@ -60,18 +60,22 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   return (
     <div className="relative z-50" ref={dropdownRef}>
       <button
-        className={`relative group p-2 rounded-lg transition-colors ${
-          isHomePage ? "hover:bg-white/10" : "hover:bg-gray-100"
-        }`}
+        className={`relative group p-2 rounded-lg transition-colors ${isHomePage ? "hover:bg-white/10" : "hover:bg-gray-100"
+          }`}
         aria-label="Notifications"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          setIsOpen(!isOpen);
+          // Mark all as read when opening the dropdown
+          if (!isOpen && unreadCount > 0) {
+            markAllAsRead();
+          }
+        }}
       >
         <svg
-          className={`w-6 h-6 transition ${
-            isHomePage
+          className={`w-6 h-6 transition ${isHomePage
               ? "text-white group-hover:text-white/80 drop-shadow-lg"
               : "text-gray-700 group-hover:text-gray-900"
-          }`}
+            }`}
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
@@ -85,9 +89,8 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         </svg>
         {unreadCount > 0 && (
           <span
-            className={`absolute top-1 right-1 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[20px] text-center shadow-lg ${
-              isHomePage ? "bg-orange-500" : "bg-orange-600"
-            }`}
+            className={`absolute top-1 right-1 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[20px] text-center shadow-lg ${isHomePage ? "bg-orange-500" : "bg-orange-600"
+              }`}
           >
             {unreadCount}
           </span>
@@ -148,9 +151,8 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
               notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-4 hover:bg-gray-50 cursor-pointer transition-all ${
-                    !notification.isRead ? "bg-blue-50/50 hover:bg-blue-50" : ""
-                  }`}
+                  className={`p-4 hover:bg-gray-50 cursor-pointer transition-all ${!notification.isRead ? "bg-blue-50/50 hover:bg-blue-50" : ""
+                    }`}
                   onClick={() => {
                     markAsRead(notification.id);
                     setIsOpen(false);
@@ -176,11 +178,10 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <h4
-                          className={`text-sm font-semibold truncate ${
-                            !notification.isRead
+                          className={`text-sm font-semibold truncate ${!notification.isRead
                               ? "text-gray-900"
                               : "text-gray-700"
-                          }`}
+                            }`}
                         >
                           {notification.title}
                         </h4>

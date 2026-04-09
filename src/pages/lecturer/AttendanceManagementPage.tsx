@@ -217,6 +217,13 @@ export default function AttendanceManagementPage() {
       await endSessionMutation.mutateAsync({ scheduleId: scheduleIdForEnd, isCheckIn: true });
       setTimeRemaining(0);
       setStoppedQrBySessionId(prev => ({ ...prev, [state.session!.id]: true }));
+      
+      // Update activeSession context so QRDisplayPage knows QR is stopped
+      setActiveSession({
+        ...state.session,
+        qrExpiry: new Date().toISOString(),  // ← Set expiry = now to stop countdown
+      });
+      
       appAlert.success('QR stopped', 'QR image has been turned off for this session.');
     } catch {
       appAlert.error('End session failed', 'Could not end this session. Please try again.');
@@ -303,11 +310,13 @@ export default function AttendanceManagementPage() {
               <h1 className="text-3xl font-bold text-slate-900">Attendance Management</h1>
               <p className="text-slate-600 mt-1">Track student attendance and manage active QR sessions</p>
             </div>
-            <AttendanceStats
-              totalStudents={state.totalStudents}
-              presentStudents={state.presentStudents}
-              absentStudents={state.absentStudents}
-            />
+            {state.session && (
+              <AttendanceStats
+                totalStudents={state.totalStudents}
+                presentStudents={state.presentStudents}
+                absentStudents={state.absentStudents}
+              />
+            )}
           </div>
         </div>
       </div>

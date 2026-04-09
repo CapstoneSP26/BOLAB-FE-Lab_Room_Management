@@ -1,26 +1,26 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UsersRound } from 'lucide-react';
-import { useStudentGroups, useCreateStudentGroup } from '../../features/groups/hooks/useStudentGroups';
+import { useGroups, useCreateGroup } from '../../features/groups';
 import GroupSearchFilter from '../../features/groups/components/GroupSearchFilter';
 import GroupsGridCard from '../../features/groups/components/GroupsGridCard';
 import CreateGroupModal from '../../features/groups/components/CreateGroupModal';
-import type { GroupFilterState } from '../../features/groups/types/types';
+import type { GroupFilterState } from '../../features/groups/types/group.type';
 import { useToast } from '../../hooks/useToast';
 
 const StudentGroupsPage: React.FC = () => {
   const navigate = useNavigate();
   const [filters, setFilters] = useState<GroupFilterState>({
     searchQuery: '',
-    sortBy: 'name',
-    sortOrder: 'asc',
+    sortBy: 'name' as const,
+    sortOrder: 'asc' as const,
   });
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const appAlert = useToast();
 
   // API Queries
-  const { data: groupsData, isLoading: isLoadingGroups } = useStudentGroups({
+  const { data: groupsData, isLoading: isLoadingGroups } = useGroups({
     params: {
       searchQuery: filters.searchQuery,
       sortBy: filters.sortBy,
@@ -29,7 +29,7 @@ const StudentGroupsPage: React.FC = () => {
   });
 
   // Mutations
-  const createMutation = useCreateStudentGroup({
+  const createMutation = useCreateGroup({
     onSuccess: () => {
       appAlert.success('Success', 'Student group created successfully!');
       setShowCreateModal(false);
@@ -40,14 +40,14 @@ const StudentGroupsPage: React.FC = () => {
   });
 
   // Computed values
-  const groups = useMemo(() => groupsData?.groups || [], [groupsData]);
+  const groups = useMemo(() => groupsData?.items || [], [groupsData]);
   // Handlers
   const handleFilterChange = useCallback((newFilters: GroupFilterState) => {
     setFilters(newFilters);
   }, []);
 
   const handleCreateGroup = async (data: { name: string }) => {
-    await createMutation.mutateAsync(data);
+    await createMutation.mutateAsync({ groupName: data.name });
   };
 
   const handleManageStudents = (group: { id: string }): void => {
@@ -57,10 +57,10 @@ const StudentGroupsPage: React.FC = () => {
   const isLoading = isLoadingGroups || createMutation.isPending;
 
   const filteredGroups = useMemo(() => {
-    const query = filters.searchQuery.trim().toLowerCase();
+    const query = (filters.searchQuery || '').trim().toLowerCase();
     if (!query) return groups;
     return groups.filter((group) => {
-      return group.name.toLowerCase().includes(query);
+      return group.groupName.toLowerCase().includes(query);
     });
   }, [groups, filters.searchQuery]);
 

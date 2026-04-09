@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { Search, X, Filter, Upload, Plus } from 'lucide-react';
-import type { GroupFilterState } from '../types/types';
+import type { GroupFilterState } from '../types/group.type';
 
 interface GroupSearchFilterProps {
   onFilterChange: (filters: GroupFilterState) => void;
@@ -16,7 +16,7 @@ export const GroupSearchFilter: React.FC<GroupSearchFilterProps> = ({
   onAddGroup,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'name' | 'count'>('name');
+  const [sortBy, setSortBy] = useState<'name' | 'memberCount' | 'createdAt'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   const handleApplyFilters = useCallback(() => {
@@ -108,12 +108,13 @@ export const GroupSearchFilter: React.FC<GroupSearchFilterProps> = ({
           <div className="relative">
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as 'name' | 'count')}
+              onChange={(e) => setSortBy(e.target.value as 'name' | 'memberCount' | 'createdAt')}
               disabled={isLoading}
               className="w-full md:w-52 appearance-none rounded-2xl border border-gray-300 bg-white px-4 py-3 pr-10 text-sm font-semibold text-gray-700 shadow-theme-xs transition-all duration-200 hover:border-brand-300 focus:outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100"
             >
               <option value="name">Group Name</option>
-              <option value="count">Student Count</option>
+              <option value="memberCount">Student Count</option>
+              <option value="createdAt">Created Date</option>
             </select>
             <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-500">
               <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -145,14 +146,6 @@ export const GroupSearchFilter: React.FC<GroupSearchFilterProps> = ({
 
         {/* Buttons */}
         <div className="flex gap-3 md:ml-auto">
-          <button
-            onClick={handleApplyFilters}
-            disabled={isLoading}
-            className="px-6 py-3 bg-gradient-to-r from-brand-600 to-brand-500 text-white rounded-xl hover:shadow-theme-lg transition-all duration-300 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium text-sm"
-          >
-            {isLoading ? 'Loading...' : 'Apply'}
-          </button>
-
           {hasActiveFilters && (
             <button
               onClick={handleClearFilters}

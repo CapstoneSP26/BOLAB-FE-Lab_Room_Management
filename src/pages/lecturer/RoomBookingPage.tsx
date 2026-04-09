@@ -1,8 +1,7 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Calendar as CalendarIcon, List, Building2, Info } from "lucide-react";
 import { BookingConfirmPanel } from "../../features/booking/components/BookingConfirmPanel";
-// import { AvailableSlotList } from "../../features/booking/components/AvailableSlotList";
 import { BookingSuccessModal } from "../../features/booking/components/BookingSuccessModal";
 import { useCreateBooking } from "../../features/booking/hooks/useCreateBooking";
 import { useLabRooms } from "../../features/labroom/hooks/useLabRooms";
@@ -18,7 +17,10 @@ import { FLEXIBLE_ID } from "../../features/slot/constants/slot.constant";
 import { WeeklyCalendar } from "../../features/calendar/components/WeeklyCalendar";
 import { usePurposeTypes } from "../../features/booking/hooks/usePurposeTypes";
 import { useLabPolicies } from "../../features/labroom/hooks/useLabPolicies";
-import { QueryClient, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { PolicyType } from "../../features/labroom";
+import { useSlotTypes } from "../../features/slot/hooks/useSlotTypes";
+import { useSlotStore } from "../../store/slotStore";
 
 type BookingView = "calendar" | "list";
 
@@ -53,6 +55,10 @@ const RoomBookingPage: React.FC = () => {
   );
 
   const queryClient = useQueryClient();
+
+  // Fetch Slot Types for dropdown & calendar rendering
+  const { } = useSlotTypes(1);
+  const { slotTypes } = useSlotStore();
 
   // Fetch Booking Purpose
   const { data: pagedPurposes, isLoading: purposesLoading } = usePurposeTypes();
@@ -102,12 +108,8 @@ const RoomBookingPage: React.FC = () => {
       labRoomId: Number(selectedRoomId),
       slotTypeId: pendingBooking.slotTypeId,
       purposeTypeId: formData.purposeId,
-      startTime: new Date(
-        `${pendingBooking.date}T${pendingBooking.startTime}:00`,
-      ).toISOString(),
-      endTime: new Date(
-        `${pendingBooking.date}T${pendingBooking.endTime}:00`,
-      ).toISOString(),
+      startTime: new Date(`${pendingBooking.date}T${pendingBooking.startTime}`).toISOString(),
+      endTime: new Date(`${pendingBooking.date}T${pendingBooking.endTime}`).toISOString(),
       studentCount: formData.studentCount,
       recurringCount: formData.weeks,
       reason: formData.reason,
@@ -142,6 +144,19 @@ const RoomBookingPage: React.FC = () => {
     setPendingBooking(data);
     setShowConfirmPanel(true);
   };
+
+  useEffect(() => {
+    if (policies) {
+      const isFreeTimeAllowed = (policies?.[PolicyType.IsFreeTimeAllowed] ?? 'true') === 'true' ? true : false;
+      if (isFreeTimeAllowed) {
+        setSelectedSlotTypeId(FLEXIBLE_ID);
+      }
+      else if (slotTypes.length > 0) {
+        setSelectedSlotTypeId(slotTypes[0].id);
+      }
+    }
+
+  }, [policies, slotTypes]);
 
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-gray-50">
@@ -187,22 +202,20 @@ const RoomBookingPage: React.FC = () => {
             <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
               <button
                 onClick={() => setActiveView("calendar")}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all text-sm font-medium ${
-                  activeView === "calendar"
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all text-sm font-medium ${activeView === "calendar"
                     ? "bg-white text-orange-600 shadow-sm border border-orange-200"
                     : "text-gray-600 hover:text-gray-900"
-                }`}
+                  }`}
               >
                 <CalendarIcon className="w-4 h-4" />
                 <span>Calendar</span>
               </button>
               <button
                 onClick={() => setActiveView("list")}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all text-sm font-medium ${
-                  activeView === "list"
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all text-sm font-medium ${activeView === "list"
                     ? "bg-white text-orange-600 shadow-sm border border-orange-200"
                     : "text-gray-600 hover:text-gray-900"
-                }`}
+                  }`}
               >
                 <List className="w-4 h-4" />
                 <span>List</span>
@@ -249,26 +262,27 @@ const RoomBookingPage: React.FC = () => {
             onCreateBooking={handleCalendarDragComplete}
             weekOffset={weekOffset}
             onWeekChange={setWeekOffset}
+            slotTypes={slotTypes}
           />
         ) : // <div className="flex-1 overflow-auto p-8 bg-gradient-to-b from-white to-gray-50">
-        //   <div className="max-w-6xl mx-auto">
-        //     <AvailableSlotList
-        //       slots={displaySlots}
-        //       selectedSlotIds={selectedSlotIds}
-        //       onSelectSlot={(slotId) => {
-        //         setSelectedSlotIds((prev) =>
-        //           prev.includes(slotId)
-        //             ? prev.filter((id) => id !== slotId)
-        //             : [...prev, slotId],
-        //         );
-        //       }}
-        //       onBookSelected={handleBookSelectedSlots}
-        //       multiSelect={true}
-        //       loading={slotsLoading}
-        //     />
-        //   </div>
-        // </div>
-        null}
+          //   <div className="max-w-6xl mx-auto">
+          //     <AvailableSlotList
+          //       slots={displaySlots}
+          //       selectedSlotIds={selectedSlotIds}
+          //       onSelectSlot={(slotId) => {
+          //         setSelectedSlotIds((prev) =>
+          //           prev.includes(slotId)
+          //             ? prev.filter((id) => id !== slotId)
+          //             : [...prev, slotId],
+          //         );
+          //       }}
+          //       onBookSelected={handleBookSelectedSlots}
+          //       multiSelect={true}
+          //       loading={slotsLoading}
+          //     />
+          //   </div>
+          // </div>
+          null}
       </div>
       {/* Panel xác nhận nhanh (Slide-in từ bên phải) */}
       {pendingBooking && (

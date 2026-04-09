@@ -1,23 +1,22 @@
-import React, { useState, useRef, useMemo, useCallback } from "react";
-import type { CalendarMode } from "../types/calendar.type";
-import { useCalendarEvents } from "../hooks/useCalendarEvents";
-import { getWeekDaysByOffset } from "../../../utils/date.util";
-import { SlotTypeSelector } from "../../slot/components/SlotTypeSelector";
-import { FLEXIBLE_ID } from "../../slot/constants/slot.constant";
-import { CalendarNavigation } from "./CalendarNavigation";
-import { CalendarDayHeader } from "./CalendarDayHeader";
-import { CALENDAR_CONFIG } from "../constants/calendar.constants";
-import { positionToTime } from "../utils/calendar-math.util";
-import { FlexibleGridView } from "./FlexibleGridView";
-import { useSlotTypes } from "../../slot/hooks/useSlotType";
-import { useSlotStore } from "../../../store/slotStore";
-import { FixedGridView } from "./FixedGridView";
-import type { PendingBooking } from "../../booking/types/booking.type";
-import { getStartOfDayVNInUTC } from "../../../utils/date.util";
-import { addDays, formatDate } from "date-fns";
-import { PolicyType, type PolicyTypeEnum } from "../../labroom";
-import { checkLabPolicies } from "../../labroom/utils/policy.util";
-import { useToast } from "../../../hooks/useToast";
+import React, { useState, useRef, useMemo, useCallback } from 'react';
+import type { CalendarMode } from '../types/calendar.type';
+import { useCalendarEvents } from '../hooks/useCalendarEvents';
+import { getWeekDaysByOffset } from '../../../utils/date.util';
+import { SlotTypeSelector } from '../../slot/components/SlotTypeSelector';
+import { FLEXIBLE_ID } from '../../slot/constants/slot.constant';
+import { CalendarNavigation } from './CalendarNavigation';
+import { CalendarDayHeader } from './CalendarDayHeader';
+import { CALENDAR_CONFIG } from '../constants/calendar.constants';
+import { positionToTime } from '../utils/calendar-math.util';
+import { FlexibleGridView } from './FlexibleGridView';
+import { FixedGridView } from './FixedGridView';
+import type { PendingBooking } from '../../booking/types/booking.type';
+import { getStartOfDayVNInUTC } from '../../../utils/date.util';
+import { addDays, formatDate } from 'date-fns';
+import { PolicyType, type PolicyTypeEnum } from '../../labroom';
+import { checkLabPolicies } from '../../labroom/utils/policy.util';
+import { useToast } from '../../../hooks/useToast';
+import type { SlotType } from '../../slot/types/slot.types';
 
 interface DragState {
   isActive: boolean;
@@ -37,6 +36,7 @@ export interface WeeklyCalendarProps {
   onSlotTypeChange: (id: number) => void;
   weekOffset?: number;
   onWeekChange: (offset: number) => void;
+  slotTypes: SlotType[];
 }
 
 /**
@@ -52,6 +52,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   onSlotTypeChange,
   weekOffset = 0,
   onWeekChange,
+  slotTypes
 }) => {
   const appAlert = useToast();
   const { CELL_HEIGHT, START_HOUR, END_HOUR } = CALENDAR_CONFIG;
@@ -64,15 +65,10 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     endTime: "",
   });
 
-  // 1. Fetch dữ liệu slot types khi campus thay đổi
-  const {} = useSlotTypes(1);
 
-  // Hook này bên trong sẽ tự động gọi useSlotStore.getState().setSlotTypes()
-  // 2. Lấy thông tin type hiện tại để vẽ Grid
-  const { slotTypes } = useSlotStore();
-  const currentSlotType = useMemo(
-    () => slotTypes.find((t) => t.id === selectedSlotTypeId),
-    [slotTypes, selectedSlotTypeId],
+  const currentSlotType = useMemo(() =>
+    slotTypes.find(t => t.id === selectedSlotTypeId),
+    [slotTypes, selectedSlotTypeId]
   );
 
   const { weekDays, weekStart, weekEnd } = useMemo(() => {
@@ -85,15 +81,9 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   }, [weekOffset]);
 
   // Fetch Policies Data
-  const isFreeTimeAllowed = Boolean(
-    policies?.[PolicyType.IsFreeTimeAllowed] ?? true,
-  );
-  const maxConcurrentBookings = Number(
-    policies?.[PolicyType.MaxConcurrentBookings] ?? 1,
-  );
-  const minBookingLeadTime = Number(
-    policies?.[PolicyType.MinBookingLeadTime] ?? 0,
-  );
+  const isFreeTimeAllowed = (policies?.[PolicyType.IsFreeTimeAllowed] ?? 'true') === 'true' ? true : false;
+  const maxConcurrentBookings = Number(policies?.[PolicyType.MaxConcurrentBookings] ?? 1);
+  const minBookingLeadTime = Number(policies?.[PolicyType.MinBookingLeadTime] ?? 0)
 
   const { events } = useCalendarEvents({
     calendarMode: calendarMode,
@@ -258,6 +248,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     }
   }, [dragState]);
 
+
   return (
     <div className="flex flex-col h-full bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
       {/* Week Navigation Header */}
@@ -299,16 +290,16 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
               handleMouseDown={handleMouseDown}
             />
           ) : // OldSlot Mode: Show fixed slots (slot 1, slot 2, etc.)
-          currentSlotType !== undefined ? (
-            <FixedGridView
-              timeSlots={timeSlots}
-              weekDays={weekDays}
-              activeSlotType={currentSlotType}
-              events={events}
-              onSlotClick={handleSlotClick}
-              maxConcurrent={maxConcurrentBookings}
-            />
-          ) : null}
+            currentSlotType !== undefined ? (
+              <FixedGridView
+                timeSlots={timeSlots}
+                weekDays={weekDays}
+                activeSlotType={currentSlotType}
+                events={events}
+                onSlotClick={handleSlotClick}
+                maxConcurrent={maxConcurrentBookings}
+              />
+            ) : null}
         </div>
       </div>
     </div>

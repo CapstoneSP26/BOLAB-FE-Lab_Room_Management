@@ -5,6 +5,7 @@ import {
   IncidentHistoryIcon,
   ListBookingRequest,
   ListIcon,
+  ImportFileIcon,
 } from "../components/icon/index.ts";
 import type React from "react";
 
@@ -54,6 +55,16 @@ export const labManagerMenuGroups: MenuGroup[] = [
           },
         ],
       },
+      {
+        icon: ImportFileIcon,
+        name: "Import File",
+        subItems: [
+          {
+            name: "Import Booking",
+            path: "/labmanager/booking-requests/import",
+          },
+        ],
+      },
       { icon: ListIcon, name: "Report List", path: "/labmanager/reports" },
       {
         icon: IncidentHistoryIcon,
@@ -89,6 +100,16 @@ export const adminMenuGroups: MenuGroup[] = [
           {
             name: "Approve/Reject History",
             path: "/admin/booking-requests/history",
+          },
+        ],
+      },
+      {
+        icon: ImportFileIcon,
+        name: "Import File",
+        subItems: [
+          {
+            name: "Import Booking",
+            path: "/admin/booking-requests/import",
           },
         ],
       },

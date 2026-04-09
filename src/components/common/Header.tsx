@@ -1,13 +1,14 @@
-import React from "react";
-import { useLocation, Link } from "react-router-dom";
-import { QrCode, Calendar, BookOpen } from "lucide-react";
-import { NotificationDropdown } from "./NotificationDropdown";
-import ProfileMenu from "./ProfileMenu";
-import { FPTLogo } from "../icon/FPTLogo";
-import { Badge } from "../ui/Badge";
-import { Breadcrumb } from "../ui/Breadcrumb";
-import { ActiveSessionIndicator } from "../ui/ActiveSessionIndicator";
-import { useActiveSession } from "../../context/ActiveSessionContext";
+import React from 'react';
+import { useLocation, Link } from 'react-router-dom';
+import { QrCode, Calendar, BookOpen } from 'lucide-react';
+import { NotificationDropdown } from './NotificationDropdown';
+import ProfileMenu from './ProfileMenu';
+import { FPTLogo } from '../icon/FPTLogo';
+import { Badge } from '../ui/Badge';
+import { Breadcrumb } from '../ui/Breadcrumb';
+import { ActiveSessionIndicator } from '../ui/ActiveSessionIndicator';
+import { LoadingBar } from '../ui/LoadingBar';
+import { useActiveSession } from '../../context/ActiveSessionContext';
 
 const Header: React.FC = () => {
   const location = useLocation();
@@ -25,13 +26,13 @@ const Header: React.FC = () => {
   const activeSessions =
     activeSession && activeSession.isActive
       ? [
-          {
-            id: activeSession.id,
-            roomName: activeSession.roomName,
-            expiresAt: activeSession.qrExpiry,
-            attendeeCount: activeSession.presentCount,
-          },
-        ]
+        {
+          id: activeSession.id,
+          roomName: activeSession.roomName,
+          expiresAt: activeSession.qrExpiry,
+          attendeeCount: activeSession.presentCount,
+        },
+      ]
       : [];
 
   // Navigation items
@@ -58,13 +59,10 @@ const Header: React.FC = () => {
 
   return (
     <>
-      <header
-        className={`w-full h-16 relative flex items-center justify-between px-6 sticky top-0 z-[100] ${
-          isHomePage
-            ? "bg-[#fffaf0] shadow-md border-b border-orange-100"
-            : "bg-white shadow-md border-b border-gray-200"
-        }`}
-      >
+      <header className={`w-full h-16 relative flex items-center justify-between px-6 sticky top-0 z-[100] ${isHomePage
+        ? 'bg-[#fffaf0] shadow-md border-b border-orange-100'
+        : 'bg-white shadow-md border-b border-gray-200'
+        }`}>
         {/* Content */}
         <div className="relative z-10 flex items-center text-gray-900">
           <FPTLogo />
@@ -75,32 +73,28 @@ const Header: React.FC = () => {
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             const Icon = item.icon;
-            const badgeCount =
-              badgeCounts[item.badgeKey as keyof typeof badgeCounts];
+            const badgeCount = badgeCounts[item.badgeKey as keyof typeof badgeCounts];
 
             return (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`relative flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-                  isHomePage
-                    ? isActive
-                      ? "bg-blue-50 text-blue-600"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                    : isActive
-                      ? "bg-blue-50 text-blue-600"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                }`}
+                className={`relative flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${isHomePage
+                  ? isActive
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  : isActive
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
               >
                 <Icon className="w-4 h-4" />
                 <span className="text-sm">{item.label}</span>
                 {badgeCount > 0 && (
                   <Badge
                     count={badgeCount}
-                    type={
-                      item.badgeKey === "attendance" ? "success" : "warning"
-                    }
-                    pulse={item.badgeKey === "attendance"}
+                    type={item.badgeKey === 'attendance' ? 'success' : 'warning'}
+                    pulse={item.badgeKey === 'attendance'}
                   />
                 )}
               </Link>
@@ -119,6 +113,10 @@ const Header: React.FC = () => {
               isHomePage={false}
             />
           </div>
+        </div>
+
+        <div className="absolute inset-x-0 bottom-0 h-1 z-50">
+          <LoadingBar />
         </div>
       </header>
 

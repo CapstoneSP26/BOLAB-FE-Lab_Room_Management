@@ -84,7 +84,8 @@ export const parseTimeValue = (bookingDate: string, value: string): Date => {
     return new Date(0);
   }
 
-  base.setHours(Number(hourText || 0), Number(minuteText || 0), 0, 0);
+  // Sử dụng setUTCHours (không phải setHours) để consistent với UTC date
+  base.setUTCHours(Number(hourText || 0), Number(minuteText || 0), 0, 0);
   return base;
 };
 
@@ -252,4 +253,20 @@ export const formatIsoDateTimeForDisplay = (iso: string): string => {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
   return format(d, "dd/MM/yyyy HH:mm", { locale: vi });
+};
+
+/**
+ * 01:00 - 06:00 (UTC) → 08:00 - 13:00 (VN)
+ */
+export const convertHoursUtcToVN = (timeStr: string) => {
+  const [hour, minute] = timeStr.split(":").map(Number);
+
+  const date = new Date();
+  date.setUTCHours(hour, minute, 0, 0); // set theo UTC
+
+  return date.toLocaleTimeString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
 };

@@ -115,6 +115,22 @@ export const bookingApi = {
     axiosInstance
       .get<PagedResponse<PurposeTypeDto>>(BOOKING_API.PURPOSE)
       .then((response) => response.data),
+
+  /**
+  * Approve Booking
+  */
+  approveBooking: (bookingId: string) =>
+    axiosInstance
+      .put<boolean>(`/Bookings/${bookingId}/approve`, { bookingId: bookingId }) // Kiểm tra lại Route của Controller bạn đặt
+      .then((res) => res.data),
+
+  /**
+  * Reject Booking
+  */
+  rejectBooking: (bookingId: string, reason: string) =>
+    axiosInstance
+      .put<boolean>(`/Bookings/${bookingId}/reject`, { bookingId: bookingId, reason })
+      .then((res) => res.data),
 };
 
 export const bookingRequestApi = {

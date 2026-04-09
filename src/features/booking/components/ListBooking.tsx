@@ -1,21 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Repeat, Users, Info } from 'lucide-react';
+import { Search, Repeat, Info } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { AvailableSlotList } from './AvailableSlotList';
 import type { TimeSlot } from '../../slot/types/slot.types';
-import type { StudentGroupInBooking } from '../../groups/types/group.type';
 import type { LabRoomDto } from '../../labroom/types/room.type';
 
 interface ListBookingProps {
   selectedRoom: LabRoomDto | null;
-  studentGroups: StudentGroupInBooking[];
   availableSlots: TimeSlot[];
   onSubmitBooking: (data: {
     slotIds: string[];
     repeatWeekly: boolean;
     weeklyUntil?: string;
-    groupId?: string;
   }) => void;
   loading?: boolean;
   slotsLoading?: boolean;
@@ -27,7 +24,6 @@ interface ListBookingProps {
  */
 export const ListBooking: React.FC<ListBookingProps> = ({
   selectedRoom,
-  studentGroups,
   availableSlots,
   onSubmitBooking,
   loading = false,
@@ -40,7 +36,6 @@ export const ListBooking: React.FC<ListBookingProps> = ({
   const [selectedSlotIds, setSelectedSlotIds] = useState<string[]>([]);
   const [repeatWeekly, setRepeatWeekly] = useState(false);
   const [repeatUntil, setRepeatUntil] = useState('');
-  const [selectedGroupId, setSelectedGroupId] = useState<string>('');
   const [showBookingOptions, setShowBookingOptions] = useState(false);
 
   // Set default dates (today and 7 days from now)
@@ -82,14 +77,12 @@ export const ListBooking: React.FC<ListBookingProps> = ({
       slotIds: selectedSlotIds,
       repeatWeekly,
       weeklyUntil: repeatWeekly ? repeatUntil : undefined,
-      groupId: selectedGroupId || undefined,
     });
 
     // Reset form
     setSelectedSlotIds([]);
     setRepeatWeekly(false);
     setRepeatUntil('');
-    setSelectedGroupId('');
   };
 
   return (
@@ -204,31 +197,7 @@ export const ListBooking: React.FC<ListBookingProps> = ({
             )}
           </div>
 
-          {/* Student Group Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <div className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-brand-600" />
-                <span>Student Group</span>
-                <span className="text-xs text-gray-500 font-normal">(Optional)</span>
-              </div>
-            </label>
-            <select
-              value={selectedGroupId}
-              onChange={(e) => setSelectedGroupId(e.target.value)}
-              className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm"
-            >
-              <option value="">No group selected</option>
-              {studentGroups.map(group => (
-                <option key={group.id} value={group.id}>
-                  {group.name} - {group.courseCode} ({group.studentCount} students)
-                </option>
-              ))}
-            </select>
-            <p className="mt-2 text-xs text-gray-500">
-              Link this booking to a specific student group for better tracking.
-            </p>
-          </div>
+
 
           {/* Selected Slots Summary */}
           <div className="p-4 bg-brand-50 border-2 border-brand-200 rounded-lg">
@@ -237,9 +206,6 @@ export const ListBooking: React.FC<ListBookingProps> = ({
               <li>• <strong>{selectedSlotIds.length}</strong> time slot{selectedSlotIds.length > 1 ? 's' : ''} selected</li>
               <li>• Room: <strong>{selectedRoom?.roomName}</strong></li>
               {repeatWeekly && <li>• Repeating weekly {repeatUntil ? `until ${repeatUntil}` : ''}</li>}
-              {selectedGroupId && (
-                <li>• Group: <strong>{studentGroups.find(g => g.id === selectedGroupId)?.name}</strong></li>
-              )}
             </ul>
           </div>
 

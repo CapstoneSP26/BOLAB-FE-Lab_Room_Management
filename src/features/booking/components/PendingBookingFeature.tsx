@@ -28,6 +28,8 @@ import {
   LoadingSkeleton,
   ReportStatCard,
 } from "../../../components/ui/ComponentsParts";
+import { useRejectBooking } from "../hooks/useRejectBooking";
+import { useApproveBooking } from "../hooks/useApproveBooking";
 
 type SlotTypeFilter = "ALL" | number;
 
@@ -66,6 +68,9 @@ export default function PendingBookingFeature() {
   );
 
   const pendingQuery = useBookingRequests(params);
+
+  const { mutate: approve } = useApproveBooking();
+  const { mutate: reject } = useRejectBooking();
 
   const closeModal = () => {
     setOpen(false);
@@ -158,21 +163,19 @@ export default function PendingBookingFeature() {
     );
   }, [q, buildingId, roomId, slotType]);
 
-  const approve = async (id: string) => {
+  const HandleApprove = async (id: string) => {
     const ok = window.confirm("Approve this booking?");
     if (!ok) return;
 
-    await approveBookingMutation.mutateAsync(id);
+    approve(id);
+    closeModal();
   };
 
-  const reject = (id: string) => {
-    setRejectId(id);
-    setRejectModalOpen(true);
-  };
-
-  const handleRejectSubmit = async (reason: string) => {
-    if (!rejectId) return;
-    await rejectBookingMutation.mutateAsync({ id: rejectId, reason });
+  const handleConfirmReject = async (id: string) => {
+    const ok = window.confirm("Reject this booking?");
+    if (!ok) return;
+    reject({ id: id, "reason": "Rejected by Lab Manager" });
+    closeModal();
   };
 
   return (
@@ -399,11 +402,10 @@ export default function PendingBookingFeature() {
         </div>
 
         <div
-          className={`transition-all duration-300 ease-in-out ${
-            showFilters
-              ? "max-h-[1000px] opacity-100"
-              : "max-h-0 overflow-hidden opacity-0"
-          }`}
+          className={`transition-all duration-300 ease-in-out ${showFilters
+            ? "max-h-[1000px] opacity-100"
+            : "max-h-0 overflow-hidden opacity-0"
+            }`}
         >
           <div className="border-t border-gray-200 p-6 dark:border-gray-700">
             <BookingFilters
@@ -485,8 +487,8 @@ export default function PendingBookingFeature() {
                 setSelected(b);
                 setOpen(true);
               }}
-              onApprove={approve}
-              onReject={reject}
+              onApprove={HandleApprove}
+              onReject={handleConfirmReject}
             />
           </div>
         )}
@@ -527,14 +529,14 @@ export default function PendingBookingFeature() {
         open={open}
         booking={selected}
         onClose={closeModal}
-        onApprove={approve}
-        onReject={reject}
+        onApprove={HandleApprove}
+        onReject={handleConfirmReject}
       />
 
       <RejectReasonModal
         isOpen={rejectModalOpen}
         onClose={() => setRejectModalOpen(false)}
-        onSubmit={handleRejectSubmit}
+        onSubmit={handleConfirmReject}
         isLoading={rejectBookingMutation.isPending}
       />
     </div>
