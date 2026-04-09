@@ -73,12 +73,8 @@ export default function ManualAttendancePage() {
 
     const initial: Record<string, AttendanceStatus> = {};
     
-    // Initialize all students as absent
-    attendanceArray.forEach((student: any) => {
-      initial[student.userId] = 'Absent';
-    });
-
-    // Pre-fill with existing attendance records from API
+    // Map API status to attendance records
+    // API: Present = 0, Absent = 1
     attendanceArray.forEach((record: any) => {
       initial[record.userId] = record.status === 0 ? 'Present' : 'Absent';
     });
