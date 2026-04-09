@@ -69,7 +69,7 @@ export default function ManualAttendancePage() {
 
   // Initialize attendance records and pre-fill students who already scanned QR.
   useEffect(() => {
-    if (isInitialized) return;
+    if (!attendanceArray || attendanceArray.length === 0) return;
 
     const initial: Record<string, AttendanceStatus> = {};
     
@@ -81,7 +81,7 @@ export default function ManualAttendancePage() {
 
     setAttendanceRecords(initial);
     setIsInitialized(true);
-  }, [isInitialized, attendanceArray.length]);
+  }, [attendanceArray]);
 
   // Filter students by search query
   const filteredStudents = useMemo(() => {
