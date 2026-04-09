@@ -9,7 +9,7 @@ import type { ScheduleStatus } from '../../schedules/types/schedule.type';
 /**
  * Attendance Status
  */
-export type AttendanceStatus = 'present' | 'absent' | 'late';
+export type AttendanceStatus = 'Present' | 'Absent';
 
 /**
  * Student Attendance Record

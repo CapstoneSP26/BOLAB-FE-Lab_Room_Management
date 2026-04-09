@@ -75,12 +75,12 @@ export default function ManualAttendancePage() {
     
     // Initialize all students as absent
     attendanceArray.forEach((student: any) => {
-      initial[student.userId] = 'absent';
+      initial[student.userId] = 'Absent';
     });
 
     // Pre-fill with existing attendance records from API
     attendanceArray.forEach((record: any) => {
-      initial[record.userId] = record.status === 0 ? 'absent' : 'present';
+      initial[record.userId] = record.status === 0 ? 'Absent' : 'Present';
     });
 
     setAttendanceRecords(initial);
@@ -106,8 +106,8 @@ export default function ManualAttendancePage() {
     let absent = 0;
 
     Object.values(attendanceRecords).forEach(status => {
-      if (status === 'present') present++;
-      else if (status === 'absent') absent++;
+      if (status === 'Present') present++;
+      else if (status === 'Absent') absent++;
     });
 
     return { total, present, absent };
@@ -127,7 +127,7 @@ export default function ManualAttendancePage() {
     if (!isEditable) return;
     const updated: Record<string, AttendanceStatus> = {};
     students.forEach(student => {
-      updated[student.id] = 'present';
+      updated[student.id] = 'Present';
     });
     setAttendanceRecords(updated);
   };
@@ -136,7 +136,7 @@ export default function ManualAttendancePage() {
     if (!isEditable) return;
     const updated: Record<string, AttendanceStatus> = {};
     students.forEach(student => {
-      updated[student.id] = 'absent';
+      updated[student.id] = 'Absent';
     });
     setAttendanceRecords(updated);
   };
@@ -145,7 +145,7 @@ export default function ManualAttendancePage() {
     if (!isEditable) return;
     const updated: Record<string, AttendanceStatus> = {};
     students.forEach(student => {
-      updated[student.id] = 'absent';
+      updated[student.id] = 'Absent';
     });
     setAttendanceRecords(updated);
   };
@@ -171,14 +171,14 @@ export default function ManualAttendancePage() {
 
       const alreadyMarkedPresent = new Set(
         attendanceArray
-          .filter((record: any) => record.status === 1 || record.status === 'present')
+          .filter((record: any) => record.status === 1 || record.status === 'Present')
           .map((record: any) => record.userId)
       );
 
       // Build attendance payload - use student.id (userId only)
       const attendancePayload = students.map(student => ({
         userId: student.id,  // Must be userId (not studentId)
-        status: attendanceRecords[student.id] as AttendanceStatus,
+        status: attendanceRecords[student.id] as AttendanceStatus,  // Already 'Present' or 'Absent'
       }));
 
       // Call API to submit attendance
@@ -488,11 +488,11 @@ export default function ManualAttendancePage() {
                     {/* Status Buttons */}
                     <div className="col-span-4 flex items-center justify-center gap-2">
                       <button
-                        onClick={() => handleStatusChange(student.id, 'present')}
+                        onClick={() => handleStatusChange(student.id, 'Present')}
                         disabled={!isEditable}
                         className={`flex items-center gap-1.5 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${!isEditable
                           ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                          : status === 'present'
+                          : status === 'Present'
                             ? 'bg-emerald-600 text-white shadow-md'
                             : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
                           }`}
@@ -502,11 +502,11 @@ export default function ManualAttendancePage() {
                       </button>
 
                       <button
-                        onClick={() => handleStatusChange(student.id, 'absent')}
+                        onClick={() => handleStatusChange(student.id, 'Absent')}
                         disabled={!isEditable}
                         className={`flex items-center gap-1.5 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${!isEditable
                           ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                          : status === 'absent'
+                          : status === 'Absent'
                             ? 'bg-red-600 text-white shadow-md'
                             : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
                           }`}
