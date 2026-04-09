@@ -69,28 +69,23 @@ export default function ManualAttendancePage() {
 
   // Initialize attendance records and pre-fill students who already scanned QR.
   useEffect(() => {
-    if (isInitialized || !students.length) return;
+    if (isInitialized) return;
 
     const initial: Record<string, AttendanceStatus> = {};
-    students.forEach(student => {
-      initial[student.id] = 'absent';
+    
+    // Initialize all students as absent
+    attendanceArray.forEach((student: any) => {
+      initial[student.userId] = 'absent';
     });
 
     // Pre-fill with existing attendance records from API
-    const apiStudents = attendanceArray;
-    apiStudents.forEach((record: any) => {
-      const matchedStudent = students.find(
-        student => student.id === record.userId
-      );
-
-      if (matchedStudent) {
-        initial[matchedStudent.id] = record.status === 0 ? 'absent' : 'present';
-      }
+    attendanceArray.forEach((record: any) => {
+      initial[record.userId] = record.status === 0 ? 'absent' : 'present';
     });
 
     setAttendanceRecords(initial);
     setIsInitialized(true);
-  }, [attendanceArray, isInitialized, students]);
+  }, [isInitialized, attendanceArray.length]);
 
   // Filter students by search query
   const filteredStudents = useMemo(() => {
