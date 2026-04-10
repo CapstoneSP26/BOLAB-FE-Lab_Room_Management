@@ -2,16 +2,6 @@
 import { create } from 'zustand';
 import { authApi } from '../features/auth/api/auth.api';
 import type { UserAuth } from '../features/auth/types/auth.types';
-import { jwtDecode } from 'jwt-decode';
-import Cookies from 'js-cookie';
-import { getAccessToken } from '../utils/storage';
-
-interface UserPayload {
-  sub: string;
-  email: string;
-  campusId: string;
-  role: string;
-}
 
 interface AuthState {
   user: UserAuth | null;

@@ -8,11 +8,7 @@ import RejectReasonModal from "./RejectReasonModal";
 import { buildingApi } from "../../building/api/buildingApi";
 import { labroomApi } from "../../labroom/api/labroom.api";
 import { slotApi } from "../../slot/api/slotApi";
-import {
-  useApproveBookingRequest,
-  useBookingRequests,
-  useRejectBookingRequest,
-} from "../hooks/useBookingRequest";
+import { useBookingRequests } from "../hooks/useBookingRequest";
 
 import type { BuildingDto } from "../../building/types/building.type";
 import type { LabRoomDto } from "../../labroom/types/room.type";
@@ -49,7 +45,6 @@ export default function PendingBookingFeature() {
   const [showFilters, setShowFilters] = useState(false);
 
   // Reject with reason state
-  const [rejectId, setRejectId] = useState<string | null>(null);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
 
   const params: GetBookingRequestsRequest = useMemo(
@@ -77,19 +72,6 @@ export default function PendingBookingFeature() {
     setSelected(null);
   };
 
-  const approveBookingMutation = useApproveBookingRequest({
-    onSuccess: () => {
-      closeModal();
-    },
-  });
-
-  const rejectBookingMutation = useRejectBookingRequest({
-    onSuccess: () => {
-      setRejectModalOpen(false);
-      setRejectId(null);
-      closeModal();
-    },
-  });
 
   const items = useMemo(
     () => pendingQuery.data?.data ?? [],
@@ -537,7 +519,7 @@ export default function PendingBookingFeature() {
         isOpen={rejectModalOpen}
         onClose={() => setRejectModalOpen(false)}
         onSubmit={handleConfirmReject}
-        isLoading={rejectBookingMutation.isPending}
+        isLoading={false}
       />
     </div>
   );

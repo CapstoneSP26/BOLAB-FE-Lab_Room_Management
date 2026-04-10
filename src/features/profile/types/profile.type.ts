@@ -12,6 +12,7 @@ export interface UserDto {
   provider?: string | null;
   providerId?: string | null;
   campusId: number;
+  campusName?: string | null;
   createdAt: string;
   updatedAt?: string | null;
   createdBy?: string | null;
@@ -33,6 +34,7 @@ export interface Profile {
   avatarUrl?: string | null;
   bio?: string | null;
   campusId: number;
+  campusName?: string | null;
   createdAt: string;
   updatedAt?: string | null;
   createdBy?: string | null;

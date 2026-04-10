@@ -245,7 +245,7 @@ export const BuildingCarousel3D: React.FC<BuildingCarousel3DProps> = ({ building
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            onSelectBuilding(building.id);
+                            onSelectBuilding(String(building.id));
                           }}
                           className="mt-4 px-6 py-3 rounded-full bg-white text-gray-900 font-bold text-sm
                                    hover:bg-orange-500 hover:text-white transition-all duration-300

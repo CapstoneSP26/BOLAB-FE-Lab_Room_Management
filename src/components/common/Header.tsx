@@ -34,11 +34,11 @@ const Header: React.FC = () => {
 
   const userName =
     profile?.fullName?.trim() ||
-    authUser?.sub?.trim() ||
+    authUser?.fullName?.trim() ||
     authUser?.email?.trim() ||
     'User';
 
-  const rawRole = profile?.role?.trim() || authUser?.role?.trim();
+  const rawRole = profile?.role?.trim() || authUser?.roles?.[0]?.trim();
   const userRole = formatRoleLabel(rawRole);
 
   const userAvatar =

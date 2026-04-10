@@ -3,16 +3,10 @@
  * Floating Action Button with expandable menu
  */
 
-import React, { useState, useRef, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { Plus, Calendar, FileText, QrCode, X } from 'lucide-react';
-import { SendReportModal } from '../../features/reports/components/SendReportModal';
+import React from 'react';
+import { useLocation } from 'react-router-dom';
 
 export const QuickActionFAB: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-  const fabRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
   const location = useLocation();
 
   const hiddenPaths = ['/login'];

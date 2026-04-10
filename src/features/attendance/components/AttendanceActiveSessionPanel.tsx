@@ -17,7 +17,6 @@ interface AttendanceActiveSessionPanelProps {
 
 export function AttendanceActiveSessionPanel({
   session,
-  actionBooking,
   activeDisplayRoom,
   activeDisplayBuilding,
   isExpired,

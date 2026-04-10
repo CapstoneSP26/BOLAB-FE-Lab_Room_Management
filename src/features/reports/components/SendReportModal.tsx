@@ -17,11 +17,7 @@ import { ReportSuccessModal } from "./ReportSuccessModal";
 import { useCreateReport } from "../hooks/useReport";
 import { useReportReasons } from "../hooks/useReport";
 
-import type {
-  Report,
-  CreateReportResponse,
-  ImagePreview,
-} from "../types/report.type";
+import type { CreateReportResponse, ImagePreview } from "../types/report.type";
 import { useToast } from "../../../hooks/useToast";
 
 interface SendReportModalProps {
@@ -44,7 +40,6 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({
 
   // Success modal state
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [submittedReport, setSubmittedReport] = useState<Report | null>(null);
 
   // Fetch rooms for dropdown
   const { data: buildingsData, isLoading: buildingsLoading } = useBuildings();
@@ -57,8 +52,7 @@ export const SendReportModal: React.FC<SendReportModalProps> = ({
 
   // Create report mutation
   const createReportMutation = useCreateReport({
-    onSuccess: (response: CreateReportResponse) => {
-      setSubmittedReport(response.data);
+    onSuccess: (_response: CreateReportResponse) => {
       setShowSuccessModal(true);
       toast.success(
         "Báo cáo đã được gửi!",
