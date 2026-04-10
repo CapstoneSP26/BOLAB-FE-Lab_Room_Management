@@ -28,8 +28,7 @@ import {
   LoadingSkeleton,
   ReportStatCard,
 } from "../../../components/ui/ComponentsParts";
-import { useRejectBooking } from "../hooks/useRejectBooking";
-import { useApproveBooking } from "../hooks/useApproveBooking";
+import { useToast } from "../../../hooks/useToast";
 
 type SlotTypeFilter = "ALL" | number;
 
@@ -48,11 +47,10 @@ export default function PendingBookingFeature() {
   const [pageSize] = useState(10);
 
   const [open, setOpen] = useState(false);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [selected, setSelected] = useState<BookingRequest | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Reject with reason state
-  const [rejectId, setRejectId] = useState<string | null>(null);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
 
   const params: GetBookingRequestsRequest = useMemo(
@@ -72,8 +70,7 @@ export default function PendingBookingFeature() {
 
   const pendingQuery = useBookingRequests(params);
 
-  const { mutate: approve } = useApproveBooking();
-  const { mutate: reject } = useRejectBooking();
+  const toast = useToast();
 
   const closeModal = () => {
     setOpen(false);
@@ -82,24 +79,34 @@ export default function PendingBookingFeature() {
 
   const approveBookingMutation = useApproveBookingRequest({
     onSuccess: () => {
+      toast.success("Success", "Booking approved successfully.");
       closeModal();
     },
   });
 
   const rejectBookingMutation = useRejectBookingRequest({
     onSuccess: () => {
+      toast.success("Success", "Booking rejected.");
       setRejectModalOpen(false);
-      setRejectId(null);
+      setRejectingId(null);
       closeModal();
     },
   });
 
+  const response = pendingQuery.data as {
+    data?: BookingRequest[];
+    items?: BookingRequest[];
+    total?: number;
+    totalCount?: number;
+    totalPages?: number;
+  };
   const items = useMemo(
-    () => pendingQuery.data?.data ?? [],
-    [pendingQuery.data],
+    () => response?.data ?? response?.items ?? [],
+    [response],
   );
-  const totalCount = pendingQuery.data?.total ?? 0;
-  const totalPages = Math.ceil(totalCount / pageSize);
+  const totalCount = response?.totalCount ?? response?.total ?? 0;
+  const totalPages =
+    response?.totalPages ?? Math.ceil(totalCount / (pageSize || 10));
   const loading = pendingQuery.isLoading || pendingQuery.isFetching;
 
   const reload = async () => {
@@ -175,15 +182,17 @@ export default function PendingBookingFeature() {
     const ok = window.confirm("Approve this booking?");
     if (!ok) return;
 
-    approve(id);
-    closeModal();
+    approveBookingMutation.mutate(id);
   };
 
-  const handleConfirmReject = async (id: string) => {
-    const ok = window.confirm("Reject this booking?");
-    if (!ok) return;
-    reject({ id: id, "reason": "Rejected by Lab Manager" });
-    closeModal();
+  const handleOpenReject = (id: string) => {
+    setRejectingId(id);
+    setRejectModalOpen(true);
+  };
+
+  const handleConfirmReject = async (reason: string) => {
+    if (!rejectingId) return;
+    rejectBookingMutation.mutate({ id: rejectingId, reason });
   };
 
   return (
@@ -500,7 +509,7 @@ export default function PendingBookingFeature() {
                 setOpen(true);
               }}
               onApprove={HandleApprove}
-              onReject={handleConfirmReject}
+              onReject={handleOpenReject}
             />
           </div>
         )}
@@ -542,12 +551,15 @@ export default function PendingBookingFeature() {
         booking={selected}
         onClose={closeModal}
         onApprove={HandleApprove}
-        onReject={handleConfirmReject}
+        onReject={() => selected && handleOpenReject(String(selected.id))}
       />
 
       <RejectReasonModal
         isOpen={rejectModalOpen}
-        onClose={() => setRejectModalOpen(false)}
+        onClose={() => {
+          setRejectModalOpen(false);
+          setRejectingId(null);
+        }}
         onSubmit={handleConfirmReject}
         isLoading={rejectBookingMutation.isPending}
       />

@@ -101,12 +101,20 @@ export default function HistoryBookingFeature() {
     },
   });
 
+  const response = historyQuery.data as {
+    data?: BookingRequest[];
+    items?: BookingRequest[];
+    total?: number;
+    totalCount?: number;
+    totalPages?: number;
+  };
   const items = useMemo(
-    () => historyQuery.data?.data ?? [],
-    [historyQuery.data],
+    () => response?.data ?? response?.items ?? [],
+    [response],
   );
-  const totalCount = historyQuery.data?.total ?? 0;
-  const totalPages = Math.ceil(totalCount / pageSize);
+  const totalCount = response?.totalCount ?? response?.total ?? 0;
+  const totalPages =
+    response?.totalPages ?? Math.ceil(totalCount / (pageSize || 10));
   const loading = historyQuery.isLoading || historyQuery.isFetching;
   const selected: BookingRequest | null = detailQuery.data?.data ?? null;
 
@@ -129,7 +137,10 @@ export default function HistoryBookingFeature() {
   const handleReject = async () => {
     if (!selected?.id) return;
 
-    await rejectBookingMutation.mutateAsync({ id: String(selected.id), reason: "Rejected from History" });
+    await rejectBookingMutation.mutateAsync({
+      id: String(selected.id),
+      reason: "Rejected from History",
+    });
   };
 
   useEffect(() => {
@@ -229,17 +240,17 @@ export default function HistoryBookingFeature() {
 
   const stats = useMemo(() => {
     const approved = items.filter(
-      (item) =>
+      (item: BookingRequest) =>
         normText(item.status) === "approved" ||
         normText(item.status) === "accepted",
     ).length;
 
     const rejected = items.filter(
-      (item) => normText(item.status) === "rejected",
+      (item: BookingRequest) => normText(item.status) === "rejected",
     ).length;
 
     const pending = items.filter(
-      (item) =>
+      (item: BookingRequest) =>
         normText(item.status) === "pending" ||
         normText(item.status) === "pendingapproval",
     ).length;
