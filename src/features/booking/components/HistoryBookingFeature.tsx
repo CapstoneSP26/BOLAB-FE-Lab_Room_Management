@@ -101,23 +101,24 @@ export default function HistoryBookingFeature() {
     },
   });
 
-  const response = historyQuery.data as {
+  type HistoryBookingResponse = {
     data?: BookingRequest[];
-    items?: BookingRequest[];
     total?: number;
-    totalCount?: number;
-    totalPages?: number;
+    page?: number;
+    limit?: number;
   };
-  const items = useMemo(
-    () => response?.data ?? response?.items ?? [],
+
+  const response = historyQuery.data as HistoryBookingResponse | undefined;
+
+  const items = useMemo<BookingRequest[]>(
+    () => response?.data ?? [],
     [response],
   );
-  const totalCount = response?.totalCount ?? response?.total ?? 0;
-  const totalPages =
-    response?.totalPages ?? Math.ceil(totalCount / (pageSize || 10));
+
+  const totalCount = response?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   const loading = historyQuery.isLoading || historyQuery.isFetching;
   const selected: BookingRequest | null = detailQuery.data?.data ?? null;
-
   const reload = async () => {
     await historyQuery.refetch();
   };
@@ -432,7 +433,7 @@ export default function HistoryBookingFeature() {
                   }}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 transition-all hover:bg-gray-50 active:scale-95 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
                 >
-                  <X className="h-3 v-3" />
+                  <X className="h-3 w-3" />
                   Clear All
                 </button>
               )}

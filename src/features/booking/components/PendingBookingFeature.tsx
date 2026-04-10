@@ -13,7 +13,6 @@ import {
   useBookingRequests,
   useRejectBookingRequest,
 } from "../hooks/useBookingRequest";
-
 import type { BuildingDto } from "../../building/types/building.type";
 import type { LabRoomDto } from "../../labroom/types/room.type";
 import type { SlotType } from "../../slot/types/slot.types";
@@ -93,20 +92,22 @@ export default function PendingBookingFeature() {
     },
   });
 
-  const response = pendingQuery.data as {
+  type PendingBookingResponse = {
     data?: BookingRequest[];
-    items?: BookingRequest[];
     total?: number;
-    totalCount?: number;
-    totalPages?: number;
+    page?: number;
+    limit?: number;
   };
-  const items = useMemo(
-    () => response?.data ?? response?.items ?? [],
+
+  const response = pendingQuery.data as PendingBookingResponse | undefined;
+
+  const items = useMemo<BookingRequest[]>(
+    () => response?.data ?? [],
     [response],
   );
-  const totalCount = response?.totalCount ?? response?.total ?? 0;
-  const totalPages =
-    response?.totalPages ?? Math.ceil(totalCount / (pageSize || 10));
+
+  const totalCount = response?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   const loading = pendingQuery.isLoading || pendingQuery.isFetching;
 
   const reload = async () => {
@@ -419,10 +420,11 @@ export default function PendingBookingFeature() {
         </div>
 
         <div
-          className={`transition-all duration-300 ease-in-out ${showFilters
-            ? "max-h-[1000px] opacity-100"
-            : "max-h-0 overflow-hidden opacity-0"
-            }`}
+          className={`transition-all duration-300 ease-in-out ${
+            showFilters
+              ? "max-h-[1000px] opacity-100"
+              : "max-h-0 overflow-hidden opacity-0"
+          }`}
         >
           <div className="border-t border-gray-200 p-6 dark:border-gray-700">
             <BookingFilters

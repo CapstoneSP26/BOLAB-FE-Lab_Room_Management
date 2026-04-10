@@ -84,15 +84,6 @@ export default function BookingTable({
             ) : (
               rows.map((b) => (
                 <tr key={String(b.id)} className="bg-white dark:bg-transparent">
-                  {/* <td className="px-4 py-4">
-                    <div className="font-semibold text-gray-800 dark:text-white/90">
-                      {b.purpose ?? "No purpose provided"}
-                    </div>
-                    <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      User: {b.requestedBy}
-                    </div>
-                  </td> */}
-
                   <td className="px-4 py-4 font-semibold text-gray-800 dark:text-white/90">
                     {b.roomName}
                     <div className="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
