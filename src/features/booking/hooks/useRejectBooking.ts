@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { bookingApi } from "../api/bookingApi";
 import { useToast } from "../../../hooks/useToast";
+import { QUERY_KEYS } from "./useBookingRequest";
 
 interface RejectParams {
   id: string;
@@ -20,6 +21,7 @@ export const useRejectBooking = () => {
       // Làm mới dữ liệu để cập nhật trạng thái trên UI
       queryClient.invalidateQueries({ queryKey: ['bookings'] });
       queryClient.invalidateQueries({ queryKey: ['schedules'] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.BOOKING_REQUESTS] });
     },
 
     onError: (error: any) => {

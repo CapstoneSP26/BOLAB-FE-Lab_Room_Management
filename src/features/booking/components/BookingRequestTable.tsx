@@ -19,7 +19,7 @@ type Props = {
   onView: (b: BookingRequest) => void;
 
   onApprove?: (id: string) => void | Promise<void>;
-  onReject?: (id: string) => void | Promise<void>;
+  handleOpenRejectModal: (id: string) => void
 };
 
 export default function BookingTable({
@@ -32,9 +32,9 @@ export default function BookingTable({
   onPageChange,
   onView,
   onApprove,
-  onReject,
+  handleOpenRejectModal,
 }: Props) {
-  const hasActions = Boolean(onApprove && onReject);
+  const hasActions = Boolean(onApprove && handleOpenRejectModal);
 
   const pageButtons = Array.from(
     { length: Math.min(5, Math.max(totalPages, 1)) },
@@ -92,10 +92,9 @@ export default function BookingTable({
                   </td>
 
                   <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
-                    <div>{formatUtcDateLabel(b.startTime)}</div>
+                    <div>{b.date}</div>
                     <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      {formatBookingTimeLabel(b.startTime, b.startTime)} -{" "}
-                      {formatBookingTimeLabel(b.startTime, b.endTime)}
+                      {convertHoursUtcToVN(b.startTime) + " - " + convertHoursUtcToVN(b.endTime)}
                     </div>
                   </td>
 
@@ -133,7 +132,7 @@ export default function BookingTable({
                         <>
                           <button
                             type="button"
-                            onClick={() => onReject?.(String(b.id))}
+                            onClick={() => handleOpenRejectModal(b.id.toString())}
                             className="rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700"
                           >
                             Reject

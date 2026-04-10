@@ -2,7 +2,6 @@ import React, { useCallback, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useSidebar } from "./sidebarContext.tsx";
 import { useAuthStore } from "../../store/useAuthStore";
-import { Role } from "../../constants/role";
 import {
   GridIcon,
   CalenderIcon,
@@ -12,7 +11,6 @@ import {
   ListIcon,
   ImportFileIcon,
 } from "../../components/icon/index.ts";
-
 type IconProps = React.SVGProps<SVGSVGElement> & { size?: number };
 type IconComp = React.ComponentType<IconProps>;
 
@@ -57,12 +55,7 @@ const AppSidebar: React.FC = () => {
     setIsHovered,
   } = useSidebar();
   const { user } = useAuthStore();
-
-  const role = useMemo(() => {
-    if (user?.roles.includes(Role.Admin)) return "Admin";
-    return "Manager";
-  }, [user]);
-
+  const isAdmin = user && user.roles.includes("Admin") ? true : false;
   const base = "/labmanager";
   const p = (suffix: string) => `${base}${suffix}`;
 
@@ -79,7 +72,7 @@ const AppSidebar: React.FC = () => {
   );
   const menuGroups: MenuGroup[] = useMemo(() => {
     // ===== ADMIN MENU =====
-    if (role === "Admin") {
+    if (isAdmin) {
       return [
         {
           title: "Menu",
@@ -126,8 +119,11 @@ const AppSidebar: React.FC = () => {
 
             {
               icon: CalenderIcon,
-              name: "Room Schedule",
-              path: p("/lab-scheduler"),
+              name: "Lab Rooms",
+              subItems: [
+                { name: "Room Schedule", path: p("/lab-scheduler") },
+                { name: "Room Management", path: p("/room-management") },
+              ],
             },
 
             {
@@ -219,7 +215,7 @@ const AppSidebar: React.FC = () => {
         ],
       },
     ];
-  }, [role]);
+  }, [user]);
 
   const isActive = useCallback(
     (path: string) => location.pathname === path,

@@ -8,7 +8,7 @@ import type {
   GetScheduleListResponse,
   Schedule,
   UpdateScheduleStatusResponse,
-} from "./calendar.type";
+} from "../types/calendar.type";
 
 export const mapScheduleDtoToCalendarSchedule = (dto: ScheduleDto): Schedule => ({
   Id: dto.id,

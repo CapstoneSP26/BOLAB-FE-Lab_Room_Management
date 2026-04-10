@@ -5,7 +5,6 @@ export interface AppRoute {
   element: LazyExoticComponent<ComponentType>;
   roles?: Role[];
 }
-
 const LoginPage = lazy(() => import("../../pages/user/LoginPage.tsx"));
 const UnauthorizedPage = lazy(() => import("../../pages/user/UnauthorizedPage.tsx"));
 const HomePage = lazy(() => import("../../pages/user/HomePage.tsx"));
@@ -35,6 +34,9 @@ const ImportUserPage = lazy(() => import("../../pages/labmanager/ImportUserPage.
 const ReportListPage = lazy(() => import("../../pages/labmanager/ReportListPage.tsx"));
 const ReportDetailPage = lazy(() => import("../../pages/labmanager/ReportDetailPage.tsx"));
 const IncidentHistoryPage = lazy(() => import("../../pages/labmanager/ReportHistoryPage.tsx"));
+
+const RoomManagementPage = lazy(() => import("../../pages/admin/RoomManagementPage.tsx"))
+const ScheduleManagementPage = lazy(() => import("../../pages/admin/ScheduleManagementPage.tsx"));
 
 export const publicRoutes: AppRoute[] = [
   { path: "/login", element: LoginPage },
@@ -71,6 +73,8 @@ export const managerRoutes: AppRoute[] = [
   { path: "/labmanager/reports", element: ReportListPage, roles: [Role.Manager, Role.Admin] },
   { path: "/labmanager/reports/:id", element: ReportDetailPage, roles: [Role.Manager, Role.Admin] },
   { path: "/labmanager/incident-history", element: IncidentHistoryPage, roles: [Role.Manager, Role.Admin] },
+  { path: "/labmanager/room-management", element: RoomManagementPage, roles: [Role.Admin, Role.Manager] },
+  { path: "/labmanager/slot-management", element: ScheduleManagementPage, roles: [Role.Admin] }
 ];
 
 export const adminRoutes = [

@@ -27,7 +27,6 @@ import {
   LoadingSkeleton,
   ReportStatCard,
 } from "../../../components/ui/ComponentsParts";
-import { useToast } from "../../../hooks/useToast";
 
 type SlotTypeFilter = "ALL" | number;
 
@@ -69,41 +68,19 @@ export default function PendingBookingFeature() {
 
   const pendingQuery = useBookingRequests(params);
 
-  const toast = useToast();
+  const { mutate: approve } = useApproveBooking();
+  const { mutate: reject, isPending } = useRejectBooking();
 
   const closeModal = () => {
     setOpen(false);
     setSelected(null);
+    setRejectId(null);
+    setRejectModalOpen(false);
   };
 
-  const approveBookingMutation = useApproveBookingRequest({
-    onSuccess: () => {
-      toast.success("Success", "Booking approved successfully.");
-      closeModal();
-    },
-  });
-
-  const rejectBookingMutation = useRejectBookingRequest({
-    onSuccess: () => {
-      toast.success("Success", "Booking rejected.");
-      setRejectModalOpen(false);
-      setRejectingId(null);
-      closeModal();
-    },
-  });
-
-  type PendingBookingResponse = {
-    data?: BookingRequest[];
-    total?: number;
-    page?: number;
-    limit?: number;
-  };
-
-  const response = pendingQuery.data as PendingBookingResponse | undefined;
-
-  const items = useMemo<BookingRequest[]>(
-    () => response?.data ?? [],
-    [response],
+  const items = useMemo(
+    () => pendingQuery.data?.data ?? [],
+    [pendingQuery.data],
   );
 
   const totalCount = response?.total ?? 0;
@@ -186,14 +163,15 @@ export default function PendingBookingFeature() {
     approveBookingMutation.mutate(id);
   };
 
-  const handleOpenReject = (id: string) => {
-    setRejectingId(id);
+  const HandleOpenRejectModal = (id: string) => {
+    setRejectId(id);
     setRejectModalOpen(true);
   };
 
-  const handleConfirmReject = async (reason: string) => {
-    if (!rejectingId) return;
-    rejectBookingMutation.mutate({ id: rejectingId, reason });
+  const handleConfirmReject = async (id: string, reason: string) => {
+    reject({ id: id, reason: reason });
+    closeModal();
+    setRejectId(null);
   };
 
   return (
@@ -511,7 +489,7 @@ export default function PendingBookingFeature() {
                 setOpen(true);
               }}
               onApprove={HandleApprove}
-              onReject={handleOpenReject}
+              handleOpenRejectModal={HandleOpenRejectModal}
             />
           </div>
         )}
@@ -553,17 +531,18 @@ export default function PendingBookingFeature() {
         booking={selected}
         onClose={closeModal}
         onApprove={HandleApprove}
-        onReject={() => selected && handleOpenReject(String(selected.id))}
+        handleOpenRejectModal={HandleOpenRejectModal}
       />
 
       <RejectReasonModal
+        rejectId={rejectId}
         isOpen={rejectModalOpen}
         onClose={() => {
           setRejectModalOpen(false);
           setRejectingId(null);
         }}
         onSubmit={handleConfirmReject}
-        isLoading={rejectBookingMutation.isPending}
+        isLoading={isPending}
       />
     </div>
   );
