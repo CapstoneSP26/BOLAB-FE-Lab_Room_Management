@@ -23,7 +23,10 @@ export const FlexibleGridView: React.FC<FlexibleGridViewProps> = ({
   handleMouseDown,
 }) => {
   const { START_HOUR, END_HOUR, CELL_HEIGHT } = CALENDAR_CONFIG;
-  const maxHeight = useMemo(() => (END_HOUR - START_HOUR + 1) * CELL_HEIGHT, []);
+  const maxHeight = useMemo(
+    () => (END_HOUR - START_HOUR + 1) * CELL_HEIGHT,
+    [],
+  );
   const now = new Date();
   const minAllowedTime = addHours(now, minBookingLeadTime);
   // --- LOGIC XỬ LÝ CHỒNG LẤN (OVERLAP) ---
@@ -169,7 +172,7 @@ export const FlexibleGridView: React.FC<FlexibleGridViewProps> = ({
 
           let lockedOverlayStyle = null;
           if (isPastDay) {
-            lockedOverlayStyle = { top: 0, height: '100%' };
+            lockedOverlayStyle = { top: 0, height: "100%" };
           } else if (isToday) {
             const heightPos = Math.min(timeToPosition(format(minAllowedTime, 'HH:mm')), maxHeight);
             lockedOverlayStyle = { top: 0, height: `${heightPos}px` };

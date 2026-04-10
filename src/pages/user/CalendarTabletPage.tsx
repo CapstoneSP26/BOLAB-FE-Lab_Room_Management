@@ -34,6 +34,7 @@ const CalendarTabletPage: React.FC = () => {
     startDate: getStartOfDayVNInUTC(weekStart),
     endDate: getStartOfDayVNInUTC(addDays(weekEnd, 1))
   });
+  console.log("Event : ", events)
 
   const gridRef = useRef<HTMLDivElement>(null);
 

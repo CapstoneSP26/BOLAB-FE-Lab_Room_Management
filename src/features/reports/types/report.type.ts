@@ -61,7 +61,7 @@ export interface ReportDraft {
 export interface Report {
   id: string;
   userId: string;
-  userName: string;
+  userName?: string;
 
   reportType?: string;
   description: string;
@@ -118,20 +118,7 @@ export interface GetMyReportsRequest {
 export interface GetReportDetailRequest {
   reportId: string;
 }
-export interface GetReportsRequest {
-  q?: string;
-  buildingId?: number;
-  roomId?: number;
-  reportType?: string;
-  isResolved?: boolean;
-  fromDate?: string;
-  toDate?: string;
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  isDescending?: boolean;
-}
-export interface GetReportHistoryRequest {
+export interface GetReportListRequest {
   q?: string;
   buildingId?: number;
   roomId?: number;
@@ -160,15 +147,9 @@ export interface CreateReportResponse {
   message: string;
   data: Report;
 }
-export interface GetReportsResponse {
+export interface GetReportListResponse {
   success: boolean;
   data: PagedResponse<Report>;
-}
-export interface GetReportHistoryResponse {
-  data: Report[];
-  total?: number;
-  page?: number;
-  limit?: number;
 }
 
 export interface GetMyReportsResponse {

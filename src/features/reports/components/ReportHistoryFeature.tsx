@@ -1,26 +1,28 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import type { ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronDown, Filter, X, RefreshCw, AlertTriangle } from "lucide-react";
 
 import ReportHistoryFilter from "./ReportHistoryFilter";
 import ReportHistoryTable from "./ReportHistoryTable";
-
 import { buildingApi } from "../../building/api/buildingApi";
 import { labroomApi } from "../../labroom/api/labroom.api";
-import { mapBuildingOptions, mapRoomOptions } from "../types/report.mapper";
-import type { Building } from "../../building/types/building.type";
-import type { LabRoomLookupItem } from "../../labroom/types/room.type";
-import { useReports } from "../hooks/useReport";
+import type { BuildingDto } from "../../building/types/building.type";
+import type { LabRoomDto } from "../../labroom/types/room.type";
+import { useReportHistory } from "../hooks/useReport";
+import {
+  ReportStatCard,
+  EmptyIcon,
+  EmptyState,
+  LoadingSkeleton,
+} from "../../../components/ui/ComponentsParts";
 
 export default function ReportHistoryFeature() {
   const nav = useNavigate();
 
-  const [lookupLoading, setLookupLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
-
-  const [buildingOptions, setBuildingOptions] = useState<Building[]>([]);
-  const [roomOptions, setRoomOptions] = useState<LabRoomLookupItem[]>([]);
+  const [lookupLoading, setLookupLoading] = useState(true);
+  const [buildingOptions, setBuildingOptions] = useState<BuildingDto[]>([]);
+  const [roomOptions, setRoomOptions] = useState<LabRoomDto[]>([]);
 
   const [q, setQ] = useState("");
   const [buildingId, setBuildingId] = useState<number | "ALL">("ALL");
@@ -29,13 +31,12 @@ export default function ReportHistoryFeature() {
   const {
     data: pagedReports,
     isLoading,
-    isFetching,
     refetch,
-  } = useReports({
+    isFetching,
+  } = useReportHistory({
     q: q.trim() || undefined,
     buildingId: buildingId === "ALL" ? undefined : buildingId,
     roomId: roomId === "ALL" ? undefined : roomId,
-    isResolved: true,
     page: 1,
     limit: 1000,
     sortBy: "CreatedAt",
@@ -43,25 +44,29 @@ export default function ReportHistoryFeature() {
   });
 
   const items = useMemo(() => pagedReports?.items ?? [], [pagedReports?.items]);
-
-  const loadLookups = useCallback(async () => {
-    setLookupLoading(true);
-    try {
-      const buildings = await buildingApi.getBuildings({
-        pageNumber: 1,
-        pageSize: 1000,
-      });
-
-      setBuildingOptions(mapBuildingOptions(buildings ?? []));
-      setRoomOptions([]);
-    } finally {
-      setLookupLoading(false);
-    }
-  }, []);
+  const totalCount = pagedReports?.totalCount ?? items.length;
 
   useEffect(() => {
-    void loadLookups();
-  }, [loadLookups]);
+    const loadBuildings = async () => {
+      setLookupLoading(true);
+      try {
+        const buildingsResponse = await buildingApi.getBuildings({
+          pageNumber: 1,
+          pageSize: 1000,
+        });
+
+        const buildings = Array.isArray(buildingsResponse?.items)
+          ? buildingsResponse.items
+          : [];
+
+        setBuildingOptions(buildings);
+      } finally {
+        setLookupLoading(false);
+      }
+    };
+
+    void loadBuildings();
+  }, []);
 
   useEffect(() => {
     const loadRoomsByBuilding = async () => {
@@ -81,7 +86,7 @@ export default function ReportHistoryFeature() {
         });
 
         const rooms = Array.isArray(response?.items) ? response.items : [];
-        setRoomOptions(mapRoomOptions(rooms));
+        setRoomOptions(rooms);
       } catch {
         setRoomOptions([]);
       }
@@ -90,17 +95,13 @@ export default function ReportHistoryFeature() {
     void loadRoomsByBuilding();
   }, [buildingId]);
 
-  const rows = useMemo(() => {
-    return [...items].sort((a, b) =>
-      String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? "")),
-    );
-  }, [items]);
+  const rows = useMemo(() => items, [items]);
 
   const stats = useMemo(() => {
     return {
-      totalResolved: rows.length,
+      totalResolved: totalCount,
     };
-  }, [rows]);
+  }, [totalCount]);
 
   const hasActiveFilters = useMemo(() => {
     return q.trim() !== "" || buildingId !== "ALL" || roomId !== "ALL";
@@ -120,12 +121,11 @@ export default function ReportHistoryFeature() {
     setRoomId("ALL");
   };
   const loading = isLoading || isFetching;
+
   return (
     <div className="space-y-6">
-      {/* Hero Header */}
       <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-white via-red-50/30 to-orange-50/20 p-6 shadow-sm dark:border-gray-700 dark:from-gray-800/50 dark:via-red-900/5 dark:to-orange-900/5">
         <div className="flex flex-col gap-6">
-          {/* Title Section */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-start gap-4">
               <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-red-500 to-orange-600 shadow-lg shadow-red-500/20">
@@ -147,25 +147,17 @@ export default function ReportHistoryFeature() {
               disabled={loading}
               className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
             >
-              <RefreshCw
-                className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
-              />
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
               Refresh
             </button>
           </div>
 
-          {/* Stats Dashboard */}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <StatCard
+            <ReportStatCard
               label="Resolved Reports"
               value={stats.totalResolved}
               icon={
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -180,9 +172,7 @@ export default function ReportHistoryFeature() {
         </div>
       </div>
 
-      {/* Collapsible Filter Card */}
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all dark:border-gray-700 dark:bg-gray-800/50">
-        {/* Filter Header */}
         <button
           type="button"
           onClick={() => setShowFilters(!showFilters)}
@@ -207,12 +197,7 @@ export default function ReportHistoryFeature() {
 
               {hasActiveFilters && (
                 <span className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 dark:border-blue-800 dark:bg-blue-500/10 dark:text-blue-400">
-                  <svg
-                    className="h-3 w-3"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
+                  <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -247,12 +232,9 @@ export default function ReportHistoryFeature() {
           </div>
         </button>
 
-        {/* Filter Content */}
         <div
           className={`grid transition-all duration-300 ease-in-out ${
-            showFilters
-              ? "grid-rows-[1fr] opacity-100"
-              : "grid-rows-[0fr] opacity-0"
+            showFilters ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
           }`}
         >
           <div className="overflow-hidden">
@@ -264,11 +246,9 @@ export default function ReportHistoryFeature() {
                 onBuildingId={(value) => {
                   setBuildingId(value);
                   setRoomId("ALL");
-                  // Auto-reload happens via useEffect
                 }}
                 roomId={roomId}
                 onRoomId={setRoomId}
-                // Auto-reload happens via useEffect
                 buildingOptions={buildingOptions}
                 roomOptions={roomOptions}
                 onReset={handleReset}
@@ -278,7 +258,6 @@ export default function ReportHistoryFeature() {
         </div>
       </div>
 
-      {/* Results Card */}
       <div className="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800/50">
         {(loading || lookupLoading) && items.length === 0 ? (
           <LoadingSkeleton />
@@ -299,12 +278,7 @@ export default function ReportHistoryFeature() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white shadow-sm dark:bg-gray-700">
-                    <svg
-                      className="h-5 w-5 text-gray-600 dark:text-gray-300"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
+                    <svg className="h-5 w-5 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -318,9 +292,7 @@ export default function ReportHistoryFeature() {
                       Issue Reports
                     </h3>
                     {hasActiveFilters && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Filtered results
-                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Filtered results</p>
                     )}
                   </div>
                 </div>
@@ -333,12 +305,7 @@ export default function ReportHistoryFeature() {
                     </div>
                   )}
                   <span className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm dark:border-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                    <svg
-                      className="h-4 w-4 text-gray-400"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
+                    <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -361,114 +328,5 @@ export default function ReportHistoryFeature() {
         )}
       </div>
     </div>
-  );
-}
-function StatCard({
-  label,
-  value,
-  icon,
-  color,
-}: {
-  label: string;
-  value: number | string;
-  icon: ReactNode;
-  color: "blue" | "emerald" | "amber" | "purple";
-}) {
-  const colorClasses = {
-    blue: "bg-blue-100 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
-    emerald:
-      "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
-    amber:
-      "bg-amber-100 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400",
-    purple:
-      "bg-purple-100 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400",
-  };
-  return (
-    <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white/50 p-4 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-800/30">
-      <div
-        className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg ${colorClasses[color]}`}
-      >
-        {icon}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="text-xs font-medium text-gray-600 dark:text-gray-400">
-          {label}
-        </div>
-        <div className="mt-0.5 text-xl font-bold text-gray-900 dark:text-white">
-          {value}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function EmptyState({
-  title,
-  description,
-  icon,
-  onReset,
-}: {
-  title: string;
-  description: string;
-  icon: ReactNode;
-  onReset?: () => void;
-}) {
-  return (
-    <div className="flex flex-col items-center justify-center p-12">
-      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
-        {icon}
-      </div>
-      <h3 className="mt-4 text-base font-semibold text-gray-900 dark:text-white">
-        {title}
-      </h3>
-      <p className="mt-2 max-w-sm text-center text-sm text-gray-500 dark:text-gray-400">
-        {description}
-      </p>
-      {onReset && (
-        <button
-          type="button"
-          onClick={onReset}
-          className="mt-4 inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 active:scale-[0.98] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-        >
-          <X className="h-4 w-4" />
-          Clear Filters
-        </button>
-      )}
-    </div>
-  );
-}
-
-function LoadingSkeleton() {
-  return (
-    <div className="p-6">
-      <div className="space-y-4">
-        <div className="h-12 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700" />
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div
-            key={i}
-            className="h-16 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"
-            style={{ animationDelay: `${i * 100}ms` }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function EmptyIcon() {
-  return (
-    <svg
-      className="h-10 w-10 text-gray-400"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-      />
-    </svg>
   );
 }

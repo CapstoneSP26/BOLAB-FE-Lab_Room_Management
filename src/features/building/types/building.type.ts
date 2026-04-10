@@ -42,7 +42,3 @@ export interface GetBuildingsRequest {
   page?: number;
   limit?: number;
 }
-
-export type BuildingLookupApiResponse =
-  | BuildingResponse[]
-  | { data?: BuildingResponse[] };

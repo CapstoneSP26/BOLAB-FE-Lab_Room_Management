@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import Chart from "react-apexcharts";
 import type { ApexOptions } from "apexcharts";
-import type { DashboardStatsDto } from "../services/dashboardService";
+import type { DashboardStatsDto } from "../types/dashboard.type";
 
 type OptionValue = "optionOne" | "optionTwo" | "optionThree";
 
@@ -35,42 +35,31 @@ const FALLBACK_CATEGORIES = [
   "Dec",
 ];
 
+const normalizeToTwelveMonths = (values: number[]) => {
+  if (values.length >= 12) return values.slice(0, 12);
+  return [...values, ...Array(12 - values.length).fill(0)];
+};
+
 export default function StatisticsCard({ stats }: StatisticsChartProps) {
   const [selected, setSelected] = useState<OptionValue>("optionOne");
 
-  const statistics = stats?.statistics;
-  const monthlyApproved = statistics?.monthlyApprovedBookings ?? [];
-  const monthlyIncidents = statistics?.monthlyIncidents ?? [];
+  const monthlyBookings = stats?.monthlyBookings ?? [];
+  const monthlyIncidents = stats?.monthlyIncidents ?? [];
 
-  const isUsingFallbackData =
-    monthlyApproved.length === 0 || monthlyIncidents.length === 0;
-
-  const categories = useMemo(
-    () =>
-      monthlyApproved.length > 0
-        ? monthlyApproved.map((point) => point.label.slice(0, 3))
-        : FALLBACK_CATEGORIES,
-    [monthlyApproved],
-  );
+  const hasData = monthlyBookings.length > 0 || monthlyIncidents.length > 0;
 
   const series: Series[] = useMemo(
     () => [
       {
-        name: "Approved Bookings",
-        data:
-          monthlyApproved.length > 0
-            ? monthlyApproved.map((point) => point.value)
-            : [160, 180, 190, 210, 170, 200, 220, 205, 215, 230, 240, 225],
+        name: "Bookings",
+        data: normalizeToTwelveMonths(monthlyBookings),
       },
       {
         name: "Incidents",
-        data:
-          monthlyIncidents.length > 0
-            ? monthlyIncidents.map((point) => point.value)
-            : [5, 3, 8, 4, 6, 7, 9, 5, 4, 6, 8, 7],
+        data: normalizeToTwelveMonths(monthlyIncidents),
       },
     ],
-    [monthlyApproved, monthlyIncidents],
+    [monthlyBookings, monthlyIncidents],
   );
 
   const chartOptions: ApexOptions = useMemo(
@@ -110,7 +99,7 @@ export default function StatisticsCard({ stats }: StatisticsChartProps) {
       },
       xaxis: {
         type: "category",
-        categories,
+        categories: FALLBACK_CATEGORIES,
         axisBorder: { show: false },
         axisTicks: { show: false },
         tooltip: { enabled: false },
@@ -121,7 +110,7 @@ export default function StatisticsCard({ stats }: StatisticsChartProps) {
         },
       },
     }),
-    [categories],
+    [],
   );
 
   return (
@@ -132,11 +121,11 @@ export default function StatisticsCard({ stats }: StatisticsChartProps) {
             Statistics
           </h3>
           <p className="mt-1 text-gray-500 text-theme-sm dark:text-gray-400">
-            Target you’ve set for each month
+            Monthly booking and incident trend from backend
           </p>
-          {isUsingFallbackData && (
-            <div className="mt-3 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
-              Showing sample data. Monthly statistics are not available yet.
+          {!hasData && (
+            <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-300">
+              No monthly statistics available from the API yet.
             </div>
           )}
         </div>
@@ -170,12 +159,18 @@ export default function StatisticsCard({ stats }: StatisticsChartProps) {
           id="chartThree"
           className="-ml-4 min-w-[1000px] pl-2 xl:min-w-full"
         >
-          <Chart
-            type="area"
-            height={310}
-            options={chartOptions}
-            series={series}
-          />
+          {hasData ? (
+            <Chart
+              type="area"
+              height={310}
+              options={chartOptions}
+              series={series}
+            />
+          ) : (
+            <div className="flex h-[310px] items-center justify-center rounded-2xl border border-dashed border-gray-300 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+              Waiting for statistics data from backend
+            </div>
+          )}
         </div>
       </div>
     </div>

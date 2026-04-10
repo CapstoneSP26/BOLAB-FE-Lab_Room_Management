@@ -3,12 +3,27 @@ import Chart from "react-apexcharts";
 import type { ApexOptions } from "apexcharts";
 import DropdownMenu, {
   type DropdownMenuItem,
-} from "../../../components/common/DropdownMenu";
-import type { DashboardStatsDto } from "../services/dashboardService";
+} from "../../notifications/components/DropdownMenu";
+import type { DashboardStatsDto } from "../types/dashboard.type";
 
 interface MonthlyBookingsProps {
   stats?: DashboardStatsDto;
 }
+
+const MONTH_CATEGORIES = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
 export default function MonthlyBookings({ stats }: MonthlyBookingsProps) {
   const menuItems: DropdownMenuItem[] = useMemo(
@@ -19,41 +34,27 @@ export default function MonthlyBookings({ stats }: MonthlyBookingsProps) {
     [],
   );
 
-  const monthlyPoints = stats?.monthlyBookings ?? [];
-  const isUsingFallbackData = monthlyPoints.length === 0;
+  const monthlyBookings = stats?.monthlyBookings ?? [];
+  const hasData = monthlyBookings.length > 0;
 
-  const categories = useMemo(
-    () =>
-      monthlyPoints.length > 0
-        ? monthlyPoints.map((point) => point.label.slice(0, 3))
-        : [
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "May",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Oct",
-            "Nov",
-            "Dec",
-          ],
-    [monthlyPoints],
-  );
+  const normalizedData = useMemo(() => {
+    if (!hasData) return [] as number[];
+
+    if (monthlyBookings.length >= 12) {
+      return monthlyBookings.slice(0, 12);
+    }
+
+    return [...monthlyBookings, ...Array(12 - monthlyBookings.length).fill(0)];
+  }, [hasData, monthlyBookings]);
 
   const series = useMemo(
     () => [
       {
         name: "Bookings",
-        data:
-          monthlyPoints.length > 0
-            ? monthlyPoints.map((point) => point.value)
-            : [168, 385, 201, 298, 187, 195, 291, 110, 215, 390, 280, 112],
+        data: normalizedData,
       },
     ],
-    [monthlyPoints],
+    [normalizedData],
   );
 
   const options: ApexOptions = useMemo(
@@ -74,7 +75,7 @@ export default function MonthlyBookings({ stats }: MonthlyBookingsProps) {
       dataLabels: { enabled: false },
       stroke: { show: true, width: 4, colors: ["transparent"] },
       xaxis: {
-        categories,
+        categories: MONTH_CATEGORIES,
         axisBorder: { show: false },
         axisTicks: { show: false },
       },
@@ -87,7 +88,6 @@ export default function MonthlyBookings({ stats }: MonthlyBookingsProps) {
           size: 6,
         },
       },
-
       yaxis: {},
       grid: { yaxis: { lines: { show: true } } },
       fill: { opacity: 1 },
@@ -95,7 +95,7 @@ export default function MonthlyBookings({ stats }: MonthlyBookingsProps) {
         y: { formatter: (val: number) => String(val) },
       },
     }),
-    [categories],
+    [],
   );
 
   return (
@@ -127,15 +127,21 @@ export default function MonthlyBookings({ stats }: MonthlyBookingsProps) {
         />
       </div>
 
-      {isUsingFallbackData && (
-        <div className="mt-3 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
-          Showing sample data. Monthly bookings are not available yet.
+      {!hasData && (
+        <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-300">
+          No monthly booking data available from the API yet.
         </div>
       )}
 
       <div className="max-w-full overflow-x-auto custom-scrollbar">
         <div className="-ml-5 min-w-[650px] pl-2 xl:min-w-full">
-          <Chart type="bar" height={180} options={options} series={series} />
+          {hasData ? (
+            <Chart type="bar" height={180} options={options} series={series} />
+          ) : (
+            <div className="flex h-[180px] items-center justify-center rounded-2xl border border-dashed border-gray-300 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+              Waiting for booking trend data from backend
+            </div>
+          )}
         </div>
       </div>
     </div>

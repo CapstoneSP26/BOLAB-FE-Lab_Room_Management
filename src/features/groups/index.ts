@@ -20,7 +20,7 @@ export type {
   GetGroupMembersResponse,
   PaginatedResponse,
   GroupFilterState,
-} from './types/types';
+} from './types/group.type';
 
 // ===== QUERY KEYS =====
 export { GROUPS_QUERY_KEYS } from './hooks/useGroups';

@@ -1,57 +1,21 @@
-import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import PageBreadcrumb from "../../components/common/PageBreadcrumb";
+import { LoadingFallback } from "../../components/ui/LoadingFallback";
 import ProfileCard from "../../features/profile/components/ProfileCard";
-import {
-  profileService,
-  type Profile,
-  type Role,
-} from "../../features/profile/api/profile.api";
-
-function normalizeRole(role: string) {
-  return role.trim().toLowerCase();
-}
+import { useMyProfile } from "../../features/profile/hooks/userProfile";
+import { getErrorMessage } from "../../utils/error";
+import { getRole, setRole } from "../../utils/role";
 
 export default function UserProfilePage() {
   const currentPageTitle = "User Profile";
+  const navigate = useNavigate();
+  const role = getRole();
+  const { data: profile, isLoading, error } = useMyProfile();
 
-  const [role, setRole] = useState<Role>("Lab Manager");
-
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const switchRole = () => {
-    const next =
-      normalizeRole(role) === "lab manager" ? "Lecturer" : "Lab Manager";
-    const ok = window.confirm(
-      `Bạn muốn chuyển role sang "${next}" chứ? Việc này có thể ảnh hưởng quyền truy cập.`,
-    );
-    if (!ok) return;
-    setRole(next);
+  const handleSwitchToLecturer = () => {
+    setRole("LECTURER");
+    navigate("/profile", { replace: true });
   };
-
-  const switchLabel = useMemo(() => {
-    return normalizeRole(role) === "lab manager"
-      ? "Switch to Lecturer"
-      : "Switch to Lab Manager";
-  }, [role]);
-
-  // ✅ Load profile (read-only)
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await profileService.getMe();
-        setProfile(data);
-      } catch (e) {
-        if (e instanceof Error) setError(e.message);
-        else setError("Failed to load profile");
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
 
   return (
     <>
@@ -63,23 +27,23 @@ export default function UserProfilePage() {
             Profile
           </h3>
 
-          {/* ✅ Switch đặt ở PAGE */}
-          <button
-            type="button"
-            onClick={switchRole}
-            className="rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-white/[0.04]"
-          >
-            {switchLabel}
-          </button>
+          {role === "LAB_MANAGER" && (
+            <button
+              type="button"
+              onClick={handleSwitchToLecturer}
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition-all hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+            >
+              Switch To Lecturer
+            </button>
+          )}
         </div>
 
-        {/* Loading / Error */}
-        {loading ? (
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            Loading...
-          </div>
+        {isLoading ? (
+          <LoadingFallback />
         ) : error ? (
-          <div className="text-sm text-red-600 dark:text-red-400">{error}</div>
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-500/10 dark:text-red-200">
+            {getErrorMessage(error, "Failed to load profile")}
+          </div>
         ) : profile ? (
           <ProfileCard role={role} profile={profile} />
         ) : (

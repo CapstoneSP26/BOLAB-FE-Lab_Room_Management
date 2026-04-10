@@ -1,75 +1,120 @@
 import { axiosInstance } from "../../../api";
 import type { PagedResponse } from "../../../types/pagination.types";
-import type { BookingDto, CreateBookingCommand, CreateBookingResponse, GetBookingHistoryRequest, GetBookingHistoryResponse, GetBookingsParams, GetBookingStatsRequest, GetBookingStatsResponse, GetRecentRequestsRequest, GetRecentRequestsResponse, GetUpcomingBookingsRequest, GetUpcomingBookingsResponse, PurposeTypeDto } from "../types/booking.type";
+import type {
+  BookingDto,
+  CreateBookingCommand,
+  CreateBookingResponse,
+  GetBookingHistoryRequest,
+  GetBookingHistoryResponse,
+  GetBookingsParams,
+  GetBookingStatsRequest,
+  GetBookingStatsResponse,
+  GetRecentRequestsRequest,
+  GetRecentRequestsResponse,
+  GetUpcomingBookingsRequest,
+  GetUpcomingBookingsResponse,
+  PurposeTypeDto,
+  GetBookingRequestsResponse,
+  GetBookingRequestsRequest,
+  GetBookingByIdResponse,
+  GetBookingByScheduleIdResponse,
+  ApproveBookingRequestResponse,
+  RejectBookingRequestResponse,
+  GetBookingStatusLookupResponse,
+} from "../types/booking.type";
 
 const BOOKING_API = {
-  BOOKS: '/bookings',
-  BOOKING_ATTENDANCE: '/bookings/booking-attendance',
-  UPCOMING: '/bookings/upcoming',
-  STATS: '/bookings/stats',
-  RECENT_REQUESTS: '/booking-requests/recent',
-  HISTORY: '/bookings/history',
-  PURPOSE: '/bookings/purposes'
+  BOOKS: "/bookings",
+  BOOKING_ATTENDANCE: "/bookings/booking-attendance",
+  UPCOMING: "/bookings/upcoming",
+  STATS: "/bookings/stats",
+  RECENT_REQUESTS: "/booking-requests/recent",
+  HISTORY: "/bookings/history",
+  PURPOSE: "/bookings/purposes",
+};
+
+const BOOKING_REQUEST_API = {
+  LIST: "/bookings/get-unchecked-booking-request",
+  HISTORY: "/bookings/history",
+  BY_ID: (id: string) => `/bookings/${id}`,
+  BY_SCHEDULE: (scheduleId: string) =>
+    `/booking-requests/by-schedule/${scheduleId}`,
+  APPROVE: (id: string) => `/bookings/${id}/approve`,
+  REJECT: (id: string) => `/bookings/${id}/reject`,
+  STATUS_LOOKUP: "/bookings/status",
 };
 
 export const bookingApi = {
   getBookings: (params: GetBookingsParams) =>
-    axiosInstance.get<PagedResponse<BookingDto>>(BOOKING_API.BOOKS, {
-      params,
-    }).then(res => res.data),
+    axiosInstance
+      .get<PagedResponse<BookingDto>>(BOOKING_API.BOOKS, {
+        params,
+      })
+      .then((res) => res.data),
 
   getBookingAttendance: (params: GetBookingsParams) =>
-    axiosInstance.get<PagedResponse<BookingDto>>(BOOKING_API.BOOKING_ATTENDANCE, {
-      params,
-    }),
+    axiosInstance.get<PagedResponse<BookingDto>>(
+      BOOKING_API.BOOKING_ATTENDANCE,
+      {
+        params,
+      },
+    ),
 
   /**
    * Lấy danh sách lịch booking sắp tới
    */
   getUpcomingBookings: (params: GetUpcomingBookingsRequest) =>
-    axiosInstance.get<GetUpcomingBookingsResponse>(BOOKING_API.UPCOMING, {
-      params,
-    }).then(res => res.data),
+    axiosInstance
+      .get<GetUpcomingBookingsResponse>(BOOKING_API.UPCOMING, {
+        params,
+      })
+      .then((res) => res.data),
 
   /**
-  * Lấy thống kê booking requests
-  */
+   * Lấy thống kê booking requests
+   */
   getBookingStats: (params: GetBookingStatsRequest) =>
-    axiosInstance.get<GetBookingStatsResponse>(BOOKING_API.STATS, {
-      params,
-    }).then(res => res.data),
+    axiosInstance
+      .get<GetBookingStatsResponse>(BOOKING_API.STATS, {
+        params,
+      })
+      .then((res) => res.data),
 
   /**
-  * Lấy danh sách booking requests gần đây
-  */
+   * Lấy danh sách booking requests gần đây
+   */
   getRecentRequests: (params: GetRecentRequestsRequest) =>
-    axiosInstance.get<GetRecentRequestsResponse>(BOOKING_API.RECENT_REQUESTS, {
-      params,
-    }).then(res => res.data),
+    axiosInstance
+      .get<GetRecentRequestsResponse>(BOOKING_API.RECENT_REQUESTS, {
+        params,
+      })
+      .then((res) => res.data),
 
   /**
-  * Lấy lịch sử booking của user
-  */
+   * Lấy lịch sử booking của user
+   */
   getBookingHistory: (params: GetBookingHistoryRequest) =>
-    axiosInstance.get<GetBookingHistoryResponse>(BOOKING_API.HISTORY, {
-      params,
-    }).then(res => res.data),
+    axiosInstance
+      .get<GetBookingHistoryResponse>(BOOKING_API.HISTORY, {
+        params,
+      })
+      .then((res) => res.data),
 
   /**
-  * tạo booking
-  */
+   * tạo booking
+   */
   createBooking: (command: CreateBookingCommand) =>
     axiosInstance
       .post<CreateBookingResponse>(BOOKING_API.BOOKS, command)
-      .then(response => response.data),
+      .then((response) => response.data),
 
   /**
-  * Lấy Purposes cho Booking
-  */
+   * Lấy Purposes cho Booking
+   */
   getPurposes: () =>
     axiosInstance
       .get<PagedResponse<PurposeTypeDto>>(BOOKING_API.PURPOSE)
-      .then(response => response.data),
+      .then((response) => response.data),
 
   /**
   * Approve Booking
@@ -86,6 +131,50 @@ export const bookingApi = {
     axiosInstance
       .put<boolean>(`/Bookings/${bookingId}/reject`, { bookingId: bookingId, reason })
       .then((res) => res.data),
-}
+};
 
+export const bookingRequestApi = {
+  getBookingRequests: (params: GetBookingRequestsRequest = {}) =>
+    axiosInstance
+      .get<GetBookingRequestsResponse>(BOOKING_REQUEST_API.LIST, { params })
+      .then((res) => res.data),
 
+  getBookingHistory: (params: GetBookingRequestsRequest = {}) =>
+    axiosInstance
+      .get<GetBookingRequestsResponse>(BOOKING_REQUEST_API.HISTORY, {
+        params,
+      })
+      .then((res) => res.data),
+
+  getBookingById: (id: string) =>
+    axiosInstance
+      .get<GetBookingByIdResponse>(BOOKING_REQUEST_API.BY_ID(id))
+      .then((res) => res.data),
+
+  getBookingByScheduleId: (scheduleId: string) =>
+    axiosInstance
+      .get<GetBookingByScheduleIdResponse>(
+        BOOKING_REQUEST_API.BY_SCHEDULE(scheduleId),
+      )
+      .then((res) => res.data),
+
+  approveBookingRequest: (id: string) =>
+    axiosInstance
+      .put<ApproveBookingRequestResponse>(BOOKING_REQUEST_API.APPROVE(id), {
+        bookingId: id,
+      })
+      .then((res) => res.data),
+
+  rejectBookingRequest: (id: string, reason?: string) =>
+    axiosInstance
+      .put<RejectBookingRequestResponse>(BOOKING_REQUEST_API.REJECT(id), {
+        bookingId: id,
+        reason,
+      })
+      .then((res) => res.data),
+
+  getBookingStatusLookup: () =>
+    axiosInstance
+      .get<GetBookingStatusLookupResponse>(BOOKING_REQUEST_API.STATUS_LOOKUP)
+      .then((res) => res.data),
+};

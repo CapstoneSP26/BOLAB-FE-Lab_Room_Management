@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useSidebar } from "./sidebarContext.tsx";
 import {
@@ -144,6 +144,12 @@ const AppSidebar: React.FC = () => {
 
             {
               icon: UserCircleIcon,
+              name: "User Management",
+              path: p("/users"),
+            },
+
+            {
+              icon: UserCircleIcon,
               name: "User Profile",
               path: p("/user-profile"),
             },
@@ -161,6 +167,11 @@ const AppSidebar: React.FC = () => {
             icon: CalenderIcon,
             name: "Room Schedule",
             path: p("/lab-scheduler"),
+          },
+          {
+            icon: ListIcon,
+            name: "Schedules & Slots",
+            path: p("/slot-management"),
           },
           {
             icon: ListBookingRequest,
@@ -205,9 +216,12 @@ const AppSidebar: React.FC = () => {
         ],
       },
     ];
-  }, [role, base]);
+  }, [role]);
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = useCallback(
+    (path: string) => location.pathname === path,
+    [location.pathname],
+  );
 
   const isAnySubmenuRouteActive = useMemo(() => {
     return menuGroups.some((group) =>
@@ -216,7 +230,7 @@ const AppSidebar: React.FC = () => {
           item.subItems && item.subItems.some((sub) => isActive(sub.path)),
       ),
     );
-  }, [menuGroups, location.pathname]);
+  }, [isActive, menuGroups]);
 
   const isSubmenuOpen = (groupIndex: number, itemIndex: number) => {
     const key = `${groupIndex}-${itemIndex}`;

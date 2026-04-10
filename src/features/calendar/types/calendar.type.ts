@@ -1,4 +1,8 @@
+import type { ScheduleDto } from "../../schedules/types/schedule.type";
+
 export type CalendarMode = "PERSONAL" | "LAB_SPECIFIC" | "PUBLIC";
+export type ScheduleType = string;
+export type ScheduleStatus = string;
 
 export interface UseCalendarEventProps {
   calendarMode: CalendarMode;
@@ -7,6 +11,38 @@ export interface UseCalendarEventProps {
   endDate?: string;
 }
 
+export type LabCalendarEventProps = {
+  schedule: ScheduleDto;
+  status: string;
+  roomName: string;
+  buildingName: string;
+};
+
+export type RoomLookupItem = {
+  id: number;
+  roomName: string;
+  buildingName: string;
+};
+
+export type ScheduleRoomOption = {
+  roomName: string;
+  buildingName: string;
+  roomId?: number;
+};
+
+export type LabCalendarSelectOption = {
+  value: string;
+  label: string;
+};
+
+export type LabCalendarFilterState = {
+  selectedRoom: string;
+  selectedBuilding: string;
+  selectedTimeRange: string;
+  selectedStatus: string;
+  selectedSlotType: string;
+};
+
 export interface CalendarEvent {
   id: string;
   title: string;
@@ -14,11 +50,31 @@ export interface CalendarEvent {
   end: string;
   type: string;
   status: string;
-  rawOrigin: any; // Giữ lại data gốc nếu cần hiển thị Modal chi tiết
+  rawOrigin: unknown; // Giữ lại data gốc nếu cần hiển thị Modal chi tiết
   color?: string;
   slotName?: string; // Tên loại slot, dùng để hiển thị trong tooltip
 }
 
+export interface Schedule {
+  Id: string;
+  LecturerId: string;
+  LabRoomId: number;
+
+  ScheduleType: string;
+  ScheduleStatus: string;
+  BuildingName: string;
+  StartTime: string;
+  EndTime: string;
+
+  CreatedAt: string;
+  UpdatedAt: string;
+  CreatedBy: string;
+  UpdatedBy: string;
+
+  IsActive: boolean;
+  IsDeleted: boolean;
+  FromAdmin: boolean;
+}
 
 export type IncidentStatus = "OPEN" | "CLOSED" | "RESOLVED" | string;
 export type IncidentSeverity = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" | string;
@@ -75,4 +131,16 @@ export interface AddIncidentFromReportResponse {
 
 export interface RemoveIncidentByReportIdResponse {
   success: boolean;
+}
+
+export interface GetScheduleListResponse {
+  data: ScheduleDto[];
+}
+
+export interface GetScheduleByIdResponse {
+  data: ScheduleDto;
+}
+
+export interface UpdateScheduleStatusResponse {
+  data: ScheduleDto;
 }
