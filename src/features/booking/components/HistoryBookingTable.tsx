@@ -3,15 +3,35 @@ import {
   formatUtcDateLabel,
   formatBookingTimeLabel,
 } from "../../../utils/date.util";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { statusClass } from "../../../utils/status";
 
 type Props = {
   loading: boolean;
   rows: BookingRequest[];
+  page: number;
+  totalPages: number;
+  totalCount: number;
+  onPageChange: (page: number) => void;
   onView: (id: string) => void;
 };
 
-export default function HistoryBookingTable({ loading, rows, onView }: Props) {
+export default function HistoryBookingTable({
+  loading,
+  rows,
+  page,
+  totalPages,
+  totalCount,
+  onPageChange,
+  onView,
+}: Props) {
+  const pageButtons = Array.from(
+    { length: Math.min(5, Math.max(totalPages, 1)) },
+    (_, index) => {
+      const startPage = Math.max(1, Math.min(page - 2, totalPages - 4));
+      return startPage + index;
+    },
+  ).filter((value) => value <= totalPages);
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
       <div className="overflow-x-auto">
@@ -110,6 +130,57 @@ export default function HistoryBookingTable({ loading, rows, onView }: Props) {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Pagination */}
+      <div className="flex flex-col gap-4 border-t border-gray-200 bg-gray-50/80 px-4 py-4 sm:flex-row sm:items-center sm:justify-between dark:border-gray-800 dark:bg-gray-900/40">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Page{" "}
+          <span className="font-semibold text-gray-900 dark:text-white">
+            {page}
+          </span>{" "}
+          / {Math.max(totalPages, 1)}. Total requests:{" "}
+          <span className="font-semibold text-gray-900 dark:text-white">
+            {totalCount}
+          </span>
+        </p>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onPageChange(Math.max(1, page - 1))}
+            disabled={page <= 1}
+            className="inline-flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Previous
+          </button>
+
+          {pageButtons.map((value) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => onPageChange(value)}
+              className={`h-10 w-10 rounded-lg text-sm font-semibold transition ${
+                value === page
+                  ? "bg-brand-500 text-white"
+                  : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+              }`}
+            >
+              {value}
+            </button>
+          ))}
+
+          <button
+            type="button"
+            onClick={() => onPageChange(Math.min(totalPages, page + 1))}
+            disabled={page >= totalPages}
+            className="inline-flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+          >
+            Next
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
       </div>
     </div>
   );

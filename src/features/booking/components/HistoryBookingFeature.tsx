@@ -52,6 +52,9 @@ export default function HistoryBookingFeature() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
 
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
+
   const [open, setOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
@@ -64,12 +67,12 @@ export default function HistoryBookingFeature() {
       buildingId: buildingId === "ALL" ? undefined : buildingId,
       keyword: q.trim() || undefined,
       status: status === "All" ? undefined : status,
-      page: 1,
-      limit: 100,
+      page: page,
+      limit: pageSize,
       sortBy: "RequestedAt",
       isDescending: true,
     }),
-    [from, to, roomId, buildingId, q, status],
+    [from, to, roomId, buildingId, q, status, page, pageSize],
   );
 
   const historyQuery = useBookingRequestHistory(params);
@@ -102,7 +105,8 @@ export default function HistoryBookingFeature() {
     () => historyQuery.data?.data ?? [],
     [historyQuery.data],
   );
-  const totalCount = historyQuery.data?.total ?? items.length;
+  const totalCount = historyQuery.data?.total ?? 0;
+  const totalPages = Math.ceil(totalCount / pageSize);
   const loading = historyQuery.isLoading || historyQuery.isFetching;
   const selected: BookingRequest | null = detailQuery.data?.data ?? null;
 
@@ -125,7 +129,7 @@ export default function HistoryBookingFeature() {
   const handleReject = async () => {
     if (!selected?.id) return;
 
-    await rejectBookingMutation.mutateAsync(String(selected.id));
+    await rejectBookingMutation.mutateAsync({ id: String(selected.id), reason: "Rejected from History" });
   };
 
   useEffect(() => {
@@ -197,6 +201,10 @@ export default function HistoryBookingFeature() {
       from !== "" ||
       to !== ""
     );
+  }, [q, buildingId, roomId, status, from, to]);
+
+  useEffect(() => {
+    setPage(1);
   }, [q, buildingId, roomId, status, from, to]);
 
   const activeFilterCount = useMemo(() => {
@@ -413,7 +421,7 @@ export default function HistoryBookingFeature() {
                   }}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 transition-all hover:bg-gray-50 active:scale-95 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-3 v-3" />
                   Clear All
                 </button>
               )}
@@ -502,6 +510,10 @@ export default function HistoryBookingFeature() {
           <HistoryBookingTable
             loading={loading || lookupLoading}
             rows={rows}
+            page={page}
+            totalPages={totalPages}
+            totalCount={totalCount}
+            onPageChange={setPage}
             onView={handleView}
           />
         </div>

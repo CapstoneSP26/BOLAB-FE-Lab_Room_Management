@@ -1,6 +1,8 @@
 import React, { useCallback, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useSidebar } from "./sidebarContext.tsx";
+import { useAuthStore } from "../../store/useAuthStore";
+import { Role } from "../../constants/role";
 import {
   GridIcon,
   CalenderIcon,
@@ -33,11 +35,6 @@ type MenuGroup = {
   items: MenuItem[];
 };
 
-type Role = "ADMIN" | "LAB_MANAGER";
-
-const getRole = (): Role =>
-  (localStorage.getItem("role") as Role) || "LAB_MANAGER";
-
 const HorizontalDots: IconComp = (props) => (
   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
     <path
@@ -59,7 +56,13 @@ const AppSidebar: React.FC = () => {
     toggleSubmenu,
     setIsHovered,
   } = useSidebar();
-  const role = getRole();
+  const { user } = useAuthStore();
+
+  const role = useMemo(() => {
+    if (user?.roles.includes(Role.Admin)) return "Admin";
+    return "Manager";
+  }, [user]);
+
   const base = "/labmanager";
   const p = (suffix: string) => `${base}${suffix}`;
 
@@ -76,7 +79,7 @@ const AppSidebar: React.FC = () => {
   );
   const menuGroups: MenuGroup[] = useMemo(() => {
     // ===== ADMIN MENU =====
-    if (role === "ADMIN") {
+    if (role === "Admin") {
       return [
         {
           title: "Menu",

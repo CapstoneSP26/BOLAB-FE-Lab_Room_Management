@@ -44,6 +44,9 @@ export default function PendingBookingFeature() {
   const [buildingId, setBuildingId] = useState<number | "ALL">("ALL");
   const [slotType, setSlotType] = useState<SlotTypeFilter>("ALL");
 
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
+
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<BookingRequest | null>(null);
   const [showFilters, setShowFilters] = useState(false);
@@ -59,12 +62,12 @@ export default function PendingBookingFeature() {
       buildingId: buildingId === "ALL" ? undefined : buildingId,
       keyword: q.trim() || undefined,
       slotTypeId: slotType === "ALL" ? undefined : slotType,
-      page: 1,
-      limit: 100,
+      page: page,
+      limit: pageSize,
       sortBy: "RequestedAt",
       isDescending: true,
     }),
-    [roomId, buildingId, q, slotType],
+    [roomId, buildingId, q, slotType, page, pageSize],
   );
 
   const pendingQuery = useBookingRequests(params);
@@ -95,7 +98,8 @@ export default function PendingBookingFeature() {
     () => pendingQuery.data?.data ?? [],
     [pendingQuery.data],
   );
-  const totalCount = pendingQuery.data?.total ?? items.length;
+  const totalCount = pendingQuery.data?.total ?? 0;
+  const totalPages = Math.ceil(totalCount / pageSize);
   const loading = pendingQuery.isLoading || pendingQuery.isFetching;
 
   const reload = async () => {
@@ -161,6 +165,10 @@ export default function PendingBookingFeature() {
       roomId !== "ALL" ||
       slotType !== "ALL"
     );
+  }, [q, buildingId, roomId, slotType]);
+
+  useEffect(() => {
+    setPage(1);
   }, [q, buildingId, roomId, slotType]);
 
   const HandleApprove = async (id: string) => {
@@ -483,6 +491,10 @@ export default function PendingBookingFeature() {
               loading={loading}
               rows={rows}
               emptyText="No pending requests."
+              page={page}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              onPageChange={setPage}
               onView={(b) => {
                 setSelected(b);
                 setOpen(true);
