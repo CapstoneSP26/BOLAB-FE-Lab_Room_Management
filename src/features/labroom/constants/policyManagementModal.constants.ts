@@ -6,6 +6,7 @@ export type PolicyMetaEntry = {
   hint: string;
   icon: string;
   color: string;
+  type: string;
 };
 
 export const POLICY_META: Record<
@@ -18,6 +19,7 @@ export const POLICY_META: Record<
     hint: "Boolean rule to allow or block free-time booking.",
     icon: "🎯",
     color: "blue",
+    type: "boolean",
   },
   MinBookingLeadTime: {
     label: "Minimum lead time",
@@ -25,6 +27,7 @@ export const POLICY_META: Record<
     hint: "Number of hours required before booking starts.",
     icon: "⏰",
     color: "purple",
+    type: "number"
   },
   MaxBookingAdvance: {
     label: "Maximum booking advance",
@@ -32,6 +35,7 @@ export const POLICY_META: Record<
     hint: "Number of days users can book ahead.",
     icon: "📅",
     color: "green",
+    type: "number",
   },
   CurfewTime: {
     label: "Curfew time",
@@ -39,6 +43,7 @@ export const POLICY_META: Record<
     hint: "Latest allowed end time in HH:mm format.",
     icon: "🌙",
     color: "indigo",
+    type: "time",
   },
   MaxOutSlotDuration: {
     label: "Maximum out-slot duration",
@@ -46,6 +51,7 @@ export const POLICY_META: Record<
     hint: "Maximum duration allowed for flexible bookings.",
     icon: "⏱️",
     color: "orange",
+    type: "number"
   },
   MaxConcurrentBookings: {
     label: "Maximum concurrent bookings",
@@ -53,6 +59,7 @@ export const POLICY_META: Record<
     hint: "Limit how many bookings can coexist at once.",
     icon: "📊",
     color: "pink",
+    type: "number"
   },
 };
 

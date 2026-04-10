@@ -69,27 +69,15 @@ export default function PendingBookingFeature() {
 
   const pendingQuery = useBookingRequests(params);
 
-  const { mutate: approve } = useApproveBooking();
-  const { mutate: reject } = useRejectBooking();
+  const { mutate: approve, } = useApproveBooking();
+  const { mutate: reject, isPending } = useRejectBooking();
 
   const closeModal = () => {
     setOpen(false);
     setSelected(null);
+    setRejectId(null);
+    setRejectModalOpen(false);
   };
-
-  const approveBookingMutation = useApproveBookingRequest({
-    onSuccess: () => {
-      closeModal();
-    },
-  });
-
-  const rejectBookingMutation = useRejectBookingRequest({
-    onSuccess: () => {
-      setRejectModalOpen(false);
-      setRejectId(null);
-      closeModal();
-    },
-  });
 
   const items = useMemo(
     () => pendingQuery.data?.data ?? [],
@@ -171,11 +159,15 @@ export default function PendingBookingFeature() {
     closeModal();
   };
 
-  const handleConfirmReject = async (id: string) => {
-    const ok = window.confirm("Reject this booking?");
-    if (!ok) return;
-    reject({ id: id, "reason": "Rejected by Lab Manager" });
+  const HandleOpenRejectModal = (id: string) => {
+    setRejectId(id);
+    setRejectModalOpen(true);
+  }
+
+  const handleConfirmReject = async (id: string, reason: string) => {
+    reject({ id: id, "reason": reason });
     closeModal();
+    setRejectId(null);
   };
 
   return (
@@ -488,7 +480,7 @@ export default function PendingBookingFeature() {
                 setOpen(true);
               }}
               onApprove={HandleApprove}
-              onReject={handleConfirmReject}
+              handleOpenRejectModal={HandleOpenRejectModal}
             />
           </div>
         )}
@@ -530,14 +522,15 @@ export default function PendingBookingFeature() {
         booking={selected}
         onClose={closeModal}
         onApprove={HandleApprove}
-        onReject={handleConfirmReject}
+        handleOpenRejectModal={HandleOpenRejectModal}
       />
 
       <RejectReasonModal
+        rejectId={rejectId}
         isOpen={rejectModalOpen}
         onClose={() => setRejectModalOpen(false)}
         onSubmit={handleConfirmReject}
-        isLoading={rejectBookingMutation.isPending}
+        isLoading={isPending}
       />
     </div>
   );
