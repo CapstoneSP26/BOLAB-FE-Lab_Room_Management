@@ -2,10 +2,12 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Calendar } from 'lucide-react';
 import { useBookingStats } from '../../features/booking/hooks/useBookingStats';
 import { BookingDetailsModal } from '../../features/booking';
+import { useCancelBooking } from '../../features/booking/hooks/useCancelBooking';
+import { useToast } from '../../hooks/useToast';
 import type { Booking, BookingStats, BookingStatus, BookingStatusFilter } from '../../features/booking/types/booking.type';
 import { BookingHistoryStats } from '../../features/booking/components/BookingHistoryStats';
 import { BookingHistoryFilters } from '../../features/booking/components/BookingHistoryFilters';
-import { BookingHistoryList } from '../../features/booking/components/BookingHistoryList';
+import { BookingHistoryTable } from '../../features/booking/components/BookingHistoryTable';
 import { BookingHistoryPagination } from '../../features/booking/components/BookingHistoryPagination';
 import { useBookingHistoryPageState } from '../../features/booking/hooks/useBookingHistoryPageState';
 
@@ -257,11 +259,31 @@ const BookingHistoryPage: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<BookingStatusFilter>('all');
-  const [dateRange, setDateRange] = useState<'week' | 'month' | 'semester' | 'all'>('month');
   const [currentPage, setCurrentPage] = useState(1);
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
-  // Fetch data
+  // Toast notification
+  const toast = useToast();
+
+  // Cancel booking mutation
+  const { mutate: cancelBooking } = useCancelBooking();
+
+  const handleCancelBooking = async (bookingId: string) => {
+    return new Promise<void>((resolve, reject) => {
+      cancelBooking(bookingId, {
+        onSuccess: () => {
+          toast.success('Booking cancelled successfully');
+          // Optionally refetch bookings or update local state
+          resolve();
+        },
+        onError: (error) => {
+          toast.error('Failed to cancel booking');
+          reject(error);
+        },
+      });
+    });
+  };
+
+  // Fetch data with filters for table
   const { data: bookingsData, isLoading } = useBookingHistoryPageState(
     {
       page: currentPage,
@@ -270,10 +292,20 @@ const BookingHistoryPage: React.FC = () => {
     },
     true,
   );
+
+  // Fetch ALL bookings (no filter) for stats calculation
+  const { data: allBookingsData } = useBookingHistoryPageState(
+    {
+      limit: 1000, // Fetch all bookings
+    },
+    true,
+  );
+
   const { data: statsData } = useBookingStats();
 
   // Use API data or fallback to mock - Remove mock when API is ready
   const bookings = bookingsData?.data ?? MOCK_BOOKINGS;
+  const allBookings = allBookingsData?.data ?? MOCK_BOOKINGS;
 
   const filteredBookings = useMemo(() => {
     return bookings.filter((booking) => {
@@ -282,42 +314,18 @@ const BookingHistoryPage: React.FC = () => {
         booking.buildingName.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus = statusFilter === 'all' || booking.status === statusFilter;
 
-      const bookingDate = new Date(booking.date);
-      const today = new Date();
-      let matchesDateRange = true;
-
-      if (dateRange === 'week') {
-        const weekAgo = new Date(today);
-        weekAgo.setDate(today.getDate() - 7);
-        const weekFromNow = new Date(today);
-        weekFromNow.setDate(today.getDate() + 7);
-        matchesDateRange = bookingDate >= weekAgo && bookingDate <= weekFromNow;
-      } else if (dateRange === 'month') {
-        const monthAgo = new Date(today);
-        monthAgo.setMonth(today.getMonth() - 1);
-        const monthFromNow = new Date(today);
-        monthFromNow.setMonth(today.getMonth() + 1);
-        matchesDateRange = bookingDate >= monthAgo && bookingDate <= monthFromNow;
-      } else if (dateRange === 'semester') {
-        const semesterAgo = new Date(today);
-        semesterAgo.setDate(today.getDate() - 120);
-        const semesterFromNow = new Date(today);
-        semesterFromNow.setDate(today.getDate() + 120);
-        matchesDateRange = bookingDate >= semesterAgo && bookingDate <= semesterFromNow;
-      }
-
-      return matchesSearch && matchesStatus && matchesDateRange;
+      return matchesSearch && matchesStatus;
     });
-  }, [bookings, dateRange, searchQuery, statusFilter]);
+  }, [bookings, searchQuery, statusFilter]);
 
   const dynamicStats: BookingStats = useMemo(() => ({
-    totalAccepted: filteredBookings.filter((b) => b.status === 'Approved').length,
-    totalPending: filteredBookings.filter((b) => b.status === 'PendingApproval').length,
-    totalRejected: filteredBookings.filter((b) => b.status === 'Rejected').length,
-    upcomingBookings: filteredBookings.filter((b) => b.status === 'Approved' && new Date(b.date) > new Date()).length,
-  }), [filteredBookings]);
+    totalAccepted: allBookings.filter((b) => b.status === 'Approved').length,
+    totalPending: allBookings.filter((b) => b.status === 'PendingApproval').length,
+    totalRejected: allBookings.filter((b) => b.status === 'Rejected').length,
+    upcomingBookings: allBookings.filter((b) => b.status === 'Approved' && new Date(b.date) > new Date()).length,
+  }), [allBookings]);
 
-  const displayStats = statsData?.data ?? dynamicStats;
+  const displayStats = dynamicStats;
 
   const ITEMS_PER_PAGE = 9;
   const totalPages = Math.ceil(filteredBookings.length / ITEMS_PER_PAGE);
@@ -327,7 +335,7 @@ const BookingHistoryPage: React.FC = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, statusFilter, dateRange]);
+  }, [searchQuery, statusFilter]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
@@ -355,25 +363,19 @@ const BookingHistoryPage: React.FC = () => {
         <BookingHistoryFilters
           searchQuery={searchQuery}
           onSearchQueryChange={setSearchQuery}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
           statusFilter={statusFilter}
           onStatusFilterChange={setStatusFilter}
-          dateRange={dateRange}
-          onDateRangeChange={setDateRange}
         />
 
-        {/* Bookings List/Grid */}
-        <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-4'}>
-          <BookingHistoryList
-            viewMode={viewMode}
-            isLoading={isLoading}
-            hasData={!!bookingsData}
-            filteredBookings={filteredBookings}
-            paginatedBookings={paginatedBookings}
-            onViewDetails={handleViewDetails}
-          />
-        </div>
+        {/* Bookings Table */}
+        <BookingHistoryTable
+          isLoading={isLoading}
+          hasData={!!bookingsData}
+          filteredBookings={filteredBookings}
+          paginatedBookings={paginatedBookings}
+          onViewDetails={handleViewDetails}
+          onCancelBooking={handleCancelBooking}
+        />
 
         <BookingHistoryPagination
           filteredCount={filteredBookings.length}

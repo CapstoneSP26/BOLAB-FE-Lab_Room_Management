@@ -86,6 +86,14 @@ export const bookingApi = {
     axiosInstance
       .put<boolean>(`/Bookings/${bookingId}/reject`, { bookingId: bookingId, reason })
       .then((res) => res.data),
+
+  /**
+  * Cancel Booking
+  */
+  cancelBooking: (bookingId: string) =>
+    axiosInstance
+      .post<{ success: boolean; message: string }>(`/bookings/cancel/${bookingId}`)
+      .then((res) => res.data),
 }
 
 
