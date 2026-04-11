@@ -39,7 +39,7 @@ function countActive(filters: GetSchedulesFilters): number {
     filters.fromDate !== "",
     filters.toDate !== "",
     filters.status !== "",
-    filters.scheduleType.trim() !== "",
+    filters.scheduleType !== "",
   ].filter(Boolean).length;
 }
 
@@ -49,14 +49,17 @@ function toListParams(
 ): GetSchedulesParams {
   const labRoomId =
     filters.labRoomId === "ALL" ? undefined : filters.labRoomId;
+  const buildingId =
+    filters.buildingId === "ALL" ? undefined : (filters.buildingId as number);
   return {
     pageNumber: page,
     pageSize: PAGE_SIZE,
     labRoomId: labRoomId,
+    buildingId: buildingId,
     fromDate: filters.fromDate || undefined,
     toDate: filters.toDate || undefined,
     status: filters.status === "" ? undefined : filters.status,
-    type: filters.scheduleType.trim() || undefined,
+    type: filters.scheduleType || undefined,
     sortBy: "startTime",
     isDescending: false,
   };
@@ -118,17 +121,6 @@ export default function ScheduleManagementFeature() {
 
   const activeFilterCount = countActive(appliedFilters);
 
-  const applyFilters = () => {
-    setAppliedFilters(draftFilters);
-    setPage(1);
-  };
-
-  const resetFilters = () => {
-    const cleared = emptyFilters();
-    setDraftFilters(cleared);
-    setAppliedFilters(cleared);
-    setPage(1);
-  };
 
   const openCreateSchedule = () => {
     setScheduleModalMode("create");
@@ -252,11 +244,13 @@ export default function ScheduleManagementFeature() {
 
           <ScheduleManagementFilters
             values={draftFilters}
-            onChange={setDraftFilters}
+            onChange={(next) => {
+              setDraftFilters(next);
+              setAppliedFilters(next);
+              setPage(1);
+            }}
             buildingOptions={buildingOptions}
             roomOptions={roomOptions}
-            onApply={applyFilters}
-            onReset={resetFilters}
             showFilters={showFilters}
             onToggleFilters={() => setShowFilters((v) => !v)}
             activeFilterCount={activeFilterCount}

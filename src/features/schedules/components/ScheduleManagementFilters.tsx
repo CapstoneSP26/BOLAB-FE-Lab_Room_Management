@@ -1,7 +1,8 @@
-import { Building2, DoorOpen, Filter, X } from "lucide-react";
+import { Building2, DoorOpen, Filter } from "lucide-react";
 import type {
   GetSchedulesFilters,
   ScheduleStatus,
+  ScheduleType,
 } from "../types/schedule.type";
 import type { BuildingDto } from "../../building/types/building.type";
 import type { LabRoomDto } from "../../labroom/types/room.type";
@@ -11,8 +12,7 @@ type Props = {
   onChange: (next: GetSchedulesFilters) => void;
   buildingOptions: BuildingDto[];
   roomOptions: LabRoomDto[];
-  onApply: () => void;
-  onReset: () => void;
+
   showFilters: boolean;
   onToggleFilters: () => void;
   activeFilterCount: number;
@@ -20,9 +20,19 @@ type Props = {
 
 const STATUS_OPTIONS: { value: ScheduleStatus | ""; label: string }[] = [
   { value: "", label: "All status" },
-  { value: "NotYet", label: "Not yet" },
   { value: "Active", label: "Active" },
-  { value: "Finish", label: "Finish" },
+  { value: "InProcess", label: "In Process" },
+  { value: "Completed", label: "Completed" },
+  { value: "Cancelled", label: "Cancelled" },
+];
+
+const TYPE_OPTIONS: { value: ScheduleType | ""; label: string }[] = [
+  { value: "", label: "All types" },
+  { value: "Academic", label: "Academic" },
+  { value: "Personal", label: "Personal" },
+  { value: "Maintenance", label: "Maintenance" },
+  { value: "Examination", label: "Examination" },
+  { value: "Event", label: "Event" },
 ];
 
 export default function ScheduleManagementFilters({
@@ -30,8 +40,7 @@ export default function ScheduleManagementFilters({
   onChange,
   buildingOptions,
   roomOptions,
-  onApply,
-  onReset,
+
   showFilters,
   onToggleFilters,
   activeFilterCount,
@@ -54,23 +63,6 @@ export default function ScheduleManagementFilters({
               {activeFilterCount}
             </span>
           ) : null}
-        </button>
-
-        <button
-          type="button"
-          onClick={onApply}
-          className="rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600"
-        >
-          Apply
-        </button>
-
-        <button
-          type="button"
-          onClick={onReset}
-          className="inline-flex items-center gap-1 rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
-        >
-          <X className="h-4 w-4" />
-          Reset
         </button>
       </div>
 
@@ -178,13 +170,19 @@ export default function ScheduleManagementFilters({
             <span className="font-medium text-gray-700 dark:text-gray-300">
               Schedule type
             </span>
-            <input
-              type="text"
+            <select
               value={values.scheduleType}
-              onChange={(e) => patch({ scheduleType: e.target.value })}
-              placeholder="e.g. LECTURE, LAB"
+              onChange={(e) =>
+                patch({ scheduleType: e.target.value as ScheduleType | "" })
+              }
               className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 shadow-sm outline-none focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-            />
+            >
+              {TYPE_OPTIONS.map((opt) => (
+                <option key={String(opt.value)} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
           </label>
         </div>
       ) : null}

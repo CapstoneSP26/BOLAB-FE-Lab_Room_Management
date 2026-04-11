@@ -25,9 +25,28 @@ export default function ScheduleManagementTable({
   onDelete,
   deletingId,
 }: Props) {
-  const getStatusLabel = (status: ScheduleDto["status"]) => {
-    if (!status) return "Unknown";
-    return status;
+  const getStatusLabel = (status: any) => {
+    const s = String(status);
+    switch (s) {
+      case "0": return "Not Yet"; // Just in case
+      case "1": case "Active": return "Active";
+      case "2": case "InProcess": return "In Process";
+      case "3": case "Completed": return "Completed";
+      case "4": case "Cancelled": return "Cancelled";
+      default: return s || "Unknown";
+    }
+  };
+
+  const getTypeLabel = (type: any) => {
+    const t = String(type);
+    switch (t) {
+      case "1": case "Academic": return "Academic";
+      case "2": case "Personal": return "Personal";
+      case "3": case "Maintenance": return "Maintenance";
+      case "4": case "Examination": return "Examination";
+      case "5": case "Event": return "Event";
+      default: return t || "Unknown";
+    }
   };
 
   const pageButtons = Array.from(
@@ -98,7 +117,7 @@ export default function ScheduleManagementTable({
                       : "—"}
                   </td>
                   <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
-                    {row.type || "—"}
+                    {getTypeLabel(row.type)}
                   </td>
                   <td className="px-4 py-3">
                     <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-white/10 dark:text-gray-200">

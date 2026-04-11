@@ -1,4 +1,5 @@
 export type ScheduleStatus = "Active" | "InProcess" | "Completed" | "Cancelled";
+export type ScheduleType = "Academic" | "Personal" | "Maintenance" | "Examination" | "Event";
 
 export interface ScheduleDto {
   id: string;
@@ -14,19 +15,20 @@ export interface ScheduleDto {
   endTime: string; // ISO
   studentCount: number;
   status: ScheduleStatus;
-  type: string;
+  type: ScheduleType;
 }
 
 export interface GetSchedulesParams {
   searchItems?: string;
   status?: ScheduleStatus | "";
   labRoomId?: number | "";
+  buildingId?: number;
   lecturerId?: string;
   subjectId?: string;
   subjectCode?: string;
   fromDate?: string;
   toDate?: string;
-  type?: string;
+  type?: ScheduleType | "";
   pageNumber?: number;
   pageSize?: number;
   sortBy?: string;
@@ -39,7 +41,7 @@ export interface GetSchedulesFilters {
   fromDate: string;
   toDate: string;
   status: ScheduleStatus | "";
-  scheduleType: string;
+  scheduleType: ScheduleType | "";
 }
 
 export interface CreateScheduleCommand {
@@ -48,9 +50,10 @@ export interface CreateScheduleCommand {
   slotTypeId?: number;
   subjectId?: string;
   subjectCode: string;
+  lecturerId?: string;
   startTime: string;
   endTime: string;
-  type: string;
+  type: ScheduleType;
   status: ScheduleStatus;
 }
 
@@ -60,9 +63,10 @@ export interface UpdateScheduleCommand {
   slotTypeId?: number;
   subjectId?: string;
   subjectCode: string;
+  lecturerId?: string;
   startTime?: string;
   endTime?: string;
-  type?: string;
+  type?: ScheduleType;
   status?: ScheduleStatus;
 }
 
@@ -79,6 +83,5 @@ export interface GetScheduleByIdResponse {
 }
 
 export function getScheduleTypeValue(schedule: ScheduleDto): string {
-  // return schedule.type?.trim() || schedule.slotName?.trim() || "Unknown";
-  return "Academic"
+  return schedule.type || "Academic";
 }
