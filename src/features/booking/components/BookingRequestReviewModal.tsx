@@ -1,5 +1,8 @@
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import type { BookingRequest } from "../../booking/types/booking.type";
+import { InfoCard, InfoRow, Skeleton } from "./BookingRequestModalParts";
+import { norm } from "../../../utils/status";
+import { formatIsoDateTimeForDisplay } from "../../../utils/date.util";
 
 type Props = {
   open: boolean;
@@ -10,67 +13,15 @@ type Props = {
   handleOpenRejectModal: (id: string) => void;
 };
 
-const norm = (s: unknown) => String(s ?? "").trim();
-
-function isPendingStatus(status: unknown) {
-  const s = norm(status).toLowerCase();
-  return s === "pending" || s === "pendingapproval";
+function TagChip({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-md border border-violet-200 bg-violet-50 px-2.5 py-1 text-[11.5px] font-semibold text-violet-700 dark:border-violet-800 dark:bg-violet-900/30 dark:text-violet-400">
+      {children}
+    </span>
+  );
 }
 
-function statusMeta(status: unknown) {
-  const s = norm(status);
-  const lower = s.toLowerCase();
-
-  if (lower === "pendingapproval" || lower === "pending") {
-    return {
-      label: "Pending",
-      cls: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
-      dot: "bg-amber-500",
-    };
-  }
-
-  if (lower === "draft") {
-    return {
-      label: "Draft",
-      cls: "bg-slate-50 text-slate-700 dark:bg-slate-500/10 dark:text-slate-400",
-      dot: "bg-slate-500",
-    };
-  }
-
-  if (lower === "rejected") {
-    return {
-      label: "Rejected",
-      cls: "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400",
-      dot: "bg-red-500",
-    };
-  }
-
-  if (lower === "approved" || lower === "accepted") {
-    return {
-      label: "Approved",
-      cls: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
-      dot: "bg-emerald-500",
-    };
-  }
-
-  return {
-    label: s || "Unknown",
-    cls: "bg-gray-50 text-gray-700 dark:bg-gray-500/10 dark:text-gray-400",
-    dot: "bg-gray-400",
-  };
-}
-
-function fmtDateTime(v?: string) {
-  if (!v) return "-";
-  const d = new Date(v);
-  if (Number.isNaN(d.getTime())) return v;
-  return d.toLocaleString("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
-}
-
-export default function BookingRequestModal({
+export default function BookingRequestReviewModal({
   open,
   booking,
   loading = false,
@@ -80,30 +31,25 @@ export default function BookingRequestModal({
 }: Props) {
   useEffect(() => {
     if (!open) return;
-
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
-
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open, onClose]);
 
   useEffect(() => {
     if (!open) return;
-
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-
     return () => {
       document.body.style.overflow = prev;
     };
   }, [open]);
 
-  const pending = booking ? isPendingStatus(booking.status) : false;
-  const meta = useMemo(() => statusMeta(booking?.status), [booking?.status]);
-
   if (!open) return null;
+
+  const isPending = norm(booking?.status).startsWith("PENDING");
 
   return (
     <div
@@ -114,53 +60,78 @@ export default function BookingRequestModal({
     >
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200" />
 
-      <div className="relative w-full max-w-5xl">
-        <div className="no-scrollbar max-h-[90vh] overflow-y-auto rounded-2xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900 animate-in fade-in zoom-in-95 duration-200">
-          <div className="sticky top-0 z-10 border-b border-gray-200 bg-white/95 px-8 py-6 backdrop-blur-xl dark:border-gray-700 dark:bg-gray-900/95">
+      {/* Modal */}
+      <div className="relative w-full max-w-3xl animate-in fade-in zoom-in-95 duration-200">
+        <div className="no-scrollbar max-h-[90vh] overflow-y-auto rounded-3xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-200/60">
+          {/* Header */}
+          <div className="sticky top-0 z-10 border-b border-gray-100 bg-white/80 px-8 py-6 backdrop-blur-xl dark:border-gray-800 dark:bg-gray-900/80">
             <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  Booking Request Details
-                </h3>
-                <p className="mt-1 font-mono text-sm text-gray-500 dark:text-gray-400">
-                  {booking?.id || "Loading..."}
-                </p>
+              <div className="flex items-start gap-4">
+                {/* Icon */}
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-600 text-white shadow-lg shadow-violet-600/20">
+                  <svg
+                    width="22"
+                    height="22"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                    />
+                  </svg>
+                </div>
+
+                <div>
+                  <h3 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
+                    Booking Request Details
+                  </h3>
+                  <p className="mt-1 font-mono text-xs font-semibold text-gray-500 dark:text-gray-400">
+                    ID: {booking?.id ?? "Loading..."}
+                  </p>
+                </div>
               </div>
 
               <div className="flex items-center gap-3">
-                <span
-                  className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold ${meta.cls}`}
-                >
-                  <span className={`h-2 w-2 rounded-full ${meta.dot}`} />
-                  {meta.label}
-                </span>
+                {booking && (
+                  <span className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-1.5 text-xs font-bold text-amber-800 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-400">
+                    <span className="h-2 w-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
+                    {String(booking.status)}
+                  </span>
+                )}
 
                 <button
                   type="button"
                   onClick={onClose}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 text-gray-600 transition-all hover:bg-gray-200 active:scale-95 dark:bg-white/5 dark:text-gray-300 dark:hover:bg-white/10"
                   aria-label="Close"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 transition-all hover:bg-gray-50 hover:text-gray-900 active:scale-90 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
                 >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M6 6L18 18M18 6L6 18"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
+                  <svg
+                    width="20"
+                    height="20"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                  >
+                    <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
                   </svg>
                 </button>
               </div>
             </div>
           </div>
 
+          {/* Body */}
           <div className="p-8">
             {loading ? (
               <Skeleton />
             ) : !booking ? (
-              <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 p-12 dark:border-gray-700">
+              <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-100 p-12 dark:border-gray-800">
                 <svg
-                  className="h-16 w-16 text-gray-400"
+                  className="h-16 w-16 text-gray-200 dark:text-gray-700"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -172,73 +143,145 @@ export default function BookingRequestModal({
                     d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                   />
                 </svg>
-                <p className="mt-4 text-base font-medium text-gray-700 dark:text-gray-300">
+                <p className="mt-4 text-lg font-bold text-gray-900 dark:text-white">
                   No booking found
                 </p>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                <p className="mt-1 text-sm font-medium text-gray-500 dark:text-gray-400">
                   This booking request could not be loaded
                 </p>
               </div>
             ) : (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <div className="space-y-8">
+                {/* Meta chips */}
+                <div className="flex flex-wrap items-center gap-3">
+                  <TagChip>
+                    <svg
+                      width="14"
+                      height="14"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                    {booking.buildingName} — {booking.roomName}
+                  </TagChip>
+
+                  {booking.studentCount != null && (
+                    <TagChip>
+                      <svg
+                        width="14"
+                        height="14"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"
+                        />
+                      </svg>
+                      {booking.studentCount} students
+                    </TagChip>
+                  )}
+
+                  <TagChip>
+                    <svg
+                      width="14"
+                      height="14"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
+                    </svg>
+                    {booking.date}
+                  </TagChip>
+                </div>
+
+                {/* Info grid */}
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                   <InfoCard title="Location & Time">
-                    <InfoRow label="Room ID" value={String(booking.roomId)} />
-                    <InfoRow
-                      label="Room Name"
-                      value={booking.roomName || "-"}
-                    />
+                    <InfoRow label="Room" value={booking.roomName || "-"} />
                     <InfoRow
                       label="Building"
                       value={booking.buildingName || "-"}
                     />
                     <InfoRow
-                      label="Start Time"
-                      value={fmtDateTime(booking.startTime)}
+                      label="Start"
+                      value={formatIsoDateTimeForDisplay(booking.startTime)}
+                      mono
                     />
                     <InfoRow
-                      label="End Time"
-                      value={fmtDateTime(booking.endTime)}
+                      label="End"
+                      value={formatIsoDateTimeForDisplay(booking.endTime)}
+                      mono
                     />
                     <InfoRow
-                      label="Student Count"
+                      label="Students"
                       value={String(booking.studentCount ?? "-")}
                     />
                   </InfoCard>
 
                   <InfoCard title="Requester">
                     <InfoRow
-                      label="Requested By"
+                      label="Requested by"
                       value={booking.requestedBy || "-"}
                     />
-                    <InfoRow label="Status" value={booking.status || "-"} />
                     <InfoRow
-                      label="Requested At"
-                      value={fmtDateTime(booking.requestedAt)}
+                      label="Requested at"
+                      value={formatIsoDateTimeForDisplay(booking.requestedAt)}
+                      mono
                     />
-                    <InfoRow label="Date" value={booking.date || "-"} />
-                  </InfoCard>
-
-                  <InfoCard title="Purpose">
-                    <InfoRow label="Purpose" value={booking.purpose || "-"} />
                     <InfoRow
-                      label="Request ID"
-                      value={String(booking.id)}
+                      label="Booking date"
+                      value={booking.date || "-"}
                       mono
                     />
                   </InfoCard>
                 </div>
 
-                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800/50">
-                  <div className="border-b border-gray-200 bg-gray-50 px-6 py-3 dark:border-gray-700 dark:bg-gray-800">
-                    <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      Notes
-                    </h4>
+                {/* Purpose */}
+                <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white dark:border-gray-800 dark:bg-gray-800/50">
+                  <div className="flex items-center gap-2 border-b border-gray-100 bg-gray-50/50 px-6 py-4 dark:border-gray-700 dark:bg-gray-800/80">
+                    <svg
+                      width="16"
+                      height="16"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      className="text-gray-400 dark:text-gray-500"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
+                      />
+                    </svg>
+                    <span className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
+                      Purpose of Request
+                    </span>
                   </div>
-                  <div className="px-6 py-4">
-                    <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-gray-800 dark:text-gray-200">
+                  <div className="px-6 py-6 font-medium leading-relaxed text-gray-900 dark:text-gray-100">
+                    <p className="whitespace-pre-wrap break-words text-[15px]">
                       {booking.purpose || (
-                        <span className="italic text-gray-400">
+                        <span className="italic text-gray-300 dark:text-gray-600">
                           No details provided
                         </span>
                       )}
@@ -246,15 +289,15 @@ export default function BookingRequestModal({
                   </div>
                 </div>
 
-                <div className="flex flex-col-reverse gap-3 rounded-xl border border-gray-200 bg-gray-50 p-5 dark:border-gray-700 dark:bg-gray-800/30 sm:flex-row sm:items-center sm:justify-between">
+                {/* Action bar */}
+                <div className="flex flex-col-reverse gap-4 rounded-2xl border border-gray-100 bg-gray-50/50 p-6 dark:border-gray-800 dark:bg-gray-800/30 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex-1">
-                    {!pending && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Actions are only available for{" "}
-                        <span className="font-semibold text-amber-600 dark:text-amber-400">
-                          Pending
-                        </span>{" "}
-                        status bookings.
+                    {!isPending && (
+                      <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">
+                        Status:{" "}
+                        <span className="text-gray-900 dark:text-white">
+                          This booking is no longer pending.
+                        </span>
                       </p>
                     )}
                   </div>
@@ -263,24 +306,27 @@ export default function BookingRequestModal({
                     <button
                       type="button"
                       onClick={onClose}
-                      className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 transition-all hover:bg-gray-50 active:scale-[0.98] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-6 py-2.5 text-sm font-bold text-gray-900 shadow-sm transition-all hover:bg-gray-50 active:scale-[0.98] dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
                     >
                       Close
                     </button>
 
-                    {pending && (
+                    {isPending && (
                       <>
                         <button
                           type="button"
-                          onClick={() => handleOpenRejectModal(String(booking.id))}
-                          className="inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-red-700 active:scale-[0.98]"
+                          onClick={() =>
+                            handleOpenRejectModal(String(booking.id))
+                          }
+                          className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-6 py-2.5 text-sm font-bold text-red-700 shadow-sm transition-all hover:bg-red-100 active:scale-[0.98] dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40"
                         >
                           Reject
                         </button>
+
                         <button
                           type="button"
                           onClick={() => onApprove(String(booking.id))}
-                          className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-emerald-700 active:scale-[0.98]"
+                          className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-6 py-2.5 text-sm font-bold text-emerald-700 shadow-sm transition-all hover:bg-emerald-100 active:scale-[0.98] dark:border-emerald-900/50 dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/40"
                         >
                           Approve
                         </button>
@@ -292,92 +338,6 @@ export default function BookingRequestModal({
             )}
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function InfoCard({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800/50">
-      <div className="border-b border-gray-200 bg-gray-50 px-5 py-3 dark:border-gray-700 dark:bg-gray-800">
-        <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-          {title}
-        </h4>
-      </div>
-      <div className="space-y-4 p-5">{children}</div>
-    </div>
-  );
-}
-
-function InfoRow({
-  label,
-  value,
-  mono,
-  highlight,
-}: {
-  label: string;
-  value: string;
-  mono?: boolean;
-  highlight?: boolean;
-}) {
-  return (
-    <div>
-      <div className="text-xs font-medium text-gray-500 dark:text-gray-400">
-        {label}
-      </div>
-      <div
-        className={`mt-1 break-words text-sm font-semibold ${mono ? "font-mono text-xs" : ""
-          } ${highlight
-            ? "text-emerald-700 dark:text-emerald-400"
-            : "text-gray-900 dark:text-white"
-          }`}
-      >
-        {value}
-      </div>
-    </div>
-  );
-}
-
-function Skeleton() {
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div
-            key={i}
-            className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700"
-          >
-            <div className="h-12 animate-pulse bg-gray-100 dark:bg-gray-800" />
-            <div className="space-y-4 p-5">
-              {Array.from({ length: 4 }).map((_, j) => (
-                <div key={j} className="space-y-2">
-                  <div className="h-3 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
-                  <div className="h-4 w-full animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
-        <div className="h-12 animate-pulse bg-gray-100 dark:bg-gray-800" />
-        <div className="p-6">
-          <div className="h-20 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
-        </div>
-      </div>
-
-      <div className="flex justify-end gap-3 rounded-xl border border-gray-200 bg-gray-50 p-5 dark:border-gray-700 dark:bg-gray-800/30">
-        <div className="h-10 w-24 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700" />
-        <div className="h-10 w-24 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700" />
-        <div className="h-10 w-24 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700" />
       </div>
     </div>
   );

@@ -28,13 +28,20 @@ const LABROOM_API = {
 } as const;
 
 const unwrapEnvelopeData = (raw: unknown): unknown => {
-  if (
-    raw &&
-    typeof raw === "object" &&
-    "data" in (raw as object) &&
-    (raw as { data?: unknown }).data !== undefined
-  ) {
-    return (raw as { data: unknown }).data;
+  if (raw && typeof raw === "object") {
+    const record = raw as Record<string, unknown>;
+
+    // Handle enveloped errors where HTTP status is 200 but success is false
+    if (record.success === false) {
+      throw new Error(
+        (record.message as string) ||
+          "An error occurred while processing your request.",
+      );
+    }
+
+    if ("data" in record && record.data !== undefined) {
+      return record.data;
+    }
   }
   return raw;
 };
@@ -60,17 +67,17 @@ export const labroomApi = {
   createRoom: (payload: CreateLabRoomRequest) =>
     axiosInstance
       .post(LABROOM_API.LIST, mapLabRoomPayload(payload))
-      .then((response) => mapLabRoomDto(response.data)),
+      .then((response) => mapLabRoomDto(unwrapEnvelopeData(response.data))),
 
   updateRoom: (id: number, payload: UpdateLabRoomRequest) =>
     axiosInstance
       .put(LABROOM_API.DETAIL(id), mapLabRoomPayload(payload))
-      .then((response) => mapLabRoomDto(response.data)),
+      .then((response) => mapLabRoomDto(unwrapEnvelopeData(response.data))),
 
   updateRoomStatus: (id: number, isActive: boolean) =>
     axiosInstance
-      .patch(LABROOM_API.STATUS(id), { isActive })
-      .then((response) => mapLabRoomDto(response.data)),
+      .patch(LABROOM_API.STATUS(id), isActive)
+      .then((response) => mapLabRoomDto(unwrapEnvelopeData(response.data))),
 
   deleteRoom: (id: number) =>
     axiosInstance.delete(LABROOM_API.DETAIL(id)).then(() => undefined),

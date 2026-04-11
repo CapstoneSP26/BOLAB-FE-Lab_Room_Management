@@ -142,7 +142,10 @@ const matchesHistoryQuery = (
     return false;
   }
 
-  if (params.buildingId !== undefined) {
+  if (
+    params.buildingId !== undefined &&
+    String(item.buildingId) !== String(params.buildingId)
+  ) {
     return false;
   }
 
@@ -273,12 +276,36 @@ export const useApproveBookingRequest = (
 
   return useMutation({
     mutationFn: (id: string) => bookingRequestApi.approveBookingRequest(id),
-    onSuccess: (data) => {
+
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({
+        queryKey: [QUERY_KEYS.BOOKING_REQUESTS],
+      });
+
+      const previousPendingQueries =
+        queryClient.getQueriesData<GetBookingRequestsResponse>({
+          queryKey: [QUERY_KEYS.BOOKING_REQUESTS],
+        });
+
+      queryClient.setQueriesData<GetBookingRequestsResponse>(
+        { queryKey: [QUERY_KEYS.BOOKING_REQUESTS] },
+        (current) => removeFromBookingRequestResponse(current, id),
+      );
+
+      return { previousPendingQueries };
+    },
+
+    onSuccess: async (data) => {
       syncBookingRequestCaches(queryClient, data.data);
-      invalidateBookingRequestQueries(queryClient);
+      await invalidateBookingRequestQueries(queryClient);
       options.onSuccess?.(data);
     },
-    onError: (error: Error) => {
+
+    onError: (error: Error, _id, context) => {
+      context?.previousPendingQueries?.forEach(([queryKey, oldData]) => {
+        queryClient.setQueryData(queryKey, oldData);
+      });
+
       options.onError?.(error);
     },
   });
@@ -292,9 +319,9 @@ export const useRejectBookingRequest = (
   return useMutation({
     mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
       bookingRequestApi.rejectBookingRequest(id, reason),
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       syncBookingRequestCaches(queryClient, data.data);
-      invalidateBookingRequestQueries(queryClient);
+      await invalidateBookingRequestQueries(queryClient);
       options.onSuccess?.(data);
     },
     onError: (error: Error) => {

@@ -52,12 +52,11 @@ export default function HistoryBookingFeature() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
 
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(10);
-
   const [open, setOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
 
   const params: GetBookingRequestsRequest = useMemo(
     () => ({
@@ -101,24 +100,24 @@ export default function HistoryBookingFeature() {
     },
   });
 
-  type HistoryBookingResponse = {
+  const response = historyQuery.data as {
     data?: BookingRequest[];
+    items?: BookingRequest[];
     total?: number;
-    page?: number;
-    limit?: number;
+    totalCount?: number;
+    totalPages?: number;
   };
 
-  const response = historyQuery.data as HistoryBookingResponse | undefined;
-
-  const items = useMemo<BookingRequest[]>(
-    () => response?.data ?? [],
+  const items = useMemo(
+    () => response?.data ?? response?.items ?? [],
     [response],
   );
-
-  const totalCount = response?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const totalCount = response?.totalCount ?? response?.total ?? 0;
+  const totalPages =
+    response?.totalPages ?? Math.ceil(totalCount / (pageSize || 10));
   const loading = historyQuery.isLoading || historyQuery.isFetching;
   const selected: BookingRequest | null = detailQuery.data?.data ?? null;
+
   const reload = async () => {
     await historyQuery.refetch();
   };
@@ -127,21 +126,6 @@ export default function HistoryBookingFeature() {
     if (!id) return;
     setSelectedId(id);
     setOpen(true);
-  };
-
-  const handleApprove = async () => {
-    if (!selected?.id) return;
-
-    await approveBookingMutation.mutateAsync(String(selected.id));
-  };
-
-  const handleReject = async () => {
-    if (!selected?.id) return;
-
-    await rejectBookingMutation.mutateAsync({
-      id: String(selected.id),
-      reason: "Rejected from History",
-    });
   };
 
   useEffect(() => {
@@ -241,17 +225,17 @@ export default function HistoryBookingFeature() {
 
   const stats = useMemo(() => {
     const approved = items.filter(
-      (item: BookingRequest) =>
+      (item) =>
         normText(item.status) === "approved" ||
         normText(item.status) === "accepted",
     ).length;
 
     const rejected = items.filter(
-      (item: BookingRequest) => normText(item.status) === "rejected",
+      (item) => normText(item.status) === "rejected",
     ).length;
 
     const pending = items.filter(
-      (item: BookingRequest) =>
+      (item) =>
         normText(item.status) === "pending" ||
         normText(item.status) === "pendingapproval",
     ).length;
@@ -535,8 +519,15 @@ export default function HistoryBookingFeature() {
         open={open}
         booking={selected}
         onClose={closeModal}
-        onApprove={handleApprove}
-        onReject={handleReject}
+        onApprove={(id) => {
+          void approveBookingMutation.mutateAsync(id);
+        }}
+        handleOpenRejectModal={(id) => {
+          void rejectBookingMutation.mutateAsync({
+            id,
+            reason: "Rejected from History",
+          });
+        }}
       />
     </div>
   );

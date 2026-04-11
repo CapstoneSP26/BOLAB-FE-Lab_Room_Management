@@ -1,16 +1,12 @@
+import { convertHoursUtcToVN } from "../../../utils/date.util";
 import type { BookingRequest } from "../../booking/types/booking.type";
-import {
-  formatUtcDateLabel,
-  formatBookingTimeLabel,
-} from "../../../utils/date.util";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { statusClass } from "../../../utils/status";
+import { ChevronLeft, ChevronRight, Eye, XCircle, CheckCircle2 } from "lucide-react";
 type Props = {
   loading: boolean;
   rows: BookingRequest[];
   emptyText?: string;
 
-  // Pagination props
   page: number;
   totalPages: number;
   totalCount: number;
@@ -35,7 +31,6 @@ export default function BookingTable({
   handleOpenRejectModal,
 }: Props) {
   const hasActions = Boolean(onApprove && handleOpenRejectModal);
-
   const pageButtons = Array.from(
     { length: Math.min(5, Math.max(totalPages, 1)) },
     (_, index) => {
@@ -43,7 +38,6 @@ export default function BookingTable({
       return startPage + index;
     },
   ).filter((value) => value <= totalPages);
-
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
       <div className="overflow-x-auto">
@@ -84,6 +78,7 @@ export default function BookingTable({
             ) : (
               rows.map((b) => (
                 <tr key={String(b.id)} className="bg-white dark:bg-transparent">
+
                   <td className="px-4 py-4 font-semibold text-gray-800 dark:text-white/90">
                     {b.roomName}
                     <div className="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
@@ -123,8 +118,9 @@ export default function BookingTable({
                       <button
                         type="button"
                         onClick={() => onView(b)}
-                        className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-white/[0.04]"
+                        className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:text-gray-900 active:scale-95 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-300 dark:hover:bg-gray-800/60 dark:hover:text-white"
                       >
+                        <Eye className="h-3.5 w-3.5" />
                         View
                       </button>
 
@@ -132,17 +128,21 @@ export default function BookingTable({
                         <>
                           <button
                             type="button"
-                            onClick={() => handleOpenRejectModal(b.id.toString())}
-                            className="rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700"
+                            onClick={() =>
+                              handleOpenRejectModal(b.id.toString())
+                            }
+                            className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 shadow-sm transition-all hover:bg-red-100 hover:text-red-800 active:scale-95 dark:border-red-900/30 dark:bg-red-950/20 dark:text-red-400 dark:hover:bg-red-900/40 dark:hover:text-red-300"
                           >
+                            <XCircle className="h-3.5 w-3.5" />
                             Reject
                           </button>
 
                           <button
                             type="button"
                             onClick={() => onApprove?.(String(b.id))}
-                            className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700"
+                            className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 shadow-sm transition-all hover:bg-emerald-100 hover:text-emerald-800 active:scale-95 dark:border-emerald-900/30 dark:bg-emerald-950/20 dark:text-emerald-400 dark:hover:bg-emerald-900/40 dark:hover:text-emerald-300"
                           >
+                            <CheckCircle2 className="h-3.5 w-3.5" />
                             Approve
                           </button>
                         </>
@@ -155,8 +155,6 @@ export default function BookingTable({
           </tbody>
         </table>
       </div>
-
-      {/* Pagination */}
       <div className="flex flex-col gap-4 border-t border-gray-200 bg-gray-50/80 px-4 py-4 sm:flex-row sm:items-center sm:justify-between dark:border-gray-800 dark:bg-gray-900/40">
         <p className="text-sm text-gray-600 dark:text-gray-400">
           Page{" "}

@@ -3,9 +3,8 @@ import {
   formatUtcDateLabel,
   formatBookingTimeLabel,
 } from "../../../utils/date.util";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { statusClass } from "../../../utils/status";
-
+import { ChevronLeft, ChevronRight, Eye } from "lucide-react";
 type Props = {
   loading: boolean;
   rows: BookingRequest[];
@@ -119,8 +118,9 @@ export default function HistoryBookingTable({
                       <button
                         type="button"
                         onClick={() => onView(String(b.id))}
-                        className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-white/[0.04]"
+                        className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:text-gray-900 active:scale-95 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-300 dark:hover:bg-gray-800/60 dark:hover:text-white"
                       >
+                        <Eye className="h-3.5 w-3.5" />
                         View
                       </button>
                     </div>
@@ -132,7 +132,6 @@ export default function HistoryBookingTable({
         </table>
       </div>
 
-      {/* Pagination */}
       <div className="flex flex-col gap-4 border-t border-gray-200 bg-gray-50/80 px-4 py-4 sm:flex-row sm:items-center sm:justify-between dark:border-gray-800 dark:bg-gray-900/40">
         <p className="text-sm text-gray-600 dark:text-gray-400">
           Page{" "}

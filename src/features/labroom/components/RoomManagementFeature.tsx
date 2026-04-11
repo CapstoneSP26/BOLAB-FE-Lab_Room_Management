@@ -233,7 +233,7 @@ export default function RoomManagementFeature() {
 
     setActionLoadingId(room.id);
     await updateStatusMutation.mutateAsync({
-      id: room.id,
+      room,
       isActive: nextActive,
     });
   };
@@ -425,7 +425,7 @@ export default function RoomManagementFeature() {
                       Lab Room Directory
                     </h3>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Search by room ID or room number. Filter by building and active status.
+                      Search by room number. Filter by building and active status.
                     </p>
                   </div>
 

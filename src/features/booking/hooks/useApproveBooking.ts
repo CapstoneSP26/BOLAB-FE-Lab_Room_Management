@@ -22,8 +22,8 @@ export const useApproveBooking = () => {
 
     },
 
-    onError: (error: any) => {
-      const message = error.response?.data?.Message || "Không thể phê duyệt yêu cầu này.";
+    onError: (error: unknown) => {
+      const message = (error as { response?: { data?: { Message?: string } } }).response?.data?.Message || "Không thể phê duyệt yêu cầu này.";
       appAlert.error("Lỗi phê duyệt", message);
     },
   });

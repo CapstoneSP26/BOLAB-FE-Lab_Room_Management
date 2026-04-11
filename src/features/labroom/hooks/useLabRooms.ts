@@ -10,6 +10,7 @@ import type {
   LabRoomPolicy,
   LabRoomPolicyUpdatePayload,
 } from "../types/policy.type";
+import type { PagedResponse } from "../../../types/pagination.types";
 
 /**
  * ===== BUSINESS LOGIC LAYER =====
@@ -146,12 +147,45 @@ export const useUpdateLabRoomStatus = (
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, isActive }: { id: number; isActive: boolean }) =>
-      labroomApi.updateRoomStatus(id, isActive),
+    mutationFn: ({
+      room,
+      isActive,
+    }: {
+      room: LabRoomDto;
+      isActive: boolean;
+    }) => {
+      const payload: UpdateLabRoomRequest = {
+        buildingId: room.buildingId,
+        roomName: room.roomName,
+        roomNo: room.roomNo,
+        location: room.location ?? "",
+        capacity: room.capacity,
+        hasEquipment: room.hasEquipment,
+        description: room.description ?? "",
+        isActive,
+      };
+
+      return labroomApi.updateRoom(room.id, payload);
+    },
     onSuccess: (data) => {
+      queryClient.setQueriesData(
+        { queryKey: [QUERY_KEYS.ROOMS_MANAGEMENT] },
+        (oldData: PagedResponse<LabRoomDto> | undefined) => {
+          if (!oldData?.items) return oldData;
+
+          return {
+            ...oldData,
+            items: oldData.items.map((item) =>
+              item.id === data.id ? { ...item, ...data } : item,
+            ),
+          };
+        },
+      );
+
       void queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.ROOMS_MANAGEMENT],
       });
+
       options.onSuccess?.(data);
     },
     onError: (error: Error) => {

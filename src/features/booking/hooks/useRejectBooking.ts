@@ -24,8 +24,10 @@ export const useRejectBooking = () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.BOOKING_REQUESTS] });
     },
 
-    onError: (error: any) => {
-      const message = error.response?.data?.Message || "Không thể từ chối yêu cầu này.";
+    onError: (error: unknown) => {
+      const message =
+        (error as { response?: { data?: { Message?: string } } }).response?.data
+          ?.Message || "Không thể từ chối yêu cầu này.";
       appAlert.error("Lỗi", message);
     },
   });

@@ -13,6 +13,7 @@ import {
   useBookingRequests,
   useRejectBookingRequest,
 } from "../hooks/useBookingRequest";
+
 import type { BuildingDto } from "../../building/types/building.type";
 import type { LabRoomDto } from "../../labroom/types/room.type";
 import type { SlotType } from "../../slot/types/slot.types";
@@ -27,6 +28,7 @@ import {
   LoadingSkeleton,
   ReportStatCard,
 } from "../../../components/ui/ComponentsParts";
+import { useToast } from "../../../hooks/useToast";
 
 type SlotTypeFilter = "ALL" | number;
 
@@ -68,19 +70,41 @@ export default function PendingBookingFeature() {
 
   const pendingQuery = useBookingRequests(params);
 
-  const { mutate: approve } = useApproveBooking();
-  const { mutate: reject, isPending } = useRejectBooking();
+  const toast = useToast();
 
   const closeModal = () => {
     setOpen(false);
     setSelected(null);
-    setRejectId(null);
-    setRejectModalOpen(false);
   };
 
-  const items = useMemo(
-    () => pendingQuery.data?.data ?? [],
-    [pendingQuery.data],
+  const approveBookingMutation = useApproveBookingRequest({
+    onSuccess: () => {
+      toast.success("Success", "Booking approved successfully.");
+      closeModal();
+    },
+  });
+
+  const rejectBookingMutation = useRejectBookingRequest({
+    onSuccess: () => {
+      toast.success("Success", "Booking rejected.");
+      setRejectModalOpen(false);
+      setRejectingId(null);
+      closeModal();
+    },
+  });
+
+  type PendingBookingResponse = {
+    data?: BookingRequest[];
+    total?: number;
+    page?: number;
+    limit?: number;
+  };
+
+  const response = pendingQuery.data as PendingBookingResponse | undefined;
+
+  const items = useMemo<BookingRequest[]>(
+    () => response?.data ?? [],
+    [response],
   );
 
   const totalCount = response?.total ?? 0;
@@ -160,18 +184,16 @@ export default function PendingBookingFeature() {
     const ok = window.confirm("Approve this booking?");
     if (!ok) return;
 
-    approveBookingMutation.mutate(id);
+    await approveBookingMutation.mutateAsync(id);
   };
 
-  const HandleOpenRejectModal = (id: string) => {
-    setRejectId(id);
+  const handleOpenReject = (id: string) => {
+    setRejectingId(id);
     setRejectModalOpen(true);
   };
 
   const handleConfirmReject = async (id: string, reason: string) => {
-    reject({ id: id, reason: reason });
-    closeModal();
-    setRejectId(null);
+    await rejectBookingMutation.mutateAsync({ id, reason });
   };
 
   return (
@@ -489,7 +511,7 @@ export default function PendingBookingFeature() {
                 setOpen(true);
               }}
               onApprove={HandleApprove}
-              handleOpenRejectModal={HandleOpenRejectModal}
+              handleOpenRejectModal={handleOpenReject}
             />
           </div>
         )}
@@ -531,18 +553,20 @@ export default function PendingBookingFeature() {
         booking={selected}
         onClose={closeModal}
         onApprove={HandleApprove}
-        handleOpenRejectModal={HandleOpenRejectModal}
+        handleOpenRejectModal={(id) => {
+          handleOpenReject(id);
+        }}
       />
 
       <RejectReasonModal
-        rejectId={rejectId}
+        rejectId={rejectingId}
         isOpen={rejectModalOpen}
         onClose={() => {
           setRejectModalOpen(false);
           setRejectingId(null);
         }}
         onSubmit={handleConfirmReject}
-        isLoading={isPending}
+        isLoading={rejectBookingMutation.isPending}
       />
     </div>
   );

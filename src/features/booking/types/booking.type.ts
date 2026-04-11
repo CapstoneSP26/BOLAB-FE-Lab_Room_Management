@@ -94,6 +94,7 @@ export interface BookingRequest {
   id: string | number;
   roomId: string | number;
   roomName: string;
+  buildingId: string | number;
   buildingName: string;
   requestedBy: string;
   requestedAt: string;
