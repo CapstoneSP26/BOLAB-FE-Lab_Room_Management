@@ -53,7 +53,7 @@ export default function HistoryBookingFeature() {
   const [to, setTo] = useState("");
 
   const [open, setOpen] = useState(false);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<BookingRequest | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
@@ -77,13 +77,13 @@ export default function HistoryBookingFeature() {
   const historyQuery = useBookingRequestHistory(params);
 
   const detailQuery = useBookingRequestDetail({
-    id: selectedId ?? undefined,
-    enabled: open && !!selectedId,
+    id: selected?.id?.toString() ?? undefined,
+    enabled: open && !!selected?.id,
   });
 
   const closeModal = () => {
     setOpen(false);
-    setSelectedId(null);
+    setSelected(null);
   };
 
   const approveBookingMutation = useApproveBookingRequest({
@@ -116,15 +116,16 @@ export default function HistoryBookingFeature() {
   const totalPages =
     response?.totalPages ?? Math.ceil(totalCount / (pageSize || 10));
   const loading = historyQuery.isLoading || historyQuery.isFetching;
-  const selected: BookingRequest | null = detailQuery.data?.data ?? null;
+
+  // Use the fetched detail if available, otherwise fallback to the one from the list
+  const currentSelected = detailQuery.data?.data ?? selected;
 
   const reload = async () => {
     await historyQuery.refetch();
   };
 
-  const handleView = async (id: string) => {
-    if (!id) return;
-    setSelectedId(id);
+  const handleView = (b: BookingRequest) => {
+    setSelected(b);
     setOpen(true);
   };
 
@@ -249,7 +250,7 @@ export default function HistoryBookingFeature() {
         totalCount > 0 ? Math.round((approved / totalCount) * 100) : 0,
     };
   }, [items, totalCount]);
-
+console.log("currentSelected", currentSelected);
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-white via-gray-50 to-blue-50/30 p-6 shadow-sm dark:border-gray-700 dark:from-gray-800/50 dark:via-gray-800/30 dark:to-blue-900/10">
@@ -517,7 +518,8 @@ export default function HistoryBookingFeature() {
 
       <BookingRequestReviewModal
         open={open}
-        booking={selected}
+        booking={currentSelected}
+        loading={detailQuery.isLoading}
         onClose={closeModal}
         onApprove={(id) => {
           void approveBookingMutation.mutateAsync(id);

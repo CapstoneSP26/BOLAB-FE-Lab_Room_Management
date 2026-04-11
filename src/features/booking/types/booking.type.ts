@@ -104,6 +104,7 @@ export interface BookingRequest {
   studentCount?: number;
   status: string;
   purpose?: string;
+  reason?: string;
 }
 
 export interface BookingStats {

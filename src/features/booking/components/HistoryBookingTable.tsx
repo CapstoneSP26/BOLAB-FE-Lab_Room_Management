@@ -1,8 +1,5 @@
 import type { BookingRequest } from "../../booking/types/booking.type";
-import {
-  formatUtcDateLabel,
-  formatBookingTimeLabel,
-} from "../../../utils/date.util";
+import { convertHoursUtcToVN } from "../../../utils/date.util";
 import { statusClass } from "../../../utils/status";
 import { ChevronLeft, ChevronRight, Eye } from "lucide-react";
 type Props = {
@@ -12,7 +9,7 @@ type Props = {
   totalPages: number;
   totalCount: number;
   onPageChange: (page: number) => void;
-  onView: (id: string) => void;
+  onView: (b: BookingRequest) => void;
 };
 
 export default function HistoryBookingTable({
@@ -86,10 +83,9 @@ export default function HistoryBookingTable({
                   </td>
 
                   <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
-                    <div>{formatUtcDateLabel(b.startTime)}</div>
+                    <div>{b.date}</div>
                     <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      {formatBookingTimeLabel(b.startTime, b.startTime)} -{" "}
-                      {formatBookingTimeLabel(b.startTime, b.endTime)}
+                       {convertHoursUtcToVN(b.startTime) + " - " + convertHoursUtcToVN(b.endTime)}
                     </div>
                   </td>
 
@@ -117,7 +113,7 @@ export default function HistoryBookingTable({
                     <div className="flex justify-end gap-2">
                       <button
                         type="button"
-                        onClick={() => onView(String(b.id))}
+                        onClick={() => onView(b)}
                         className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:text-gray-900 active:scale-95 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-300 dark:hover:bg-gray-800/60 dark:hover:text-white"
                       >
                         <Eye className="h-3.5 w-3.5" />

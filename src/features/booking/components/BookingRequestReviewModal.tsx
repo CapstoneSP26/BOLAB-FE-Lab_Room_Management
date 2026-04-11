@@ -3,6 +3,7 @@ import type { BookingRequest } from "../../booking/types/booking.type";
 import { InfoCard, InfoRow, Skeleton } from "./BookingRequestModalParts";
 import { norm } from "../../../utils/status";
 import { formatIsoDateTimeForDisplay } from "../../../utils/date.util";
+import { AlertCircle } from "lucide-react";
 
 type Props = {
   open: boolean;
@@ -288,6 +289,23 @@ export default function BookingRequestReviewModal({
                     </p>
                   </div>
                 </div>
+
+                {/* Rejection Reason */}
+                {String(booking.status).trim().toLowerCase() === "rejected" && booking.reason && (
+                  <div className="overflow-hidden rounded-2xl border border-red-100 bg-red-50/30 dark:border-red-900/30 dark:bg-red-900/10">
+                    <div className="flex items-center gap-2 border-b border-red-100 bg-red-50/50 px-6 py-4 dark:border-red-900/30 dark:bg-red-900/20">
+                      <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                      <span className="text-xs font-bold uppercase tracking-widest text-red-600 dark:text-red-400">
+                        Reason for Rejection
+                      </span>
+                    </div>
+                    <div className="px-6 py-6 font-medium leading-relaxed text-red-950 dark:text-red-200">
+                      <p className="whitespace-pre-wrap break-words text-[15px]">
+                        {booking.reason}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Action bar */}
                 <div className="flex flex-col-reverse gap-4 rounded-2xl border border-gray-100 bg-gray-50/50 p-6 dark:border-gray-800 dark:bg-gray-800/30 sm:flex-row sm:items-center sm:justify-between">

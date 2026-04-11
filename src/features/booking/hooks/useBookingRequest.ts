@@ -295,8 +295,15 @@ export const useApproveBookingRequest = (
       return { previousPendingQueries };
     },
 
-    onSuccess: async (data) => {
-      syncBookingRequestCaches(queryClient, data.data);
+    onSuccess: async (data: any) => {
+      try {
+        const item = data?.data || data;
+        if (item && item.id) {
+          syncBookingRequestCaches(queryClient, item);
+        }
+      } catch (err) {
+        console.error("Failed to sync booking cache optimistically:", err);
+      }
       await invalidateBookingRequestQueries(queryClient);
       options.onSuccess?.(data);
     },
@@ -319,8 +326,15 @@ export const useRejectBookingRequest = (
   return useMutation({
     mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
       bookingRequestApi.rejectBookingRequest(id, reason),
-    onSuccess: async (data) => {
-      syncBookingRequestCaches(queryClient, data.data);
+    onSuccess: async (data: any) => {
+      try {
+        const item = data?.data || data;
+        if (item && item.id) {
+          syncBookingRequestCaches(queryClient, item);
+        }
+      } catch (err) {
+        console.error("Failed to sync booking cache optimistically:", err);
+      }
       await invalidateBookingRequestQueries(queryClient);
       options.onSuccess?.(data);
     },
