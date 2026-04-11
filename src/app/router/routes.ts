@@ -31,6 +31,7 @@ const BookingRequestsPendingPage = lazy(() => import("../../pages/labmanager/Boo
 const BookingRequestsHistoryPage = lazy(() => import("../../pages/labmanager/BookingRequestsHistoryPage.tsx"));
 const ImportBookingPage = lazy(() => import("../../pages/labmanager/ImportBookingPage.tsx"));
 const ImportUserPage = lazy(() => import("../../pages/labmanager/ImportUserPage.tsx"));
+const ImportGroupPage = lazy(() => import("../../pages/labmanager/ImportGroupPage.tsx"));
 const ReportListPage = lazy(() => import("../../pages/labmanager/ReportListPage.tsx"));
 const ReportDetailPage = lazy(() => import("../../pages/labmanager/ReportDetailPage.tsx"));
 const IncidentHistoryPage = lazy(() => import("../../pages/labmanager/ReportHistoryPage.tsx"));
@@ -69,6 +70,7 @@ export const managerRoutes: AppRoute[] = [
   { path: "/labmanager/booking-requests/history", element: BookingRequestsHistoryPage, roles: [Role.Manager] },
   { path: "/labmanager/booking-requests/import", element: ImportBookingPage, roles: [Role.Manager] },
   { path: "/labmanager/users/import", element: ImportUserPage, roles: [Role.Manager] },
+  { path: "/labmanager/groups/import", element: ImportGroupPage, roles: [Role.Manager] },
   { path: "/labmanager/user-profile", element: UserProfilePage, roles: [Role.Manager] },
   { path: "/labmanager/reports", element: ReportListPage, roles: [Role.Manager, Role.Admin] },
   { path: "/labmanager/reports/:id", element: ReportDetailPage, roles: [Role.Manager, Role.Admin] },

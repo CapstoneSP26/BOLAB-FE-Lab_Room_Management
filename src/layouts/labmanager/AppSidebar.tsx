@@ -107,6 +107,10 @@ const AppSidebar: React.FC = () => {
                   name: "Import User",
                   path: p("/users/import"),
                 },
+                {
+                  name: "Import Groups",
+                  path: p("/groups/import"),
+                },
               ],
             },
 
@@ -199,6 +203,10 @@ const AppSidebar: React.FC = () => {
               {
                 name: "Import User",
                 path: p("/users/import"),
+              },
+              {
+                name: "Import Groups",
+                path: p("/groups/import"),
               },
             ],
           },
