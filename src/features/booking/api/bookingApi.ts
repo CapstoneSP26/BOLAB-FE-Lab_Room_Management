@@ -35,7 +35,7 @@ const BOOKING_API = {
 
 const BOOKING_REQUEST_API = {
   LIST: "/bookings/get-unchecked-booking-request",
-  HISTORY: "/bookings/history",
+  HISTORY: "/bookings/history/labmanager",
   BY_ID: (id: string) => `/bookings/${id}`,
   BY_SCHEDULE: (scheduleId: string) =>
     `/booking-requests/by-schedule/${scheduleId}`,

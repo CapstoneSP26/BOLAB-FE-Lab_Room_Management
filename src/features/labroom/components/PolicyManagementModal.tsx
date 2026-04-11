@@ -4,7 +4,6 @@ import {
   Loader2,
   Pencil,
   Save,
-  Trash2,
   X,
   Shield,
   Eye,
@@ -12,7 +11,6 @@ import {
   Info,
   Settings2,
   Sparkles,
-  Clock
 } from "lucide-react";
 import { useToast } from "../../../hooks/useToast";
 import { getErrorMessage } from "../../../utils/error";
@@ -128,18 +126,18 @@ export default function PolicyManagementModal({
     });
   };
 
-  const handleDelete = async (policy: LabRoomPolicy) => {
-    if (!isAdmin) return;
-    const policyKey = getPolicyKey(policy);
-    if (
-      !window.confirm(
-        `Delete policy "${POLICY_META[policyKey as keyof typeof POLICY_META]?.label || policyKey}" from ${room.roomName}?`,
-      )
-    ) {
-      return;
-    }
-    await deletePolicyMutation.mutateAsync({ labRoomId: roomId, policyKey });
-  };
+  // const handleDelete = async (policy: LabRoomPolicy) => {
+  //   if (!isAdmin) return;
+  //   const policyKey = getPolicyKey(policy);
+  //   if (
+  //     !window.confirm(
+  //       `Delete policy "${POLICY_META[policyKey as keyof typeof POLICY_META]?.label || policyKey}" from ${room.roomName}?`,
+  //     )
+  //   ) {
+  //     return;
+  //   }
+  //   await deletePolicyMutation.mutateAsync({ labRoomId: roomId, policyKey });
+  // };
 
   const activeMeta = effectiveEditingKey
     ? POLICY_META[effectiveEditingKey as keyof typeof POLICY_META]
