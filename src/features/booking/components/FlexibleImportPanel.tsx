@@ -25,15 +25,18 @@ import type {
 } from "../types/importBooking.type";
 import { useBookingFlexibleImport } from "../hooks/useBookingFlexibleImport";
 import { useToast } from "../../../hooks/useToast";
+import type { SemesterInfo } from "../../../utils/semester.util";
 
 interface FlexibleImportPanelProps {
   onImportComplete?: () => void;
+  semester: SemesterInfo
 }
 
 const pageSize = 10;
 
 export default function FlexibleImportPanel({
   onImportComplete,
+  semester,
 }: FlexibleImportPanelProps) {
   const toast = useToast();
   const {
@@ -225,6 +228,8 @@ export default function FlexibleImportPanel({
     try {
       const payload: ValidateFlexibleSlotImportRequest = {
         Schedules: toFlexibleSlotRows(flexibleRows),
+        StartTime: semester.startDate.toISOString(),
+        EndTime: semester.endDate.toISOString()
       };
 
       const response = await validateFlexibleScheduleMutation.mutateAsync(payload);
@@ -297,6 +302,8 @@ export default function FlexibleImportPanel({
     try {
       const payload: CommitFlexibleSlotImportRequest = {
         Schedules: toFlexibleSlotRows(flexibleRows),
+        StartTime: semester.startDate.toISOString(),
+        EndTime: semester.endDate.toISOString()
       };
 
       const response = await commitFlexibleScheduleMutation.mutateAsync(payload);

@@ -1,14 +1,28 @@
+import { useMemo, useState } from "react";
 import FixedImportPanel from "./FixedImportPanel";
 import FlexibleImportPanel from "./FlexibleImportPanel";
+import { getDynamicSemesters, getSemesterDetails } from "../../../utils/semester.util";
+import { formatDate } from "date-fns";
 
 export default function ImportBookingFeature() {
   const handleImportComplete = () => {
     // Optional: Trigger any post-import actions (e.g., refresh data, close modals, etc.)
   };
 
+  // Tự động suy ra danh sách kỳ dựa trên thời gian thực (ví dụ: tháng 4/2026)
+  const availableSemesters = useMemo(() => getDynamicSemesters(), []);
+
+  // Mặc định chọn kỳ đầu tiên (thường là kỳ hiện tại)
+  const [selectedCode, setSelectedCode] = useState(availableSemesters[0]);
+
+  const semesterDetails = useMemo(() =>
+    getSemesterDetails(selectedCode),
+    [selectedCode]
+  );
+
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800/50">
+      <div className="flex items-start justify-between rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800/50">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
             Import Schedules from Excel
@@ -18,11 +32,37 @@ export default function ImportBookingFeature() {
             and Flexible.
           </p>
         </div>
+        <div className="flex flex-col items-end gap-1">
+          <label className="text-[10px] font-bold text-gray-400 uppercase">Chọn kỳ Import</label>
+          <select
+            value={selectedCode}
+            onChange={(e) => setSelectedCode(e.target.value)}
+            className="rounded-lg border border-gray-300 p-2 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none"
+          >
+            {availableSemesters.map((code) => (
+              <option key={code} value={code}>
+                {getSemesterDetails(code).label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      {/* Hiển thị chi tiết ngày để user kiểm tra trước khi Import */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-8">
+        <div>
+          <p className="text-[10px] uppercase text-blue-500 font-bold">Ngày bắt đầu</p>
+          <p className="text-lg font-bold text-blue-900">{formatDate(semesterDetails.startDate, "dd-MM-yyyy")}</p>
+        </div>
+        <div className="flex items-center text-blue-300">→</div>
+        <div>
+          <p className="text-[10px] uppercase text-blue-500 font-bold">Ngày kết thúc</p>
+          <p className="text-lg font-bold text-blue-900">{formatDate(semesterDetails.endDate, "dd-MM-yyyy")}</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <FixedImportPanel onImportComplete={handleImportComplete} />
-        <FlexibleImportPanel onImportComplete={handleImportComplete} />
+        <FixedImportPanel semester={semesterDetails} onImportComplete={handleImportComplete} />
+        <FlexibleImportPanel semester={semesterDetails} onImportComplete={handleImportComplete} />
       </div>
     </div>
   );
