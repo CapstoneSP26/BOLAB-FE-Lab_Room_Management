@@ -35,26 +35,50 @@ export interface NotificationRealtimePayload {
 
 export const notificationApi = {
   async getMyNotifications(page: number = 1, pageSize: number = 10): Promise<NotificationListResult> {
-    const response = await axiosInstance.get<ApiResponse<PagedList<NotificationDto>>>(
-      '/Profile/notifications',
-      {
-        params: {
-          page,
-          pageSize,
-        },
-      },
-    );
+    // Backend routes may differ across branches/environments after merge.
+    // Try known endpoints and query styles to avoid hard 404 in UI.
+    const requestCandidates = [
+      () =>
+        axiosInstance.get<ApiResponse<PagedList<NotificationDto>>>('/Profile/notifications', {
+          params: { pageNumber: page, pageSize },
+        }),
+      () =>
+        axiosInstance.get<ApiResponse<PagedList<NotificationDto>>>('/Profile/notifications', {
+          params: { page, pageSize },
+        }),
+      () =>
+        axiosInstance.get<ApiResponse<PagedList<NotificationDto>>>('/notifications', {
+          params: { pageNumber: page, pageSize },
+        }),
+      () =>
+        axiosInstance.get<ApiResponse<PagedList<NotificationDto>>>('/notifications', {
+          params: { page, pageSize },
+        }),
+    ];
 
-    const payload = response.data?.data;
-    const items = Array.isArray(payload?.items) ? payload.items : [];
+    let lastError: unknown = null;
 
-    return {
-      items,
-      pageNumber: payload?.pageNumber ?? page,
-      pageSize: payload?.pageSize ?? pageSize,
-      totalPages: payload?.totalPages ?? 1,
-      totalCount: payload?.totalCount ?? items.length,
-    };
+    for (const request of requestCandidates) {
+      try {
+        const response = await request();
+        const payload = response.data?.data;
+        const items = Array.isArray(payload?.items) ? payload.items : [];
+
+        return {
+          items,
+          pageNumber: payload?.pageNumber ?? page,
+          pageSize: payload?.pageSize ?? pageSize,
+          totalPages: payload?.totalPages ?? 1,
+          totalCount: payload?.totalCount ?? items.length,
+        };
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw lastError instanceof Error
+      ? lastError
+      : new Error('Failed to load notifications from all known endpoints');
   },
 
   async markAsRead(notificationId: number): Promise<void> {
