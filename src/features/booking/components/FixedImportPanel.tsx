@@ -19,14 +19,16 @@ import {
 import type { ValidateImportQuery, CommitImportCommand } from "../types/importBooking.type";
 import { useBookingImport } from "../hooks/useBookingImport";
 import { useToast } from "../../../hooks/useToast";
+import type { SemesterInfo } from "../../../utils/semester.util";
 
 interface FixedImportPanelProps {
   onImportComplete?: () => void;
+  semester: SemesterInfo;
 }
 
 const pageSize = 10;
 
-export default function FixedImportPanel({ onImportComplete }: FixedImportPanelProps) {
+export default function FixedImportPanel({ onImportComplete, semester }: FixedImportPanelProps) {
   const {
     validateScheduleRows,
     commitScheduleRows,
@@ -238,6 +240,8 @@ export default function FixedImportPanel({ onImportComplete }: FixedImportPanelP
     try {
       const payload: ValidateImportQuery = {
         Schedules: toScheduleRows(rows),
+        StartTime: semester.startDate.toISOString(),
+        EndTime: semester.endDate.toISOString()
       };
 
       const response = await validateScheduleRows(payload);
@@ -311,6 +315,8 @@ export default function FixedImportPanel({ onImportComplete }: FixedImportPanelP
     try {
       const payload: CommitImportCommand = {
         Schedules: toScheduleRows(rows),
+        StartTime: semester.startDate.toISOString(),
+        EndTime: semester.endDate.toISOString()
       };
 
       const response = await commitScheduleRows(payload);

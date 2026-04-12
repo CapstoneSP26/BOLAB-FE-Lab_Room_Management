@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { bookingApi } from "../api/bookingApi";
 import { useToast } from "../../../hooks/useToast";
+import { QUERY_KEYS } from "./useBookingRequest";
 
 export const useApproveBooking = () => {
   const queryClient = useQueryClient();
@@ -17,6 +18,8 @@ export const useApproveBooking = () => {
       // 'calendar-events' là key bạn dùng ở trang RoomBookingPage
       queryClient.invalidateQueries({ queryKey: ['bookings'] });
       queryClient.invalidateQueries({ queryKey: ['schedules'] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.BOOKING_REQUESTS] });
+
     },
 
     onError: (error: any) => {

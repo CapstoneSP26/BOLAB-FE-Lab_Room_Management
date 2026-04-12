@@ -7,9 +7,26 @@ import axios, {
 import {
   clearAuth,
   getAccessToken,
-  getRefreshToken,
-  saveAccessToken,
 } from "../utils/storage";
+
+/**
+ * Helper: Extract JWT token from cookies (if it's not HttpOnly)
+ * Some browsers/configs allow reading non-HttpOnly cookies
+ */
+const extractTokenFromCookie = (): string | null => {
+  try {
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+      const [name, value] = cookie.trim().split('=');
+      if (name === 'accessToken' || name === 'access_token') {
+        return decodeURIComponent(value);
+      }
+    }
+  } catch (err) {
+    console.error('Error reading cookies:', err);
+  }
+  return null;
+};
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string | undefined;
 
@@ -35,6 +52,7 @@ axiosInstance.interceptors.request.use(
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log("✅ Authorization: Bearer [token]");
     }
 
     return config;
@@ -42,77 +60,16 @@ axiosInstance.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-let isRefreshing = false;
-let failedQueue: {
-  resolve: (token: string) => void;
-  reject: (error: AxiosError) => void;
-}[] = [];
-
-const processQueue = (error: AxiosError | null, token: string | null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else if (token) {
-      prom.resolve(token);
-    }
-  });
-
-  failedQueue = [];
-};
-
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & {
-      _retry?: boolean;
-    };
-
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({
-            resolve: (token: string) => {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
-              resolve(axiosInstance(originalRequest));
-            },
-            reject,
-          });
-        });
-      }
-
-      originalRequest._retry = true;
-      isRefreshing = true;
-
-      try {
-        const refreshToken = getRefreshToken();
-        if (!refreshToken) {
-          clearAuth();
-          window.location.href = "/login";
-          return Promise.reject(error);
-        }
-
-        const response = await axios.post(
-          `${API_BASE_URL}/auth/refresh-token`,
-          {
-            refreshToken,
-          },
-        );
-
-        const newAccessToken = response.data.accessToken;
-        saveAccessToken(newAccessToken);
-
-        axiosInstance.defaults.headers.Authorization = `Bearer ${newAccessToken}`;
-        processQueue(null, newAccessToken);
-
-        return axiosInstance(originalRequest);
-      } catch (refreshError) {
-        processQueue(refreshError as AxiosError, null);
-        clearAuth();
-        window.location.href = "/login";
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
-      }
+    // If 401 Unauthorized, redirect to login
+    // Backend manages HttpOnly cookies - no manual token refresh needed
+    if (error.response?.status === 401) {
+      console.log("⚠️ 401 Unauthorized - Redirecting to login");
+      clearAuth();
+      window.location.href = "/login";
+      return Promise.reject(error);
     }
 
     return Promise.reject(error);

@@ -1,41 +1,23 @@
 /**
- * Hook: useEndQRSession
- * End (deactivate) an active QR attendance session
+ * Hook: useScanQRCode
+ * For scanning QR codes - kept for backward compatibility alias
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { EndQRSessionRequest, EndQRSessionResponse } from '../types/attendance.type';
+import type { ScanQRCodeRequest } from '../types/attendance.type';
 import { attendanceApi } from '../api/attendanceApi';
 
-export const QUERY_KEYS = {
-  END_QR_SESSION: 'endQRSession',
-} as const;
-
-interface UseEndQRSessionOptions {
-  onSuccess?: (data: EndQRSessionResponse) => void;
-  onError?: (error: Error) => void;
-}
-
 /**
- * End QR session mutation
- * Deactivates an active QR attendance session
+ * Scan QR code mutation
  */
-export const useEndQRSession = (options: UseEndQRSessionOptions = {}) => {
+export const useScanQRCode = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationKey: [QUERY_KEYS.END_QR_SESSION],
-    mutationFn: (request: EndQRSessionRequest) => attendanceApi.endQRSession(request),
-    onSuccess: (data) => {
-      // Invalidate all session queries since backend contract may not return sessionId.
-      queryClient.invalidateQueries({ queryKey: ['qr-session'] });
-      // Invalidate lecturer bookings
-      queryClient.invalidateQueries({ queryKey: ['lecturer-bookings'] });
-
-      options.onSuccess?.(data);
-    },
-    onError: (error: Error) => {
-      options.onError?.(error);
+    mutationFn: (request: ScanQRCodeRequest) => attendanceApi.scanQRCode(request),
+    onSuccess: () => {
+      // Invalidate all attendance queries after scan
+      queryClient.invalidateQueries({ queryKey: ['attendance-list'] });
     },
   });
 };

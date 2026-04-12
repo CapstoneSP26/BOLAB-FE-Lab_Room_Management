@@ -9,7 +9,7 @@ import type {
 import {
   mapScheduleDetailResponse,
   mapScheduleListResponse,
-} from "../types/calendar.mapper";
+} from "../utils/calendar.mapper";
 
 const SCHEDULE_API = {
   LIST: "/schedules",
