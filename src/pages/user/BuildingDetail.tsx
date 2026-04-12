@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import type { User } from '../../types';
 import { useBuildingContext } from '../../context/BuildingContext';
 import RoomCard from '../../features/labroom/components/RoomCard';
+import { labroomApi } from '../../features/labroom/api/labroom.api';
 import { buildingApi, type BuildingResponse } from '../../features/building';
 
 import {
@@ -52,6 +53,8 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [currentPage, setCurrentPage] = useState(1);
+  const [rooms, setRooms] = useState<(typeof MOCK_ROOMS)[number][]>([]);
+  const [roomsLoading, setRoomsLoading] = useState(false);
   const itemsPerPage = 6;
   const { setActiveBuildingImage } = useBuildingContext();
 
@@ -64,7 +67,7 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
         if (id) {
           // Decode URL parameter in case it's encoded
           const buildingName = decodeURIComponent(id);
-          const data = (await buildingApi.getBuildingByName(buildingName)).data;
+          const data = await buildingApi.getBuildingByName(buildingName);
           setBuilding(data);
           // Update context với hình ảnh tòa nhà
           setActiveBuildingImage(data.buildingImageUrl);
@@ -84,13 +87,51 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
     fetchBuilding();
   }, [id, setActiveBuildingImage]);
 
-  // Filter rooms based on selected building and search keyword
+  useEffect(() => {
+    const fetchRooms = async () => {
+      if (!building?.id) return;
+      try {
+        setRoomsLoading(true);
+        const response = await labroomApi.getRooms({
+          buildingId: building.id,
+          includeImages: true,
+          includeBuilding: true,
+          isActive: true,
+          pageNumber: 1,
+          pageSize: 100,
+        });
+
+        const mappedRooms = response.items
+          .filter((room) => room.buildingId === building.id)
+          .map((room) => ({
+            id: room.id,
+            name: room.roomName || room.roomNo,
+            building: room.buildingName,
+            capacity: room.capacity,
+            status: room.isActive ? 'Available' : 'Maintenance',
+            image: room.images?.[0]?.url || 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&q=80&w=400',
+            features: ['wifi', 'screen'],
+            nextAvailable: 'Now',
+          }));
+
+        setRooms(mappedRooms);
+      } catch (err) {
+        console.error('Error fetching rooms:', err);
+        setRooms([]);
+      } finally {
+        setRoomsLoading(false);
+      }
+    };
+
+    fetchRooms();
+  }, [building?.id]);
+
+  // Filter rooms based on search keyword
   const filteredRooms = useMemo(() => {
-    return MOCK_ROOMS.filter(room =>
-      room.building === id &&
+    return rooms.filter((room) =>
       room.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [id, searchQuery]);
+  }, [rooms, searchQuery]);
 
   // Pagination logic
   const totalPages = Math.ceil(filteredRooms.length / itemsPerPage);
@@ -257,7 +298,12 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
                 ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                 : "flex flex-col gap-4"
               }>
-                {filteredRooms.length === 0 ? (
+                {roomsLoading ? (
+                  <div className={`${viewMode === 'grid' ? 'col-span-3' : ''} flex flex-col items-center justify-center py-20 text-gray-500`}>
+                    <Loader className="h-10 w-10 mb-4 text-gray-400 animate-spin" />
+                    <p className="text-lg font-medium">Đang tải danh sách phòng...</p>
+                  </div>
+                ) : filteredRooms.length === 0 ? (
                   <div className={`${viewMode === 'grid' ? 'col-span-3' : ''} flex flex-col items-center justify-center py-20 text-gray-500`}>
                     <Building2 className="h-16 w-16 mb-4 text-gray-300" />
                     <p className="text-lg font-medium">Không tìm thấy phòng</p>

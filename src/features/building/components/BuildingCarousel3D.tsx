@@ -226,11 +226,13 @@ export const BuildingCarousel3D: React.FC<BuildingCarousel3DProps> = ({ building
 
                     {/* Building Info */}
                     <div className="space-y-3">
-                      <div className="inline-block px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm border border-white/20">
-                        <span className="text-white/80 text-xs font-medium uppercase tracking-wider">
-                          {building.id}
-                        </span>
-                      </div>
+                      {building.campusName && (
+                        <div className="inline-block px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm border border-white/20">
+                          <span className="text-white/80 text-xs font-medium uppercase tracking-wider">
+                            {building.campusName}
+                          </span>
+                        </div>
+                      )}
 
                       <h2 className="text-4xl font-black text-white leading-tight">
                         {building.name}
@@ -245,7 +247,7 @@ export const BuildingCarousel3D: React.FC<BuildingCarousel3DProps> = ({ building
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            onSelectBuilding(building.id);
+                            onSelectBuilding(building.name);
                           }}
                           className="mt-4 px-6 py-3 rounded-full bg-white text-gray-900 font-bold text-sm
                                    hover:bg-orange-500 hover:text-white transition-all duration-300

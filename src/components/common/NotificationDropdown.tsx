@@ -1,9 +1,6 @@
-import React, { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  useNotificationStore,
-  type NotificationStoreType as NotificationType,
-} from "../../features/notifications/store/notificationStore";
+import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useNotificationStore, type NotificationType } from '../../hooks/useNotifications';
 
 interface NotificationDropdownProps {
   isHomePage?: boolean;
@@ -17,10 +14,11 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   const navigate = useNavigate();
 
   const notifications = useNotificationStore((state) => state.notifications);
+  const fetchNotifications = useNotificationStore((state) => state.fetchNotifications);
   const markAsRead = useNotificationStore((state) => state.markAsRead);
   const markAllAsRead = useNotificationStore((state) => state.markAllAsRead);
 
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -151,8 +149,9 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
               notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-4 hover:bg-gray-50 cursor-pointer transition-all ${!notification.isRead ? "bg-blue-50/50 hover:bg-blue-50" : ""
-                    }`}
+                  className={`p-4 hover:bg-gray-50 cursor-pointer transition-all ${
+                    !notification.isRead ? 'bg-blue-50/50 hover:bg-blue-50' : ''
+                  }`}
                   onClick={() => {
                     markAsRead(notification.id);
                     setIsOpen(false);
