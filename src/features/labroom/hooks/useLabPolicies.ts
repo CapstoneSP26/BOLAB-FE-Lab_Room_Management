@@ -23,3 +23,5 @@ export const useLabPolicies = (labRoomId: number) => {
     },
   });
 };
+
+

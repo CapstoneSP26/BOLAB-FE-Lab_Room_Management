@@ -79,5 +79,6 @@ export interface GetScheduleByIdResponse {
 }
 
 export function getScheduleTypeValue(schedule: ScheduleDto): string {
-  return schedule.type?.trim() || schedule.slotName?.trim() || "Unknown";
+  // return schedule.type?.trim() || schedule.slotName?.trim() || "Unknown";
+  return "Academic"
 }

@@ -19,7 +19,6 @@ import {
 } from "../../../components/ui/ComponentsParts";
 import { useBuildings } from "../../building/hooks/useBuildings";
 import { getErrorMessage } from "../../../utils/error";
-import { getRole } from "../../../utils/role";
 import {
   useCreateLabRoom,
   useDeleteLabRoom,
@@ -32,11 +31,12 @@ import PolicyManagementModal from "./PolicyManagementModal";
 import RoomFormModal from "./RoomFormModal";
 import RoomManagementFilters from "./RoomManagementFilters";
 import RoomManagementTable from "./RoomManagementTable";
+import { useAuthStore } from "../../../store/useAuthStore";
 
 const PAGE_SIZE = 10;
 
 export default function RoomManagementFeature() {
-  const isAdmin = getRole() === "ADMIN";
+  const { user } = useAuthStore();
   const toast = useToast();
   const [showFilters, setShowFilters] = useState(true);
   const [search, setSearch] = useState("");
@@ -48,6 +48,8 @@ export default function RoomManagementFeature() {
   const [selectedRoom, setSelectedRoom] = useState<LabRoomDto | null>(null);
   const [policyRoom, setPolicyRoom] = useState<LabRoomDto | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
+
+  const isAdmin = useMemo(() => user && user.roles.includes("Admin") ? true : false, [user])
 
   const deferredSearch = useDeferredValue(search.trim());
 
@@ -134,8 +136,7 @@ export default function RoomManagementFeature() {
     onSuccess: (updatedRoom) => {
       toast.success(
         "Status updated",
-        `${updatedRoom.roomName || "Room"} is now ${
-          updatedRoom.isActive ? "active" : "de-activated"
+        `${updatedRoom.roomName || "Room"} is now ${updatedRoom.isActive ? "active" : "de-activated"
         }.`,
       );
       setActionLoadingId(null);
@@ -174,7 +175,7 @@ export default function RoomManagementFeature() {
   };
 
   const handleOpenCreate = () => {
-    if (!isAdmin) return;
+    if (!user) return;
     setModalMode("create");
     setSelectedRoom(null);
     setIsRoomModalOpen(true);
@@ -333,9 +334,8 @@ export default function RoomManagementFeature() {
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div
-                  className={`flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm transition-all dark:bg-gray-700 ${
-                    showFilters ? "rotate-180" : "rotate-0"
-                  }`}
+                  className={`flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm transition-all dark:bg-gray-700 ${showFilters ? "rotate-180" : "rotate-0"
+                    }`}
                 >
                   <ChevronDown className="h-5 w-5 text-gray-600 dark:text-gray-300" />
                 </div>
@@ -371,9 +371,8 @@ export default function RoomManagementFeature() {
           </button>
 
           <div
-            className={`grid transition-all duration-300 ease-in-out ${
-              showFilters ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-            }`}
+            className={`grid transition-all duration-300 ease-in-out ${showFilters ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+              }`}
           >
             <div className="overflow-hidden">
               <div className="border-t border-gray-200 p-6 dark:border-gray-700">

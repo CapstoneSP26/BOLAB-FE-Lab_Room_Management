@@ -2,21 +2,27 @@ import { useState } from "react";
 import { AlertCircle, X } from "lucide-react";
 
 interface Props {
+  rejectId: string | null
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (reason: string) => void;
+  onSubmit: (id: string, reason: string) => void;
   isLoading?: boolean;
 }
 
 export default function RejectReasonModal({
+  rejectId,
   isOpen,
   onClose,
   onSubmit,
   isLoading = false,
 }: Props) {
   const [reason, setReason] = useState("");
-
   if (!isOpen) return null;
+
+  const handleReject = (id: string | null, reason: string) => {
+    if (id == null) return;
+    onSubmit(id, reason);
+  }
 
   return (
     <div
@@ -71,7 +77,7 @@ export default function RejectReasonModal({
           </button>
           <button
             type="button"
-            onClick={() => onSubmit(reason)}
+            onClick={() => handleReject(rejectId, reason)}
             disabled={isLoading || !reason.trim()}
             className="flex-1 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 active:scale-[0.98] disabled:opacity-50 disabled:hover:bg-red-600"
           >

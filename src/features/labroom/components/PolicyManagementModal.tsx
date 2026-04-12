@@ -12,13 +12,14 @@ import {
   Info,
   Settings2,
   Sparkles,
+  Clock
 } from "lucide-react";
 import { useToast } from "../../../hooks/useToast";
 import { getErrorMessage } from "../../../utils/error";
 import {
   useDeleteRoomPolicy,
-  useRoomPolicies,
   useUpdateRoomPolicy,
+  useRoomPolicies
 } from "../hooks/useLabRooms";
 import type { LabRoomPolicy } from "../types/policy.type";
 import type { LabRoomDto } from "../types/room.type";
@@ -295,11 +296,10 @@ export default function PolicyManagementModal({
                       return (
                         <div
                           key={policyKey}
-                          className={`group transition-all duration-200 ${
-                            isEditing
-                              ? "bg-gradient-to-r from-amber-50 to-orange-50/50 dark:from-amber-500/10 dark:to-orange-500/5"
-                              : "hover:bg-gray-50/80 dark:hover:bg-gray-800/40"
-                          }`}
+                          className={`group transition-all duration-200 ${isEditing
+                            ? "bg-gradient-to-r from-amber-50 to-orange-50/50 dark:from-amber-500/10 dark:to-orange-500/5"
+                            : "hover:bg-gray-50/80 dark:hover:bg-gray-800/40"
+                            }`}
                         >
                           <div className="flex flex-col gap-4 px-5 py-5 md:flex-row md:items-start md:justify-between">
                             {/* Policy Content */}
@@ -359,19 +359,6 @@ export default function PolicyManagementModal({
                                 >
                                   <Pencil className="h-3.5 w-3.5" />
                                   Edit value
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => void handleDelete(policy)}
-                                  disabled={deletePolicyMutation.isPending}
-                                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-red-600 to-red-700 px-4 py-2.5 text-xs font-bold text-white hover:from-red-700 hover:to-red-800 disabled:opacity-50 shadow-lg shadow-red-500/30 hover:shadow-xl transition-all active:scale-95"
-                                >
-                                  {deletePolicyMutation.isPending ? (
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                  ) : (
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  )}
-                                  Delete
                                 </button>
                               </div>
                             )}
@@ -463,16 +450,56 @@ export default function PolicyManagementModal({
                       <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-300">
                         New Value <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        value={value}
-                        onChange={(event) => {
-                          setValue(event.target.value);
-                          setValueError("");
-                        }}
-                        disabled={isSubmitting}
-                        placeholder={activeMeta?.placeholder}
-                        className="h-12 w-full rounded-xl border-2 border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 text-sm font-medium text-gray-900 dark:text-white outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 disabled:bg-gray-100 dark:disabled:bg-gray-800/60 disabled:cursor-not-allowed"
-                      />
+                      {activeMeta?.type === "boolean" ? (
+                        /* Render lựa chọn cho kiểu Boolean */
+                        <div className="grid grid-cols-2 gap-3">
+                          {["true", "false"].map((option) => (
+                            <button
+                              key={option}
+                              type="button"
+                              onClick={() => {
+                                setValue(option);
+                                setValueError("");
+                              }}
+                              disabled={isSubmitting}
+                              className={`h-12 rounded-xl border-2 font-bold transition-all flex items-center justify-center gap-2 ${value === option
+                                ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300"
+                                : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800"
+                                }`}
+                            >
+                              <div className={`h-2 w-2 rounded-full ${value === option ? "bg-blue-500 animate-pulse" : "bg-gray-300"}`} />
+                              {option === "true" ? "Allow" : "Deny"}
+                            </button>
+                          ))}
+                        </div>
+                      ) : activeMeta?.type === "time" ? (
+                        /* 2. Render Input đồng hồ cho Curfew Time */
+                        <div className="relative">
+                          <input
+                            type="time"
+                            value={value}
+                            onChange={(event) => {
+                              setValue(event.target.value);
+                              setValueError("");
+                            }}
+                            disabled={isSubmitting}
+                            className="h-12 w-full rounded-xl border-2 border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 text-sm font-bold text-gray-900 dark:text-white outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed appearance-none"
+                          />
+                        </div>
+                      ) : (
+                        /* Render Input thông thường cho các kiểu khác */
+                        <input
+                          value={value}
+                          onChange={(event) => {
+                            setValue(event.target.value);
+                            setValueError("");
+                          }}
+                          type={activeMeta?.type === "number" ? "number" : "text"}
+                          disabled={isSubmitting}
+                          placeholder={activeMeta?.placeholder}
+                          className="h-12 w-full rounded-xl border-2 border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 text-sm font-medium text-gray-900 dark:text-white outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 disabled:bg-gray-100 dark:disabled:bg-gray-800/60 disabled:cursor-not-allowed"
+                        />
+                      )}
                       {valueError && (
                         <div className="mt-2 flex items-center gap-2 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 border border-red-200 dark:border-red-500/30">
                           <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0" />

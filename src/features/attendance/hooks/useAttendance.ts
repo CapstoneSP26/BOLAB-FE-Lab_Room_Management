@@ -1,12 +1,11 @@
 /**
  * useAttendance Hook
- * BOLAB-30: React Query hooks for attendance tracking
+ * BOLAB-30: React Query hooks for attendance
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type {
-  MarkAttendanceRequest,
-  ExportAttendanceRequest,
+  SubmitAttendanceCommand,
 } from '../types/attendance.type';
 import { attendanceApi } from '../api/attendanceApi';
 
@@ -14,68 +13,34 @@ import { attendanceApi } from '../api/attendanceApi';
  * Query keys
  */
 export const ATTENDANCE_KEYS = {
-  ATTENDANCE_LIST: (sessionId: string) => ['attendance-list', sessionId],
-  LECTURER_BOOKINGS: 'lecturer-bookings',
+  ATTENDANCE_LIST: (scheduleId: string) => ['attendance-list', scheduleId],
 } as const;
 
 /**
- * Get attendance list for a session (with polling)
+ * Get attendance list for a schedule
  */
-export const useAttendanceList = (sessionId: string | null, enablePolling = false) => {
+export const useAttendanceList = (scheduleId: string | null) => {
   return useQuery({
-    queryKey: ATTENDANCE_KEYS.ATTENDANCE_LIST(sessionId || ''),
-    queryFn: () => attendanceApi.getAttendanceList({ sessionId: sessionId! }),
-    enabled: !!sessionId,
-    staleTime: enablePolling ? 0 : 10 * 1000,
-    refetchInterval: enablePolling ? 3 * 1000 : false, // Poll every 3 seconds for real-time updates
+    queryKey: ATTENDANCE_KEYS.ATTENDANCE_LIST(scheduleId || ''),
+    queryFn: () => attendanceApi.getAttendanceList({ scheduleId: scheduleId! }),
+    enabled: !!scheduleId,
+    staleTime: 10 * 1000,
   });
 };
 
 /**
- * Mark attendance mutation (for student scan)
+ * Submit attendance mutation
  */
-export const useMarkAttendance = () => {
+export const useSubmitAttendance = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (request: MarkAttendanceRequest) => attendanceApi.markAttendance(request),
-    onSuccess: () => {
-      // Invalidate all attendance lists to refresh counts
-      queryClient.invalidateQueries({ queryKey: ['attendance-list'] });
-    },
-  });
-};
-
-/**
- * Get lecturer's bookings (for QR management page)
- */
-export const useLecturerBookings = () => {
-  return useQuery({
-    queryKey: [ATTENDANCE_KEYS.LECTURER_BOOKINGS],
-    queryFn: () => attendanceApi.getLecturerBookings(),
-    staleTime: 2 * 60 * 1000, // 2 minutes
-  });
-};
-
-/**
- * Export attendance mutation
- */
-export const useExportAttendance = () => {
-  return useMutation({
-    mutationFn: async (request: ExportAttendanceRequest) => {
-      const blob = await attendanceApi.exportAttendance(request);
-
-      // Create download link
-      const url = window.URL.createObjectURL(new Blob());
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `attendance_${request.sessionId}.${request.format}`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
-      return blob;
+    mutationFn: (command: SubmitAttendanceCommand) => attendanceApi.submitAttendance(command),
+    onSuccess: (_data, variables) => {
+      // Invalidate the attendance list for this schedule
+      queryClient.invalidateQueries({
+        queryKey: ATTENDANCE_KEYS.ATTENDANCE_LIST(variables.scheduleId),
+      });
     },
   });
 };

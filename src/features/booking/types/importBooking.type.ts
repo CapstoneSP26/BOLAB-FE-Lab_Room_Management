@@ -59,18 +59,26 @@ export interface ImportValidationResult<T> {
 
 export interface ValidateImportQuery {
   Schedules: ScheduleImportDto[];
+  StartTime: string;
+  EndTime: string;
 }
 
 export interface CommitImportCommand {
   Schedules: ScheduleImportDto[];
+  StartTime: string;
+  EndTime: string;
 }
 
 export interface ValidateFlexibleSlotImportRequest {
   Schedules: FlexibleSlotImportDto[];
+  StartTime: string;
+  EndTime: string;
 }
 
 export interface CommitFlexibleSlotImportRequest {
   Schedules: FlexibleSlotImportDto[];
+  StartTime: string;
+  EndTime: string;
 }
 
 export interface CommitScheduleImportResponse {
