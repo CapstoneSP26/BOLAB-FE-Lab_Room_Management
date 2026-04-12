@@ -12,9 +12,9 @@ const HomePage = lazy(() => import("../../pages/user/HomePage.tsx"));
 const BuildingDetail = lazy(() => import("../../pages/user/BuildingDetail.tsx"));
 const RoomBookingPage = lazy(() => import("../../pages/lecturer/RoomBookingPage.tsx"));
 const CalendarTabletPage = lazy(() => import("../../pages/user/CalendarTabletPage.tsx"));
-// const LabRoomDetailsPage = lazy(
-//   () => import("../../pages/lecturer/LabRoomDetailsPage.tsx"),
-// );
+const LabRoomDetailsPage = lazy(
+  () => import("../../pages/lecturer/LabRoomDetailsPage.tsx"),
+);
 const BookingHistoryPage = lazy(() => import("../../pages/lecturer/BookingHistoryPage.tsx"));
 const NotificationsPage = lazy(() => import("../../pages/lecturer/NotificationsPage.tsx"));
 const AttendanceManagementPage = lazy(() => import("../../pages/lecturer/AttendanceManagementPage.tsx"));
@@ -52,6 +52,7 @@ export const lecturerRoutes: AppRoute[] = [
   { path: "/buildings/:id", element: BuildingDetail, roles: [Role.Lecturer] },
   { path: "/my-bookings", element: BookingHistoryPage, roles: [Role.Lecturer] },
   { path: "/book-room", element: RoomBookingPage, roles: [Role.Lecturer] },
+  { path: "/lab-room/:id", element: LabRoomDetailsPage, roles: [Role.Lecturer] },
   { path: "/attendance", element: AttendanceManagementPage, roles: [Role.Lecturer] },
   { path: "/attendance/manual/:sessionId", element: ManualAttendancePage, roles: [Role.Lecturer] },
   { path: "/qr-display/:sessionId", element: QRDisplayPage, roles: [Role.Lecturer] },

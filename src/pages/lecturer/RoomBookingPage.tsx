@@ -33,6 +33,7 @@ const RoomBookingPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const roomIdParam = searchParams.get("roomId") ?? "";
+  const buildingIdParam = searchParams.get("buildingId") ?? "";
   const appAlert = useToast();
   const [activeView, setActiveView] = useState<BookingView>("calendar");
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -43,7 +44,7 @@ const RoomBookingPage: React.FC = () => {
   } | null>(null);
   const [lastBookingId, setLastBookingId] = useState<string>("");
 
-  const [selectedBuildingId, setSelectedBuildingId] = useState<string>();
+  const [selectedBuildingId, setSelectedBuildingId] = useState<string>(buildingIdParam || undefined);
   const [selectedRoomId, setSelectedRoomId] = useState<string>(roomIdParam);
   const [selectedSlotTypeId, setSelectedSlotTypeId] =
     useState<number>(FLEXIBLE_ID);
@@ -82,6 +83,15 @@ const RoomBookingPage: React.FC = () => {
     includeBuilding: true,
   });
   const rooms = useMemo(() => pagedRooms?.items ?? [], [pagedRooms]);
+
+  useEffect(() => {
+    if (!selectedRoomId || selectedBuildingId) return;
+    const matchedRoom = rooms.find((room) => room.id === Number(selectedRoomId));
+    if (matchedRoom?.buildingId) {
+      setSelectedBuildingId(String(matchedRoom.buildingId));
+    }
+  }, [rooms, selectedRoomId, selectedBuildingId]);
+
   const selectedRoom = useMemo(() => {
     return rooms.find((room) => room.id === Number(selectedRoomId)) || null;
   }, [rooms, selectedRoomId]);

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useNotificationStore, type NotificationType } from '../../hooks/useNotifications';
+import { useNotificationStore, type NotificationStoreType as NotificationType } from '../../features/notifications/store/notificationStore';
 
 interface NotificationDropdownProps {
   isHomePage?: boolean;

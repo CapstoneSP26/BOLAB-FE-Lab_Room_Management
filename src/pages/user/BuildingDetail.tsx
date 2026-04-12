@@ -54,6 +54,7 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [currentPage, setCurrentPage] = useState(1);
   const [rooms, setRooms] = useState<(typeof MOCK_ROOMS)[number][]>([]);
+  const [totalRoomsCount, setTotalRoomsCount] = useState(0);
   const [roomsLoading, setRoomsLoading] = useState(false);
   const itemsPerPage = 6;
   const { setActiveBuildingImage } = useBuildingContext();
@@ -96,10 +97,11 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
           buildingId: building.id,
           includeImages: true,
           includeBuilding: true,
-          isActive: true,
           pageNumber: 1,
           pageSize: 100,
         });
+
+        setTotalRoomsCount(response.totalCount || response.items.length);
 
         const mappedRooms = response.items
           .filter((room) => room.buildingId === building.id)
@@ -118,6 +120,7 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
       } catch (err) {
         console.error('Error fetching rooms:', err);
         setRooms([]);
+        setTotalRoomsCount(0);
       } finally {
         setRoomsLoading(false);
       }
@@ -241,13 +244,13 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
               </div>
 
               <div className="w-full lg:max-w-xl relative">
-                <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
                 <input
                   type="text"
                   placeholder="Tìm kiếm tên phòng, ID hoặc thiết bị..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-white/10 border border-white/20 rounded-2xl py-5 pl-14 pr-6 text-lg placeholder:text-gray-400 focus:bg-white focus:text-black focus:ring-4 focus:ring-brand-500/30 focus:border-brand-500 transition-all outline-none backdrop-blur-md shadow-xl text-white"
+                  className="w-full bg-white/95 border border-slate-200 rounded-2xl py-5 pl-14 pr-6 text-lg placeholder:text-slate-400 focus:bg-white focus:text-slate-900 focus:ring-4 focus:ring-brand-500/20 focus:border-brand-500 transition-all outline-none shadow-xl text-slate-800"
                 />
               </div>
             </div>
@@ -260,7 +263,7 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
             <div className="pointer-events-none absolute -top-10 -left-10 h-44 w-44 rounded-full bg-orange-300/25 blur-3xl animate-pulse" />
             <div className="pointer-events-none absolute top-20 -right-10 h-56 w-56 rounded-full bg-cyan-200/25 blur-3xl animate-pulse" style={{ animationDelay: '0.5s' }} />
             {/* Glassmorphism Container */}
-            <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl p-10 border border-white/50 animate-fade-in">
+            <div className="bg-white/97 backdrop-blur-xl rounded-3xl shadow-2xl p-10 border border-slate-200 animate-fade-in">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
                   <h2 className="text-3xl font-black text-gray-900 flex items-center gap-3">
@@ -268,7 +271,7 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
                     Danh sách phòng
                   </h2>
                   <span className="px-3 py-1 bg-brand-100 text-brand-700 rounded-full text-sm font-bold">
-                    {filteredRooms.length} phòng
+                    {totalRoomsCount} phòng
                   </span>
                 </div>
                 <div className="flex gap-2">
@@ -331,34 +334,34 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
                         />
                       ) : (
                         <div
-                          className="flex gap-6 items-center cursor-pointer"
+                          className="flex gap-6 items-center cursor-pointer bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all"
                           onClick={() => handleOpenRoomDetails(room)}
                         >
                           <img
                             src={room.image}
                             alt={room.name}
-                            className="w-32 h-32 object-cover rounded-xl transition-transform duration-300 hover:scale-105"
+                            className="w-32 h-32 object-cover rounded-xl border border-slate-200 transition-transform duration-300 hover:scale-105"
                           />
                           <div className="flex-1">
-                            <h3 className="text-xl font-bold text-gray-900 mb-2">{room.name}</h3>
-                            <div className="flex gap-4 text-sm text-gray-600">
+                            <h3 className="text-xl font-bold text-slate-900 mb-2">{room.name}</h3>
+                            <div className="flex gap-4 text-sm text-slate-600">
                               <span className="flex items-center gap-1">
                                 <Building2 className="h-4 w-4" />
                                 Sức chứa: {room.capacity}
                               </span>
-                              <span className={`px-3 py-1 rounded-full font-medium ${room.status === 'Available'
-                                ? 'bg-green-100 text-green-700'
+                              <span className={`px-3 py-1 rounded-full font-semibold ${room.status === 'Available'
+                                ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
                                 : room.status === 'Occupied'
-                                  ? 'bg-red-100 text-red-700'
-                                  : 'bg-yellow-100 text-yellow-700'
+                                  ? 'bg-rose-100 text-rose-700 border border-rose-200'
+                                  : 'bg-amber-100 text-amber-700 border border-amber-200'
                                 }`}>
                                 {room.status === 'Available' ? 'Trống' : room.status === 'Occupied' ? 'Đang sử dụng' : 'Bảo trì'}
                               </span>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <p className="text-sm text-gray-500 mb-2">Rảnh lúc</p>
-                            <p className="text-lg font-bold text-brand-600">{room.nextAvailable}</p>
+                          <div className="text-right min-w-[130px]">
+                            <p className="text-sm text-slate-500 mb-1">Rảnh lúc</p>
+                            <p className="text-xl font-extrabold text-brand-700">{room.nextAvailable}</p>
                             <button
                               onClick={(event) => {
                                 event.stopPropagation();
