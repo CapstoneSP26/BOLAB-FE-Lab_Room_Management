@@ -45,9 +45,6 @@ const NotificationsPage: React.FC = () => {
   const notifications = useNotificationStore((state) => state.notifications);
   const markAsRead = useNotificationStore((state) => state.markAsRead);
   const markAllAsRead = useNotificationStore((state) => state.markAllAsRead);
-  const removeNotification = useNotificationStore(
-    (state) => state.removeNotification,
-  );
   const clearReadNotifications = useNotificationStore(
     (state) => state.clearReadNotifications,
   );

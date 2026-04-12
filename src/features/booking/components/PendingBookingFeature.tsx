@@ -8,11 +8,7 @@ import RejectReasonModal from "./RejectReasonModal";
 import { buildingApi } from "../../building/api/buildingApi";
 import { labroomApi } from "../../labroom/api/labroom.api";
 import { slotApi } from "../../slot/api/slotApi";
-import {
-  useApproveBookingRequest,
-  useBookingRequests,
-  useRejectBookingRequest,
-} from "../hooks/useBookingRequest";
+import { useBookingRequests } from "../hooks/useBookingRequest";
 
 import type { BuildingDto } from "../../building/types/building.type";
 import type { LabRoomDto } from "../../labroom/types/room.type";
@@ -49,8 +45,8 @@ export default function PendingBookingFeature() {
   const [showFilters, setShowFilters] = useState(false);
 
   // Reject with reason state
-  const [rejectId, setRejectId] = useState<string | null>(null);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [rejectId, setRejectId] = useState<string | null>(null);
 
   const params: GetBookingRequestsRequest = useMemo(
     () => ({

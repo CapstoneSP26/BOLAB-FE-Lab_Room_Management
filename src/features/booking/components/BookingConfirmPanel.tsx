@@ -41,6 +41,13 @@ export const BookingConfirmPanel: React.FC<BookingConfirmPanelProps> = ({
   const [isRecurring, setIsRecurring] = useState(false);
   const [weeks, setWeeks] = useState(1);
   const [purposeId, setPurposeId] = useState<number>(purposes[0]?.id || 1);
+
+  const parsedDate = new Date(selectedDate);
+  const isValidDate = !Number.isNaN(parsedDate.getTime());
+  const displayDate = isValidDate
+    ? formatDate(parsedDate, 'DD/MM/YYYY')
+    : (selectedDate || '--');
+
   if (!isOpen) return null;
 
   return (
@@ -71,7 +78,7 @@ export const BookingConfirmPanel: React.FC<BookingConfirmPanelProps> = ({
                 <div className="flex items-center justify-between pt-2 border-t border-slate-200">
                   <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">🕐 Thời gian</span>
                   <div className="text-right">
-                    <span className="block text-sm font-semibold text-slate-900">{formatDate(new Date(selectedDate), 'DD/MM/YYYY')}</span>
+                    <span className="block text-sm font-semibold text-slate-900">{displayDate}</span>
                     <span className="text-xs text-orange-600 font-bold">{startTime} → {endTime}</span>
                   </div>
                 </div>

@@ -1,4 +1,11 @@
-export type ScheduleStatus = "Active" | "InProcess" | "Completed" | "Cancelled";
+export type ScheduleStatus =
+  | "Active"
+  | "InProcess"
+  | "Completed"
+  | "Cancelled"
+  | "NotYet"
+  | "Finish"
+  | "Done";
 
 export interface ScheduleDto {
   id: string;

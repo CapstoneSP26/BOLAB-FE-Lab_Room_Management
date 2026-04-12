@@ -125,7 +125,10 @@ export default function HistoryBookingFeature() {
   const handleReject = async () => {
     if (!selected?.id) return;
 
-    await rejectBookingMutation.mutateAsync(String(selected.id));
+    await rejectBookingMutation.mutateAsync({
+      id: String(selected.id),
+      reason: "Rejected by Lab Manager",
+    });
   };
 
   useEffect(() => {

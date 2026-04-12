@@ -288,7 +288,7 @@ const BookingHistoryPage: React.FC = () => {
     {
       page: currentPage,
       limit: 10,
-      status: statusFilter,
+      status: statusFilter === 'all' ? undefined : statusFilter,
     },
     true,
   );

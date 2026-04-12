@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useNotificationStore, type NotificationStoreType as NotificationType } from '../../features/notifications/store/notificationStore';
+import { useNotificationStore } from '../../features/notifications/store/notificationStore';
+import type { NotificationType } from '../../features/notifications/notification.mapper';
 
 interface NotificationDropdownProps {
   isHomePage?: boolean;
@@ -14,11 +15,34 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   const navigate = useNavigate();
 
   const notifications = useNotificationStore((state) => state.notifications);
+  const unreadCount = useNotificationStore((state) => state.unreadCount);
   const fetchNotifications = useNotificationStore((state) => state.fetchNotifications);
   const markAsRead = useNotificationStore((state) => state.markAsRead);
   const markAllAsRead = useNotificationStore((state) => state.markAllAsRead);
+  const startRealtime = useNotificationStore((state) => state.startRealtime);
+  const stopRealtime = useNotificationStore((state) => state.stopRealtime);
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  useEffect(() => {
+    fetchNotifications(1, 10);
+    startRealtime();
+
+    return () => {
+      stopRealtime();
+    };
+  }, [fetchNotifications, startRealtime, stopRealtime]);
+
+  useEffect(() => {
+    // Polling fallback only when realtime is unavailable.
+    const timer = window.setInterval(() => {
+      if (!useNotificationStore.getState().isRealtimeConnected) {
+        void useNotificationStore.getState().fetchNotifications(1, 10);
+      }
+    }, 30000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -32,34 +56,35 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     };
 
     if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isOpen]);
 
   const getTypeColor = (type: NotificationType) => {
     switch (type) {
-      case "info":
-        return "bg-blue-100 text-blue-600";
-      case "warning":
-        return "bg-yellow-100 text-yellow-600";
-      case "success":
-        return "bg-green-100 text-green-600";
-      case "error":
-        return "bg-red-100 text-red-600";
+      case 'info':
+        return 'bg-blue-100 text-blue-600';
+      case 'warning':
+        return 'bg-yellow-100 text-yellow-600';
+      case 'success':
+        return 'bg-green-100 text-green-600';
+      case 'error':
+        return 'bg-red-100 text-red-600';
       default:
-        return "bg-gray-100 text-gray-600";
+        return 'bg-gray-100 text-gray-600';
     }
   };
 
   return (
     <div className="relative z-50" ref={dropdownRef}>
       <button
-        className={`relative group p-2 rounded-lg transition-colors ${isHomePage ? "hover:bg-white/10" : "hover:bg-gray-100"
-          }`}
+        className={`relative group p-2 rounded-lg transition-colors ${
+          isHomePage ? 'hover:bg-white/10' : 'hover:bg-gray-100'
+        }`}
         aria-label="Notifications"
         onClick={() => {
           setIsOpen(!isOpen);
@@ -70,10 +95,11 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         }}
       >
         <svg
-          className={`w-6 h-6 transition ${isHomePage
-              ? "text-white group-hover:text-white/80 drop-shadow-lg"
-              : "text-gray-700 group-hover:text-gray-900"
-            }`}
+          className={`w-6 h-6 transition ${
+            isHomePage
+              ? 'text-white group-hover:text-white/80 drop-shadow-lg'
+              : 'text-gray-700 group-hover:text-gray-900'
+          }`}
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
@@ -87,8 +113,9 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         </svg>
         {unreadCount > 0 && (
           <span
-            className={`absolute top-1 right-1 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[20px] text-center shadow-lg ${isHomePage ? "bg-orange-500" : "bg-orange-600"
-              }`}
+            className={`absolute top-1 right-1 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[20px] text-center shadow-lg ${
+              isHomePage ? 'bg-orange-500' : 'bg-orange-600'
+            }`}
           >
             {unreadCount}
           </span>
@@ -152,10 +179,10 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                   className={`p-4 hover:bg-gray-50 cursor-pointer transition-all ${
                     !notification.isRead ? 'bg-blue-50/50 hover:bg-blue-50' : ''
                   }`}
-                  onClick={() => {
-                    markAsRead(notification.id);
+                  onClick={async () => {
+                    await markAsRead(notification.id);
                     setIsOpen(false);
-                    navigate(notification.relatedPath ?? "/notifications");
+                    navigate(notification.relatedPath ?? '/notifications');
                   }}
                 >
                   <div className="flex items-start gap-3">
@@ -177,10 +204,9 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <h4
-                          className={`text-sm font-semibold truncate ${!notification.isRead
-                              ? "text-gray-900"
-                              : "text-gray-700"
-                            }`}
+                          className={`text-sm font-semibold truncate ${
+                            !notification.isRead ? 'text-gray-900' : 'text-gray-700'
+                          }`}
                         >
                           {notification.title}
                         </h4>
@@ -206,7 +232,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
             <button
               onClick={() => {
                 setIsOpen(false);
-                navigate("/notifications");
+                navigate('/notifications');
               }}
               className="w-full cursor-pointer flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
             >

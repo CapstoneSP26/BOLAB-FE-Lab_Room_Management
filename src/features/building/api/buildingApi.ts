@@ -10,7 +10,7 @@ export const buildingApi = {
 
     const building = response.data.items?.[0];
     if (!building) {
-      throw new Error(`Building \"${buildingName}\" not found`);
+      throw new Error(`Building "${buildingName}" not found`);
     }
 
     return building;
