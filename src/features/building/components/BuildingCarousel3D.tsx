@@ -238,9 +238,6 @@ export const BuildingCarousel3D: React.FC<BuildingCarousel3DProps> = ({ building
                         {building.name}
                       </h2>
 
-                      <p className="text-white/90 text-lg font-medium">
-                        {building.description}
-                      </p>
 
                       {/* Action Button - Only show on active card */}
                       {isActive && (
