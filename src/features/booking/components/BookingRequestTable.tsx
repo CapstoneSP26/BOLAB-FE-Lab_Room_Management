@@ -1,9 +1,6 @@
 import type { BookingRequest } from "../../booking/types/booking.type";
-import {
-  formatUtcDateLabel,
-  formatBookingTimeLabel,
-} from "../../../utils/date.util";
 import { statusClass } from "../../../utils/status";
+import { convertHoursUtcToVN } from "../../../utils/date.util";
 type Props = {
   loading: boolean;
   rows: BookingRequest[];
@@ -34,7 +31,7 @@ export default function BookingTable({
               {/* <th className="px-4 py-3">Booking</th> */}
               <th className="px-4 py-3">Room</th>
               <th className="px-4 py-3">Time</th>
-              <th className="px-4 py-3">Group</th>
+              <th className="px-4 py-3">Quantity</th>
               <th className="px-4 py-3">Purpose</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3 text-right">

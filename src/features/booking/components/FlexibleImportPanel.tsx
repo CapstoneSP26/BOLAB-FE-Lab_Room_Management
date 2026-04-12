@@ -241,7 +241,6 @@ export default function FlexibleImportPanel({
         // Backend returns rowNumber as 0, use data.index instead for correct row number
         const rowNum = (rowResult.data?.index ?? rowResult.rowNumber ?? rowResult.RowNumber) ?? 0;
         const errorsData = rowResult.Errors ?? rowResult.errors ?? [];
-        console.log(`Processing validation for row ${rowNum}:`, errorsData);
         errorsData.forEach((error: any) => {
           const resolvedField =
             resolveFieldFlexibleFromText(error.FieldName ?? error.fieldName ?? "") ??
@@ -683,7 +682,6 @@ function FlexibleTableRow({
   validationErrors,
   onUpdateCell,
 }: FlexibleTableRowProps) {
-  console.log("Rendering row:", validationErrors, row);
   return (
     <tr>
       <td className="px-3 py-2 align-top text-gray-500 dark:text-gray-400">

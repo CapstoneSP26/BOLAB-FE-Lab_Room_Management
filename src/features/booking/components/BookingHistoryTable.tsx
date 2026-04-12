@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { BookingStatusBadge } from './BookingStatusBadge';
 import { CancelBookingModal } from './CancelBookingModal';
 import type { Booking } from '../types/booking.type';
+import { convertHoursUtcToVN } from '../../../utils/date.util';
 
 interface BookingHistoryTableProps {
   isLoading: boolean;
@@ -119,17 +120,16 @@ export function BookingHistoryTable({
             {paginatedBookings.map((booking) => (
               <tr
                 key={booking.id}
-                className={`hover:bg-gray-50 transition-colors ${getStatusColor(booking.status)} border-l-4 ${
-                  booking.status === 'Approved'
+                className={`hover:bg-gray-50 transition-colors ${getStatusColor(booking.status)} border-l-4 ${booking.status === 'Approved'
                     ? 'border-l-green-500'
                     : booking.status === 'PendingApproval'
-                    ? 'border-l-yellow-500'
-                    : booking.status === 'Rejected'
-                    ? 'border-l-red-500'
-                    : booking.status === 'Cancelled'
-                    ? 'border-l-gray-500'
-                    : 'border-l-blue-500'
-                }`}
+                      ? 'border-l-yellow-500'
+                      : booking.status === 'Rejected'
+                        ? 'border-l-red-500'
+                        : booking.status === 'Cancelled'
+                          ? 'border-l-gray-500'
+                          : 'border-l-blue-500'
+                  }`}
               >
                 {/* Room Name */}
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -160,7 +160,7 @@ export function BookingHistoryTable({
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-gray-500" />
                     <span className="text-sm text-gray-900">
-                      {booking.startTime} - {booking.endTime}
+                      {convertHoursUtcToVN(booking.startTime)} - {convertHoursUtcToVN(booking.endTime)}
                     </span>
                   </div>
                 </td>

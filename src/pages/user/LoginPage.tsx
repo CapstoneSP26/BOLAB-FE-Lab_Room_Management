@@ -8,7 +8,6 @@ export default function LoginPage() {
   const [show, setShow] = useState(false);
   const [err, setErr] = useState("");
   const [form, setForm] = useState<Form>({ email: "", password: "" });
-  console.log("RENDER LOGIN");
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
   };
@@ -21,9 +20,6 @@ export default function LoginPage() {
       setErr("Vui lòng nhập Email và Password.");
       return;
     }
-
-    // TODO: gọi API login (bạn có axios.ts sẵn)
-    console.log("LOGIN", form);
   };
 
   const LoginGoogle = () => {

@@ -15,7 +15,8 @@ export const mapBookingToEvent = (booking: BookingDto): CalendarEvent => ({
 
 export const mapScheduleToEvent = (schedule: ScheduleDto): CalendarEvent => ({
   id: `schedule-${schedule.id}`,
-  title: `${schedule.subjectCode} - ${schedule.lecturerName}`,
+  title: `${schedule.subjectCode ? schedule.subjectCode + ' - ' : ''}${schedule.lecturerName}`,
+  groupName: schedule.groupName,
   start: convertUTCStringToLocal(schedule.startTime),
   end: convertUTCStringToLocal(schedule.endTime),
   type: schedule.type,

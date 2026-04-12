@@ -22,6 +22,7 @@ import { PolicyType } from "../../features/labroom";
 import { useSlotStore } from "../../store/slotStore";
 import { useNotificationStore } from "../../features/notifications/store/notificationStore";
 import { useSlotTypes } from "../../features/slot/hooks/useSlotType";
+import type { AxiosError } from "axios";
 
 type BookingView = "calendar" | "list";
 
@@ -45,7 +46,7 @@ const RoomBookingPage: React.FC = () => {
   } | null>(null);
   const [lastBookingId, setLastBookingId] = useState<string>("");
 
-  const [selectedBuildingId, setSelectedBuildingId] = useState<string>(buildingIdParam || undefined);
+  const [selectedBuildingId, setSelectedBuildingId] = useState<string>(buildingIdParam);
   const [selectedRoomId, setSelectedRoomId] = useState<string>(roomIdParam);
   const [selectedSlotTypeId, setSelectedSlotTypeId] =
     useState<number>(FLEXIBLE_ID);
@@ -146,10 +147,12 @@ const RoomBookingPage: React.FC = () => {
         // Push booking-related notification immediately (without waiting polling/realtime).
         await fetchLatestByBookingId(data.id);
       },
-      onError: (err) => {
-        const message =
-          err.message ||
-          "Không thể tạo lịch đặt. Vui lòng kiểm tra lại thời gian.";
+      onError: (err: any) => {
+        const backendMessage = err.response?.data?.error;
+        const message = backendMessage
+          ? backendMessage
+          : "Không thể tạo lịch đặt. Vui lòng kiểm tra lại thời gian.";
+
         appAlert.error("Lỗi đặt lịch", message);
       },
     });

@@ -122,6 +122,14 @@ export const FlexibleGridView: React.FC<FlexibleGridViewProps> = ({
             )}
           </div>
 
+          {event.groupName && (
+            <div className="flex justify-between items-start gap-1 mb-0.5">
+              <div className="truncate drop-shadow-sm uppercase tracking-tighter leading-tight">
+                {event.groupName}
+              </div>
+            </div>)}
+
+
           {/* Info Row: Time & Badge */}
           <div className="flex flex-wrap items-center gap-1 mt-auto">
             <div className="text-[9px] opacity-70 font-medium whitespace-nowrap">

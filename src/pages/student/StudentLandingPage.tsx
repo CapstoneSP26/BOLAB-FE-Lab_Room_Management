@@ -173,7 +173,7 @@ export default function StudentLandingPage() {
                   <TrendingUp className="w-5 h-5 text-emerald-600" />
                 </div>
                 <div className="text-4xl font-bold text-slate-900 mb-2">
-                <AnimatedCounter value={(stats as any)?.weekAttendanceRate || 0} duration={1000} suffix="%" />
+                  <AnimatedCounter value={(stats as any)?.weekAttendanceRate || 0} duration={1000} suffix="%" />
                 </div>
                 <p className="text-xs text-slate-500">Attendance rate</p>
               </div>
@@ -184,7 +184,7 @@ export default function StudentLandingPage() {
                   <CheckCircle className="w-5 h-5 text-blue-600" />
                 </div>
                 <div className="text-4xl font-bold text-slate-900 mb-2">
-                <AnimatedCounter value={(stats as any)?.totalClassesAttended || 0} duration={1000} />
+                  <AnimatedCounter value={(stats as any)?.totalClassesAttended || 0} duration={1000} />
                 </div>
                 <p className="text-xs text-slate-500">Attended this semester</p>
               </div>
@@ -195,7 +195,7 @@ export default function StudentLandingPage() {
                   <AlertCircle className="w-5 h-5 text-amber-600" />
                 </div>
                 <div className="text-4xl font-bold text-slate-900 mb-2">
-                <AnimatedCounter value={(stats as any)?.currentStreak || 0} duration={1000} />
+                  <AnimatedCounter value={(stats as any)?.currentStreak || 0} duration={1000} />
                 </div>
                 <p className="text-xs text-slate-500">Consecutive days</p>
               </div>
@@ -243,68 +243,67 @@ export default function StudentLandingPage() {
               upcomingClasses.map((cls) => (
                 <div
                   key={cls.id}
-                  className={`px-8 py-6 hover:bg-slate-50 transition-colors border-l-4 ${
-                    cls.status === 'upcoming'
+                  className={`px-8 py-6 hover:bg-slate-50 transition-colors border-l-4 ${cls.status === 'upcoming'
                       ? 'border-blue-500'
                       : cls.status === 'ongoing'
-                      ? 'border-amber-500'
-                      : 'border-emerald-500'
-                  }`}
+                        ? 'border-amber-500'
+                        : 'border-emerald-500'
+                    }`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold text-slate-900">{cls.subjectCode}</h3>
-                          <span
-                            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                              cls.status
-                            )}`}
-                          >
-                            {getStatusBadge(cls.status)}
-                            {cls.status.charAt(0).toUpperCase() + cls.status.slice(1)}
-                          </span>
-                        </div>
+                        <h3 className="text-lg font-semibold text-slate-900">{cls.subjectCode}</h3>
+                        <span
+                          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                            cls.status
+                          )}`}
+                        >
+                          {getStatusBadge(cls.status)}
+                          {cls.status.charAt(0).toUpperCase() + cls.status.slice(1)}
+                        </span>
+                      </div>
 
-                        <div className="grid grid-cols-3 gap-6 mt-4 text-sm text-slate-600">
-                          <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-slate-400" />
-                            <span>{cls.slotName}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <MapPin className="w-4 h-4 text-slate-400" />
-                            <span>{cls.labRoomName}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Users className="w-4 h-4 text-slate-400" />
-                            <span>{cls.lecturerName}</span>
-                          </div>
+                      <div className="grid grid-cols-3 gap-6 mt-4 text-sm text-slate-600">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-slate-400" />
+                          <span>{cls.slotName}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-slate-400" />
+                          <span>{cls.labRoomName}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Users className="w-4 h-4 text-slate-400" />
+                          <span>{cls.lecturerName}</span>
                         </div>
                       </div>
                     </div>
-
-                    {cls.status === 'ongoing' && (
-                      <button
-                        onClick={() => handleScanQRFromClass(cls.id)}
-                        className="ml-4 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-2 whitespace-nowrap"
-                      >
-                        <QrCode className="w-4 h-4" />
-                        Scan Now
-                      </button>
-                    )}
-
-                    {cls.status === 'upcoming' && (
-                      <div className="ml-4 text-sm text-slate-500 whitespace-nowrap">
-                        Coming soon
-                      </div>
-                    )}
-
-                    {cls.status === 'completed' && (
-                      <div className="ml-4 flex items-center gap-2 text-emerald-600">
-                        <CheckCircle className="w-5 h-5" />
-                        <span className="text-sm font-medium">Completed</span>
-                      </div>
-                    )}
                   </div>
+
+                  {cls.status === 'ongoing' && (
+                    <button
+                      onClick={() => handleScanQRFromClass(cls.id)}
+                      className="ml-4 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-2 whitespace-nowrap"
+                    >
+                      <QrCode className="w-4 h-4" />
+                      Scan Now
+                    </button>
+                  )}
+
+                  {cls.status === 'upcoming' && (
+                    <div className="ml-4 text-sm text-slate-500 whitespace-nowrap">
+                      Coming soon
+                    </div>
+                  )}
+
+                  {cls.status === 'completed' && (
+                    <div className="ml-4 flex items-center gap-2 text-emerald-600">
+                      <CheckCircle className="w-5 h-5" />
+                      <span className="text-sm font-medium">Completed</span>
+                    </div>
+                  )}
+                </div>
               ))
             ) : (
               <div className="px-8 py-12 text-center text-slate-500">

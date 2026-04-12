@@ -35,11 +35,6 @@ export default function StudentAttendanceScanPage() {
 
   const scanQRCode = useScanQRCode();
 
-  // Ensure profile data is loaded immediately when component mounts
-  useEffect(() => {
-    console.log('🔄 useProfile hook already called via hook above, data:', profileData);
-  }, [profileData]);
-
   /**
    * Provide haptic/audio feedback on scan
    */
@@ -74,20 +69,16 @@ export default function StudentAttendanceScanPage() {
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.2);
     } catch (error) {
-      console.log('Audio feedback not available:', error);
     }
   };
 
   // Start camera when component mounts
   useEffect(() => {
     // Don't start scanning until we have user data AND profile data loaded
-    const hasUserData = user?.Id;  // ← Changed from user?.sub to user?.Id
+    const hasUserData = user?.id;  // ← Changed from user?.sub to user?.Id
     const hasProfileData = (profileData as any)?.id;
-    
-    console.log('🔐 Auth state check:', { hasUserData, hasProfileData, user, profileData });
-    
+
     if (!hasUserData && !hasProfileData) {
-      console.log('⏳ Waiting for user/profile data before starting camera...');
       return;
     }
 
@@ -142,7 +133,6 @@ export default function StudentAttendanceScanPage() {
       scannerRef.current = scanner;
 
       const cameras = await Html5Qrcode.getCameras();
-      console.log(`📷 Detected ${cameras?.length || 0} camera(s):`, cameras);
 
       if (!cameras || cameras.length === 0) {
         setScanState('no-camera');
@@ -170,7 +160,6 @@ export default function StudentAttendanceScanPage() {
         selectedCameraId = frontCamera?.id || (cameras.length > 1 ? cameras[1].id : cameras[0].id);
       }
 
-      console.log(`🎬 Starting scanner with camera: ${selectedCameraId}`);
       await scanner.start(
         selectedCameraId,
         {
@@ -184,7 +173,6 @@ export default function StudentAttendanceScanPage() {
 
       isScanning.current = true;
       setScanState('scanning');
-      console.log('✅ Scanner started successfully!');
 
       toast.success('Camera Ready', 'Position QR code within the frame', 3000);
 
@@ -252,9 +240,6 @@ export default function StudentAttendanceScanPage() {
   const onScanSuccess = async (decodedText: string) => {
     if (scanState === 'processing' || scanState === 'success') return;
 
-    console.log(`🎯 QR Code detected!`);
-    console.log('📱 Decoded text:', decodedText);
-
     provideFeedback('success');
     toast.info('QR Code Detected', 'Processing attendance...', 2000);
 
@@ -264,9 +249,6 @@ export default function StudentAttendanceScanPage() {
     setScannedData(decodedText);
 
     await stopScanning();
-    console.log('⏹️ Scanner stopped');
-
-    console.log('⏳ Starting attendance marking...');
     await markAttendance(decodedText);
   };
 
@@ -279,9 +261,6 @@ export default function StudentAttendanceScanPage() {
       setScanCount(scanAttempts.current);
       setLastDetection(`🔍 Scanning... (${scanAttempts.current} attempts)`);
     }
-    if (scanAttempts.current % 100 === 0) {
-      console.log(`🔍 Scanner active - ${scanAttempts.current} scan attempts`);
-    }
   };
 
   /**
@@ -292,11 +271,6 @@ export default function StudentAttendanceScanPage() {
     setErrorMessage('');
 
     try {
-      console.log('🔍 Raw QR Code Data (decoded URL):', qrCodeData);
-      console.log('📊 QR Data Length:', qrCodeData.length);
-      console.log('📊 QR Data Type:', typeof qrCodeData);
-      console.log('📊 QR Data First 100 chars:', qrCodeData.substring(0, 100));
-
       // QR code contains full URL from backend
       // Format: https://backend/api/attendances/scan-qrcode?qrId=GUID&scheduleId=GUID&isCheckIn=true&studentId=
       let qrId = '';
@@ -305,22 +279,13 @@ export default function StudentAttendanceScanPage() {
 
       try {
         const url = new URL(qrCodeData);
-        console.log('📍 URL extracted from QR');
-        console.log('📍 URL origin:', url.origin);
-        console.log('📍 URL pathname:', url.pathname);
-        console.log('📍 URL search:', url.search);
-        
+
         // Extract query parameters
         qrId = url.searchParams.get('qrId') || '';
         decodedScheduleId = url.searchParams.get('scheduleId') || '';
         const checkInParam = url.searchParams.get('isCheckIn');
         isCheckIn = checkInParam !== 'false'; // Default to true if not specified
-        
-        console.log('🆔 QR ID:', qrId, '| Length:', qrId.length);
-        console.log('📚 Schedule ID from QR:', decodedScheduleId, '| Length:', decodedScheduleId.length);
-        console.log('✓ IsCheckIn:', isCheckIn, '| Type:', typeof isCheckIn);
       } catch (urlError) {
-        console.log('⚠️ Failed to parse URL, treating as plain qrId...');
         qrId = qrCodeData.trim();
       }
 
@@ -328,35 +293,22 @@ export default function StudentAttendanceScanPage() {
         throw new Error('Invalid QR code - could not extract QR ID');
       }
 
-      console.log('🌐 Calling API to scan QR code...');
-      
       // Get studentId: Priority 1 = user.Id from JWT (backend claim), Priority 2 = profile.id from API  
-      let studentId = user?.Id;  // ← Changed from user?.sub to user?.Id
-      
+      let studentId = user?.id;  // ← Changed from user?.sub to user?.Id
+
       // If no user.Id from JWT, try to get from profileData
       if (!studentId && profileData) {
         studentId = (profileData as any)?.id;
-        console.log('📌 Using profile.id since user.Id not available:', studentId);
       }
-      
+
       // Final fallback: make sure studentId is not empty
       if (!studentId) {
-        console.log('❌ FAILED - Both sources empty:', {
-          'user.Id': user?.Id,
-          'profileData.id': (profileData as any)?.id,
-          'user': user,
-          'profileData': profileData
-        });
-        throw new Error(`Student ID not found. Please refresh the page and login again. (JWT: ${user?.Id}, Profile: ${(profileData as any)?.id})`);
+        throw new Error(`Student ID not found. Please refresh the page and login again. (JWT: ${user?.id}, Profile: ${(profileData as any)?.id})`);
       }
-      
-      console.log('✅ Got Student ID:', studentId);
-      
+
       // Use scheduleId from URL params if extracted from QR, otherwise use route param
       const finalScheduleId = decodedScheduleId || scheduleId || '';
-      
-      console.log('🎯 Final API Params:', { qrId, scheduleId: finalScheduleId, studentId, isCheckIn });
-      
+
       await scanQRCode.mutateAsync({
         qrId: qrId.trim(),
         scheduleId: finalScheduleId.trim(),
@@ -364,7 +316,6 @@ export default function StudentAttendanceScanPage() {
         isCheckIn,
       });
 
-      console.log('✅ Attendance marked successfully!');
       setScanState('success');
       toast.success('Attendance Marked!', 'Your attendance has been recorded successfully', 4000);
       provideFeedback('success');
@@ -385,28 +336,25 @@ export default function StudentAttendanceScanPage() {
         } else if (responseData?.message) {
           rawErrorMessage = responseData.message;
         }
-        console.error('💥 Backend message:', rawErrorMessage);
       } else if (error instanceof Error) {
         // JavaScript Error
         rawErrorMessage = error.message;
-        console.error('💥 Error message:', error.message);
-        console.error('💥 Error stack:', error.stack);
       }
 
       errorMsg = rawErrorMessage;
       const errMsg = (rawErrorMessage || '').toLowerCase();
 
-        if (errMsg.includes('invalid') || errMsg.includes('format')) {
-          errorTitle = 'Invalid QR Code';
-        } else if (errMsg.includes('expired')) {
-          errorTitle = 'QR Code Expired';
-        } else if (errMsg.includes('already') || errMsg.includes('duplicate')) {
-          errorTitle = 'Already Marked';
-        } else if (errMsg.includes('session') || errMsg.includes('not found')) {
-          errorTitle = 'Session Not Found';
-        } else if (errMsg.includes('network') || errMsg.includes('fetch')) {
-          errorTitle = 'Network Error';
-        }
+      if (errMsg.includes('invalid') || errMsg.includes('format')) {
+        errorTitle = 'Invalid QR Code';
+      } else if (errMsg.includes('expired')) {
+        errorTitle = 'QR Code Expired';
+      } else if (errMsg.includes('already') || errMsg.includes('duplicate')) {
+        errorTitle = 'Already Marked';
+      } else if (errMsg.includes('session') || errMsg.includes('not found')) {
+        errorTitle = 'Session Not Found';
+      } else if (errMsg.includes('network') || errMsg.includes('fetch')) {
+        errorTitle = 'Network Error';
+      }
 
       setErrorMessage(errorMsg);
       console.error('Final error display:', { title: errorTitle, msg: errorMsg });
@@ -443,164 +391,164 @@ export default function StudentAttendanceScanPage() {
       {/* Only render scanner when data is ready */}
       {(user || profileData) && (
         <>
-      {scanState === 'requesting-camera' && (
-        <div className="min-h-screen flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
-            <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-            <p className="text-slate-700 font-medium">Starting camera...</p>
-            <p className="text-sm text-slate-500 mt-2">Please allow camera access if prompted</p>
-          </div>
-        </div>
-      )}
-
-      {/* No camera state */}
-      {scanState === 'no-camera' && (
-        <div className="min-h-screen flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full">
-            <div className="flex justify-center mb-4">
-              <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center">
-                <Camera className="w-8 h-8 text-amber-600" />
+          {scanState === 'requesting-camera' && (
+            <div className="min-h-screen flex items-center justify-center p-4">
+              <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
+                <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+                <p className="text-slate-700 font-medium">Starting camera...</p>
+                <p className="text-sm text-slate-500 mt-2">Please allow camera access if prompted</p>
               </div>
             </div>
-            <h2 className="text-xl font-bold text-slate-900 text-center mb-2">Camera Not Available</h2>
-            <p className="text-slate-600 text-center mb-6">{errorMessage}</p>
+          )}
 
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-              <p className="text-sm font-semibold text-amber-900 mb-2">Troubleshooting:</p>
-              <ul className="text-sm text-amber-800 space-y-1">
-                <li>• Check browser camera permissions</li>
-                <li>• Ensure camera is not used by another app</li>
-                <li>• Try using a different browser</li>
-                <li>• Reload the page</li>
-              </ul>
-            </div>
+          {/* No camera state */}
+          {scanState === 'no-camera' && (
+            <div className="min-h-screen flex items-center justify-center p-4">
+              <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full">
+                <div className="flex justify-center mb-4">
+                  <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center">
+                    <Camera className="w-8 h-8 text-amber-600" />
+                  </div>
+                </div>
+                <h2 className="text-xl font-bold text-slate-900 text-center mb-2">Camera Not Available</h2>
+                <p className="text-slate-600 text-center mb-6">{errorMessage}</p>
 
-            <button
-              onClick={handleRetry}
-              className="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-            >
-              Try Again
-            </button>
-          </div>
-        </div>
-      )}
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+                  <p className="text-sm font-semibold text-amber-900 mb-2">Troubleshooting:</p>
+                  <ul className="text-sm text-amber-800 space-y-1">
+                    <li>• Check browser camera permissions</li>
+                    <li>• Ensure camera is not used by another app</li>
+                    <li>• Try using a different browser</li>
+                    <li>• Reload the page</li>
+                  </ul>
+                </div>
 
-      {/* Success state */}
-      {scanState === 'success' && (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-emerald-50 to-emerald-100">
-          <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full">
-            <div className="flex justify-center mb-4">
-              <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center animate-bounce">
-                <CheckCircle className="w-12 h-12 text-emerald-600" />
+                <button
+                  onClick={handleRetry}
+                  className="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+                >
+                  Try Again
+                </button>
               </div>
             </div>
-            <h2 className="text-2xl font-bold text-slate-900 text-center mb-2">Attendance Marked!</h2>
-            <p className="text-slate-600 text-center mb-6">Your attendance has been recorded successfully</p>
+          )}
 
-            <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-600">Time:</span>
-                <span className="font-semibold text-slate-900">{new Date().toLocaleTimeString()}</span>
-              </div>
-            </div>
+          {/* Success state */}
+          {scanState === 'success' && (
+            <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-emerald-50 to-emerald-100">
+              <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full">
+                <div className="flex justify-center mb-4">
+                  <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center animate-bounce">
+                    <CheckCircle className="w-12 h-12 text-emerald-600" />
+                  </div>
+                </div>
+                <h2 className="text-2xl font-bold text-slate-900 text-center mb-2">Attendance Marked!</h2>
+                <p className="text-slate-600 text-center mb-6">Your attendance has been recorded successfully</p>
 
-            <button
-              onClick={handleRetry}
-              className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-            >
-              Scan Another QR Code
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Error state */}
-      {scanState === 'error' && (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-red-50 to-red-100">
-          <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full">
-            <div className="flex justify-center mb-4">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-                <XCircle className="w-8 h-8 text-red-600" />
-              </div>
-            </div>
-            <h2 className="text-xl font-bold text-slate-900 text-center mb-2">Scan Failed</h2>
-            <p className="text-base font-semibold text-red-700 text-center mb-6">{errorMessage}</p>
-
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-              <p className="text-sm font-semibold text-red-900 mb-2">Possible issues:</p>
-              <ul className="text-sm text-red-800 space-y-1">
-                <li>• Invalid or expired QR code</li>
-                <li>• Wrong session or class</li>
-                <li>• Already marked attendance</li>
-                <li>• Network connection issue</li>
-              </ul>
-            </div>
-
-            <button
-              onClick={handleRetry}
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-            >
-              Scan Again
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Requesting camera / Processing state */}
-      {(scanState === 'requesting-camera' || scanState === 'processing') && (
-        <div className="min-h-screen flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
-            <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-            <p className="text-slate-700 font-medium">
-              {scanState === 'requesting-camera' ? 'Starting Camera...' : 'Processing...'}
-            </p>
-            <p className="text-sm text-slate-500 mt-2">
-              {scanState === 'requesting-camera'
-                ? 'Please allow camera access if prompted'
-                : 'Marking your attendance'}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Scanning state - show camera */}
-      {scanState === 'scanning' && (
-        <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 flex flex-col">
-          {/* Header */}
-          <div className="bg-slate-800/80 backdrop-blur-sm border-b border-slate-700/50 px-4 py-5">
-            <div className="max-w-3xl mx-auto text-center">
-              <h1 className="text-2xl font-bold text-white mb-1.5">Scan QR Code for Attendance</h1>
-              <p className="text-sm text-slate-300 flex items-center justify-center gap-2">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                </span>
-                Scanning... Position the QR code within the frame
-              </p>
-            </div>
-          </div>
-
-          {/* Camera Scanner */}
-          <div className="flex-1 flex items-center justify-center px-4 py-6">
-            <div className="max-w-3xl w-full">
-              {/* Scanner Container */}
-              <div className="relative bg-black rounded-3xl shadow-2xl overflow-hidden border-4 border-blue-500/20" style={{ minHeight: '480px' }}>
-                <div id="qr-reader" style={{ width: '100%', minHeight: '480px', borderRadius: '1.5rem' }}></div>
-
-                {/* Scanner overlay corners */}
-                <div className="absolute inset-0 pointer-events-none z-10">
-                  <div className="absolute top-8 left-8 w-16 h-16 border-t-[6px] border-l-[6px] border-blue-400 rounded-tl-2xl"></div>
-                  <div className="absolute top-8 right-8 w-16 h-16 border-t-[6px] border-r-[6px] border-blue-400 rounded-tr-2xl"></div>
-                  <div className="absolute bottom-8 left-8 w-16 h-16 border-b-[6px] border-l-[6px] border-blue-400 rounded-bl-2xl"></div>
-                  <div className="absolute bottom-8 right-8 w-16 h-16 border-b-[6px] border-r-[6px] border-blue-400 rounded-br-2xl"></div>
-
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-[350px] h-[350px] border-2 border-green-400/50 rounded-2xl animate-pulse"></div>
-                    <div className="absolute w-[350px] h-[2px] bg-gradient-to-r from-transparent via-green-400 to-transparent animate-scan"></div>
+                <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-600">Time:</span>
+                    <span className="font-semibold text-slate-900">{new Date().toLocaleTimeString()}</span>
                   </div>
                 </div>
 
-                <style>{`
+                <button
+                  onClick={handleRetry}
+                  className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+                >
+                  Scan Another QR Code
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Error state */}
+          {scanState === 'error' && (
+            <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-red-50 to-red-100">
+              <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full">
+                <div className="flex justify-center mb-4">
+                  <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                    <XCircle className="w-8 h-8 text-red-600" />
+                  </div>
+                </div>
+                <h2 className="text-xl font-bold text-slate-900 text-center mb-2">Scan Failed</h2>
+                <p className="text-base font-semibold text-red-700 text-center mb-6">{errorMessage}</p>
+
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                  <p className="text-sm font-semibold text-red-900 mb-2">Possible issues:</p>
+                  <ul className="text-sm text-red-800 space-y-1">
+                    <li>• Invalid or expired QR code</li>
+                    <li>• Wrong session or class</li>
+                    <li>• Already marked attendance</li>
+                    <li>• Network connection issue</li>
+                  </ul>
+                </div>
+
+                <button
+                  onClick={handleRetry}
+                  className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+                >
+                  Scan Again
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Requesting camera / Processing state */}
+          {(scanState === 'requesting-camera' || scanState === 'processing') && (
+            <div className="min-h-screen flex items-center justify-center p-4">
+              <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
+                <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+                <p className="text-slate-700 font-medium">
+                  {scanState === 'requesting-camera' ? 'Starting Camera...' : 'Processing...'}
+                </p>
+                <p className="text-sm text-slate-500 mt-2">
+                  {scanState === 'requesting-camera'
+                    ? 'Please allow camera access if prompted'
+                    : 'Marking your attendance'}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Scanning state - show camera */}
+          {scanState === 'scanning' && (
+            <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 flex flex-col">
+              {/* Header */}
+              <div className="bg-slate-800/80 backdrop-blur-sm border-b border-slate-700/50 px-4 py-5">
+                <div className="max-w-3xl mx-auto text-center">
+                  <h1 className="text-2xl font-bold text-white mb-1.5">Scan QR Code for Attendance</h1>
+                  <p className="text-sm text-slate-300 flex items-center justify-center gap-2">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                    </span>
+                    Scanning... Position the QR code within the frame
+                  </p>
+                </div>
+              </div>
+
+              {/* Camera Scanner */}
+              <div className="flex-1 flex items-center justify-center px-4 py-6">
+                <div className="max-w-3xl w-full">
+                  {/* Scanner Container */}
+                  <div className="relative bg-black rounded-3xl shadow-2xl overflow-hidden border-4 border-blue-500/20" style={{ minHeight: '480px' }}>
+                    <div id="qr-reader" style={{ width: '100%', minHeight: '480px', borderRadius: '1.5rem' }}></div>
+
+                    {/* Scanner overlay corners */}
+                    <div className="absolute inset-0 pointer-events-none z-10">
+                      <div className="absolute top-8 left-8 w-16 h-16 border-t-[6px] border-l-[6px] border-blue-400 rounded-tl-2xl"></div>
+                      <div className="absolute top-8 right-8 w-16 h-16 border-t-[6px] border-r-[6px] border-blue-400 rounded-tr-2xl"></div>
+                      <div className="absolute bottom-8 left-8 w-16 h-16 border-b-[6px] border-l-[6px] border-blue-400 rounded-bl-2xl"></div>
+                      <div className="absolute bottom-8 right-8 w-16 h-16 border-b-[6px] border-r-[6px] border-blue-400 rounded-br-2xl"></div>
+
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-[350px] h-[350px] border-2 border-green-400/50 rounded-2xl animate-pulse"></div>
+                        <div className="absolute w-[350px] h-[2px] bg-gradient-to-r from-transparent via-green-400 to-transparent animate-scan"></div>
+                      </div>
+                    </div>
+
+                    <style>{`
                   @keyframes scan {
                     0%, 100% {
                       transform: translateY(-175px);
@@ -616,68 +564,68 @@ export default function StudentAttendanceScanPage() {
                   }
                 `}</style>
 
-                {/* Switch Camera Button */}
-                {availableCameras.length > 1 && (
-                  <button
-                    onClick={handleSwitchCamera}
-                    className="absolute top-6 right-6 z-20 bg-white/95 hover:bg-white backdrop-blur-sm p-3.5 rounded-full shadow-xl transition-all active:scale-95 hover:scale-105"
-                    title="Switch Camera"
-                  >
-                    <SwitchCamera className="w-6 h-6 text-slate-900" />
-                  </button>
-                )}
+                    {/* Switch Camera Button */}
+                    {availableCameras.length > 1 && (
+                      <button
+                        onClick={handleSwitchCamera}
+                        className="absolute top-6 right-6 z-20 bg-white/95 hover:bg-white backdrop-blur-sm p-3.5 rounded-full shadow-xl transition-all active:scale-95 hover:scale-105"
+                        title="Switch Camera"
+                      >
+                        <SwitchCamera className="w-6 h-6 text-slate-900" />
+                      </button>
+                    )}
 
-                {/* Camera Mode Badge */}
-                <div className="absolute top-6 left-6 z-20 bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-full border border-slate-700/50 shadow-lg">
-                  <span className="text-sm font-semibold text-white flex items-center gap-1.5">
-                    <span>{cameraFacing === 'front' ? '📷' : '📸'}</span>
-                    <span>{cameraFacing === 'front' ? 'Front Camera' : 'Back Camera'}</span>
-                  </span>
-                </div>
+                    {/* Camera Mode Badge */}
+                    <div className="absolute top-6 left-6 z-20 bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-full border border-slate-700/50 shadow-lg">
+                      <span className="text-sm font-semibold text-white flex items-center gap-1.5">
+                        <span>{cameraFacing === 'front' ? '📷' : '📸'}</span>
+                        <span>{cameraFacing === 'front' ? 'Front Camera' : 'Back Camera'}</span>
+                      </span>
+                    </div>
 
-                {/* Live Scan Status Badge */}
-                <div className="absolute top-20 left-6 z-20 bg-slate-900/90 backdrop-blur-md px-4 py-2 rounded-lg border border-slate-700/50 shadow-lg max-w-[calc(100%-3rem)]">
-                  <div className="text-xs font-mono text-green-400 flex items-center gap-2">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                    </span>
-                    <span className="truncate">{lastDetection || '🔍 Waiting for QR code...'}</span>
-                  </div>
-                  {scanCount > 0 && (
-                    <div className="text-xs font-mono text-slate-400 mt-1 flex items-center gap-1">
-                      <span>Attempts: {scanCount}</span>
-                      {scanCount > 50 && (
-                        <span className="text-yellow-400">• Hold steady</span>
+                    {/* Live Scan Status Badge */}
+                    <div className="absolute top-20 left-6 z-20 bg-slate-900/90 backdrop-blur-md px-4 py-2 rounded-lg border border-slate-700/50 shadow-lg max-w-[calc(100%-3rem)]">
+                      <div className="text-xs font-mono text-green-400 flex items-center gap-2">
+                        <span className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                        </span>
+                        <span className="truncate">{lastDetection || '🔍 Waiting for QR code...'}</span>
+                      </div>
+                      {scanCount > 0 && (
+                        <div className="text-xs font-mono text-slate-400 mt-1 flex items-center gap-1">
+                          <span>Attempts: {scanCount}</span>
+                          {scanCount > 50 && (
+                            <span className="text-yellow-400">• Hold steady</span>
+                          )}
+                        </div>
                       )}
                     </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Instructions */}
-              <div className="mt-6 bg-slate-800/60 backdrop-blur-md rounded-2xl px-5 py-4 border border-slate-700/50 shadow-xl">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
-                    <Camera className="w-6 h-6 text-white" />
                   </div>
-                  <div className="flex-1">
-                    <p className="text-base font-semibold text-white mb-2">Quick Tips:</p>
-                    <ul className="text-sm text-slate-300 space-y-1.5">
-                      <li>• Hold steady and ensure good lighting</li>
-                      <li>• Keep QR code within the blue frame</li>
-                      <li>• Scanning happens automatically</li>
-                      {availableCameras.length > 1 && (
-                        <li>• Tap the <SwitchCamera className="w-3.5 h-3.5 inline mx-0.5" /> button to switch camera</li>
-                      )}
-                    </ul>
+
+                  {/* Instructions */}
+                  <div className="mt-6 bg-slate-800/60 backdrop-blur-md rounded-2xl px-5 py-4 border border-slate-700/50 shadow-xl">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                        <Camera className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-base font-semibold text-white mb-2">Quick Tips:</p>
+                        <ul className="text-sm text-slate-300 space-y-1.5">
+                          <li>• Hold steady and ensure good lighting</li>
+                          <li>• Keep QR code within the blue frame</li>
+                          <li>• Scanning happens automatically</li>
+                          {availableCameras.length > 1 && (
+                            <li>• Tap the <SwitchCamera className="w-3.5 h-3.5 inline mx-0.5" /> button to switch camera</li>
+                          )}
+                        </ul>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          )}
         </>
       )}
     </div>

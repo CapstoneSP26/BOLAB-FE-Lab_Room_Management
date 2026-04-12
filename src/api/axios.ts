@@ -52,7 +52,6 @@ axiosInstance.interceptors.request.use(
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log("✅ Authorization: Bearer [token]");
     }
 
     return config;
@@ -66,7 +65,6 @@ axiosInstance.interceptors.response.use(
     // If 401 Unauthorized, redirect to login
     // Backend manages HttpOnly cookies - no manual token refresh needed
     if (error.response?.status === 401) {
-      console.log("⚠️ 401 Unauthorized - Redirecting to login");
       clearAuth();
       window.location.href = "/login";
       return Promise.reject(error);
