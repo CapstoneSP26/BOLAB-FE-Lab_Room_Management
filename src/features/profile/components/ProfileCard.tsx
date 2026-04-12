@@ -63,7 +63,7 @@ export default function ProfileCard({ role, profile }: ProfileCardProps) {
                     {role}
                   </span>
                   <span className="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                    Campus ID: {profile.campusId}
+                    Campus: {profile.campusName || `Campus ${profile.campusId}`}
                   </span>
                 </div>
               </div>
@@ -140,8 +140,8 @@ export default function ProfileCard({ role, profile }: ProfileCardProps) {
             />
 
             <ProfileInfoField
-              label="Campus ID"
-              value={profile.campusId}
+              label="Campus Name"
+              value={profile.campusName || `Campus ${profile.campusId}`}
               icon={<CampusIcon />}
             />
 

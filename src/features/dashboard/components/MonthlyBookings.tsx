@@ -10,6 +10,21 @@ interface MonthlyBookingsProps {
   stats?: DashboardStatsDto;
 }
 
+const MONTH_CATEGORIES = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
 export default function MonthlyBookings({ stats }: MonthlyBookingsProps) {
   const menuItems: DropdownMenuItem[] = useMemo(
     () => [
@@ -19,16 +34,27 @@ export default function MonthlyBookings({ stats }: MonthlyBookingsProps) {
     [],
   );
 
-  const hasData = (stats?.monthlyBookings?.length ?? 0) > 0;
+  const monthlyBookings = stats?.monthlyBookings ?? [];
+  const hasData = monthlyBookings.length > 0;
+
+  const normalizedData = useMemo(() => {
+    if (!hasData) return [] as number[];
+
+    if (monthlyBookings.length >= 12) {
+      return monthlyBookings.slice(0, 12);
+    }
+
+    return [...monthlyBookings, ...Array(12 - monthlyBookings.length).fill(0)];
+  }, [hasData, monthlyBookings]);
 
   const series = useMemo(
     () => [
       {
         name: "Bookings",
-        data: stats?.monthlyBookings ?? [],
+        data: normalizedData,
       },
     ],
-    [stats?.monthlyBookings],
+    [normalizedData],
   );
 
   const options: ApexOptions = useMemo(
@@ -44,26 +70,12 @@ export default function MonthlyBookings({ stats }: MonthlyBookingsProps) {
           horizontal: false,
           columnWidth: "39%",
           borderRadius: 5,
-          //   borderRadiusApplication: "end",
         },
       },
       dataLabels: { enabled: false },
       stroke: { show: true, width: 4, colors: ["transparent"] },
       xaxis: {
-        categories: [
-          "Jan",
-          "Feb",
-          "Mar",
-          "Apr",
-          "May",
-          "Jun",
-          "Jul",
-          "Aug",
-          "Sep",
-          "Oct",
-          "Nov",
-          "Dec",
-        ],
+        categories: MONTH_CATEGORIES,
         axisBorder: { show: false },
         axisTicks: { show: false },
       },
@@ -73,10 +85,9 @@ export default function MonthlyBookings({ stats }: MonthlyBookingsProps) {
         horizontalAlign: "left",
         fontFamily: "Outfit",
         markers: {
-          size: 6, // hoặc 8 tuỳ bạn
+          size: 6,
         },
       },
-
       yaxis: {},
       grid: { yaxis: { lines: { show: true } } },
       fill: { opacity: 1 },

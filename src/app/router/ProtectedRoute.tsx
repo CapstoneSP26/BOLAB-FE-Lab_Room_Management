@@ -2,6 +2,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
 import { LoadingFallback } from '../../components/ui';
+import { Role } from '../../constants/role';
 
 interface ProtectedRouteProps {
   allowedRoles?: string[];
@@ -24,11 +25,27 @@ export const ProtectedRoute = ({ allowedRoles, children }: ProtectedRouteProps) 
   // Nếu không truyền allowedRoles => chỉ cần login là vào được
   if (allowedRoles && allowedRoles.length > 0) {
     const userRoles = user?.roles || [];
-    const hasPermission = allowedRoles.some(role => userRoles.includes(role));
+
+    // Normalize case/whitespace to prevent false 403 after merge/API casing differences
+    const normalizedUserRoles = userRoles.map((role) => role.trim().toLowerCase());
+    const normalizedAllowedRoles = allowedRoles.map((role) => role.trim().toLowerCase());
+    const hasPermission = normalizedAllowedRoles.some((role) => normalizedUserRoles.includes(role));
 
     if (!hasPermission) {
-      // Nếu sai quyền, đẩy về trang chủ hoặc trang 403 chuyên dụng
-      // Không nên đẩy về /login vì họ đã đăng nhập rồi
+      // Role-aware fallback to avoid locking valid users on wrong default route
+      if (normalizedUserRoles.includes(Role.Student.toLowerCase())) {
+        return <Navigate to="/student" replace />;
+      }
+      if (normalizedUserRoles.includes(Role.Lecturer.toLowerCase())) {
+        return <Navigate to="/" replace />;
+      }
+      if (
+        normalizedUserRoles.includes(Role.Manager.toLowerCase()) ||
+        normalizedUserRoles.includes(Role.Admin.toLowerCase())
+      ) {
+        return <Navigate to="/labmanager/dashboard" replace />;
+      }
+
       return <Navigate to="/unauthorized" replace />;
     }
   }

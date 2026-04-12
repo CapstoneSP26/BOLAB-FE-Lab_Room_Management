@@ -72,7 +72,7 @@ function defaultValues(schedule?: ScheduleDto | null): CreateScheduleCommand {
   };
 }
 
-const STATUS_CONFIG = {
+const STATUS_CONFIG: Record<ScheduleStatus, { label: string; color: string }> = {
   NotYet: {
     label: "Not Yet",
     color:
@@ -87,6 +87,26 @@ const STATUS_CONFIG = {
     label: "Finished",
     color:
       "bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-500/30",
+  },
+  InProcess: {
+    label: "In Process",
+    color:
+      "bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-500/30",
+  },
+  Completed: {
+    label: "Completed",
+    color:
+      "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30",
+  },
+  Cancelled: {
+    label: "Cancelled",
+    color:
+      "bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-500/30",
+  },
+  Done: {
+    label: "Done",
+    color:
+      "bg-slate-100 dark:bg-slate-500/20 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-500/30",
   },
 };
 

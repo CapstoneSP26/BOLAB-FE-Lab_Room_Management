@@ -64,7 +64,7 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
         if (id) {
           // Decode URL parameter in case it's encoded
           const buildingName = decodeURIComponent(id);
-          const data = (await buildingApi.getBuildingByName(buildingName)).data;
+          const data = await buildingApi.getBuildingByName(buildingName);
           setBuilding(data);
           // Update context với hình ảnh tòa nhà
           setActiveBuildingImage(data.buildingImageUrl);

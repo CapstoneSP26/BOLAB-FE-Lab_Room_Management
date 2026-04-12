@@ -20,6 +20,7 @@ import { useLabPolicies } from "../../features/labroom/hooks/useLabPolicies";
 import { useQueryClient } from "@tanstack/react-query";
 import { PolicyType } from "../../features/labroom";
 import { useSlotStore } from "../../store/slotStore";
+import { useNotificationStore } from "../../features/notifications/store/notificationStore";
 import { useSlotTypes } from "../../features/slot/hooks/useSlotType";
 
 type BookingView = "calendar" | "list";
@@ -59,6 +60,7 @@ const RoomBookingPage: React.FC = () => {
   // Fetch Slot Types for dropdown & calendar rendering
   const { } = useSlotTypes(1);
   const { slotTypes } = useSlotStore();
+  const fetchLatestByBookingId = useNotificationStore((state) => state.fetchLatestByBookingId);
 
   // Fetch Booking Purpose
   const { data: pagedPurposes, isLoading: purposesLoading } = usePurposeTypes();
@@ -117,7 +119,7 @@ const RoomBookingPage: React.FC = () => {
     };
 
     createBooking(command, {
-      onSuccess: (data) => {
+      onSuccess: async (data) => {
         // 1. Lưu ID và thông tin vừa đặt
         appAlert.success(
           "Đặt lịch thành công!",
@@ -130,6 +132,9 @@ const RoomBookingPage: React.FC = () => {
         setShowConfirmPanel(false);
         setShowSuccessModal(true);
         queryClient.invalidateQueries({ queryKey: ["calendar-events"] });
+
+        // Push booking-related notification immediately (without waiting polling/realtime).
+        await fetchLatestByBookingId(data.id);
       },
       onError: (err) => {
         const message =
