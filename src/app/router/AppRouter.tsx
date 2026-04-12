@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 import { MainLayout, AuthLayout } from '../../layouts';
 import ManagerLayout from '../../layouts/labmanager/ManagerLayout';
-import { publicRoutes, sharedRoutes, lecturerRoutes, managerRoutes, adminRoutes } from './routes';
+import { publicRoutes, sharedRoutes, lecturerRoutes, managerRoutes, adminRoutes, studentRoutes } from './routes';
 import { Role } from '../../constants/role';
 
 export const AppRouter = () => {
@@ -19,6 +19,9 @@ export const AppRouter = () => {
           <Route key={r.path} path={r.path} element={<ProtectedRoute allowedRoles={r.roles}><r.element /></ProtectedRoute>} />
         ))}
         {lecturerRoutes.map(r => (
+          <Route key={r.path} path={r.path} element={<ProtectedRoute allowedRoles={r.roles}><r.element /></ProtectedRoute>} />
+        ))}
+        {studentRoutes.map(r => (
           <Route key={r.path} path={r.path} element={<ProtectedRoute allowedRoles={r.roles}><r.element /></ProtectedRoute>} />
         ))}
       </Route>

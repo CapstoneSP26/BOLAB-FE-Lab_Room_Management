@@ -23,17 +23,14 @@ const Header: React.FC = () => {
   };
 
   // Active sessions from global context (shared with AttendancePage)
-  const activeSessions =
-    activeSession && activeSession.isActive
-      ? [
-        {
-          id: activeSession.id,
-          roomName: activeSession.roomName,
-          expiresAt: activeSession.qrExpiry,
-          attendeeCount: activeSession.presentCount,
-        },
-      ]
-      : [];
+  const activeSessions = activeSession && activeSession.isActive && activeSession.qrExpiry
+    ? [{
+      id: activeSession.id,
+      roomName: activeSession.roomName,
+      expiresAt: activeSession.qrExpiry,
+      attendeeCount: activeSession.presentCount || 0,
+    }]
+    : [];
 
   // Navigation items
   const navItems = [

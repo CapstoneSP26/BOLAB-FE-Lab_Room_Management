@@ -6,10 +6,8 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { QRCodeSVG } from 'qrcode.react';
-import { Clock, MapPin, Calendar, RefreshCw, CheckCircle2, AlertTriangle, Home, ArrowLeft } from 'lucide-react';
-import { useQRSession, useAttendanceList } from '../../features/attendance';
-import { MOCK_QR_SESSION, MOCK_STUDENT_ATTENDANCE } from '../../features/attendance/mocks/attendance.mock';
+import { Calendar, RefreshCw, CheckCircle2, AlertTriangle, Home, ArrowLeft } from 'lucide-react';
+import { useAttendanceList, useGenerateQRCode } from '../../features/attendance';
 import { useActiveSession } from '../../context/ActiveSessionContext';
 import { useToast } from '../../hooks/useToast';
 
@@ -18,42 +16,52 @@ export default function QRDisplayPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
   const { activeSession } = useActiveSession();
-  const isAttendanceMockMode = (() => {
-    if (typeof window === 'undefined') return false;
-    const params = new URLSearchParams(window.location.search);
-    return params.get('mockAttendance') === '1' || params.get('testAttendance') === '1';
-  })();
-  const isMockSession = isAttendanceMockMode && sessionId === MOCK_QR_SESSION.id;
-  const apiSessionId = isMockSession ? null : (sessionId || null);
   
-  // Polling enabled for real-time updates - WITH ERROR HANDLING
+  // Fetch attendance list for the schedule
   const { 
-    data: sessionData, 
+    data: attendanceData,
     isLoading: sessionLoading,
     isError: sessionError,
     error: sessionErrorData,
-  } = useQRSession(apiSessionId, true);
-  
-  const { 
-    data: attendanceData,
-  } = useAttendanceList(apiSessionId, true);
+  } = useAttendanceList(sessionId || null);
+
+  // Fetch QR code image from backend
+  const generateQrMutation = useGenerateQRCode();
+  const [qrImageBase64, setQrImageBase64] = useState('');
+  const [isLoadingQR, setIsLoadingQR] = useState(false);
 
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
 
-  // Priority: activeSession from context > API data > mock data
-  // This ensures real-time sync with Attendance page
-  const session = (activeSession && activeSession.id === sessionId) 
-    ? activeSession 
-    : (sessionData?.data || (isMockSession ? MOCK_QR_SESSION : null));
+  // Use activeSession from context if available
+  const session = activeSession && activeSession.id === sessionId ? activeSession : null;
     
-  const students = attendanceData?.data?.students || (isMockSession ? MOCK_STUDENT_ATTENDANCE : []);
-  const presentCount = students.filter(s => s.status === 'present').length;
+  const students = attendanceData?.data || [];
+  const presentCount = Array.isArray(students) ? students.filter((s: any) => s.status === 'present').length : 0;
 
-  // Generate scan URL for QR code (safe with fallback)
-  const scanUrl = session?.qrToken 
-    ? `${window.location.origin}/scan-attendance/${sessionId}?token=${encodeURIComponent(session.qrToken)}`
-    : '#';
+  // Fetch QR image on mount
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const fetchQRImage = async () => {
+      setIsLoadingQR(true);
+      try {
+        const response = await generateQrMutation.mutateAsync({
+          scheduleId: sessionId,
+          isCheckIn: true,
+        });
+        
+        if (response?.data) {
+          setQrImageBase64(response.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch QR image:', error);
+      } finally {
+        setIsLoadingQR(false);
+      }
+    };
+
+    fetchQRImage();
+  }, [sessionId, generateQrMutation]);
 
   // Update clock every second
   useEffect(() => {
@@ -63,31 +71,8 @@ export default function QRDisplayPage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Calculate time remaining until QR expiry
-  useEffect(() => {
-    if (!session?.qrExpiry) return;
-
-    const calculateRemaining = () => {
-      const expiry = new Date(session.qrExpiry);
-      const now = new Date();
-      const diff = Math.floor((expiry.getTime() - now.getTime()) / 1000);
-      setTimeRemaining(diff > 0 ? diff : 0);
-    };
-
-    calculateRemaining();
-    const interval = setInterval(calculateRemaining, 1000);
-    return () => clearInterval(interval);
-  }, [session?.qrExpiry]);
-
-  // Format time remaining as MM:SS
-  const formatTimeRemaining = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
   // Loading state
-  if (sessionLoading && !isMockSession) {
+  if (sessionLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
@@ -99,7 +84,7 @@ export default function QRDisplayPage() {
   }
 
   // Error state - Session not found or API error
-  if (sessionError && !sessionData && !isMockSession) {
+  if (sessionError) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 text-center">
@@ -157,9 +142,6 @@ export default function QRDisplayPage() {
     );
   }
 
-  // Expired state
-  const isExpired = timeRemaining !== null && timeRemaining <= 0;
-
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       {/* Header Bar */}
@@ -185,33 +167,13 @@ export default function QRDisplayPage() {
 
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
           <div className="flex items-center justify-between">
-            {/* Left: Room Info */}
+            {/* Left: Schedule ID */}
             <div className="flex items-center gap-6">
-              <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 rounded-xl border border-slate-200">
-                <MapPin className="w-5 h-5 text-slate-600" />
-                <div>
-                  <p className="text-sm text-slate-500 font-medium">Room</p>
-                  <p className="text-lg font-bold text-slate-900">{session.roomName}</p>
-                </div>
-              </div>
-              
-              <div className="h-12 w-px bg-slate-200"></div>
-              
               <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 rounded-xl border border-slate-200">
                 <Calendar className="w-5 h-5 text-slate-600" />
                 <div>
-                  <p className="text-sm text-slate-500 font-medium">Date</p>
-                  <p className="text-lg font-bold text-slate-900">{new Date(session.date).toLocaleDateString('vi-VN')}</p>
-                </div>
-              </div>
-              
-              <div className="h-12 w-px bg-slate-200"></div>
-              
-              <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 rounded-xl border border-slate-200">
-                <Clock className="w-5 h-5 text-slate-600" />
-                <div>
-                  <p className="text-sm text-slate-500 font-medium">Time</p>
-                  <p className="text-lg font-bold text-slate-900">{session.startTime} - {session.endTime}</p>
+                  <p className="text-sm text-slate-500 font-medium">Schedule</p>
+                  <p className="text-lg font-bold text-slate-900">{sessionId}</p>
                 </div>
               </div>
             </div>
@@ -255,60 +217,58 @@ export default function QRDisplayPage() {
 
               {/* QR Code Container */}
               <div className="flex justify-center items-center bg-slate-50 border-2 border-slate-200 rounded-2xl p-12 mb-6">
-                {isExpired ? (
+                {isLoadingQR ? (
                   <div className="text-center py-24">
-                    <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <RefreshCw className="w-10 h-10 text-red-600" />
+                    <div className="animate-spin rounded-full h-16 w-16 border-4 border-slate-200 border-t-blue-600 mx-auto mb-4"></div>
+                    <p className="text-lg font-medium text-slate-600">Loading QR Code...</p>
+                  </div>
+                ) : qrImageBase64 ? (
+                  <img
+                    src={`data:image/png;base64,${qrImageBase64}`}
+                    alt="QR Code for Attendance"
+                    style={{ width: '420px', height: '420px' }}
+                    className="border border-slate-300 rounded"
+                  />
+                ) : (
+                  <div className="text-center py-24">
+                    <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <AlertTriangle className="w-10 h-10 text-orange-600" />
                     </div>
-                    <p className="text-2xl font-bold text-slate-900 mb-2">QR Code Expired</p>
+                    <p className="text-2xl font-bold text-slate-900 mb-2">QR Code Unavailable</p>
                     <p className="text-slate-600">
-                      Please ask your lecturer to refresh the code
+                      Failed to load QR code. Please refresh the page or ask your lecturer to regenerate.
                     </p>
                   </div>
-                ) : (
-                  <QRCodeSVG
-                    value={scanUrl}
-                    size={420}
-                    level="H"
-                    includeMargin
-                    bgColor="#ffffff"
-                    fgColor="#0f172a"
-                  />
                 )}
               </div>
 
-              {/* Expiry Timer */}
-              {!isExpired && timeRemaining !== null && (
-                <div className="text-center space-y-3">
-                  <div className="inline-flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-6 py-3">
-                    <Clock className="w-5 h-5 text-amber-600" />
-                    <span className="text-2xl font-bold text-slate-900 tabular-nums">
-                      {formatTimeRemaining(timeRemaining)}
-                    </span>
-                    <span className="text-sm text-slate-600 font-medium">remaining</span>
-                  </div>
-                  
-                  {/* Test Button - for development */}
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(scanUrl);
-                      appAlert.success('Link copied', 'Paste in browser or send to phone.');
-                    }}
-                    className="text-sm text-blue-600 hover:text-blue-700 font-semibold hover:underline"
-                  >
-                    📋 Copy Link to Test
-                  </button>
-                </div>
-              )}
-
-              {isExpired && (
-                <div className="text-center">
-                  <div className="inline-flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-6 py-3">
-                    <RefreshCw className="w-5 h-5 text-red-600" />
-                    <span className="text-lg font-bold text-red-900">Code Expired</span>
-                  </div>
-                </div>
-              )}
+              {/* Refresh Button */}
+              <div className="text-center">
+                <button
+                  onClick={async () => {
+                    setIsLoadingQR(true);
+                    try {
+                      const response = await generateQrMutation.mutateAsync({
+                        scheduleId: sessionId!,
+                        isCheckIn: true,
+                      });
+                      if (response?.data) {
+                        setQrImageBase64(response.data);
+                        appAlert.success('QR Refreshed', 'New QR code loaded.');
+                      }
+                    } catch {
+                      appAlert.error('Refresh failed', 'Could not refresh QR code.');
+                    } finally {
+                      setIsLoadingQR(false);
+                    }
+                  }}
+                  disabled={isLoadingQR}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Refresh QR
+                </button>
+              </div>
             </div>
           </div>
 
