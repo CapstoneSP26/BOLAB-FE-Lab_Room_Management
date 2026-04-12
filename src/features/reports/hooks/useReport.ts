@@ -11,13 +11,14 @@ import {
   getReportDetail,
   getReports,
   resolveReport,
+  getReportHistory,
 } from "../api/reportApi";
 import type {
   CreateReportRequest,
   GetMyReportsRequest,
   GetReportDetailRequest,
   ReportReasonOption,
-  GetReportsRequest,
+  GetReportListRequest,
   Report,
   CreateReportResponse,
   ResolveReportResponse,
@@ -30,6 +31,7 @@ export const QUERY_KEYS = {
   MY_REPORTS: "my-reports",
   REPORT_DETAIL: "report-detail",
   REPORTS: "reports",
+  REPORT_HISTORY: "report-history",
 } as const;
 
 // ============================================================================
@@ -93,7 +95,7 @@ export const useReportReasons = () => {
  * Hook to get reports list
  * Use for both unresolved list page and resolved history page
  */
-export interface UseReportsOptions extends GetReportsRequest {
+export interface UseReportsOptions extends GetReportListRequest {
   enabled?: boolean;
 }
 export const useReports = (options: UseReportsOptions = {}) => {
@@ -103,6 +105,32 @@ export const useReports = (options: UseReportsOptions = {}) => {
     queryKey: [QUERY_KEYS.REPORTS, params],
     queryFn: async () => {
       const response = await getReports(params);
+      return response.data;
+    },
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    enabled,
+  });
+};
+
+/**
+ * Hook to get resolved report history
+ * Use for history page only
+ */
+export interface UseReportHistoryOptions extends GetReportListRequest {
+  enabled?: boolean;
+}
+
+export const useReportHistory = (options: UseReportHistoryOptions = {}) => {
+  const { enabled = true, ...params } = options;
+
+  return useQuery<PagedResponse<Report>>({
+    queryKey: [QUERY_KEYS.REPORT_HISTORY, params],
+    queryFn: async () => {
+      const response = await getReportHistory({
+        ...params,
+        isResolved: true,
+      });
       return response.data;
     },
     staleTime: 2 * 60 * 1000,
@@ -161,6 +189,10 @@ export const useResolveReport = (options: UseResolveReportOptions = {}) => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.REPORTS],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.REPORT_HISTORY],
       });
 
       queryClient.invalidateQueries({

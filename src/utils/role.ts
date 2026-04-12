@@ -14,3 +14,7 @@ export const normalizeRole = (v: unknown): Role => {
 };
 
 export const getRole = (): Role => normalizeRole(localStorage.getItem("role"));
+
+export const setRole = (role: Role): void => {
+  localStorage.setItem("role", role);
+};

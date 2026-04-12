@@ -29,7 +29,6 @@ const extractTokenFromCookie = (): string | null => {
 };
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string | undefined;
-console.log("VITE_API_BASE_URL =", API_BASE_URL);
 
 const axiosInstance: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -49,22 +48,13 @@ export const api = axios.create({
 
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Try multiple sources for token
-    let token = getAccessToken(); // First try: localStorage
-    if (!token) {
-      token = extractTokenFromCookie(); // Second try: cookies
-    }
-    
-    console.log("Request baseURL:", config.baseURL);
-    console.log("Request url:", config.url);
-    console.log("Full request:", `${config.baseURL}${config.url}`);
-    console.log("Token source:", token ? (getAccessToken() ? "localStorage ✅" : "cookie ✅") : "❌ Not found");
-    
+    const token = getAccessToken();
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
       console.log("✅ Authorization: Bearer [token]");
     }
-    
+
     return config;
   },
   (error) => Promise.reject(error),

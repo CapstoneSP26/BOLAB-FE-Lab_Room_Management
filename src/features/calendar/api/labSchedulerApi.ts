@@ -1,69 +1,65 @@
-import type { Schedule } from "../type";
+import { axiosInstance } from "../../../api";
+import type { PagedResponse } from "../../../types/pagination.types";
+import type { ScheduleDto } from "../../schedules/types/schedule.type";
+import type {
+  GetScheduleByIdResponse,
+  Schedule,
+  UpdateScheduleStatusResponse,
+} from "../types/calendar.type";
+import {
+  mapScheduleDetailResponse,
+  mapScheduleListResponse,
+} from "../utils/calendar.mapper";
 
-const KEY = "lab_schedules_v2";
-
-function sleep(ms = 150) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function readStorage(): Schedule[] {
-  const raw = localStorage.getItem(KEY);
-  if (!raw) {
-    localStorage.setItem(KEY, JSON.stringify([]));
-    return [];
-  }
-
-  try {
-    return JSON.parse(raw) as Schedule[];
-  } catch {
-    localStorage.setItem(KEY, JSON.stringify([]));
-    return [];
-  }
-}
-
-function writeStorage(items: Schedule[]) {
-  localStorage.setItem(KEY, JSON.stringify(items));
-}
-
-async function updateStatus(
-  id: string,
-  status: "APPROVED" | "REJECTED",
-): Promise<Schedule> {
-  await sleep();
-
-  const items = readStorage();
-  const idx = items.findIndex((x) => x.Id === id && !x.IsDeleted);
-  if (idx < 0) throw new Error("Schedule not found");
-
-  const next: Schedule = {
-    ...items[idx],
-    ScheduleStatus: status,
-    UpdatedAt: new Date().toISOString(),
-    UpdatedBy: "ADMIN",
-  };
-
-  items[idx] = next;
-  writeStorage(items);
-
-  return next;
-}
+const SCHEDULE_API = {
+  LIST: "/schedules",
+  BY_ID: (id: string) => `/schedules/${id}`,
+  APPROVE: (id: string) => `/schedules/${id}/approve`,
+  REJECT: (id: string) => `/schedules/${id}/reject`,
+} as const;
 
 export const labSchedulerApi = {
   async list(): Promise<Schedule[]> {
-    await sleep();
-    return readStorage().filter((x) => !x.IsDeleted);
+    const response = await axiosInstance.get<PagedResponse<ScheduleDto>>(
+      SCHEDULE_API.LIST,
+      {
+        params: {
+          pageNumber: 1,
+          pageSize: 1000,
+          sortBy: "startTime",
+          isDescending: false,
+        },
+      },
+    );
+
+    return mapScheduleListResponse(response.data);
   },
 
   async getById(id: string): Promise<Schedule | null> {
-    await sleep();
-    return readStorage().find((x) => x.Id === id && !x.IsDeleted) ?? null;
+    const response = await axiosInstance.get<GetScheduleByIdResponse>(
+      SCHEDULE_API.BY_ID(id),
+    );
+
+    if (!response.data?.data) {
+      return null;
+    }
+
+    return mapScheduleDetailResponse(response.data);
   },
 
   async approve(id: string): Promise<Schedule> {
-    return updateStatus(id, "APPROVED");
+    const response = await axiosInstance.patch<UpdateScheduleStatusResponse>(
+      SCHEDULE_API.APPROVE(id),
+    );
+
+    return mapScheduleDetailResponse(response.data);
   },
 
   async reject(id: string): Promise<Schedule> {
-    return updateStatus(id, "REJECTED");
+    const response = await axiosInstance.patch<UpdateScheduleStatusResponse>(
+      SCHEDULE_API.REJECT(id),
+    );
+
+    return mapScheduleDetailResponse(response.data);
   },
 };

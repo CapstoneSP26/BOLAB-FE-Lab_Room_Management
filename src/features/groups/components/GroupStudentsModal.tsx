@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Search, UserPlus, UserMinus, Loader2 } from 'lucide-react';
-import type { Group, GroupMemberDto } from '../types/types';
+import type { Group, GroupMemberDto } from '../types/group.type';
 
 interface GroupStudentsModalProps {
   isOpen: boolean;
@@ -138,11 +138,10 @@ export const GroupStudentsModal: React.FC<GroupStudentsModalProps> = ({
                   filteredStudents.map((student) => (
                     <label
                       key={student.studentId}
-                      className={`flex items-center p-3 border border-blue-200 rounded-lg cursor-pointer transition ${
-                        selectedStudentId === student.studentId
+                      className={`flex items-center p-3 border border-blue-200 rounded-lg cursor-pointer transition ${selectedStudentId === student.studentId
                           ? 'bg-blue-50 border-blue-500'
                           : 'hover:bg-blue-50'
-                      }`}
+                        }`}
                     >
                       <input
                         type="radio"

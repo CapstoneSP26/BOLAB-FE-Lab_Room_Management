@@ -13,6 +13,7 @@ export function AttendanceBookingCard({ booking }: AttendanceBookingCardProps) {
   const statusColors: Record<BookingWithQR['status'], string> = {
     Active: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     NotYet: 'bg-amber-50 text-amber-700 border-amber-200',
+    Finish: 'bg-slate-100 text-slate-700 border-slate-200',
     Done: 'bg-slate-100 text-slate-700 border-slate-200',
   };
 

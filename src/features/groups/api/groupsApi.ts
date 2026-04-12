@@ -19,7 +19,7 @@ import type {
   UpdateGroupMemberRequest,
   GetGroupsResponse,
   GetGroupMembersResponse,
-} from '../types/types';
+} from '../types/group.type';
 
 // API endpoints
 const API_ENDPOINTS = {

@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useSidebar } from "./sidebarContext.tsx";
 import {
@@ -10,6 +10,7 @@ import {
   ListIcon,
   ImportFileIcon,
 } from "../../components/icon/index.ts";
+import { useAuthStore } from "../../store/useAuthStore.ts";
 
 type IconProps = React.SVGProps<SVGSVGElement> & { size?: number };
 type IconComp = React.ComponentType<IconProps>;
@@ -33,11 +34,6 @@ type MenuGroup = {
   items: MenuItem[];
 };
 
-type Role = "ADMIN" | "LAB_MANAGER";
-
-const getRole = (): Role =>
-  (localStorage.getItem("role") as Role) || "LAB_MANAGER";
-
 const HorizontalDots: IconComp = (props) => (
   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
     <path
@@ -59,7 +55,8 @@ const AppSidebar: React.FC = () => {
     toggleSubmenu,
     setIsHovered,
   } = useSidebar();
-  const role = getRole();
+  const { user } = useAuthStore();
+  const isAdmin = user && user.roles.includes("Admin") ? true : false;
   const base = "/labmanager";
   const p = (suffix: string) => `${base}${suffix}`;
 
@@ -76,7 +73,7 @@ const AppSidebar: React.FC = () => {
   );
   const menuGroups: MenuGroup[] = useMemo(() => {
     // ===== ADMIN MENU =====
-    if (role === "ADMIN") {
+    if (isAdmin) {
       return [
         {
           title: "Menu",
@@ -123,8 +120,11 @@ const AppSidebar: React.FC = () => {
 
             {
               icon: CalenderIcon,
-              name: "Room Schedule",
-              path: p("/lab-scheduler"),
+              name: "Lab Rooms",
+              subItems: [
+                { name: "Room Schedule", path: p("/lab-scheduler") },
+                { name: "Room Management", path: p("/room-management") }
+              ]
             },
 
             {
@@ -140,6 +140,12 @@ const AppSidebar: React.FC = () => {
               icon: ListIcon,
               name: "Slot Management",
               path: p("/slot-management"),
+            },
+
+            {
+              icon: UserCircleIcon,
+              name: "User Management",
+              path: p("/users"),
             },
 
             {
@@ -161,6 +167,11 @@ const AppSidebar: React.FC = () => {
             icon: CalenderIcon,
             name: "Room Schedule",
             path: p("/lab-scheduler"),
+          },
+          {
+            icon: ListIcon,
+            name: "Schedules & Slots",
+            path: p("/slot-management"),
           },
           {
             icon: ListBookingRequest,
@@ -205,9 +216,12 @@ const AppSidebar: React.FC = () => {
         ],
       },
     ];
-  }, [role, base]);
+  }, [user]);
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = useCallback(
+    (path: string) => location.pathname === path,
+    [location.pathname],
+  );
 
   const isAnySubmenuRouteActive = useMemo(() => {
     return menuGroups.some((group) =>
@@ -216,7 +230,7 @@ const AppSidebar: React.FC = () => {
           item.subItems && item.subItems.some((sub) => isActive(sub.path)),
       ),
     );
-  }, [menuGroups, location.pathname]);
+  }, [isActive, menuGroups]);
 
   const isSubmenuOpen = (groupIndex: number, itemIndex: number) => {
     const key = `${groupIndex}-${itemIndex}`;

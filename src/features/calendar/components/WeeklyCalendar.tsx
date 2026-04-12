@@ -9,8 +9,6 @@ import { CalendarDayHeader } from './CalendarDayHeader';
 import { CALENDAR_CONFIG } from '../constants/calendar.constants';
 import { positionToTime } from '../utils/calendar-math.util';
 import { FlexibleGridView } from './FlexibleGridView';
-import { useSlotTypes } from '../../slot/hooks/useSlotTypes';
-import { useSlotStore } from '../../../store/slotStore';
 import { FixedGridView } from './FixedGridView';
 import type { PendingBooking } from '../../booking/types/booking.type';
 import { getStartOfDayVNInUTC } from '../../../utils/date.util';
@@ -18,6 +16,7 @@ import { addDays, formatDate } from 'date-fns';
 import { PolicyType, type PolicyTypeEnum } from '../../labroom';
 import { checkLabPolicies } from '../../labroom/utils/policy.util';
 import { useToast } from '../../../hooks/useToast';
+import type { SlotType } from '../../slot/types/slot.types';
 
 interface DragState {
   isActive: boolean;
@@ -28,18 +27,17 @@ interface DragState {
   endTime: string;
 }
 
-
 export interface WeeklyCalendarProps {
-  policies?: Record<PolicyTypeEnum, string>
+  policies?: Record<PolicyTypeEnum, string>;
   calendarMode: CalendarMode;
   selectedRoomId: string;
   onCreateBooking: (data: PendingBooking) => void;
   selectedSlotTypeId: number;
-  onSlotTypeChange: (id: number) => void
+  onSlotTypeChange: (id: number) => void;
   weekOffset?: number;
   onWeekChange: (offset: number) => void;
+  slotTypes: SlotType[];
 }
-
 
 /**
  * 🗓️ Weekly Calendar Grid Component (Google Calendar Style)
@@ -54,6 +52,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   onSlotTypeChange,
   weekOffset = 0,
   onWeekChange,
+  slotTypes
 }) => {
   const appAlert = useToast();
   const { CELL_HEIGHT, START_HOUR, END_HOUR } = CALENDAR_CONFIG;
@@ -62,16 +61,11 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     dayIndex: null,
     startY: null,
     currentY: null,
-    startTime: '',
-    endTime: '',
+    startTime: "",
+    endTime: "",
   });
 
-  // 1. Fetch dữ liệu slot types khi campus thay đổi
-  const { } = useSlotTypes(1);
 
-  // Hook này bên trong sẽ tự động gọi useSlotStore.getState().setSlotTypes()
-  // 2. Lấy thông tin type hiện tại để vẽ Grid
-  const { slotTypes } = useSlotStore();
   const currentSlotType = useMemo(() =>
     slotTypes.find(t => t.id === selectedSlotTypeId),
     [slotTypes, selectedSlotTypeId]
@@ -87,7 +81,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   }, [weekOffset]);
 
   // Fetch Policies Data
-  const isFreeTimeAllowed = Boolean(policies?.[PolicyType.IsFreeTimeAllowed] ?? true);
+  const isFreeTimeAllowed = (policies?.[PolicyType.IsFreeTimeAllowed] ?? 'true') === 'true' ? true : false;
   const maxConcurrentBookings = Number(policies?.[PolicyType.MaxConcurrentBookings] ?? 1);
   const minBookingLeadTime = Number(policies?.[PolicyType.MinBookingLeadTime] ?? 0)
 
@@ -95,7 +89,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     calendarMode: calendarMode,
     labRoomId: Number(selectedRoomId),
     startDate: getStartOfDayVNInUTC(weekStart),
-    endDate: getStartOfDayVNInUTC(addDays(weekEnd, 1))
+    endDate: getStartOfDayVNInUTC(addDays(weekEnd, 1)),
   });
 
   const gridRef = useRef<HTMLDivElement>(null);
@@ -103,17 +97,17 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   // Generate time slots (7:00 AM - 10:00 PM, hourly display only)
   const timeSlots: string[] = [];
   for (let hour = START_HOUR; hour <= END_HOUR; hour++) {
-    timeSlots.push(`${hour.toString().padStart(2, '0')}:00`);
+    timeSlots.push(`${hour.toString().padStart(2, "0")}:00`);
   }
 
   // Handle clicking on a fixed slot
   const handleSlotClick = (date: string, frame: any) => {
     // Thực thi callback onCreateBooking được truyền từ props
     onCreateBooking({
-      date: date,           // Định dạng YYYY-MM-DD
+      date: date, // Định dạng YYYY-MM-DD
       startTime: frame.startTime,
       endTime: frame.endTime,
-      slotTypeId: selectedSlotTypeId
+      slotTypeId: selectedSlotTypeId,
     });
   };
 
@@ -138,7 +132,13 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
 
   // Handle mouse move (update drag) - Global mouse move
   const handleGlobalMouseMove = (e: MouseEvent) => {
-    if (!dragState.isActive || !gridRef.current || dragState.dayIndex === null || dragState.startY === null) return;
+    if (
+      !dragState.isActive ||
+      !gridRef.current ||
+      dragState.dayIndex === null ||
+      dragState.startY === null
+    )
+      return;
 
     const gridRect = gridRef.current.getBoundingClientRect();
     const scrollContainer = gridRef.current.parentElement;
@@ -160,13 +160,16 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     }
 
     // Get actual header height by finding the day header element (not time column)
-    const dayHeader = gridRef.current.querySelector('[data-day-header]');
+    const dayHeader = gridRef.current.querySelector("[data-day-header]");
     const headerHeight = dayHeader?.getBoundingClientRect().height || 0;
 
     // Calculate Y position relative to grid content (after headers)
     // gridRect.top already accounts for scroll (can be negative), so just subtract it and header
     const relativeY = e.clientY - gridRect.top - headerHeight;
-    const currentY = Math.max(0, Math.min(relativeY, timeSlots.length * CELL_HEIGHT));
+    const currentY = Math.max(
+      0,
+      Math.min(relativeY, timeSlots.length * CELL_HEIGHT),
+    );
 
     const minY = Math.min(dragState.startY, currentY);
     const maxY = Math.max(dragState.startY, currentY);
@@ -189,13 +192,16 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
       return;
     }
     // 2. Kiểm tra nếu chỉ là một cú click (không di chuyển chuột đáng kể)
-    const dragDistance = Math.abs((dragState.currentY || 0) - (dragState.startY || 0));
-    if (dragDistance < 5) { // 5px threshold
+    const dragDistance = Math.abs(
+      (dragState.currentY || 0) - (dragState.startY || 0),
+    );
+    if (dragDistance < 5) {
+      // 5px threshold
       resetDragState();
       return;
     }
 
-    const date = formatDate(weekDays[dragState.dayIndex], 'yyyy-MM-dd');
+    const date = formatDate(weekDays[dragState.dayIndex], "yyyy-MM-dd");
     const bookingData = {
       date,
       startTime: dragState.startTime,
@@ -213,7 +219,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     }
     onCreateBooking({
       ...bookingData,
-      slotTypeId: selectedSlotTypeId
+      slotTypeId: selectedSlotTypeId,
     });
 
     resetDragState();
@@ -225,28 +231,28 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
       dayIndex: null,
       startY: null,
       currentY: null,
-      startTime: '',
-      endTime: '',
+      startTime: "",
+      endTime: "",
     });
   };
 
   // Handle global mouse events
   React.useEffect(() => {
     if (dragState.isActive) {
-      document.addEventListener('mousemove', handleGlobalMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener("mousemove", handleGlobalMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
       return () => {
-        document.removeEventListener('mousemove', handleGlobalMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener("mousemove", handleGlobalMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
       };
     }
   }, [dragState]);
+
 
   return (
     <div className="flex flex-col h-full bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
       {/* Week Navigation Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b-2 border-gray-200 bg-gradient-to-r from-gray-50 via-white to-gray-50">
-
         <CalendarNavigation
           weekStart={weekStart}
           weekEnd={weekEnd}
@@ -267,7 +273,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
         <div
           ref={gridRef}
           className="border-l border-t border-gray-200 relative select-none"
-          style={{ minWidth: '1000px' }}
+          style={{ minWidth: "1000px" }}
         >
           {/* Day headers */}
           <CalendarDayHeader weekDays={weekDays} />
@@ -283,8 +289,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
               events={events}
               handleMouseDown={handleMouseDown}
             />
-          ) : (
-            // OldSlot Mode: Show fixed slots (slot 1, slot 2, etc.)
+          ) : // OldSlot Mode: Show fixed slots (slot 1, slot 2, etc.)
             currentSlotType !== undefined ? (
               <FixedGridView
                 timeSlots={timeSlots}
@@ -293,8 +298,8 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                 events={events}
                 onSlotClick={handleSlotClick}
                 maxConcurrent={maxConcurrentBookings}
-              />) : null
-          )}
+              />
+            ) : null}
         </div>
       </div>
     </div>

@@ -7,7 +7,7 @@ type Props = {
   loading?: boolean;
   onClose: () => void;
   onApprove: (id: string) => void;
-  onReject: (id: string) => void;
+  handleOpenRejectModal: (id: string) => void;
 };
 
 const norm = (s: unknown) => String(s ?? "").trim();
@@ -76,7 +76,7 @@ export default function BookingRequestModal({
   loading = false,
   onClose,
   onApprove,
-  onReject,
+  handleOpenRejectModal,
 }: Props) {
   useEffect(() => {
     if (!open) return;
@@ -272,7 +272,7 @@ export default function BookingRequestModal({
                       <>
                         <button
                           type="button"
-                          onClick={() => onReject(String(booking.id))}
+                          onClick={() => handleOpenRejectModal(String(booking.id))}
                           className="inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-red-700 active:scale-[0.98]"
                         >
                           Reject
@@ -333,13 +333,11 @@ function InfoRow({
         {label}
       </div>
       <div
-        className={`mt-1 break-words text-sm font-semibold ${
-          mono ? "font-mono text-xs" : ""
-        } ${
-          highlight
+        className={`mt-1 break-words text-sm font-semibold ${mono ? "font-mono text-xs" : ""
+          } ${highlight
             ? "text-emerald-700 dark:text-emerald-400"
             : "text-gray-900 dark:text-white"
-        }`}
+          }`}
       >
         {value}
       </div>

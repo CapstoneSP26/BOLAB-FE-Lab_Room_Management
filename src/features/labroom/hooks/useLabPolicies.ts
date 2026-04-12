@@ -11,9 +11,11 @@ export const useLabPolicies = (labRoomId: number) => {
     enabled: !!labRoomId && labRoomId > 0,
 
     select: (data) => {
-      return data.data.reduce((acc, policy) => {
-        if (isPolicyType(policy.policyKeyName)) {
-          acc[policy.policyKeyName] = policy.value;
+      return data.reduce((acc, policy) => {
+        const policyKey = policy.policyKeyName || policy.policyKey;
+
+        if (isPolicyType(policyKey)) {
+          acc[policyKey] = policy.policyValue;
         }
 
         return acc;
@@ -21,3 +23,5 @@ export const useLabPolicies = (labRoomId: number) => {
     },
   });
 };
+
+

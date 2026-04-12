@@ -1,6 +1,6 @@
 import React from 'react';
 import { Trash2 } from 'lucide-react';
-import type { GroupMemberDto } from '../types/types';
+import type { GroupMemberDto } from '../types/group.type';
 
 interface GroupStudentsTableProps {
   students: GroupMemberDto[];

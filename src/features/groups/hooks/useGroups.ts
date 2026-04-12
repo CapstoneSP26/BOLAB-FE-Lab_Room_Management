@@ -14,7 +14,7 @@ import {
   deleteGroup,
   getGroupMembers,
   addGroupMember,
-  updateGroupMember,  
+  updateGroupMember,
   removeGroupMember,
 } from '../api/groupsApi';
 import type {
@@ -23,7 +23,7 @@ import type {
   UpdateGroupRequest,
   AddGroupMemberRequest,
   UpdateGroupMemberRequest,
-} from '../types/types';
+} from '../types/group.type';
 
 // React Query keys
 export const GROUPS_QUERY_KEYS = {

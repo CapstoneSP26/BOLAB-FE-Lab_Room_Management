@@ -1,33 +1,42 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import type { ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
+
 import BookingRequestReviewModal from "./BookingRequestReviewModal";
 import BookingFilters from "./BookingRequestFilter";
 import BookingTable from "./BookingRequestTable";
-
-import type { Building } from "../../building/types/building.type";
-import type { LabRoomLookupItem } from "../../labroom/types/room.type";
-import type { SlotType } from "../../slot/types/slot.types";
+import RejectReasonModal from "./RejectReasonModal";
+import { buildingApi } from "../../building/api/buildingApi";
+import { labroomApi } from "../../labroom/api/labroom.api";
+import { slotApi } from "../../slot/api/slotApi";
 import {
-  getBookingRequests,
-  getBuildingOptions,
-  getRoomOptions,
-  getSlotTypes,
-  updateBookingRequestStatus,
-} from "../api/bookingRequestApi";
-import type { BookingRequest, BookingStatus } from "../types/booking.type";
+  useApproveBookingRequest,
+  useBookingRequests,
+  useRejectBookingRequest,
+} from "../hooks/useBookingRequest";
+
+import type { BuildingDto } from "../../building/types/building.type";
+import type { LabRoomDto } from "../../labroom/types/room.type";
+import type { SlotType } from "../../slot/types/slot.types";
+import type {
+  BookingRequest,
+  BookingStatus,
+  GetBookingRequestsRequest,
+} from "../types/booking.type";
+
+import {
+  EmptyState,
+  LoadingSkeleton,
+  ReportStatCard,
+} from "../../../components/ui/ComponentsParts";
 import { useRejectBooking } from "../hooks/useRejectBooking";
 import { useApproveBooking } from "../hooks/useApproveBooking";
 
 type SlotTypeFilter = "ALL" | number;
 
 export default function PendingBookingFeature() {
-  const [loading, setLoading] = useState(true);
   const [lookupLoading, setLookupLoading] = useState(true);
-
-  const [items, setItems] = useState<BookingRequest[]>([]);
-  const [buildingOptions, setBuildingOptions] = useState<Building[]>([]);
-  const [roomOptions, setRoomOptions] = useState<LabRoomLookupItem[]>([]);
+  const [buildingOptions, setBuildingOptions] = useState<BuildingDto[]>([]);
+  const [roomOptions, setRoomOptions] = useState<LabRoomDto[]>([]);
   const [slotOptions, setSlotOptions] = useState<SlotType[]>([]);
 
   const [q, setQ] = useState("");
@@ -37,61 +46,74 @@ export default function PendingBookingFeature() {
 
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<BookingRequest | null>(null);
-
   const [showFilters, setShowFilters] = useState(false);
 
-  const { mutate: approve } = useApproveBooking();
-  const { mutate: reject } = useRejectBooking();
+  // Reject with reason state
+  const [rejectId, setRejectId] = useState<string | null>(null);
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+
+  const params: GetBookingRequestsRequest = useMemo(
+    () => ({
+      status: "PendingApproval" as BookingStatus,
+      labRoomId: roomId === "ALL" ? undefined : roomId,
+      buildingId: buildingId === "ALL" ? undefined : buildingId,
+      keyword: q.trim() || undefined,
+      slotTypeId: slotType === "ALL" ? undefined : slotType,
+      page: 1,
+      limit: 100,
+      sortBy: "RequestedAt",
+      isDescending: true,
+    }),
+    [roomId, buildingId, q, slotType],
+  );
+
+  const pendingQuery = useBookingRequests(params);
+
+  const { mutate: approve, } = useApproveBooking();
+  const { mutate: reject, isPending } = useRejectBooking();
 
   const closeModal = () => {
     setOpen(false);
     setSelected(null);
+    setRejectId(null);
+    setRejectModalOpen(false);
   };
 
-  const loadLookups = useCallback(async () => {
-    setLookupLoading(true);
-    try {
-      const [buildingsResult, slotsResult] = await Promise.allSettled([
-        getBuildingOptions(),
-        getSlotTypes(),
-      ]);
+  const items = useMemo(
+    () => pendingQuery.data?.data ?? [],
+    [pendingQuery.data],
+  );
+  const totalCount = pendingQuery.data?.total ?? items.length;
+  const loading = pendingQuery.isLoading || pendingQuery.isFetching;
 
-      setBuildingOptions(
-        buildingsResult.status === "fulfilled" ? buildingsResult.value : [],
-      );
-
-      setSlotOptions(
-        slotsResult.status === "fulfilled"
-          ? (slotsResult.value.data ?? [])
-          : [],
-      );
-
-      setRoomOptions([]);
-    } finally {
-      setLookupLoading(false);
-    }
-  }, []);
-
-  const reload = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await getBookingRequests({
-        status: "PendingApproval" as BookingStatus,
-        labRoomId: roomId === "ALL" ? undefined : roomId,
-        buildingId: buildingId === "ALL" ? undefined : buildingId,
-        keyword: q.trim() || undefined,
-        slotTypeId: slotType === "ALL" ? undefined : slotType,
-      });
-
-      setItems(Array.isArray(data?.data) ? data.data : []);
-    } finally {
-      setLoading(false);
-    }
-  }, [roomId, buildingId, q, slotType]);
+  const reload = async () => {
+    await pendingQuery.refetch();
+  };
 
   useEffect(() => {
+    const loadLookups = async () => {
+      setLookupLoading(true);
+      try {
+        const [buildingsRes, slotsRes] = await Promise.all([
+          buildingApi.getBuildings({
+            pageNumber: 1,
+            pageSize: 100,
+          }),
+          slotApi.getSlotTypes(),
+        ]);
+
+        setBuildingOptions(buildingsRes.items ?? []);
+        setSlotOptions(slotsRes ?? []);
+      } catch {
+        setBuildingOptions([]);
+        setSlotOptions([]);
+      } finally {
+        setLookupLoading(false);
+      }
+    };
+
     void loadLookups();
-  }, [loadLookups]);
+  }, []);
 
   useEffect(() => {
     const loadRoomsByBuilding = async () => {
@@ -102,8 +124,14 @@ export default function PendingBookingFeature() {
       }
 
       try {
-        const rooms = await getRoomOptions(buildingId);
-        setRoomOptions(rooms);
+        const rooms = await labroomApi.getRooms({
+          buildingId,
+          pageNumber: 1,
+          pageSize: 100,
+          includeBuilding: true,
+        });
+
+        setRoomOptions(rooms.items ?? []);
       } catch {
         setRoomOptions([]);
       }
@@ -112,15 +140,7 @@ export default function PendingBookingFeature() {
     void loadRoomsByBuilding();
   }, [buildingId]);
 
-  useEffect(() => {
-    void reload();
-  }, [reload]);
-
-  const rows = useMemo(() => {
-    return [...items].sort((a, b) =>
-      (b.requestedAt ?? "").localeCompare(a.requestedAt ?? ""),
-    );
-  }, [items]);
+  const rows = useMemo(() => items, [items]);
 
   const hasActiveFilters = useMemo(() => {
     return (
@@ -136,18 +156,18 @@ export default function PendingBookingFeature() {
     if (!ok) return;
 
     approve(id);
-    setItems((prev) => prev.filter((x) => String(x.id) !== id));
     closeModal();
   };
 
+  const HandleOpenRejectModal = (id: string) => {
+    setRejectId(id);
+    setRejectModalOpen(true);
+  }
 
-
-  const handleConfirmReject = async (id: string) => {
-    const ok = window.confirm("Reject this booking?");
-    if (!ok) return;
-    reject({ id: id, "reason": "Rejected by Lab Manager" });
-    setItems((prev) => prev.filter((x) => String(x.id) !== id));
+  const handleConfirmReject = async (id: string, reason: string) => {
+    reject({ id: id, "reason": reason });
     closeModal();
+    setRejectId(null);
   };
 
   return (
@@ -224,9 +244,9 @@ export default function PendingBookingFeature() {
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <QuickStat
+          <ReportStatCard
             label="Total Items"
-            value={items.length}
+            value={totalCount}
             icon={
               <svg
                 className="h-5 w-5"
@@ -244,9 +264,9 @@ export default function PendingBookingFeature() {
             }
             color="blue"
           />
-          <QuickStat
+          <ReportStatCard
             label="Filtered Results"
-            value={rows.length}
+            value={totalCount}
             icon={
               <svg
                 className="h-5 w-5"
@@ -264,7 +284,7 @@ export default function PendingBookingFeature() {
             }
             color="purple"
           />
-          <QuickStat
+          <ReportStatCard
             label="Active Rooms"
             value={roomOptions.length}
             icon={
@@ -282,9 +302,9 @@ export default function PendingBookingFeature() {
                 />
               </svg>
             }
-            color="green"
+            color="emerald"
           />
-          <QuickStat
+          <ReportStatCard
             label="Buildings"
             value={buildingOptions.length}
             icon={
@@ -302,7 +322,7 @@ export default function PendingBookingFeature() {
                 />
               </svg>
             }
-            color="gray"
+            color="amber"
           />
         </div>
       </div>
@@ -460,7 +480,7 @@ export default function PendingBookingFeature() {
                 setOpen(true);
               }}
               onApprove={HandleApprove}
-              onReject={handleConfirmReject}
+              handleOpenRejectModal={HandleOpenRejectModal}
             />
           </div>
         )}
@@ -502,86 +522,16 @@ export default function PendingBookingFeature() {
         booking={selected}
         onClose={closeModal}
         onApprove={HandleApprove}
-        onReject={handleConfirmReject}
+        handleOpenRejectModal={HandleOpenRejectModal}
       />
-    </div>
-  );
-}
 
-function QuickStat({
-  label,
-  value,
-  icon,
-  color,
-}: {
-  label: string;
-  value: number | string;
-  icon: ReactNode;
-  color: "blue" | "purple" | "green" | "gray";
-}) {
-  const colorClasses = {
-    blue: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
-    purple:
-      "bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400",
-    green:
-      "bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400",
-    gray: "bg-gray-50 text-gray-600 dark:bg-gray-500/10 dark:text-gray-400",
-  };
-
-  return (
-    <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-700/30">
-      <div
-        className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg ${colorClasses[color]}`}
-      >
-        {icon}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="text-xs font-medium text-gray-600 dark:text-gray-400">
-          {label}
-        </div>
-        <div className="text-lg font-bold text-gray-900 dark:text-white">
-          {value}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function EmptyState({
-  title,
-  description,
-  icon,
-}: {
-  title: string;
-  description: string;
-  icon: ReactNode;
-}) {
-  return (
-    <div className="flex flex-col items-center justify-center p-12">
-      {icon}
-      <h3 className="mt-4 text-base font-semibold text-gray-900 dark:text-white">
-        {title}
-      </h3>
-      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-        {description}
-      </p>
-    </div>
-  );
-}
-
-function LoadingSkeleton() {
-  return (
-    <div className="p-6">
-      <div className="space-y-4">
-        <div className="h-12 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700" />
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div
-            key={i}
-            className="h-16 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"
-            style={{ animationDelay: `${i * 100}ms` }}
-          />
-        ))}
-      </div>
+      <RejectReasonModal
+        rejectId={rejectId}
+        isOpen={rejectModalOpen}
+        onClose={() => setRejectModalOpen(false)}
+        onSubmit={handleConfirmReject}
+        isLoading={isPending}
+      />
     </div>
   );
 }

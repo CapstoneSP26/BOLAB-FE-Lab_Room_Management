@@ -1,9 +1,9 @@
-import type { Building } from "../../building/types/building.type";
-import type { LabRoomLookupItem } from "../../labroom/types/room.type";
+import type { BuildingDto } from "../../building/types/building.type";
+import type { LabRoomDto } from "../../labroom/types/room.type";
 import type {
+  BookingStatus,
   BookingStatusLookupItem,
-  HistoryStatus,
-} from "../types/bookingRequest.type";
+} from "../types/booking.type";
 import {
   Search,
   Building2,
@@ -21,14 +21,14 @@ type Props = {
 
   buildingId: number | "ALL";
   onBuildingId: (v: number | "ALL") => void;
-  buildingOptions: Building[];
+  buildingOptions: BuildingDto[];
 
   roomId: number | "ALL";
   onRoomId: (v: number | "ALL") => void;
-  roomOptions: LabRoomLookupItem[];
+  roomOptions: LabRoomDto[];
 
-  status: HistoryStatus;
-  onStatus: (v: HistoryStatus) => void;
+  status: BookingStatus;
+  onStatus: (v: BookingStatus) => void;
   statusOptions: BookingStatusLookupItem[];
 
   from: string;
@@ -49,7 +49,7 @@ function toStatusLabel(value: string) {
 
 function getStatusBadgeColor(status: string) {
   const s = status.toUpperCase();
-  if (s === "PENDING")
+  if (s === "PENDING" || s === "PENDINGAPPROVAL")
     return "bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/30";
   if (s === "REJECTED")
     return "bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-500/30";
@@ -76,16 +76,20 @@ export default function HistoryBookingFilter({
   onTo,
   onApplyFilters,
 }: Props) {
-  // Auto-apply filters
+  const triggerApply = (delay = 0) => {
+    if (onApplyFilters) {
+      setTimeout(() => onApplyFilters(), delay);
+    }
+  };
+
   const handleSearchChange = (value: string) => {
     onQ(value);
-    if (onApplyFilters) {
-      setTimeout(() => onApplyFilters(), 300);
-    }
+    triggerApply(300);
   };
 
   const handleBuildingChange = (value: number | "ALL") => {
     onBuildingId(value);
+    // Reset room khi đổi building
     if (value === "ALL") {
       onRoomId("ALL");
     }
@@ -96,57 +100,45 @@ export default function HistoryBookingFilter({
 
   const handleRoomChange = (value: number | "ALL") => {
     onRoomId(value);
-    if (onApplyFilters) {
-      setTimeout(() => onApplyFilters(), 0);
-    }
+    triggerApply();
   };
 
-  const handleStatusChange = (value: HistoryStatus) => {
+  const handleStatusChange = (value: BookingStatus) => {
     onStatus(value);
-    if (onApplyFilters) {
-      setTimeout(() => onApplyFilters(), 0);
-    }
+    triggerApply();
   };
 
   const handleFromChange = (value: string) => {
     onFrom(value);
-    if (onApplyFilters) {
-      setTimeout(() => onApplyFilters(), 0);
-    }
+    triggerApply();
   };
 
   const handleToChange = (value: string) => {
     onTo(value);
-    if (onApplyFilters) {
-      setTimeout(() => onApplyFilters(), 0);
-    }
+    triggerApply();
   };
 
   const handleReset = () => {
     onQ("");
     onBuildingId("ALL");
     onRoomId("ALL");
-    onStatus("ALL");
+    onStatus("All");
     onFrom("");
     onTo("");
-    if (onApplyFilters) {
-      setTimeout(() => onApplyFilters(), 0);
-    }
+    triggerApply();
   };
 
   const hasActiveFilters =
     q !== "" ||
     buildingId !== "ALL" ||
     roomId !== "ALL" ||
-    status !== "ALL" ||
+    status !== "All" ||
     from !== "" ||
     to !== "";
 
   return (
-    <div className="space-y-4 mb-6">
-      {/* Filter Controls */}
-      <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white dark:bg-gray-900/40 backdrop-blur-sm shadow-lg shadow-gray-200/20 dark:shadow-none p-6">
-        {/* Search Bar - Full Width */}
+    <div className="mb-6 space-y-4">
+      <div className="rounded-2xl border border-gray-200/60 bg-white p-6 shadow-lg shadow-gray-200/20 backdrop-blur-sm dark:border-gray-800/60 dark:bg-gray-900/40 dark:shadow-none">
         <div className="mb-4">
           <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">
             Search
@@ -161,8 +153,9 @@ export default function HistoryBookingFilter({
             />
             {q && (
               <button
+                type="button"
                 onClick={() => handleSearchChange("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -170,15 +163,13 @@ export default function HistoryBookingFilter({
           </div>
         </div>
 
-        {/* Filter Dropdowns */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
-          {/* Building Filter */}
           <div className="lg:col-span-1">
             <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">
               Building
             </label>
             <div className="relative">
-              <Building2 className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 pointer-events-none z-10" />
+              <Building2 className="pointer-events-none absolute left-4 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <select
                 value={String(buildingId)}
                 onChange={(e) =>
@@ -186,16 +177,16 @@ export default function HistoryBookingFilter({
                     e.target.value === "ALL" ? "ALL" : Number(e.target.value),
                   )
                 }
-                className="h-12 w-full appearance-none rounded-xl border border-gray-300 bg-white pl-11 pr-10 text-sm text-gray-800 transition-all focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white dark:focus:border-blue-500 cursor-pointer"
+                className="h-12 w-full cursor-pointer appearance-none rounded-xl border border-gray-300 bg-white pl-11 pr-10 text-sm text-gray-800 transition-all focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white dark:focus:border-blue-500"
               >
                 <option value="ALL">All buildings</option>
                 {buildingOptions.map((b) => (
-                  <option key={String(b.id)} value={String(b.id)}>
-                    {b.name}
+                  <option key={String(b.id)} value={b.id}>
+                    {b.buildingName}
                   </option>
                 ))}
               </select>
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+              <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2">
                 <svg
                   className="h-4 w-4 text-gray-400"
                   fill="none"
@@ -213,13 +204,12 @@ export default function HistoryBookingFilter({
             </div>
           </div>
 
-          {/* Room Filter */}
           <div className="lg:col-span-1">
             <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">
               Room
             </label>
             <div className="relative">
-              <DoorOpen className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 pointer-events-none z-10" />
+              <DoorOpen className="pointer-events-none absolute left-4 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <select
                 value={String(roomId)}
                 onChange={(e) =>
@@ -228,7 +218,7 @@ export default function HistoryBookingFilter({
                   )
                 }
                 disabled={buildingId === "ALL"}
-                className="h-12 w-full appearance-none rounded-xl border border-gray-300 bg-white pl-11 pr-10 text-sm text-gray-800 transition-all focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white dark:focus:border-blue-500 dark:disabled:bg-gray-700/50 dark:disabled:text-gray-500 cursor-pointer"
+                className="h-12 w-full cursor-pointer appearance-none rounded-xl border border-gray-300 bg-white pl-11 pr-10 text-sm text-gray-800 transition-all focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white dark:focus:border-blue-500 dark:disabled:bg-gray-700/50 dark:disabled:text-gray-500"
               >
                 <option value="ALL">
                   {buildingId === "ALL" ? "Select building first" : "All rooms"}
@@ -239,7 +229,7 @@ export default function HistoryBookingFilter({
                   </option>
                 ))}
               </select>
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+              <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2">
                 <svg
                   className="h-4 w-4 text-gray-400"
                   fill="none"
@@ -257,28 +247,29 @@ export default function HistoryBookingFilter({
             </div>
           </div>
 
-          {/* Status Filter */}
           <div className="lg:col-span-1">
             <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">
               Status
             </label>
             <div className="relative">
-              <CheckCircle2 className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 pointer-events-none z-10" />
+              <CheckCircle2 className="pointer-events-none absolute left-4 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <select
                 value={status}
                 onChange={(e) =>
-                  handleStatusChange(e.target.value as HistoryStatus)
+                  handleStatusChange(e.target.value as BookingStatus)
                 }
-                className="h-12 w-full appearance-none rounded-xl border border-gray-300 bg-white pl-11 pr-10 text-sm text-gray-800 transition-all focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white dark:focus:border-blue-500 cursor-pointer"
+                className="h-12 w-full cursor-pointer appearance-none rounded-xl border border-gray-300 bg-white pl-11 pr-10 text-sm text-gray-800 transition-all focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white dark:focus:border-blue-500"
               >
-                <option value="ALL">All status</option>
-                {statusOptions.map((s) => (
-                  <option key={s.code} value={s.code}>
-                    {toStatusLabel(s.name)}
-                  </option>
-                ))}
+                <option value="All">All status</option>
+                {statusOptions
+                  .filter((s) => s.code !== "All")
+                  .map((s) => (
+                    <option key={s.code} value={s.code}>
+                      {toStatusLabel(s.name)}
+                    </option>
+                  ))}
               </select>
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+              <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2">
                 <svg
                   className="h-4 w-4 text-gray-400"
                   fill="none"
@@ -296,72 +287,69 @@ export default function HistoryBookingFilter({
             </div>
           </div>
 
-          {/* From Date */}
           <div className="lg:col-span-1">
             <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">
               From Date
             </label>
             <div className="relative">
-              <Calendar className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 pointer-events-none z-10" />
+              <Calendar className="pointer-events-none absolute left-4 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
                 type="date"
                 value={from}
                 onChange={(e) => handleFromChange(e.target.value)}
-                className="h-12 w-full appearance-none rounded-xl border border-gray-300 bg-white pl-11 pr-4 text-sm text-gray-800 transition-all focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white dark:focus:border-blue-500 cursor-pointer [color-scheme:light] dark:[color-scheme:dark]"
+                className="h-12 w-full cursor-pointer appearance-none rounded-xl border border-gray-300 bg-white pl-11 pr-4 text-sm text-gray-800 transition-all focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 [color-scheme:light] dark:border-gray-700 dark:bg-gray-800/50 dark:text-white dark:focus:border-blue-500 dark:[color-scheme:dark]"
               />
             </div>
           </div>
 
-          {/* To Date */}
           <div className="lg:col-span-1">
             <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">
               To Date
             </label>
             <div className="relative">
-              <CalendarRange className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 pointer-events-none z-10" />
+              <CalendarRange className="pointer-events-none absolute left-4 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
                 type="date"
                 value={to}
                 onChange={(e) => handleToChange(e.target.value)}
                 min={from}
-                className="h-12 w-full appearance-none rounded-xl border border-gray-300 bg-white pl-11 pr-4 text-sm text-gray-800 transition-all focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white dark:focus:border-blue-500 cursor-pointer [color-scheme:light] dark:[color-scheme:dark]"
+                className="h-12 w-full cursor-pointer appearance-none rounded-xl border border-gray-300 bg-white pl-11 pr-4 text-sm text-gray-800 transition-all focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 [color-scheme:light] dark:border-gray-700 dark:bg-gray-800/50 dark:text-white dark:focus:border-blue-500 dark:[color-scheme:dark]"
               />
             </div>
           </div>
 
-          {/* Reset Button */}
-          <div className="lg:col-span-1 flex items-end">
+          <div className="flex items-end lg:col-span-1">
             <button
               type="button"
               onClick={handleReset}
               disabled={!hasActiveFilters}
-              className="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 text-gray-700 transition-all hover:bg-gray-50 hover:border-gray-400 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-200 dark:hover:bg-gray-700/50 dark:hover:border-gray-600 flex items-center justify-center gap-2 group"
+              className="group flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 text-gray-700 transition-all hover:border-gray-400 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-gray-300 disabled:hover:bg-white dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-200 dark:hover:border-gray-600 dark:hover:bg-gray-700/50"
               title="Clear all filters"
             >
-              <RotateCcw className="h-4 w-4 transition-transform group-hover:rotate-180 duration-300" />
-              <span className="text-sm font-semibold hidden xl:inline">
+              <RotateCcw className="h-4 w-4 transition-transform duration-300 group-hover:rotate-180" />
+              <span className="hidden text-sm font-semibold xl:inline">
                 Reset
               </span>
             </button>
           </div>
         </div>
 
-        {/* Active Filters Display */}
         {hasActiveFilters && (
-          <div className="mt-5 flex flex-wrap items-center gap-2 pt-5 border-t border-gray-200 dark:border-gray-800">
+          <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-gray-200 pt-5 dark:border-gray-800">
             <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
               Active Filters:
             </span>
 
             {q && (
-              <div className="inline-flex items-center gap-2 rounded-lg bg-blue-100 dark:bg-blue-500/20 px-3 py-1.5 text-xs font-medium text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30">
+              <div className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-100 px-3 py-1.5 text-xs font-medium text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/20 dark:text-blue-300">
                 <Search className="h-3 w-3" />
                 <span>
-                  Search: "{q.length > 30 ? q.substring(0, 30) + "..." : q}"
+                  Search: "{q.length > 30 ? `${q.substring(0, 30)}...` : q}"
                 </span>
                 <button
+                  type="button"
                   onClick={() => handleSearchChange("")}
-                  className="ml-1 rounded-md hover:bg-blue-200 dark:hover:bg-blue-500/30 p-0.5 transition-colors"
+                  className="ml-1 rounded-md p-0.5 transition-colors hover:bg-blue-200 dark:hover:bg-blue-500/30"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -369,15 +357,16 @@ export default function HistoryBookingFilter({
             )}
 
             {buildingId !== "ALL" && (
-              <div className="inline-flex items-center gap-2 rounded-lg bg-purple-100 dark:bg-purple-500/20 px-3 py-1.5 text-xs font-medium text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30">
+              <div className="inline-flex items-center gap-2 rounded-lg border border-purple-200 bg-purple-100 px-3 py-1.5 text-xs font-medium text-purple-700 dark:border-purple-500/30 dark:bg-purple-500/20 dark:text-purple-300">
                 <Building2 className="h-3 w-3" />
                 <span>
-                  {buildingOptions.find((b) => b.id === buildingId)?.name ||
-                    "Building"}
+                  {buildingOptions.find((b) => b.id === buildingId)
+                    ?.buildingName || "Building"}
                 </span>
                 <button
+                  type="button"
                   onClick={() => handleBuildingChange("ALL")}
-                  className="ml-1 rounded-md hover:bg-purple-200 dark:hover:bg-purple-500/30 p-0.5 transition-colors"
+                  className="ml-1 rounded-md p-0.5 transition-colors hover:bg-purple-200 dark:hover:bg-purple-500/30"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -385,23 +374,24 @@ export default function HistoryBookingFilter({
             )}
 
             {roomId !== "ALL" && (
-              <div className="inline-flex items-center gap-2 rounded-lg bg-green-100 dark:bg-green-500/20 px-3 py-1.5 text-xs font-medium text-green-700 dark:text-green-300 border border-green-200 dark:border-green-500/30">
+              <div className="inline-flex items-center gap-2 rounded-lg border border-green-200 bg-green-100 px-3 py-1.5 text-xs font-medium text-green-700 dark:border-green-500/30 dark:bg-green-500/20 dark:text-green-300">
                 <DoorOpen className="h-3 w-3" />
                 <span>
                   {roomOptions.find((r) => r.id === roomId)?.roomName || "Room"}
                 </span>
                 <button
+                  type="button"
                   onClick={() => handleRoomChange("ALL")}
-                  className="ml-1 rounded-md hover:bg-green-200 dark:hover:bg-green-500/30 p-0.5 transition-colors"
+                  className="ml-1 rounded-md p-0.5 transition-colors hover:bg-green-200 dark:hover:bg-green-500/30"
                 >
                   <X className="h-3 w-3" />
                 </button>
               </div>
             )}
 
-            {status !== "ALL" && (
+            {status !== "All" && (
               <div
-                className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium border ${getStatusBadgeColor(String(status))}`}
+                className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium ${getStatusBadgeColor(String(status))}`}
               >
                 <CheckCircle2 className="h-3 w-3" />
                 <span>
@@ -411,8 +401,9 @@ export default function HistoryBookingFilter({
                   )}
                 </span>
                 <button
-                  onClick={() => handleStatusChange("ALL")}
-                  className="ml-1 rounded-md hover:opacity-70 p-0.5 transition-opacity"
+                  type="button"
+                  onClick={() => handleStatusChange("All")}
+                  className="ml-1 rounded-md p-0.5 transition-opacity hover:opacity-70"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -420,7 +411,7 @@ export default function HistoryBookingFilter({
             )}
 
             {(from || to) && (
-              <div className="inline-flex items-center gap-2 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 px-3 py-1.5 text-xs font-medium text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30">
+              <div className="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-100 px-3 py-1.5 text-xs font-medium text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/20 dark:text-indigo-300">
                 <CalendarRange className="h-3 w-3" />
                 <span>
                   {from && to
@@ -430,11 +421,12 @@ export default function HistoryBookingFilter({
                       : `Until ${to}`}
                 </span>
                 <button
+                  type="button"
                   onClick={() => {
                     handleFromChange("");
                     handleToChange("");
                   }}
-                  className="ml-1 rounded-md hover:bg-indigo-200 dark:hover:bg-indigo-500/30 p-0.5 transition-colors"
+                  className="ml-1 rounded-md p-0.5 transition-colors hover:bg-indigo-200 dark:hover:bg-indigo-500/30"
                 >
                   <X className="h-3 w-3" />
                 </button>

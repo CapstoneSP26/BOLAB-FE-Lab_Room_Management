@@ -44,9 +44,19 @@ export default function AttendanceManagementPage() {
   const generateQrCodeMutation = useGenerateQRCode();
   const removeQrCodeMutation = useRemoveQRCode();
 
+  const legacyScheduleEnvelope = bookingScheduleData as
+    | {
+        data?: {
+          items?: ScheduleDto[];
+          result?: { items?: ScheduleDto[] };
+        };
+      }
+    | undefined;
+
   const bookingScheduleItems: ScheduleDto[] =
-    ((bookingScheduleData?.data as { result?: { items?: ScheduleDto[] } })?.result?.items)
-    || bookingScheduleData?.data?.items
+    bookingScheduleData?.items
+    || legacyScheduleEnvelope?.data?.result?.items
+    || legacyScheduleEnvelope?.data?.items
     || [];
 
   const [searchQuery, setSearchQuery] = useState('');

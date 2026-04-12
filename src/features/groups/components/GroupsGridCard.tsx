@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowRight, GraduationCap, Users } from 'lucide-react';
-import type { Group, GroupMemberDto } from '../types/types';
+import type { Group, GroupMemberDto } from '../types/group.type';
 
 interface GroupsGridCardProps {
   groups: Group[];

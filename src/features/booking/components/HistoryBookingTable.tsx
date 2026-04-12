@@ -1,44 +1,17 @@
 import type { BookingRequest } from "../../booking/types/booking.type";
+import {
+  formatUtcDateLabel,
+  formatBookingTimeLabel,
+} from "../../../utils/date.util";
+import { statusClass } from "../../../utils/status";
 
-function badgeClass(status: string) {
-  const s = status.toUpperCase();
-  if (s === "APPROVED" || s === "ACCEPTED")
-    return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-200";
-  if (s === "REJECTED") return "bg-red-500/15 text-red-700 dark:text-red-200";
-  if (s === "PENDING" || s === "PENDINGAPPROVAL")
-    return "bg-amber-500/15 text-amber-700 dark:text-amber-200";
-  return "bg-gray-500/15 text-gray-700 dark:text-gray-200";
-}
-
-function formatRange(start: string, end: string) {
-  const s = new Date(start);
-  const e = new Date(end);
-
-  const fmtTime = (d: Date) => {
-    const h = d.getHours();
-    const m = d.getMinutes();
-    return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, "0")}`;
-  };
-
-  const fmtDate = (d: Date) => {
-    const dd = String(d.getDate()).padStart(2, "0");
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const yyyy = d.getFullYear();
-    return `${dd}/${mm}/${yyyy}`;
-  };
-
-  return `${fmtDate(s)} • ${fmtTime(s)} - ${fmtTime(e)}`;
-}
-
-export default function HistoryBookingTable({
-  loading,
-  rows,
-  onView,
-}: {
+type Props = {
   loading: boolean;
   rows: BookingRequest[];
-  onView: (b: BookingRequest) => void;
-}) {
+  onView: (id: string) => void;
+};
+
+export default function HistoryBookingTable({ loading, rows, onView }: Props) {
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
       <div className="overflow-x-auto">
@@ -79,7 +52,7 @@ export default function HistoryBookingTable({
                 <tr key={String(b.id)} className="bg-white dark:bg-transparent">
                   <td className="px-4 py-4">
                     <div className="font-semibold text-gray-800 dark:text-white/90">
-                      #{b.id}
+                      {b.requestedBy}
                     </div>
                     <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                       User: {b.requestedBy}
@@ -94,7 +67,11 @@ export default function HistoryBookingTable({
                   </td>
 
                   <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
-                    {formatRange(b.startTime, b.endTime)}
+                    <div>{formatUtcDateLabel(b.startTime)}</div>
+                    <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {formatBookingTimeLabel(b.startTime, b.startTime)} -{" "}
+                      {formatBookingTimeLabel(b.startTime, b.endTime)}
+                    </div>
                   </td>
 
                   <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
@@ -109,8 +86,8 @@ export default function HistoryBookingTable({
 
                   <td className="px-4 py-4">
                     <span
-                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(
-                        String(b.status),
+                      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${statusClass(
+                        b.status,
                       )}`}
                     >
                       {String(b.status)}
@@ -121,7 +98,7 @@ export default function HistoryBookingTable({
                     <div className="flex justify-end gap-2">
                       <button
                         type="button"
-                        onClick={() => onView(b)}
+                        onClick={() => onView(String(b.id))}
                         className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-white/[0.04]"
                       >
                         View

@@ -5,7 +5,7 @@ import { useGroups, useCreateGroup } from '../../features/groups';
 import GroupSearchFilter from '../../features/groups/components/GroupSearchFilter';
 import GroupsGridCard from '../../features/groups/components/GroupsGridCard';
 import CreateGroupModal from '../../features/groups/components/CreateGroupModal';
-import type { GroupFilterState } from '../../features/groups/types/types';
+import type { GroupFilterState } from '../../features/groups/types/group.type';
 import { useToast } from '../../hooks/useToast';
 
 const StudentGroupsPage: React.FC = () => {

@@ -3,8 +3,8 @@
  * Global toast notification management
  */
 
-import { create } from 'zustand';
-import type { ToastType } from '../../../components/ui/Toast';
+import { create } from "zustand";
+import type { ToastType } from "../../../components/ui/Toast";
 
 interface ToastItem {
   id: string;
@@ -16,7 +16,7 @@ interface ToastItem {
 
 interface ToastStore {
   toasts: ToastItem[];
-  addToast: (toast: Omit<ToastItem, 'id'>) => void;
+  addToast: (toast: Omit<ToastItem, "id">) => void;
   removeToast: (id: string) => void;
 }
 
@@ -40,16 +40,16 @@ export const useToast = () => {
 
   return {
     success: (title: string, message?: string, duration?: number) => {
-      addToast({ type: 'success', title, message, duration });
+      addToast({ type: "success", title, message, duration });
     },
     error: (title: string, message?: string, duration?: number) => {
-      addToast({ type: 'error', title, message, duration });
+      addToast({ type: "error", title, message, duration });
     },
     warning: (title: string, message?: string, duration?: number) => {
-      addToast({ type: 'warning', title, message, duration });
+      addToast({ type: "warning", title, message, duration });
     },
     info: (title: string, message?: string, duration?: number) => {
-      addToast({ type: 'info', title, message, duration });
+      addToast({ type: "info", title, message, duration });
     },
     remove: removeToast,
   };

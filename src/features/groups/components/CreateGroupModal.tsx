@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Loader2 } from 'lucide-react';
-import type { Group } from '../types/types';
+import type { Group } from '../types/group.type';
 
 interface CreateGroupModalProps {
   isOpen: boolean;
@@ -82,8 +82,8 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
               disabled={isLoading}
               placeholder="e.g. SE1801"
               className={`w-full px-4 py-2 border rounded-lg focus:outline-none transition ${errors.name
-                  ? 'border-red-500 focus:border-red-500'
-                  : 'border-gray-300 focus:border-orange-500'
+                ? 'border-red-500 focus:border-red-500'
+                : 'border-gray-300 focus:border-orange-500'
                 } disabled:bg-gray-100`}
             />
             {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
