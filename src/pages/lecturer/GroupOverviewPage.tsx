@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { useGroups, useGroupMembers, useAddGroupMember, useRemoveGroupMember } from '../../features/groups';
@@ -13,16 +13,22 @@ const GroupOverviewPage: React.FC = () => {
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
   const appAlert = useToast();
 
-  // Get all groups to find the selected one
-  const { data: groupsData, isLoading: isLoadingGroups } = useGroups({
-    params: {
+  // Memoize params to prevent duplicate requests
+  const groupsParams = useMemo(
+    () => ({
       searchQuery: '',
       sortBy: 'name' as const,
       sortOrder: 'asc' as const,
-    },
+    }),
+    []
+  );
+
+  // Get all groups to find the selected one
+  const { data: groupsData, isLoading: isLoadingGroups } = useGroups({
+    params: groupsParams,
   });
 
-  const selectedGroup = groupsData?.items.find((g) => g.id === groupId);
+  const selectedGroup = groupsData?.find((g) => g.id === groupId);
 
   // Get students in the group
   const { data: membersData, isLoading: isLoadingStudents } = useGroupMembers({
@@ -49,7 +55,7 @@ const GroupOverviewPage: React.FC = () => {
     },
   });
 
-  const students = membersData?.items || [];
+  const students = membersData || [];
 
   const handleRemoveStudent = async (studentId: string): Promise<void> => {
     if (!selectedGroup) return;
@@ -60,12 +66,24 @@ const GroupOverviewPage: React.FC = () => {
     });
   };
 
-  const handleAddStudent = async (studentId: string): Promise<void> => {
-    if (!selectedGroup) return;
-    await addStudentMutation.mutateAsync({
-      groupId: selectedGroup.id,
-      userId: studentId,
-    });
+  // Handle batch adding students to the group
+  const handleConfirmAddStudents = async (studentIds: string[]): Promise<void> => {
+    if (!selectedGroup || studentIds.length === 0) return;
+
+    try {
+      // Add each student one by one
+      for (const userId of studentIds) {
+        await addStudentMutation.mutateAsync({
+          groupId: selectedGroup.id,
+          userId,
+        });
+      }
+      appAlert.success('Success', `Added ${studentIds.length} student(s) to the group!`);
+      setShowAddStudentModal(false);
+    } catch (error) {
+      appAlert.error('Error', 'Failed to add one or more students');
+      console.error('Error adding students:', error);
+    }
   };
 
   if (isLoadingGroups || !selectedGroup) {
@@ -144,8 +162,8 @@ const GroupOverviewPage: React.FC = () => {
         group={selectedGroup}
         students={students}
         isLoading={addStudentMutation.isPending || removeStudentMutation.isPending}
-        onAddStudent={handleAddStudent}
         onRemoveStudent={handleRemoveStudent}
+        onConfirmAddStudents={handleConfirmAddStudents}
       />
     </div>
   );

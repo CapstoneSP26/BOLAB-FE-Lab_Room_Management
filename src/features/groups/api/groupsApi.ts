@@ -23,15 +23,16 @@ import type {
 
 // API endpoints
 const API_ENDPOINTS = {
-  GROUPS: '/api/groups',
-  GROUP_DETAIL: (groupId: string) => `/api/groups/${groupId}`,
-  GROUP_MEMBERS: (groupId: string) => `/api/groups/${groupId}/members`,
+  GROUPS: '/groups',
+  GROUP_DETAIL: (groupId: string) => `/groups/${groupId}`,
+  GROUP_MEMBERS: (groupId: string) => `/groups/${groupId}/members`,
   GROUP_MEMBER_DETAIL: (groupId: string, userId: string) =>
-    `/api/groups/${groupId}/members/${userId}`,
+    `/groups/${groupId}/members/${userId}`,
 } as const;
 
 /**
  * Get all groups owned by current lecturer
+ * Returns array of groups directly from backend
  */
 export const getGroups = async (
   params: GetGroupsParams = {}
@@ -90,6 +91,7 @@ export const deleteGroup = async (groupId: string): Promise<void> => {
 
 /**
  * Get all members of a group
+ * Returns array of members directly from backend
  */
 export const getGroupMembers = async (
   groupId: string,

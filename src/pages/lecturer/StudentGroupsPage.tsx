@@ -19,13 +19,19 @@ const StudentGroupsPage: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const appAlert = useToast();
 
-  // API Queries
-  const { data: groupsData, isLoading: isLoadingGroups } = useGroups({
-    params: {
+  // Memoize params to prevent duplicate requests from re-renders
+  const params = useMemo(
+    () => ({
       searchQuery: filters.searchQuery,
       sortBy: filters.sortBy,
       sortOrder: filters.sortOrder,
-    },
+    }),
+    [filters.searchQuery, filters.sortBy, filters.sortOrder]
+  );
+
+  // API Queries
+  const { data: groupsData, isLoading: isLoadingGroups } = useGroups({
+    params,
   });
 
   // Mutations
@@ -40,7 +46,7 @@ const StudentGroupsPage: React.FC = () => {
   });
 
   // Computed values
-  const groups = useMemo(() => groupsData?.items || [], [groupsData]);
+  const groups = useMemo(() => groupsData || [], [groupsData]);
   // Handlers
   const handleFilterChange = useCallback((newFilters: GroupFilterState) => {
     setFilters(newFilters);

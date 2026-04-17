@@ -42,10 +42,6 @@ export const GroupsGridCard: React.FC<GroupsGridCardProps> = ({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {groups.map((group) => {
-        const previewMembers: GroupMemberDto[] = group.members || [];
-        const visibleMembers = previewMembers.slice(0, 4);
-        const remainingMembers = Math.max((group.memberCount || 0) - visibleMembers.length, 0);
-
         return (
           <div key={group.id}>
             <div
@@ -60,42 +56,7 @@ export const GroupsGridCard: React.FC<GroupsGridCardProps> = ({
                 className="relative mt-4 flex justify-center"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="group/avatars inline-flex items-center">
-                  <div className="flex -space-x-2.5">
-                    {visibleMembers.map((member) => (
-                      <img
-                        key={member.id}
-                        src={member.user?.avatarUrl || getFallbackAvatar(member.userId, 0)}
-                        alt={member.user?.fullName || 'Student'}
-                        className="h-10 w-10 rounded-full border-2 border-white object-cover shadow-theme-sm ring-1 ring-gray-200 transition-transform duration-200 hover:z-10 hover:scale-110"
-                      />
-                    ))}
-                    {remainingMembers > 0 && (
-                      <div className="h-10 w-10 rounded-full border-2 border-white bg-gray-200 text-gray-700 text-xs font-bold flex items-center justify-center shadow-theme-sm">
-                        +{remainingMembers}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="pointer-events-none invisible absolute left-1/2 top-full z-30 mt-3 w-64 -translate-x-1/2 rounded-xl border border-gray-200 bg-white p-3 shadow-theme-lg opacity-0 transition-all duration-200 group-hover/avatars:visible group-hover/avatars:opacity-100">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      Student Preview
-                    </p>
-                    <div className="mt-2 space-y-2">
-                      {previewMembers.slice(0, 3).map((member) => (
-                        <div key={`${member.id}-tooltip`} className="flex items-center gap-2">
-                          <img
-                            src={member.user?.avatarUrl || getFallbackAvatar(member.userId, 1)}
-                            alt={member.user?.fullName || 'Student'}
-                            className="h-7 w-7 rounded-full border border-gray-200 object-cover"
-                          />
-                          <p className="text-xs font-medium text-gray-700">{member.user?.fullName || 'N/A'}</p>
-                        </div>
-                      ))}
-                    </div>
-                    <p className="mt-2 text-xs text-gray-500">Hover avatars to preview members</p>
-                  </div>
-                </div>
+                <Users className="w-8 h-8 text-gray-400" />
               </div>
 
               <div className="mt-4 space-y-1 text-left">
@@ -106,7 +67,7 @@ export const GroupsGridCard: React.FC<GroupsGridCardProps> = ({
               <div className="mt-5 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                   <Users size={16} className="text-gray-500" />
-                  {group.memberCount || 0} students
+                  <span>{group.membersCount || 0} students</span>
                 </div>
 
                 <div

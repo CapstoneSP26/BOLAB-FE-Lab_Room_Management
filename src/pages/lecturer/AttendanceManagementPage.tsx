@@ -50,11 +50,15 @@ export default function AttendanceManagementPage() {
           items?: ScheduleDto[];
           result?: { items?: ScheduleDto[] };
         };
+        result?: {
+          items?: ScheduleDto[];
+        };
       }
     | undefined;
 
   const bookingScheduleItems: ScheduleDto[] =
     bookingScheduleData?.items
+    || legacyScheduleEnvelope?.result?.items
     || legacyScheduleEnvelope?.data?.result?.items
     || legacyScheduleEnvelope?.data?.items
     || [];

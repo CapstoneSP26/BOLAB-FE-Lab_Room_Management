@@ -63,31 +63,23 @@ export const GroupStudentsTable: React.FC<GroupStudentsTableProps> = ({
         </thead>
         <tbody className="divide-y divide-gray-200">
           {students.map((member, index) => (
-            <tr key={member.id} className="hover:bg-gray-50 transition">
+            <tr key={member.userId} className="hover:bg-gray-50 transition">
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                 {index + 1}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                {member.user?.avatarUrl ? (
-                  <img
-                    src={member.user.avatarUrl}
-                    alt={member.user.fullName}
-                    className="w-10 h-10 rounded-full object-cover border border-gray-200"
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm">
-                    {member.user?.fullName?.charAt(0)?.toUpperCase()}
-                  </div>
-                )}
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm">
+                  {member.userName?.charAt(0)?.toUpperCase()}
+                </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                {member.user?.fullName}
+                {member.userName}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                {member.user?.studentCode}
+                {member.userCode || '-'}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                {member.user?.email || '-'}
+                {member.userEmail || '-'}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">

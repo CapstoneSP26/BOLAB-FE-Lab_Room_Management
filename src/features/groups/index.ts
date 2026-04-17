@@ -38,6 +38,7 @@ export type {
 
 // ===== QUERY KEYS =====
 export { GROUPS_QUERY_KEYS } from './hooks/useGroups';
+export { SEARCH_GROUP_MEMBERS_QUERY_KEYS } from './hooks/useSearchGroupMembers';
 
 // ===== HOOKS =====
 export {
@@ -51,6 +52,9 @@ export {
   useUpdateGroupMember,
   useRemoveGroupMember,
 } from './hooks/useGroups';
+
+// ===== SEARCH HOOKS =====
+export { useSearchGroupMembers } from './hooks/useSearchGroupMembers';
 
 // ===== IMPORT HOOKS =====
 export { useGroupImport } from './hooks/useGroupImport';

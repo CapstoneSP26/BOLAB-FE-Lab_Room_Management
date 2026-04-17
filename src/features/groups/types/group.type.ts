@@ -18,18 +18,19 @@ export interface GroupDto {
 /** Group with owner details (for listing) */
 export interface Group extends GroupDto {
   ownerName?: string;
-  memberCount?: number;
+  membersCount?: number;
   members?: GroupMemberDto[];
 }
 
 /** GroupMember DTO from backend */
 export interface GroupMemberDto {
-  id: string; // GUID
-  groupId: string; // GUID
   userId: string; // GUID - Student ID
+  userName: string; // Full name from backend
+  userCode?: string; // Student code from backend
+  userEmail?: string; // Email from backend
   subjectCode?: string; // Teacher's subject code for the student
-  group?: GroupDto;
-  user?: UserInfo;
+  groupId?: string; // GUID
+  id?: string; // GUID - if BE returns it
 }
 
 /** User info embedded in responses */
@@ -100,8 +101,9 @@ export interface PaginatedResponse<T> {
   pageSize: number;
 }
 
-export type GetGroupsResponse = PaginatedResponse<Group>;
-export type GetGroupMembersResponse = PaginatedResponse<GroupMemberDto>;
+// Backend returns arrays directly, not paginated responses
+export type GetGroupsResponse = Group[];
+export type GetGroupMembersResponse = GroupMemberDto[];
 
 /**
  * ===== FILTER & SEARCH STATE =====
