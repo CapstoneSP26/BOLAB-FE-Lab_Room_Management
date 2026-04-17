@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Settings, LogOut, ChevronDown } from 'lucide-react';
+import { useAuthStore } from '../../store/useAuthStore';
+import { Role } from '../../constants/role';
 
 interface ProfileMenuProps {
   userName?: string;
@@ -18,6 +20,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { user } = useAuthStore();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -36,14 +39,22 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
     };
   }, [isOpen]);
 
+  const getProfilePath = () => {
+    const userRole = user?.roles?.[0];
+    if (userRole === Role.Student) {
+      return '/student/profile';
+    }
+    return '/profile';
+  };
+
   const handleProfile = () => {
     setIsOpen(false);
-    navigate('/profile');
+    navigate(getProfilePath());
   };
 
   const handleSettings = () => {
     setIsOpen(false);
-    navigate('/profile');
+    navigate(getProfilePath());
   };
 
   const handleSignOut = () => {
@@ -125,13 +136,15 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
               <span>Profile</span>
             </button>
 
-            <button
-              onClick={handleSettings}
-              className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-            >
-              <Settings className="w-5 h-5 text-gray-500" />
-              <span>Settings</span>
-            </button>
+            {user?.roles?.[0] !== Role.Student && (
+              <button
+                onClick={handleSettings}
+                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+              >
+                <Settings className="w-5 h-5 text-gray-500" />
+                <span>Settings</span>
+              </button>
+            )}
           </div>
 
           {/* Sign Out */}
