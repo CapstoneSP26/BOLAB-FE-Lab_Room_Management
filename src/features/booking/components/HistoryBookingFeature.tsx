@@ -11,6 +11,8 @@ import { useEffect, useMemo, useState } from "react";
 import BookingRequestReviewModal from "./BookingRequestReviewModal";
 import HistoryBookingTable from "./HistoryBookingTable";
 import HistoryBookingFilter from "./HistoryBookingFilter";
+import RejectReasonModal from "./RejectReasonModal";
+import { BookingHistoryPagination } from "./BookingHistoryPagination";
 import { ReportStatCard } from "../../../components/ui/ComponentsParts";
 import { bookingRequestApi } from "../api/bookingApi";
 import { labroomApi } from "../../labroom/api/labroom.api";
@@ -56,6 +58,14 @@ export default function HistoryBookingFeature() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+
+  // Reject with reason state
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [rejectId, setRejectId] = useState<string | null>(null);
+
   const params: GetBookingRequestsRequest = useMemo(
     () => ({
       startDate: from || undefined,
@@ -64,12 +74,12 @@ export default function HistoryBookingFeature() {
       buildingId: buildingId === "ALL" ? undefined : buildingId,
       keyword: q.trim() || undefined,
       status: status === "All" ? undefined : status,
-      page: 1,
-      limit: 100,
+      page: page,
+      limit: limit,
       sortBy: "RequestedAt",
       isDescending: true,
     }),
-    [from, to, roomId, buildingId, q, status],
+    [from, to, roomId, buildingId, q, status, page, limit],
   );
 
   const historyQuery = useBookingRequestHistory(params);
@@ -102,9 +112,13 @@ export default function HistoryBookingFeature() {
     () => historyQuery.data?.data ?? [],
     [historyQuery.data],
   );
-  const totalCount = historyQuery.data?.total ?? items.length;
+  const totalCount = historyQuery.data?.total ?? 0;
   const loading = historyQuery.isLoading || historyQuery.isFetching;
   const selected: BookingRequest | null = detailQuery.data?.data ?? null;
+
+  const totalPages = Math.ceil(totalCount / limit);
+  const startIndex = (page - 1) * limit;
+  const endIndex = startIndex + items.length;
 
   const reload = async () => {
     await historyQuery.refetch();
@@ -116,20 +130,32 @@ export default function HistoryBookingFeature() {
     setOpen(true);
   };
 
-  const handleApprove = async () => {
-    if (!selected?.id) return;
+  const handleApprove = async (id: string) => {
+    if (!id) return;
 
-    await approveBookingMutation.mutateAsync(String(selected.id));
+    await approveBookingMutation.mutateAsync(id);
   };
 
-  const handleReject = async () => {
-    if (!selected?.id) return;
+  const handleOpenRejectModal = (id: string) => {
+    if (!id) return;
+    setRejectId(id);
+    setRejectModalOpen(true);
+  };
 
+  const handleConfirmReject = async (id: string, reason: string) => {
     await rejectBookingMutation.mutateAsync({
-      id: String(selected.id),
-      reason: "Rejected by Lab Manager",
+      id,
+      reason,
     });
+    setRejectModalOpen(false);
+    setRejectId(null);
+    closeModal();
   };
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [q, buildingId, roomId, status, from, to]);
 
   useEffect(() => {
     const loadLookups = async () => {
@@ -508,6 +534,17 @@ export default function HistoryBookingFeature() {
             onView={handleView}
           />
         </div>
+
+        {totalCount > 0 && (
+          <BookingHistoryPagination
+            filteredCount={totalCount}
+            startIndex={startIndex}
+            endIndex={endIndex}
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
+        )}
       </div>
 
       <BookingRequestReviewModal
@@ -515,7 +552,15 @@ export default function HistoryBookingFeature() {
         booking={selected}
         onClose={closeModal}
         onApprove={handleApprove}
-        onReject={handleReject}
+        handleOpenRejectModal={handleOpenRejectModal}
+      />
+
+      <RejectReasonModal
+        isOpen={rejectModalOpen}
+        onClose={() => setRejectModalOpen(false)}
+        onSubmit={handleConfirmReject}
+        isLoading={rejectBookingMutation.isPending}
+        rejectId={rejectId}
       />
     </div>
   );
