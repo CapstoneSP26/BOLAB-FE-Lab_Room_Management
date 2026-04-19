@@ -55,8 +55,8 @@ export default function IncidentModal({ open, incident, onClose }: Props) {
           <InfoRow label="Severity" value={incident.Severity} />
           <InfoRow label="Status" value={incident.Status} />
           <InfoRow label="Created At" value={fmt(incident.CreatedAt)} />
-          <InfoRow label="Resolved At" value={fmt(incident.ResolvedAt)} />
-          <InfoRow label="Resolved By" value={incident.ResolvedBy || "-"} />
+          <InfoRow label="Resolved At" value={fmt(incident.ResolvedAt ?? undefined)} />
+          <InfoRow label="Resolved By" value={incident.ResolvedBy ?? "-"} />
         </div>
 
         <div className="mt-5 rounded-xl border border-gray-200 p-4 dark:border-gray-700">

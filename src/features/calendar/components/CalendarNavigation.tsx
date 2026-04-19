@@ -7,6 +7,7 @@ interface CalendarNavigationProps {
   weekEnd: Date;
   weekOffset: number;
   onWeekChange: (newOffset: number) => void;
+  labRoomName?: string
 }
 
 export const CalendarNavigation: React.FC<CalendarNavigationProps> = ({
@@ -14,6 +15,7 @@ export const CalendarNavigation: React.FC<CalendarNavigationProps> = ({
   weekEnd,
   weekOffset,
   onWeekChange,
+  labRoomName
 }) => {
   return (
     <div className="flex items-center gap-4">
@@ -50,6 +52,14 @@ export const CalendarNavigation: React.FC<CalendarNavigationProps> = ({
           {format(weekStart, 'MMM dd')} – {format(weekEnd, 'MMM dd, yyyy')}
         </h2>
       </div>
+      {labRoomName && (
+        <div className="flex items-center gap-3">
+          <div className="w-1 h-8 bg-gradient-to-b from-blue-400 to-blue-500 rounded-full"></div>
+          <h2 className="text-xl font-bold text-gray-900 tracking-tight">
+            {labRoomName}
+          </h2>
+        </div>
+      )}
     </div>
   );
 };

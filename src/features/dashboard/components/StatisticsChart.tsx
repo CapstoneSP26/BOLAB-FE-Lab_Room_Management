@@ -20,25 +20,46 @@ interface StatisticsChartProps {
   stats?: DashboardStatsDto;
 }
 
+const FALLBACK_CATEGORIES = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+const normalizeToTwelveMonths = (values: number[]) => {
+  if (values.length >= 12) return values.slice(0, 12);
+  return [...values, ...Array(12 - values.length).fill(0)];
+};
+
 export default function StatisticsCard({ stats }: StatisticsChartProps) {
   const [selected, setSelected] = useState<OptionValue>("optionOne");
 
-  const hasData =
-    (stats?.monthlyBookings?.length ?? 0) > 0 ||
-    (stats?.monthlyIncidents?.length ?? 0) > 0;
+  const monthlyBookings = stats?.monthlyBookings ?? [];
+  const monthlyIncidents = stats?.monthlyIncidents ?? [];
+
+  const hasData = monthlyBookings.length > 0 || monthlyIncidents.length > 0;
 
   const series: Series[] = useMemo(
     () => [
       {
         name: "Bookings",
-        data: stats?.monthlyBookings ?? [],
+        data: normalizeToTwelveMonths(monthlyBookings),
       },
       {
         name: "Incidents",
-        data: stats?.monthlyIncidents ?? [],
+        data: normalizeToTwelveMonths(monthlyIncidents),
       },
     ],
-    [stats?.monthlyBookings, stats?.monthlyIncidents],
+    [monthlyBookings, monthlyIncidents],
   );
 
   const chartOptions: ApexOptions = useMemo(
@@ -48,7 +69,6 @@ export default function StatisticsCard({ stats }: StatisticsChartProps) {
         position: "top",
         horizontalAlign: "left",
       },
-      // giữ y như Vue (nếu bạn muốn để mặc định, có thể bỏ dòng colors)
       colors: ["#465FFF", "#9CB9FF"],
       chart: {
         fontFamily: "Outfit, sans-serif",
@@ -74,27 +94,12 @@ export default function StatisticsCard({ stats }: StatisticsChartProps) {
       dataLabels: { enabled: false },
       tooltip: {
         x: {
-          // NOTE: x-axis là category (Jan..Dec), format date không tác dụng.
-          // Mình giữ lại để giống Vue, nhưng có thể bỏ.
           format: "dd MMM yyyy",
         },
       },
       xaxis: {
         type: "category",
-        categories: [
-          "Jan",
-          "Feb",
-          "Mar",
-          "Apr",
-          "May",
-          "Jun",
-          "Jul",
-          "Aug",
-          "Sep",
-          "Oct",
-          "Nov",
-          "Dec",
-        ],
+        categories: FALLBACK_CATEGORIES,
         axisBorder: { show: false },
         axisTicks: { show: false },
         tooltip: { enabled: false },

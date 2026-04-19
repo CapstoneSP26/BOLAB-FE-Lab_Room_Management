@@ -1,6 +1,7 @@
 /**
  * Attendance Feature Types
  * BOLAB-30: QR Code Attendance System
+ * Aligned with Backend API
  */
 
 import type { ScheduleStatus } from '../../schedules/types/schedule.type';
@@ -8,166 +9,107 @@ import type { ScheduleStatus } from '../../schedules/types/schedule.type';
 /**
  * Attendance Status
  */
-export type AttendanceStatus = 'present' | 'absent' | 'late';
+export type AttendanceStatus = 'Present' | 'Absent';
 
 /**
  * Student Attendance Record
+ * Returned from GET /api/attendances/schedule/{scheduleId}
  */
-export interface StudentAttendance {
-  id: string;
+export interface AttendanceStudentDto {
   studentId: string;
   studentName: string;
-  studentEmail: string;
-  rollNumber: string;
-  scanTime?: string; // ISO date string
   status: AttendanceStatus;
-  ipAddress?: string;
-  deviceInfo?: string;
-}
-
-/**
- * QR Code Session
- * Represents an active QR code for attendance
- */
-export interface QRSession {
-  id: string;
-  bookingId: string;
-  roomName: string;
-  roomCode: string;
-  buildingName: string;
-  date: string; // ISO date string
-  startTime: string;
-  endTime: string;
-  lecturerName: string;
-  lecturerId: string;
-  qrToken: string; // Unique token for QR code
-  qrExpiry: string; // ISO date string
-  qrImageUrl?: string;
-  qrImageBase64?: string;
-  createdAt: string;
-  isActive: boolean;
-  totalStudents: number;
-  presentCount: number;
-  absentCount: number;
-}
-
-/**
- * Create QR Session Request
- */
-export interface CreateQRSessionRequest {
-  scheduleId: string;
-  isCheckIn: boolean;
-}
-
-/**
- * Create QR Session Response
- */
-export interface CreateQRSessionResponse {
-  success: boolean;
-  message: string;
-  data: QRSession;
-}
-
-/**
- * Get QR Session Response
- */
-export interface GetQRSessionResponse {
-  success: boolean;
-  message: string;
-  data: QRSession;
-}
-
-/**
- * Refresh QR Token Request
- */
-export interface RefreshQRTokenRequest {
-  sessionId: string;
-  expiryMinutes?: number;
-}
-
-/**
- * Refresh QR Token Response
- */
-export interface RefreshQRTokenResponse {
-  success: boolean;
-  message: string;
-  data: {
-    qrToken: string;
-    qrExpiry: string;
-    qrImageUrl?: string;
-    qrImageBase64?: string;
-  };
-}
-
-/**
- * End QR Session Request
- */
-export interface EndQRSessionRequest {
-  scheduleId: string;
-  isCheckIn: boolean;
-}
-
-/**
- * End QR Session Response
- */
-export interface EndQRSessionResponse {
-  success: boolean;
-  message: string;
-  data: {
-    sessionId: string;
-    isActive: boolean;
-  };
+  scanTime?: string; // ISO date string
 }
 
 /**
  * Get Attendance List Request
  */
 export interface GetAttendanceListRequest {
-  sessionId: string;
+  scheduleId: string;
 }
 
 /**
  * Get Attendance List Response
  */
 export interface GetAttendanceListResponse {
+  success?: boolean;
+  data?: AttendanceStudentDto[];
+}
+
+/**
+ * Generate QR Code Request
+ */
+export interface GenerateQRCodeRequest {
+  scheduleId: string;
+  isCheckIn: boolean;
+}
+
+/**
+ * Generate QR Code Response
+ * Returns base64 PNG image
+ */
+export interface GenerateQRCodeResponse {
+  success: boolean;
+  data: string; // base64 PNG image
+}
+
+/**
+ * Remove QR Code Request
+ */
+export interface RemoveQRCodeRequest {
+  scheduleId: string;
+  isCheckIn: boolean;
+}
+
+/**
+ * Remove QR Code Response
+ */
+export interface RemoveQRCodeResponse {
+  success: boolean;
+  data: string; // empty or status
+}
+
+/**
+ * Scan QR Code Request
+ */
+export interface ScanQRCodeRequest {
+  qrId: string;
+  scheduleId: string;
+  studentId: string;
+  isCheckIn: boolean;
+}
+
+/**
+ * Scan QR Code Response
+ */
+export interface ScanQRCodeResponse {
   success: boolean;
   message: string;
-  data: {
-    session: QRSession;
-    students: StudentAttendance[];
-  };
 }
 
 /**
- * Mark Attendance Request (for student scan)
- * Note: studentId and rollNumber are optional - backend will get from access token
+ * Submit Attendance Request
  */
-export interface MarkAttendanceRequest {
-  sessionId: string;
-  qrToken: string;
-  studentId?: string; // Optional - backend gets from token if not provided
-  rollNumber?: string; // Optional - backend gets from token if not provided
+export interface SubmitAttendanceCommand {
+  scheduleId: string;
+  attendanceItems: Array<{
+    userId: string;  // Changed from studentId to userId
+    status: number;  // 0 = Present, 1 = Absent
+  }>;
 }
 
 /**
- * Mark Attendance Response
+ * Submit Attendance Response
  */
-export interface MarkAttendanceResponse {
-  success: boolean;
-  message: string;
-  data: StudentAttendance;
+export interface SubmitAttendanceResponse {
+  message?: string;
+  success?: boolean;
 }
 
 /**
- * Export Attendance Request
- */
-export interface ExportAttendanceRequest {
-  sessionId: string;
-  format: 'csv' | 'excel' | 'pdf';
-}
-
-/**
- * Booking with QR Session info (for list)
+ * Booking with QR Session info (for UI list)
+ * Frontend-only type for rendering available bookings
  */
 export interface BookingWithQR {
   bookingId: string;
@@ -181,15 +123,8 @@ export interface BookingWithQR {
   purpose: string;
   hasQRSession: boolean;
   qrSessionId?: string;
-  isUpcoming: boolean; // Can create QR for upcoming bookings
+  isUpcoming: boolean;
   isPast: boolean;
 }
 
-/**
- * Get Lecturer Bookings Response (for QR management)
- */
-export interface GetLecturerBookingsResponse {
-  success: boolean;
-  message: string;
-  data: BookingWithQR[];
-}
+

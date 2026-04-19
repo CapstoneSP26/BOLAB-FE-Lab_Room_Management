@@ -8,6 +8,7 @@ import { FlexibleGridView } from '../../features/calendar/components/FlexibleGri
 import { getStartOfDayVNInUTC } from '../../utils/date.util';
 import { addDays } from 'date-fns';
 import { useParams } from 'react-router-dom';
+import { useLabRoomDetail } from '../../features/labroom/hooks/useLabRooms';
 
 
 /**
@@ -18,6 +19,8 @@ const CalendarTabletPage: React.FC = () => {
   const { labRoomId } = useParams();
   const [weekOffset, setWeekOffset] = useState(0);
   const { START_HOUR, END_HOUR } = CALENDAR_CONFIG;
+
+  const { data } = useLabRoomDetail(Number(labRoomId));
 
   const { weekDays, weekStart, weekEnd } = useMemo(() => {
     const days = getWeekDaysByOffset(weekOffset);
@@ -34,7 +37,6 @@ const CalendarTabletPage: React.FC = () => {
     startDate: getStartOfDayVNInUTC(weekStart),
     endDate: getStartOfDayVNInUTC(addDays(weekEnd, 1))
   });
-  console.log("Event : ", events)
 
   const gridRef = useRef<HTMLDivElement>(null);
 
@@ -56,6 +58,7 @@ const CalendarTabletPage: React.FC = () => {
           weekEnd={weekEnd}
           weekOffset={weekOffset}
           onWeekChange={setWeekOffset}
+          labRoomName={data?.roomName}
         />
       </div>
 

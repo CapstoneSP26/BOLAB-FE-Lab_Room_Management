@@ -3,6 +3,8 @@ import { Users, Wifi, Monitor, MoreVertical, Clock } from 'lucide-react';
 import { RoomStatusBadge } from '../../../components/ui/RoomStatusBadge';
 import type { RoomStatus } from '../../../components/ui/RoomStatusBadge';
 
+const FALLBACK_ROOM_IMAGE = 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&q=80&w=1200';
+
 interface RoomCardProps {
   name: string;
   capacity: number;
@@ -39,7 +41,17 @@ const RoomCard: React.FC<RoomCardProps> = ({
       }`}
     >
       <div className="relative h-40">
-        <img src={image} alt={name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+        <img
+          src={image || FALLBACK_ROOM_IMAGE}
+          alt={name}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          onError={(event) => {
+            const target = event.currentTarget;
+            if (target.src !== FALLBACK_ROOM_IMAGE) {
+              target.src = FALLBACK_ROOM_IMAGE;
+            }
+          }}
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />
         <div className="absolute -left-16 top-0 h-full w-24 bg-white/20 blur-xl rotate-12 transition-transform duration-700 group-hover:translate-x-80" />
         <div className="absolute top-3 right-3">

@@ -86,6 +86,19 @@ export interface ReportImage {
   FileType: string;
 }
 
+export interface Incident {
+  Id: string;
+  ReportId: string;
+  LabRoomId: number;
+  Title: string;
+  Description: string;
+  Severity: string;
+  Status: string;
+  CreatedAt: string;
+  ResolvedAt?: string | null;
+  ResolvedBy?: string | null;
+}
+
 export interface ReportReasonLookupItem {
   value: string;
   label: string;

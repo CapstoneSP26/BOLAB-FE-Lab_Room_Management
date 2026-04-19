@@ -18,7 +18,6 @@ export const useCalendarEvents = (params: UseCalendarEventProps) => {
   },
     params.calendarMode !== 'PUBLIC' // Chỉ gọi API Booking nếu không phải PUBLIC
   );
-  console.log("Params ; ", params)
 
   const schedulesQuery = params.calendarMode !== "PUBLIC" ?
     useSchedules({

@@ -80,10 +80,10 @@ export default function LabCalendar() {
         setRoomLookup(
           Array.isArray(response?.items)
             ? response.items.map((room) => ({
-                id: room.id,
-                roomName: room.roomName,
-                buildingName: room.buildingName,
-              }))
+              id: room.id,
+              roomName: room.roomName,
+              buildingName: room.buildingName,
+            }))
             : [],
         );
       } catch {
@@ -276,8 +276,6 @@ export default function LabCalendar() {
         open={csvOpen}
         onClose={() => setCsvOpen(false)}
         onImport={async (file) => {
-          const text = await file.text();
-          console.log("CSV content:", text);
           await reload();
         }}
         templateFileName="schedule_template.csv"

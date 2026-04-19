@@ -26,15 +26,16 @@ const HomePage: React.FC<HomePageProps> = () => {
     ? buildingsList.map((building: any) => ({
       id: building.id?.toString() || building.buildingName,
       name: building.buildingName || building.name,
-      description: building.description || '',
-      roomCount: building.roomCount || 0,
+      description: building.description || building.campusName || '',
+      campusName: building.campusName || '',
+      roomCount: building.roomCount ?? 0,
       image: building.buildingImageUrl || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=400',
       color: 'bg-gradient-to-br from-gray-600 to-gray-700',
     }))
     : [];
   const handleSelectBuilding = (buildingName: string) => {
     // Navigate to building detail page using buildingName
-    navigate(`/building/${encodeURIComponent(buildingName)}`);
+    navigate(`/buildings/${encodeURIComponent(buildingName)}`);
   };
 
   return (

@@ -10,6 +10,7 @@ import {
   ListBookingRequest,
   ListIcon,
   ImportFileIcon,
+  FPTLogo,
 } from "../../components/icon/index.ts";
 type IconProps = React.SVGProps<SVGSVGElement> & { size?: number };
 type IconComp = React.ComponentType<IconProps>;
@@ -56,6 +57,7 @@ const AppSidebar: React.FC = () => {
   } = useSidebar();
   const { user } = useAuthStore();
   const isAdmin = user && user.roles.includes("Admin") ? true : false;
+  const isManager = user && user.roles.includes("Manager") ? true : false;
   const base = "/labmanager";
   const p = (suffix: string) => `${base}${suffix}`;
 
@@ -71,51 +73,51 @@ const AppSidebar: React.FC = () => {
     </svg>
   );
   const menuGroups: MenuGroup[] = useMemo(() => {
-    // ===== ADMIN MENU =====
-    if (isAdmin) {
-      return [
-        {
-          title: "Menu",
-          items: [
-            { icon: GridIcon, name: "Dashboard", path: p("/dashboard") },
+    const items = [
+      // --- DASHBOARD (Chung) ---
+      { icon: GridIcon, name: "Dashboard", path: p("/dashboard") },
 
-            {
-              icon: ListBookingRequest,
-              name: "Booking Requests",
-              subItems: [
-                {
-                  name: "Upcoming Request",
-                  path: p("/booking-requests/pending"),
-                },
-                {
-                  name: "Approve/Reject History",
-                  path: p("/booking-requests/history"),
-                },
-              ],
-            },
+      // --- IMPORT (Chỉ Admin) ---
+      {
+        icon: ImportFileIcon,
+        name: "Import File",
+        show: isAdmin,
+        subItems: [
+          { name: "Import Booking", path: p("/booking-requests/import") },
+          { name: "Import User", path: p("/users/import") },
+          { name: "Import Groups", path: p("/groups/import") },
+        ],
+      },
 
-            {
-              icon: ImportFileIcon,
-              name: "Import File",
-              subItems: [
-                {
-                  name: "Import Booking",
-                  path: p("/booking-requests/import"),
-                },
-                {
-                  name: "Import User",
-                  path: p("/users/import"),
-                },
-              ],
-            },
+      // --- BOOKING REQUESTS (Chỉ Manager) ---
+      {
+        icon: ListBookingRequest,
+        name: "Booking Requests",
+        show: isManager,
+        subItems: [
+          { name: "Upcoming Request", path: p("/booking-requests/pending") },
+          { name: "Approve/Reject History", path: p("/booking-requests/history") },
+        ],
+      },
 
-            { icon: ListIcon, name: "Report List", path: p("/reports") },
+      // --- REPORTS & INCIDENTS (Chung) ---
+      { icon: ListIcon, name: "Report List", path: p("/reports") },
+      {
+        icon: IncidentHistoryIcon,
+        name: isAdmin ? "Incident Resolution History" : "Incident History",
+        path: p("/incident-history"),
+      },
 
-            {
-              icon: IncidentHistoryIcon,
-              name: "Incident Resolution History",
-              path: p("/incident-history"),
-            },
+      // --- LAB ROOMS & SCHEDULE (Phân quyền sâu) ---
+      {
+        icon: CalenderIcon,
+        name: isAdmin ? "Lab Rooms" : "Room Schedule",
+        path: !isAdmin ? p("/lab-scheduler") : undefined, // Manager chỉ có path, Admin có subItems
+        subItems: isAdmin ? [
+          { name: "Room Schedule", path: p("/lab-scheduler") },
+          { name: "Room Management", path: p("/room-management") }
+        ] : undefined,
+      },
 
             {
               icon: CalenderIcon,
@@ -125,97 +127,26 @@ const AppSidebar: React.FC = () => {
                 { name: "Room Management", path: p("/room-management") },
               ],
             },
+      // --- MANAGEMENT (Chỉ Admin) ---
+      {
+        icon: ListIcon,
+        name: "Slot Management",
+        path: p("/slot-management"),
+        show: isAdmin,
+      },
 
-            {
-              icon: ListIcon,
-              name: "Campus Management",
-              subItems: [
-                { name: "Buildings Management", path: p("/campus/buildings") },
-                { name: "Rooms Management", path: p("/campus/rooms") },
-              ],
-            },
-
-            {
-              icon: ListIcon,
-              name: "Slot Management",
-              path: p("/slot-management"),
-            },
-
-            {
-              icon: UserCircleIcon,
-              name: "User Management",
-              path: p("/users"),
-            },
-
-            {
-              icon: UserCircleIcon,
-              name: "User Profile",
-              path: p("/user-profile"),
-            },
-          ],
-        },
-      ];
-    }
+      // --- PROFILE (Chung) ---
+      { icon: UserCircleIcon, name: "User Profile", path: p("/user-profile") },
+    ];
 
     return [
       {
         title: "Menu",
-        items: [
-          { icon: GridIcon, name: "Dashboard", path: p("/dashboard") },
-          {
-            icon: CalenderIcon,
-            name: "Room Schedule",
-            path: p("/lab-scheduler"),
-          },
-          {
-            icon: ListIcon,
-            name: "Schedules & Slots",
-            path: p("/slot-management"),
-          },
-          {
-            icon: ListBookingRequest,
-            name: "Booking Requests",
-            subItems: [
-              {
-                name: "Upcoming Request",
-                path: p("/booking-requests/pending"),
-              },
-              {
-                name: "Approve/Reject History",
-                path: p("/booking-requests/history"),
-              },
-            ],
-          },
-
-          {
-            icon: ImportFileIcon,
-            name: "Import File",
-            subItems: [
-              {
-                name: "Import Booking",
-                path: p("/booking-requests/import"),
-              },
-              {
-                name: "Import User",
-                path: p("/users/import"),
-              },
-            ],
-          },
-          { name: "Report List", icon: ListIcon, path: p("/reports") },
-          {
-            icon: IncidentHistoryIcon,
-            name: "Incident History",
-            path: p("/incident-history"),
-          },
-          {
-            icon: UserCircleIcon,
-            name: "User Profile",
-            path: p("/user-profile"),
-          },
-        ],
+        // Lọc các item dựa trên thuộc tính 'show'. Nếu không có 'show' mặc định là hiện.
+        items: items.filter(item => item.show !== false),
       },
     ];
-  }, [user]);
+  }, [isAdmin, isManager]);
 
   const isActive = useCallback(
     (path: string) => location.pathname === path,
@@ -266,33 +197,7 @@ const AppSidebar: React.FC = () => {
           !isExpanded && !isHovered ? "lg:justify-center" : "justify-start",
         ].join(" ")}
       >
-        <Link to="/">
-          {isExpanded || isHovered || isMobileOpen ? (
-            <>
-              <img
-                className="dark:hidden"
-                src="/images/logo/logo.svg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-              <img
-                className="hidden dark:block"
-                src="/images/logo/logo-dark.svg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-            </>
-          ) : (
-            <img
-              src="/images/logo/logo-icon.svg"
-              alt="Logo"
-              width={32}
-              height={32}
-            />
-          )}
-        </Link>
+        <FPTLogo />
       </div>
 
       <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">

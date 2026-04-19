@@ -19,14 +19,16 @@ import {
 import type { ValidateImportQuery, CommitImportCommand } from "../types/importBooking.type";
 import { useBookingImport } from "../hooks/useBookingImport";
 import { useToast } from "../../../hooks/useToast";
+import type { SemesterInfo } from "../../../utils/semester.util";
 
 interface FixedImportPanelProps {
   onImportComplete?: () => void;
+  semester: SemesterInfo;
 }
 
 const pageSize = 10;
 
-export default function FixedImportPanel({ onImportComplete }: FixedImportPanelProps) {
+export default function FixedImportPanel({ onImportComplete, semester }: FixedImportPanelProps) {
   const {
     validateScheduleRows,
     commitScheduleRows,
@@ -238,6 +240,8 @@ export default function FixedImportPanel({ onImportComplete }: FixedImportPanelP
     try {
       const payload: ValidateImportQuery = {
         Schedules: toScheduleRows(rows),
+        StartTime: semester.startDate.toISOString(),
+        EndTime: semester.endDate.toISOString()
       };
 
       const response = await validateScheduleRows(payload);
@@ -311,6 +315,8 @@ export default function FixedImportPanel({ onImportComplete }: FixedImportPanelP
     try {
       const payload: CommitImportCommand = {
         Schedules: toScheduleRows(rows),
+        StartTime: semester.startDate.toISOString(),
+        EndTime: semester.endDate.toISOString()
       };
 
       const response = await commitScheduleRows(payload);
@@ -690,9 +696,6 @@ function TableRow({
   hasValidated,
   onUpdateCell,
 }: TableRowProps) {
-  if (rowNumber === 9) {
-    console.log("Validation errors for row", rowNumber, validationErrors); // Debug log to inspect validation errors for this row
-  }
   return (
     <tr>
       <td className="px-3 py-2 align-top text-gray-500 dark:text-gray-400">
@@ -704,10 +707,6 @@ function TableRow({
         const hasError = Boolean(validationErrors[errorKey]);
         const isModified = Boolean(modifiedCells[errorKey]);
         const isValidatedSuccess = hasValidated && isModified && !hasError;
-        if (rowNumber === 9) {
-          console.log(` Row ${rowNumber} - Field: ${field}, ErrorKey: ${errorKey}, HasError: ${hasError}, IsModified: ${isModified}, IsValidatedSuccess: ${isValidatedSuccess}`); // Debug log to inspect cell state for this row
-          console.log(`row field : ${row} | ValidationErrors:`); // Debug log to inspect validation errors object for this row
-        }
 
         return (
           <td key={`${row.id}-${column}`} className="relative px-2 py-2 align-top">

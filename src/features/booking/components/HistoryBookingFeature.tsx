@@ -129,6 +129,21 @@ export default function HistoryBookingFeature() {
     setOpen(true);
   };
 
+  // const handleApprove = async () => {
+  //   if (!selected?.id) return;
+
+  //   await approveBookingMutation.mutateAsync(String(selected.id));
+  // };
+
+  // const handleReject = async () => {
+  //   if (!selected?.id) return;
+
+  //   await rejectBookingMutation.mutateAsync({
+  //     id: String(selected.id),
+  //     reason: "Rejected by Lab Manager",
+  //   });
+  // };
+
   useEffect(() => {
     const loadLookups = async () => {
       setLookupLoading(true);

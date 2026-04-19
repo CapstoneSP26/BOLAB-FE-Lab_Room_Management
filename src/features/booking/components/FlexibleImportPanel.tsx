@@ -25,15 +25,18 @@ import type {
 } from "../types/importBooking.type";
 import { useBookingFlexibleImport } from "../hooks/useBookingFlexibleImport";
 import { useToast } from "../../../hooks/useToast";
+import type { SemesterInfo } from "../../../utils/semester.util";
 
 interface FlexibleImportPanelProps {
   onImportComplete?: () => void;
+  semester: SemesterInfo
 }
 
 const pageSize = 10;
 
 export default function FlexibleImportPanel({
   onImportComplete,
+  semester,
 }: FlexibleImportPanelProps) {
   const toast = useToast();
   const {
@@ -225,6 +228,8 @@ export default function FlexibleImportPanel({
     try {
       const payload: ValidateFlexibleSlotImportRequest = {
         Schedules: toFlexibleSlotRows(flexibleRows),
+        StartTime: semester.startDate.toISOString(),
+        EndTime: semester.endDate.toISOString()
       };
 
       const response = await validateFlexibleScheduleMutation.mutateAsync(payload);
@@ -236,7 +241,6 @@ export default function FlexibleImportPanel({
         // Backend returns rowNumber as 0, use data.index instead for correct row number
         const rowNum = (rowResult.data?.index ?? rowResult.rowNumber ?? rowResult.RowNumber) ?? 0;
         const errorsData = rowResult.Errors ?? rowResult.errors ?? [];
-        console.log(`Processing validation for row ${rowNum}:`, errorsData);
         errorsData.forEach((error: any) => {
           const resolvedField =
             resolveFieldFlexibleFromText(error.FieldName ?? error.fieldName ?? "") ??
@@ -297,6 +301,8 @@ export default function FlexibleImportPanel({
     try {
       const payload: CommitFlexibleSlotImportRequest = {
         Schedules: toFlexibleSlotRows(flexibleRows),
+        StartTime: semester.startDate.toISOString(),
+        EndTime: semester.endDate.toISOString()
       };
 
       const response = await commitFlexibleScheduleMutation.mutateAsync(payload);
@@ -676,7 +682,6 @@ function FlexibleTableRow({
   validationErrors,
   onUpdateCell,
 }: FlexibleTableRowProps) {
-  console.log("Rendering row:", validationErrors, row);
   return (
     <tr>
       <td className="px-3 py-2 align-top text-gray-500 dark:text-gray-400">

@@ -306,14 +306,42 @@ export const notificationApi = {
   async getNotifications(
     params: GetNotificationsRequest = {},
   ): Promise<GetNotificationsResponse> {
-    const response = await axiosInstance.get(NOTIFICATION_API.LIST, {
-      params: {
-        pageNumber: params.pageNumber ?? 1,
-        pageSize: params.pageSize ?? 8,
-      },
-    });
+    const pageNumber = params.pageNumber ?? 1;
+    const pageSize = params.pageSize ?? 8;
 
-    return normalizeNotificationsResponse(response.data);
+    const requestCandidates = [
+      () =>
+        axiosInstance.get('/Profile/notifications', {
+          params: { pageNumber, pageSize },
+        }),
+      () =>
+        axiosInstance.get('/Profile/notifications', {
+          params: { page: pageNumber, pageSize },
+        }),
+      () =>
+        axiosInstance.get(NOTIFICATION_API.LIST, {
+          params: { pageNumber, pageSize },
+        }),
+      () =>
+        axiosInstance.get(NOTIFICATION_API.LIST, {
+          params: { page: pageNumber, pageSize },
+        }),
+    ];
+
+    let lastError: unknown = null;
+
+    for (const request of requestCandidates) {
+      try {
+        const response = await request();
+        return normalizeNotificationsResponse(response.data);
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw lastError instanceof Error
+      ? lastError
+      : new Error('Cannot load notifications from all known endpoints.');
   },
 
   async markAllRead(): Promise<void> {

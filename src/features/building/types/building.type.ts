@@ -5,6 +5,7 @@ export interface BuildingDto {
   buildingImageUrl?: string;
   description: string;
   campusName: string;
+  roomCount: number;
 }
 
 export interface GetBuildingsQuery {
@@ -19,6 +20,7 @@ export interface Building {
   id: number;
   name: string;
   description: string;
+  campusName?: string;
   roomCount: number;
   image: string;
   color?: string;
@@ -31,6 +33,7 @@ export interface BuildingResponse {
   description: string;
   buildingImageUrl: string;
   campusName?: string;
+  roomCount: number;
 }
 
 export interface GetBuildingsResponse {

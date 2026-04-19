@@ -10,9 +10,8 @@ type MenuItem = {
 function ChevronDownIcon({ rotated }: { rotated: boolean }) {
   return (
     <svg
-      className={`transition-transform duration-200 ${
-        rotated ? "rotate-180" : ""
-      }`}
+      className={`transition-transform duration-200 ${rotated ? "rotate-180" : ""
+        }`}
       width="20"
       height="20"
       viewBox="0 0 20 20"
@@ -118,7 +117,6 @@ export default function UserMenu() {
   const closeDropdown = () => setDropdownOpen(false);
 
   const signOut = () => {
-    console.log("Signing out...");
     closeDropdown();
     // Logic clear auth should be added here
     navigate("/signin");

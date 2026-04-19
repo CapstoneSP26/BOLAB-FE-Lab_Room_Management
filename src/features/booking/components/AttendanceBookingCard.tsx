@@ -1,7 +1,7 @@
 import { Building2, Calendar, Clock, ExternalLink, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { BookingWithQR } from '../../attendance/types/attendance.type';
-import { formatBookingTimeLabel, formatUtcDateLabel, isBookingUpcoming } from '../../../utils/date.util';
+import { formatBookingTimeLabel, formatUtcDateLabel, isBookingUpcoming, convertHoursUtcToVN } from '../../../utils/date.util';
 
 interface AttendanceBookingCardProps {
   booking: BookingWithQR;
@@ -15,6 +15,9 @@ export function AttendanceBookingCard({ booking }: AttendanceBookingCardProps) {
     NotYet: 'bg-amber-50 text-amber-700 border-amber-200',
     Finish: 'bg-slate-100 text-slate-700 border-slate-200',
     Done: 'bg-slate-100 text-slate-700 border-slate-200',
+    InProcess: 'bg-blue-50 text-blue-700 border-blue-200',
+    Completed: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    Cancelled: 'bg-rose-50 text-rose-700 border-rose-200',
   };
 
   return (
@@ -48,7 +51,7 @@ export function AttendanceBookingCard({ booking }: AttendanceBookingCardProps) {
             <div className="flex items-center gap-2 text-slate-600">
               <Clock className="w-4 h-4 flex-shrink-0" />
               <span className="text-sm tabular-nums">
-                {formatBookingTimeLabel(booking.date, booking.startTime)} - {formatBookingTimeLabel(booking.date, booking.endTime)}
+                {convertHoursUtcToVN(formatBookingTimeLabel(booking.date, booking.startTime))} - {convertHoursUtcToVN(formatBookingTimeLabel(booking.date, booking.endTime))}
               </span>
             </div>
           </div>

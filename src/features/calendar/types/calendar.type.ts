@@ -53,6 +53,7 @@ export interface CalendarEvent {
   rawOrigin: unknown; // Giữ lại data gốc nếu cần hiển thị Modal chi tiết
   color?: string;
   slotName?: string; // Tên loại slot, dùng để hiển thị trong tooltip
+  groupName?: string
 }
 
 export interface Schedule {

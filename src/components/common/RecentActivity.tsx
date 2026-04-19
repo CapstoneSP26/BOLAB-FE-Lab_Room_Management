@@ -82,7 +82,7 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({
       </div>
       
       <div className="p-4 space-y-3 max-h-96 overflow-y-auto custom-scrollbar">
-        {displayedActivities.map((activity, index) => {
+        {displayedActivities.map((activity) => {
           const Icon = activityIcons[activity.type];
           const colorClass = activityColors[activity.type];
 

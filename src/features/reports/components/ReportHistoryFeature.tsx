@@ -15,6 +15,7 @@ import {
   EmptyState,
   LoadingSkeleton,
 } from "../../../components/ui/ComponentsParts";
+
 export default function ReportHistoryFeature() {
   const nav = useNavigate();
 
@@ -41,6 +42,7 @@ export default function ReportHistoryFeature() {
     sortBy: "CreatedAt",
     isDescending: true,
   });
+
   const items = useMemo(() => pagedReports?.items ?? [], [pagedReports?.items]);
   const totalCount = pagedReports?.totalCount ?? items.length;
 
@@ -119,12 +121,11 @@ export default function ReportHistoryFeature() {
     setRoomId("ALL");
   };
   const loading = isLoading || isFetching;
+
   return (
     <div className="space-y-6">
-      {/* Hero Header */}
       <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-white via-red-50/30 to-orange-50/20 p-6 shadow-sm dark:border-gray-700 dark:from-gray-800/50 dark:via-red-900/5 dark:to-orange-900/5">
         <div className="flex flex-col gap-6">
-          {/* Title Section */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-start gap-4">
               <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-red-500 to-orange-600 shadow-lg shadow-red-500/20">
@@ -146,25 +147,17 @@ export default function ReportHistoryFeature() {
               disabled={loading}
               className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
             >
-              <RefreshCw
-                className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
-              />
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
               Refresh
             </button>
           </div>
 
-          {/* Stats Dashboard */}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <ReportStatCard
               label="Resolved Reports"
               value={stats.totalResolved}
               icon={
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -179,9 +172,7 @@ export default function ReportHistoryFeature() {
         </div>
       </div>
 
-      {/* Collapsible Filter Card */}
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all dark:border-gray-700 dark:bg-gray-800/50">
-        {/* Filter Header */}
         <button
           type="button"
           onClick={() => setShowFilters(!showFilters)}
@@ -206,12 +197,7 @@ export default function ReportHistoryFeature() {
 
               {hasActiveFilters && (
                 <span className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 dark:border-blue-800 dark:bg-blue-500/10 dark:text-blue-400">
-                  <svg
-                    className="h-3 w-3"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
+                  <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -246,12 +232,9 @@ export default function ReportHistoryFeature() {
           </div>
         </button>
 
-        {/* Filter Content */}
         <div
           className={`grid transition-all duration-300 ease-in-out ${
-            showFilters
-              ? "grid-rows-[1fr] opacity-100"
-              : "grid-rows-[0fr] opacity-0"
+            showFilters ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
           }`}
         >
           <div className="overflow-hidden">
@@ -263,11 +246,9 @@ export default function ReportHistoryFeature() {
                 onBuildingId={(value) => {
                   setBuildingId(value);
                   setRoomId("ALL");
-                  // Auto-reload happens via useEffect
                 }}
                 roomId={roomId}
                 onRoomId={setRoomId}
-                // Auto-reload happens via useEffect
                 buildingOptions={buildingOptions}
                 roomOptions={roomOptions}
                 onReset={handleReset}
@@ -277,7 +258,6 @@ export default function ReportHistoryFeature() {
         </div>
       </div>
 
-      {/* Results Card */}
       <div className="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800/50">
         {(loading || lookupLoading) && items.length === 0 ? (
           <LoadingSkeleton />
@@ -298,12 +278,7 @@ export default function ReportHistoryFeature() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white shadow-sm dark:bg-gray-700">
-                    <svg
-                      className="h-5 w-5 text-gray-600 dark:text-gray-300"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
+                    <svg className="h-5 w-5 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -317,9 +292,7 @@ export default function ReportHistoryFeature() {
                       Issue Reports
                     </h3>
                     {hasActiveFilters && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Filtered results
-                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Filtered results</p>
                     )}
                   </div>
                 </div>
@@ -332,12 +305,7 @@ export default function ReportHistoryFeature() {
                     </div>
                   )}
                   <span className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm dark:border-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                    <svg
-                      className="h-4 w-4 text-gray-400"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
+                    <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
