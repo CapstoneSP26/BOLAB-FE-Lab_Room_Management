@@ -21,7 +21,6 @@ export const useNotifications = (options: UseNotificationsOptions = {}) => {
     queryFn: () => notificationApi.getNotifications(params),
     staleTime: 60 * 1000,
     gcTime: 5 * 60 * 1000,
-    refetchInterval: 60 * 1000,
     enabled,
   });
 };

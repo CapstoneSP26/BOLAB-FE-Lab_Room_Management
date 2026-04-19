@@ -81,7 +81,6 @@ export const useStats = (options: UseStatsOptions = {}) => {
     enabled,
     staleTime: 1 * 60 * 1000, // 1 phút
     gcTime: 5 * 60 * 1000, // 5 phút
-    refetchInterval: 30 * 1000, // Refetch mỗi 30s để cập nhật real-time
   });
 };
 

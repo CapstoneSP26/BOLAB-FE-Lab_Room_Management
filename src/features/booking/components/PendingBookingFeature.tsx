@@ -75,11 +75,12 @@ export default function PendingBookingFeature() {
     setRejectModalOpen(false);
   };
 
-  const items = useMemo(
-    () => pendingQuery.data?.data ?? [],
-    [pendingQuery.data],
+  const rawData: any = pendingQuery.data;
+  const items = useMemo<BookingRequest[]>(
+    () => rawData?.data ?? rawData?.items ?? [],
+    [rawData],
   );
-  const totalCount = pendingQuery.data?.total ?? items.length;
+  const totalCount = rawData?.total ?? rawData?.totalCount ?? items.length;
   const loading = pendingQuery.isLoading || pendingQuery.isFetching;
 
   const reload = async () => {

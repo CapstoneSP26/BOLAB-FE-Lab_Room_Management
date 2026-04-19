@@ -108,11 +108,12 @@ export default function HistoryBookingFeature() {
     },
   });
 
-  const items = useMemo(
-    () => historyQuery.data?.data ?? [],
-    [historyQuery.data],
+  const rawData: any = historyQuery.data;
+  const items = useMemo<BookingRequest[]>(
+    () => rawData?.data ?? rawData?.items ?? [],
+    [rawData],
   );
-  const totalCount = historyQuery.data?.total ?? 0;
+  const totalCount = rawData?.total ?? rawData?.totalCount ?? 0;
   const loading = historyQuery.isLoading || historyQuery.isFetching;
   const selected: BookingRequest | null = detailQuery.data?.data ?? null;
 
