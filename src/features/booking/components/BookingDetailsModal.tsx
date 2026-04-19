@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Calendar, Clock, FileText, MapPin, User, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import type { Booking, BookingStatus } from '../types/booking.type';
+import { convertHoursUtcToVN } from '../../../utils/date.util';
 
 interface BookingDetailsModalProps {
   isOpen: boolean;
@@ -134,7 +135,7 @@ export const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
                     <p className="text-xs text-purple-600 font-semibold uppercase tracking-wide">Time</p>
                   </div>
                   <p className="text-sm font-bold text-gray-900">
-                    {booking.startTime} - {booking.endTime}
+                    {convertHoursUtcToVN(booking.startTime)} - {convertHoursUtcToVN(booking.endTime)}
                   </p>
                 </div>
               </div>
@@ -158,6 +159,26 @@ export const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
                     <p className="text-xs text-green-600 font-semibold uppercase tracking-wide">Booked By</p>
                   </div>
                   <p className="text-sm font-semibold text-gray-900">{booking.userName}</p>
+                </div>
+              )}
+
+              {/* Created At */}
+              {booking.createdAt && (
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Calendar className="w-4 h-4 text-gray-600" />
+                    <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide">Created At</p>
+                  </div>
+                  <p className="text-sm text-gray-900">
+                    {new Date(booking.createdAt).toLocaleString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: true
+                    })}
+                  </p>
                 </div>
               )}
             </div>

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Calendar as CalendarIcon, List, Building2, Info } from "lucide-react";
+import { Calendar as CalendarIcon, Building2, Info } from "lucide-react";
 import { BookingConfirmPanel } from "../../features/booking/components/BookingConfirmPanel";
 import { BookingSuccessModal } from "../../features/booking/components/BookingSuccessModal";
 import { useCreateBooking } from "../../features/booking/hooks/useCreateBooking";
@@ -22,9 +22,6 @@ import { PolicyType } from "../../features/labroom";
 import { useSlotStore } from "../../store/slotStore";
 import { useNotificationStore } from "../../features/notifications/store/notificationStore";
 import { useSlotTypes } from "../../features/slot/hooks/useSlotType";
-import type { AxiosError } from "axios";
-
-type BookingView = "calendar" | "list";
 
 /**
  * 🗓️ Room Booking Page - Google Calendar Style
@@ -37,7 +34,6 @@ const RoomBookingPage: React.FC = () => {
   const roomIdParam = searchParams.get("roomId") ?? "";
   const buildingIdParam = searchParams.get("buildingId") ?? "";
   const appAlert = useToast();
-  const [activeView, setActiveView] = useState<BookingView>("calendar");
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const [successData, setSuccessData] = useState<{
@@ -178,9 +174,9 @@ const RoomBookingPage: React.FC = () => {
 
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-gray-50">
-      <div className="flex flex-col overflow-hidden">
+      <div className="flex flex-col overflow-hidden h-full">
         {/* Left Sidebar - Room Selector & View Toggle */}
-        <div className="w-[420px] bg-white flex flex-col border-r-4 border-orange-300 overflow-y-auto shadow-[4px_0_12px_-2px_rgba(251,146,60,0.15)]">
+        <div className="w-[420px] bg-white flex flex-col h-full border-r-4 border-orange-300 overflow-y-auto shadow-[4px_0_12px_-2px_rgba(251,146,60,0.15)]">
           {/* Header */}
           <div className="px-6 py-5 bg-gradient-to-br from-orange-50 to-white border-b-2 border-orange-200">
             <h1 className="text-xl font-bold text-gray-900 mb-1 flex items-center gap-2">
@@ -212,47 +208,18 @@ const RoomBookingPage: React.FC = () => {
             />
           </div>
 
-          {/* View Toggle */}
-          <div className="px-6 py-4 border-b border-gray-200">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              View Mode
-            </label>
-            <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
-              <button
-                onClick={() => setActiveView("calendar")}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all text-sm font-medium ${activeView === "calendar"
-                  ? "bg-white text-orange-600 shadow-sm border border-orange-200"
-                  : "text-gray-600 hover:text-gray-900"
-                  }`}
-              >
-                <CalendarIcon className="w-4 h-4" />
-                <span>Calendar</span>
-              </button>
-              <button
-                onClick={() => setActiveView("list")}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all text-sm font-medium ${activeView === "list"
-                  ? "bg-white text-orange-600 shadow-sm border border-orange-200"
-                  : "text-gray-600 hover:text-gray-900"
-                  }`}
-              >
-                <List className="w-4 h-4" />
-                <span>List</span>
-              </button>
+          {/* Instructions - Inside sidebar */}
+          <div className="px-4 py-4 bg-cyan-50 border border-cyan-500 rounded-lg mx-3 my-4">
+            <div className="flex items-start gap-2 mb-3">
+              <Info className="w-4 h-4 text-cyan-600 mt-0.5" />
+              <p className="font-semibold text-cyan-900 text-sm">How to book</p>
             </div>
+            <ol className="space-y-2 text-xs text-cyan-800 pl-6 list-decimal">
+              <li>Select campus, building & room</li>
+              <li>Drag on calendar to pick time slot</li>
+              <li>Confirm booking details</li>
+            </ol>
           </div>
-        </div>
-        {/* Instructions - Integrated into sidebar */}
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-          <div className="flex items-start gap-2 mb-3">
-            <Info className="w-4 h-4 text-orange-600 mt-0.5" />
-            <p className="font-semibold text-gray-900 text-sm">How to book</p>
-          </div>
-          <ol className="space-y-2 text-xs text-gray-700 pl-6 list-decimal">
-            <li>Select campus, building & room</li>
-            <li>Choose Calendar or List view</li>
-            <li>Drag on calendar or pick time slot</li>
-            <li>Confirm booking details</li>
-          </ol>
         </div>
       </div>
 
@@ -270,7 +237,7 @@ const RoomBookingPage: React.FC = () => {
               </p>
             </div>
           </div>
-        ) : activeView === "calendar" ? (
+        ) : (
           <WeeklyCalendar
             policies={policies}
             calendarMode="LAB_SPECIFIC"
@@ -282,25 +249,7 @@ const RoomBookingPage: React.FC = () => {
             onWeekChange={setWeekOffset}
             slotTypes={slotTypes}
           />
-        ) : // <div className="flex-1 overflow-auto p-8 bg-gradient-to-b from-white to-gray-50">
-          //   <div className="max-w-6xl mx-auto">
-          //     <AvailableSlotList
-          //       slots={displaySlots}
-          //       selectedSlotIds={selectedSlotIds}
-          //       onSelectSlot={(slotId) => {
-          //         setSelectedSlotIds((prev) =>
-          //           prev.includes(slotId)
-          //             ? prev.filter((id) => id !== slotId)
-          //             : [...prev, slotId],
-          //         );
-          //       }}
-          //       onBookSelected={handleBookSelectedSlots}
-          //       multiSelect={true}
-          //       loading={slotsLoading}
-          //     />
-          //   </div>
-          // </div>
-          null}
+        )}
       </div>
       {/* Panel xác nhận nhanh (Slide-in từ bên phải) */}
       {pendingBooking && (
