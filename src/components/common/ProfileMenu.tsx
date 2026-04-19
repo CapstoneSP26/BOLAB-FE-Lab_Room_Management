@@ -43,7 +43,9 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
 
   const handleSettings = () => {
     setIsOpen(false);
-    navigate('/profile');
+    navigate('/profile', {
+      state: { openNotifications: true },
+    });
   };
 
   const handleSignOut = () => {

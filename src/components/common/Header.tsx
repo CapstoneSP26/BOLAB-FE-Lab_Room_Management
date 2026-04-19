@@ -46,13 +46,6 @@ const Header: React.FC = () => {
     profile?.userImageUrl?.trim() ||
     'https://randomuser.me/api/portraits/men/32.jpg';
 
-  // Mock badge counts - Replace with real data from API/state
-  const badgeCounts = {
-    'book-room': 0,
-    'my-bookings': 3, // 3 pending approvals
-    attendance: 2, // 2 active sessions
-  };
-
   // Active sessions from global context (shared with AttendancePage)
   const activeSessions = activeSession && activeSession.isActive && activeSession.qrExpiry
     ? [
@@ -64,6 +57,13 @@ const Header: React.FC = () => {
         },
       ]
     : [];
+
+  // Badge counts sourced from real data when available
+  const badgeCounts = {
+    'book-room': 0,
+    'my-bookings': 0,
+    attendance: activeSessions.length,
+  };
 
   // Navigation items
   const navItems = [
@@ -130,6 +130,9 @@ const Header: React.FC = () => {
                     type={item.badgeKey === 'attendance' ? 'success' : 'warning'}
                     pulse={item.badgeKey === 'attendance'}
                   />
+                )}
+                {item.badgeKey === 'attendance' && badgeCount > 0 && (
+                  <span className="h-2.5 w-2.5 rounded-full bg-green-500 shadow-[0_0_0_4px_rgba(34,197,94,0.15)]" />
                 )}
               </Link>
             );
