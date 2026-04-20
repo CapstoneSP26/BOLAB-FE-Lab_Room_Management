@@ -1,4 +1,4 @@
-import { AlertCircle, Calendar, CheckCircle, XCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 import { AnimatedCounter } from '../../../components/ui/AnimatedCounter';
 import { SkeletonStatsCard } from '../../../components/ui/Skeleton';
 import type { BookingStats } from '../types/booking.type';
@@ -12,8 +12,7 @@ interface BookingHistoryStatsProps {
 export function BookingHistoryStats({ isLoading, hasStatsData, stats }: BookingHistoryStatsProps) {
   if (isLoading && !hasStatsData) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <SkeletonStatsCard />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <SkeletonStatsCard />
         <SkeletonStatsCard />
         <SkeletonStatsCard />
@@ -22,7 +21,7 @@ export function BookingHistoryStats({ isLoading, hasStatsData, stats }: BookingH
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-100 p-5 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
@@ -61,20 +60,6 @@ export function BookingHistoryStats({ isLoading, hasStatsData, stats }: BookingH
           </div>
           <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
             <XCircle className="w-6 h-6 text-red-600" />
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100 p-5 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-600 font-medium">Upcoming</p>
-            <p className="text-3xl font-bold text-blue-600 mt-1">
-              <AnimatedCounter value={stats.upcomingBookings} />
-            </p>
-          </div>
-          <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-            <Calendar className="w-6 h-6 text-blue-600" />
           </div>
         </div>
       </div>

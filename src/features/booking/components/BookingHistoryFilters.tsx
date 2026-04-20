@@ -62,13 +62,6 @@ export function BookingHistoryFilters({
               <XCircle className="w-4 h-4" />
               Rejected
             </button>
-            <button
-              onClick={() => onStatusFilterChange('Cancelled')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${statusFilter === 'Cancelled' ? 'bg-gray-100 text-gray-700 border-2 border-gray-300 shadow-sm' : 'bg-gray-50 text-gray-600 border-2 border-transparent hover:border-gray-200 hover:bg-gray-100'}`}
-            >
-              <XCircle className="w-4 h-4" />
-              Cancelled
-            </button>
           </div>
         </div>
       </div>
