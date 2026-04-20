@@ -515,7 +515,7 @@ export default function HistoryBookingFeature() {
         booking={selected}
         onClose={closeModal}
         onApprove={handleApprove}
-        onReject={handleReject}
+        handleOpenRejectModal={handleReject}
       />
     </div>
   );

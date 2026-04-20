@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Calendar, QrCode, FileText, CheckCircle, XCircle, Clock, Send, CircleDashed } from 'lucide-react';
+import { Calendar, QrCode, FileText, CheckCircle, XCircle, Clock, Send } from 'lucide-react';
 
 export type ActivityType = 'booking' | 'qr_generated' | 'report_sent' | 'booking_approved' | 'booking_rejected' | 'booking_submitted';
 

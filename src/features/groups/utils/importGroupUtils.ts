@@ -6,10 +6,7 @@ import type {
   ValidationErrors,
   GroupImportDto,
 } from "../types/importGroup.type";
-import {
-  GROUP_COLUMNS,
-  columnLabels,
-} from "../constants/importGroup";
+
 
 // Row creation
 export const createEmptyGroupRows = (count: number): EditableGroupRow[] =>
@@ -165,7 +162,6 @@ export const getGroupErrorKey = (rowId: string, field: GroupField): string =>
 
 // Resolve field from text input
 export const resolveGroupFieldFromText = (
-  field: GroupField,
   value: string
 ): string => {
   return value.trim();

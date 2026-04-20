@@ -3,7 +3,7 @@
  * Lecturer's page to manage attendance and active QR sessions
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, Calendar, QrCode, RefreshCw, XCircle } from 'lucide-react';
 import {

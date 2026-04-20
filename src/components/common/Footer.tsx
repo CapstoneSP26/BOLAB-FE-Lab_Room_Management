@@ -1,10 +1,6 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
 
 const Footer: React.FC = () => {
-  const location = useLocation();
-  const isHomePage = location.pathname === '/';
-
   return (
     <footer className={`w-full relative py-4 flex flex-col md:flex-row items-center justify-between px-6 text-sm mt-auto bg-white text-gray-700 border-t border-gray-200`}>
       {/* Content */}
