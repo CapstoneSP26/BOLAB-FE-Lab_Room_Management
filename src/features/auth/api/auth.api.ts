@@ -18,6 +18,6 @@ export const authApi = {
    * Backend sẽ xóa Cookie accessToken trên trình duyệt
    */
   logout: async (): Promise<void> => {
-    await axiosInstance.post("/auth/logout");
+    await axiosInstance.get("/auth/sign-out");
   },
 };

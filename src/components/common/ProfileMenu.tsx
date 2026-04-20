@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Settings, LogOut, ChevronDown } from 'lucide-react';
+import { useAuthStore } from '../../store/useAuthStore';
 
 interface ProfileMenuProps {
   userName?: string;
@@ -18,6 +19,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const logout = useAuthStore((state) => state.logout);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -46,10 +48,9 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
     navigate('/profile');
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     setIsOpen(false);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    await logout();
     navigate('/login');
   };
 

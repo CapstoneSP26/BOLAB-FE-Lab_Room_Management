@@ -6,8 +6,8 @@
 import { useMemo, useState } from 'react';
 import {
   User, Mail, Briefcase, Shield, Bell,
-  BookOpen, QrCode, Clock,
-  ChevronRight, Check, X, AlertCircle
+  BookOpen, Clock,
+  ChevronRight, Check, X
 } from 'lucide-react';
 import { AnimatedCounter } from '../../components/ui/AnimatedCounter';
 import { RecentActivity, type Activity } from '../../components/common/RecentActivity';
@@ -28,9 +28,6 @@ export default function ProfilePage() {
     bookingApproved: true,
     bookingRejected: true,
     bookingReminder: true,
-    qrSessionCreated: true,
-    equipmentReports: true,
-    systemAnnouncements: false,
   });
 
   const { data: profile, isLoading: isProfileLoading } = useMyProfile();
@@ -154,42 +151,30 @@ export default function ProfilePage() {
             </div>
 
             {/* Quick Stats Grid */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {isStatsDataLoading && (
-                <div className="col-span-2 text-xs text-gray-500">
+                <div className="md:col-span-2 text-xs text-gray-500">
                   Loading statistics...
                 </div>
               )}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl p-4 shadow-md hover:scale-105 transition-transform cursor-pointer border border-blue-200">
-                <BookOpen className="w-6 h-6 mb-2 text-blue-600" />
-                <p className="text-2xl font-bold mb-1 text-blue-900">
-                  <AnimatedCounter value={stats?.totalBookings ?? 0} />
-                </p>
-                <p className="text-xs text-blue-700">Total Bookings</p>
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl p-5 shadow-md hover:scale-[1.02] transition-transform cursor-pointer border border-blue-200 min-h-[120px] flex flex-col justify-between">
+                <BookOpen className="w-6 h-6 text-blue-600" />
+                <div>
+                  <p className="text-3xl font-bold mb-1 text-blue-900">
+                    <AnimatedCounter value={stats?.totalBookings ?? 0} />
+                  </p>
+                  <p className="text-sm text-blue-700 font-medium">Total Bookings</p>
+                </div>
               </div>
 
-              <div className="bg-gradient-to-br from-green-50 to-emerald-100 rounded-2xl p-4 shadow-md hover:scale-105 transition-transform cursor-pointer border border-green-200">
-                <QrCode className="w-6 h-6 mb-2 text-green-600" />
-                <p className="text-2xl font-bold mb-1 text-green-900">
-                  <AnimatedCounter value={stats?.totalQASessions ?? 0} />
-                </p>
-                <p className="text-xs text-green-700">QA Sessions</p>
-              </div>
-
-              <div className="bg-gradient-to-br from-purple-50 to-pink-100 rounded-2xl p-4 shadow-md hover:scale-105 transition-transform cursor-pointer border border-purple-200">
-                <Clock className="w-6 h-6 mb-2 text-purple-600" />
-                <p className="text-2xl font-bold mb-1 text-purple-900">
-                  <AnimatedCounter value={stats?.totalHoursTaught ?? 0} />
-                </p>
-                <p className="text-xs text-purple-700">Hours Taught</p>
-              </div>
-
-              <div className="bg-gradient-to-br from-orange-50 to-red-100 rounded-2xl p-4 shadow-md hover:scale-105 transition-transform cursor-pointer border border-orange-200">
-                <User className="w-6 h-6 mb-2 text-orange-600" />
-                <p className="text-2xl font-bold mb-1 text-orange-900">
-                  <AnimatedCounter value={stats?.totalStudentsLed ?? 0} />
-                </p>
-                <p className="text-xs text-orange-700">Students Led</p>
+              <div className="bg-gradient-to-br from-purple-50 to-pink-100 rounded-2xl p-5 shadow-md hover:scale-[1.02] transition-transform cursor-pointer border border-purple-200 min-h-[120px] flex flex-col justify-between">
+                <Clock className="w-6 h-6 text-purple-600" />
+                <div>
+                  <p className="text-3xl font-bold mb-1 text-purple-900">
+                    <AnimatedCounter value={stats?.totalHoursTaught ?? 0} />
+                  </p>
+                  <p className="text-sm text-purple-700 font-medium">Hours Taught</p>
+                </div>
               </div>
             </div>
 
@@ -364,68 +349,7 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
-                  {/* Other Notifications */}
-                  <div className="pt-4 border-t border-gray-200">
-                    <h4 className="text-sm font-semibold text-gray-700 mb-3">Other Activities</h4>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <QrCode className="w-5 h-5 text-purple-500" />
-                          <div>
-                            <p className="text-sm font-medium text-gray-900">QR Session Updates</p>
-                            <p className="text-xs text-gray-500">When QR sessions are created or expired</p>
-                          </div>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={notificationPrefs.qrSessionCreated}
-                            onChange={(e) => setNotificationPrefs({ ...notificationPrefs, qrSessionCreated: e.target.checked })}
-                            className="sr-only peer"
-                          />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-orange-500 peer-checked:to-red-500"></div>
-                        </label>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <AlertCircle className="w-5 h-5 text-orange-500" />
-                          <div>
-                            <p className="text-sm font-medium text-gray-900">Equipment Reports</p>
-                            <p className="text-xs text-gray-500">Updates on equipment issues you reported</p>
-                          </div>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={notificationPrefs.equipmentReports}
-                            onChange={(e) => setNotificationPrefs({ ...notificationPrefs, equipmentReports: e.target.checked })}
-                            className="sr-only peer"
-                          />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-orange-500 peer-checked:to-red-500"></div>
-                        </label>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <Bell className="w-5 h-5 text-gray-500" />
-                          <div>
-                            <p className="text-sm font-medium text-gray-900">System Announcements</p>
-                            <p className="text-xs text-gray-500">Important system updates and news</p>
-                          </div>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={notificationPrefs.systemAnnouncements}
-                            onChange={(e) => setNotificationPrefs({ ...notificationPrefs, systemAnnouncements: e.target.checked })}
-                            className="sr-only peer"
-                          />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-orange-500 peer-checked:to-red-500"></div>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
+                  
 
                   <button className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 rounded-xl hover:from-orange-600 hover:to-red-600 transition-all font-medium shadow-lg hover:scale-105">
                     Save Preferences
