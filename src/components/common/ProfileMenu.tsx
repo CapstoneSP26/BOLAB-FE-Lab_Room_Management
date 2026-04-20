@@ -21,6 +21,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const logout = useAuthStore((state) => state.logout);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -59,10 +60,9 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
     });
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     setIsOpen(false);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    await logout();
     navigate('/login');
   };
 
@@ -70,8 +70,8 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
     <div className="relative z-50" ref={dropdownRef}>
       <button
         className={`flex items-center gap-2 p-2 rounded-lg transition-colors ${isHomePage
-            ? 'hover:bg-white/10'
-            : 'hover:bg-gray-100'
+          ? 'hover:bg-white/10'
+          : 'hover:bg-gray-100'
           }`}
         onClick={() => setIsOpen(!isOpen)}
       >
@@ -79,28 +79,28 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
           src={userAvatar}
           alt="Profile"
           className={`w-8 h-8 rounded-full object-cover shadow-lg ${isHomePage
-              ? 'border-2 border-white/50'
-              : 'border-2 border-gray-300'
+            ? 'border-2 border-white/50'
+            : 'border-2 border-gray-300'
             }`}
         />
         <div className="hidden md:block text-left">
           <p className={`font-medium text-sm ${isHomePage
-              ? 'text-white drop-shadow-lg'
-              : 'text-gray-900'
+            ? 'text-white drop-shadow-lg'
+            : 'text-gray-900'
             }`}>
             {userName}
           </p>
           <p className={`text-xs ${isHomePage
-              ? 'text-white/80 drop-shadow-lg'
-              : 'text-gray-600'
+            ? 'text-white/80 drop-shadow-lg'
+            : 'text-gray-600'
             }`}>
             {userRole}
           </p>
         </div>
         <ChevronDown
           className={`w-4 h-4 transition-transform ${isHomePage
-              ? 'text-white drop-shadow-lg'
-              : 'text-gray-700'
+            ? 'text-white drop-shadow-lg'
+            : 'text-gray-700'
             } ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
