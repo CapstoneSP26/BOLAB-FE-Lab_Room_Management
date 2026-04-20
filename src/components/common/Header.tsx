@@ -58,6 +58,13 @@ const Header: React.FC = () => {
       ]
     : [];
 
+  // Badge counts sourced from real data when available
+  const badgeCounts = {
+    'book-room': 0,
+    'my-bookings': 0,
+    attendance: activeSessions.length,
+  };
+
   // Navigation items
   const navItems = [
     {
@@ -129,6 +136,9 @@ const Header: React.FC = () => {
                     type="info"
                     pulse={true}
                   />
+                )}
+                {item.badgeKey === 'attendance' && badgeCount > 0 && (
+                  <span className="h-2.5 w-2.5 rounded-full bg-green-500 shadow-[0_0_0_4px_rgba(34,197,94,0.15)]" />
                 )}
               </Link>
             );

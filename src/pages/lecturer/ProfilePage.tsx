@@ -3,7 +3,8 @@
  * Premium design with animations and visual effects
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   User, Mail, Briefcase, Shield, Bell,
   BookOpen, QrCode, Clock,
@@ -19,6 +20,8 @@ import {
 import { addCacheBuster } from '../../utils/imageCache';
 
 export default function ProfilePage() {
+  const location = useLocation();
+  const notificationSectionRef = useRef<HTMLDivElement>(null);
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
 
   // Notification preferences
@@ -70,6 +73,23 @@ export default function ProfilePage() {
       ? (campusNameById[profile.campusId] ?? `Campus ${profile.campusId}`)
       : '—';
 
+
+  useEffect(() => {
+    const shouldOpenNotifications = Boolean(
+      location.state && typeof location.state === 'object' && (location.state as { openNotifications?: boolean }).openNotifications,
+    );
+
+    if (shouldOpenNotifications) {
+      setShowNotificationSettings(true);
+      window.history.replaceState({}, document.title);
+      requestAnimationFrame(() => {
+        notificationSectionRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      });
+    }
+  }, [location.state]);
 
   const activityItems: Activity[] = useMemo(() => {
     if (!recentActivitiesData) return [];
@@ -250,7 +270,7 @@ export default function ProfilePage() {
 
             {/* Notification Settings Section */}
             {showNotificationSettings && (
-              <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all">
+              <div ref={notificationSectionRef} className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all">
                 <div className="flex items-center gap-2 mb-6">
                   <Bell className="w-6 h-6 text-orange-500" />
                   <h3 className="text-xl font-bold text-gray-900">Notification Preferences</h3>

@@ -11,7 +11,7 @@ interface ProfileMenuProps {
   isHomePage?: boolean;
 }
 
-const ProfileMenu: React.FC<ProfileMenuProps> = ({ 
+const ProfileMenu: React.FC<ProfileMenuProps> = ({
   userName = 'Admin',
   userAvatar = 'https://randomuser.me/api/portraits/men/32.jpg',
   userRole = 'Administrator',
@@ -54,7 +54,9 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
 
   const handleSettings = () => {
     setIsOpen(false);
-    navigate(getProfilePath());
+    navigate('/profile', {
+      state: { openNotifications: true },
+    });
   };
 
   const handleSignOut = () => {
@@ -66,45 +68,40 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
 
   return (
     <div className="relative z-50" ref={dropdownRef}>
-      <button 
-        className={`flex items-center gap-2 p-2 rounded-lg transition-colors ${
-          isHomePage 
-            ? 'hover:bg-white/10' 
+      <button
+        className={`flex items-center gap-2 p-2 rounded-lg transition-colors ${isHomePage
+            ? 'hover:bg-white/10'
             : 'hover:bg-gray-100'
-        }`}
+          }`}
         onClick={() => setIsOpen(!isOpen)}
       >
-        <img 
-          src={userAvatar} 
-          alt="Profile" 
-          className={`w-8 h-8 rounded-full object-cover shadow-lg ${
-            isHomePage 
-              ? 'border-2 border-white/50' 
+        <img
+          src={userAvatar}
+          alt="Profile"
+          className={`w-8 h-8 rounded-full object-cover shadow-lg ${isHomePage
+              ? 'border-2 border-white/50'
               : 'border-2 border-gray-300'
-          }`}
+            }`}
         />
         <div className="hidden md:block text-left">
-          <p className={`font-medium text-sm ${
-            isHomePage 
-              ? 'text-white drop-shadow-lg' 
+          <p className={`font-medium text-sm ${isHomePage
+              ? 'text-white drop-shadow-lg'
               : 'text-gray-900'
-          }`}>
+            }`}>
             {userName}
           </p>
-          <p className={`text-xs ${
-            isHomePage 
-              ? 'text-white/80 drop-shadow-lg' 
+          <p className={`text-xs ${isHomePage
+              ? 'text-white/80 drop-shadow-lg'
               : 'text-gray-600'
-          }`}>
+            }`}>
             {userRole}
           </p>
         </div>
-        <ChevronDown 
-          className={`w-4 h-4 transition-transform ${
-            isHomePage 
-              ? 'text-white drop-shadow-lg' 
+        <ChevronDown
+          className={`w-4 h-4 transition-transform ${isHomePage
+              ? 'text-white drop-shadow-lg'
               : 'text-gray-700'
-          } ${isOpen ? 'rotate-180' : ''}`}
+            } ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
 
@@ -114,10 +111,10 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
           {/* User Info */}
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center gap-3">
-              <img 
-                src={userAvatar} 
-                alt="Profile" 
-                className="w-12 h-12 rounded-full border-2 border-gray-200 object-cover" 
+              <img
+                src={userAvatar}
+                alt="Profile"
+                className="w-12 h-12 rounded-full border-2 border-gray-200 object-cover"
               />
               <div>
                 <p className="font-semibold text-gray-800">{userName}</p>
