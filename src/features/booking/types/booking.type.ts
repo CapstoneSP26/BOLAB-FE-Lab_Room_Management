@@ -104,6 +104,12 @@ export interface BookingRequest {
   status: string;
   purpose?: string;
   reason?: string;
+  requester?: {
+    id: string;
+    fullName: string;
+    userCode: string;
+    email: string;
+  }
 }
 
 export interface BookingStats {

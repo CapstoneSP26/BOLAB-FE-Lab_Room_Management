@@ -36,6 +36,7 @@ export function mapUserDtoToProfile(dto: UserDto): Profile {
     avatarUrl: dto.avatarUrl ?? dto.userImageUrl ?? null,
     bio: dto.bio ?? null,
     campusId: dto.campusId,
+    campusName: dto.campusName ?? null,
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt ?? null,
     createdBy: dto.createdBy ?? null,

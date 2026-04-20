@@ -23,9 +23,7 @@ export function LabCalendarFilters({
   filters,
   availableBuildings,
   roomOptions,
-  statusOptions,
   slotTypeOptions,
-  filterStats,
   onFilterChange,
   onClearFilters,
 }: LabCalendarFiltersProps) {
@@ -150,38 +148,6 @@ export function LabCalendarFilters({
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              Status
-            </label>
-            <select
-              value={filters.selectedStatus}
-              onChange={(event) =>
-                onFilterChange("selectedStatus", event.target.value)
-              }
-              className="h-9 rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-            >
-              {statusOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <label className="flex items-center gap-2 text-xs font-semibold text-gray-600 dark:text-gray-400">
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
                   d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
                 />
               </svg>
@@ -226,17 +192,6 @@ export function LabCalendarFilters({
                 </svg>
                 Clear All Filters
               </button>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="rounded-lg bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-              {filterStats.filtered} / {filterStats.total} events
-            </span>
-            {filterStats.filtered < filterStats.total && (
-              <span className="text-xs text-gray-600 dark:text-gray-400">
-                filtered
-              </span>
             )}
           </div>
         </div>

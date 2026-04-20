@@ -44,9 +44,18 @@ export default function PendingBookingFeature() {
   const [selected, setSelected] = useState<BookingRequest | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+
   // Reject with reason state
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejectId, setRejectId] = useState<string | null>(null);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [q, buildingId, roomId, slotType]);
 
   const params: GetBookingRequestsRequest = useMemo(
     () => ({
@@ -55,12 +64,12 @@ export default function PendingBookingFeature() {
       buildingId: buildingId === "ALL" ? undefined : buildingId,
       keyword: q.trim() || undefined,
       slotTypeId: slotType === "ALL" ? undefined : slotType,
-      page: 1,
-      limit: 100,
+      page: page,
+      limit: limit,
       sortBy: "RequestedAt",
       isDescending: true,
     }),
-    [roomId, buildingId, q, slotType],
+    [roomId, buildingId, q, slotType, page, limit],
   );
 
   const pendingQuery = useBookingRequests(params);
@@ -80,8 +89,10 @@ export default function PendingBookingFeature() {
     () => rawData?.data ?? rawData?.items ?? [],
     [rawData],
   );
-  const totalCount = rawData?.total ?? rawData?.totalCount ?? items.length;
+  const totalCount = rawData?.total ?? rawData?.totalCount ?? 0;
   const loading = pendingQuery.isLoading || pendingQuery.isFetching;
+
+  const totalPages = Math.ceil(totalCount / limit);
 
   const reload = async () => {
     await pendingQuery.refetch();
@@ -464,7 +475,7 @@ export default function PendingBookingFeature() {
           <div className="overflow-hidden">
             <div className="border-b border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-700 dark:bg-gray-800">
               <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                Booking Requests ({rows.length})
+                Booking Requests ({totalCount})
               </h3>
             </div>
 
@@ -472,6 +483,10 @@ export default function PendingBookingFeature() {
               loading={loading}
               rows={rows}
               emptyText="No pending requests."
+              page={page}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              onPageChange={setPage}
               onView={(b) => {
                 setSelected(b);
                 setOpen(true);

@@ -12,13 +12,11 @@ import BookingRequestReviewModal from "./BookingRequestReviewModal";
 import HistoryBookingTable from "./HistoryBookingTable";
 import HistoryBookingFilter from "./HistoryBookingFilter";
 import RejectReasonModal from "./RejectReasonModal";
-import { BookingHistoryPagination } from "./BookingHistoryPagination";
 import { ReportStatCard } from "../../../components/ui/ComponentsParts";
 import { bookingRequestApi } from "../api/bookingApi";
 import { labroomApi } from "../../labroom/api/labroom.api";
 import {
   useApproveBookingRequest,
-  useBookingRequestDetail,
   useBookingRequestHistory,
   useRejectBookingRequest,
 } from "../hooks/useBookingRequest";
@@ -55,7 +53,7 @@ export default function HistoryBookingFeature() {
   const [to, setTo] = useState("");
 
   const [open, setOpen] = useState(false);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<BookingRequest | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
   // Pagination state
@@ -84,14 +82,9 @@ export default function HistoryBookingFeature() {
 
   const historyQuery = useBookingRequestHistory(params);
 
-  const detailQuery = useBookingRequestDetail({
-    id: selectedId ?? undefined,
-    enabled: open && !!selectedId,
-  });
-
   const closeModal = () => {
     setOpen(false);
-    setSelectedId(null);
+    setSelected(null);
   };
 
   const approveBookingMutation = useApproveBookingRequest({
@@ -109,17 +102,14 @@ export default function HistoryBookingFeature() {
   });
 
   const rawData: any = historyQuery.data;
-  const items = useMemo<BookingRequest[]>(
+  const items: BookingRequest[] = useMemo(
     () => rawData?.data ?? rawData?.items ?? [],
     [rawData],
   );
   const totalCount = rawData?.total ?? rawData?.totalCount ?? 0;
   const loading = historyQuery.isLoading || historyQuery.isFetching;
-  const selected: BookingRequest | null = detailQuery.data?.data ?? null;
 
   const totalPages = Math.ceil(totalCount / limit);
-  const startIndex = (page - 1) * limit;
-  const endIndex = startIndex + items.length;
 
   const reload = async () => {
     await historyQuery.refetch();
@@ -127,8 +117,11 @@ export default function HistoryBookingFeature() {
 
   const handleView = async (id: string) => {
     if (!id) return;
-    setSelectedId(id);
-    setOpen(true);
+    const item = items.find((x) => String(x.id) === String(id));
+    if (item) {
+      setSelected(item);
+      setOpen(true);
+    }
   };
 
   const handleApprove = async (id: string) => {
@@ -532,20 +525,13 @@ export default function HistoryBookingFeature() {
           <HistoryBookingTable
             loading={loading || lookupLoading}
             rows={rows}
+            page={page}
+            totalPages={totalPages}
+            totalCount={totalCount}
+            onPageChange={setPage}
             onView={handleView}
           />
         </div>
-
-        {totalCount > 0 && (
-          <BookingHistoryPagination
-            filteredCount={totalCount}
-            startIndex={startIndex}
-            endIndex={endIndex}
-            currentPage={page}
-            totalPages={totalPages}
-            onPageChange={setPage}
-          />
-        )}
       </div>
 
       <BookingRequestReviewModal

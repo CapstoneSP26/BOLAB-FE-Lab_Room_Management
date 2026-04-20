@@ -20,6 +20,7 @@ import CsvImportModal from "./CSVImportModal";
 import { LabCalendarFilters } from "./LabCalendarFilters";
 import { LabCalendarHeader } from "./LabCalendarHeader";
 import { LabCalendarView } from "./LabCalendarView";
+import ScheduleFormModal from "../../schedules/components/ScheduleFormModal";
 
 const templateText =
   "LabRoomId,StartTime,EndTime,ScheduleType,ScheduleStatus\n" +
@@ -44,6 +45,8 @@ export default function LabCalendar() {
   const [filters, setFilters] = useState<LabCalendarFilterState>(
     DEFAULT_LAB_CALENDAR_FILTERS,
   );
+  const [selectedSchedule, setSelectedSchedule] = useState<any | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const schedulesQuery = useSchedules(
     {
@@ -243,6 +246,11 @@ export default function LabCalendar() {
     [],
   );
 
+  const handleEventClick = useCallback((schedule: any) => {
+    setSelectedSchedule(schedule);
+    setDetailOpen(true);
+  }, []);
+
   const clearFilters = useCallback(() => {
     setFilters(DEFAULT_LAB_CALENDAR_FILTERS);
   }, []);
@@ -270,14 +278,21 @@ export default function LabCalendar() {
         loading={loading}
         scheduleCount={schedules.length}
         events={filteredEventInputs}
+        onEventClick={handleEventClick}
+      />
+
+      <ScheduleFormModal
+        isOpen={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        schedule={selectedSchedule}
+        mode="view"
+        roomOptions={[]} // Not needed for view mode, but required by type
+        onSubmit={async () => {}}
       />
 
       <CsvImportModal
         open={csvOpen}
         onClose={() => setCsvOpen(false)}
-        onImport={async (file) => {
-          await reload();
-        }}
         templateFileName="schedule_template.csv"
         templateText={templateText}
       />

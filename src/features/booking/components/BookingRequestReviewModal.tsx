@@ -2,8 +2,8 @@ import { useEffect } from "react";
 import type { BookingRequest } from "../../booking/types/booking.type";
 import { InfoCard, InfoRow, Skeleton } from "./BookingRequestModalParts";
 import { norm } from "../../../utils/status";
-import { formatIsoDateTimeForDisplay } from "../../../utils/date.util";
-import { AlertCircle } from "lucide-react";
+import { formatUtcDateLabel, convertHoursUtcToVN } from "../../../utils/date.util";
+import { AlertCircle, Calendar } from "lucide-react";
 
 type Props = {
   open: boolean;
@@ -197,21 +197,8 @@ export default function BookingRequestReviewModal({
                   )}
 
                   <TagChip>
-                    <svg
-                      width="14"
-                      height="14"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      />
-                    </svg>
-                    {booking.date}
+                    <Calendar className="h-3.5 w-3.5" />
+                    {formatUtcDateLabel(booking.date)}
                   </TagChip>
                 </div>
 
@@ -224,13 +211,26 @@ export default function BookingRequestReviewModal({
                       value={booking.buildingName || "-"}
                     />
                     <InfoRow
+                      label="Date"
+                      value={formatUtcDateLabel(booking.date) || "-"}
+                      mono
+                    />
+                    <InfoRow
                       label="Start"
-                      value={formatIsoDateTimeForDisplay(booking.startTime)}
+                      value={
+                        booking.startTime
+                          ? convertHoursUtcToVN(booking.startTime)
+                          : "—"
+                      }
                       mono
                     />
                     <InfoRow
                       label="End"
-                      value={formatIsoDateTimeForDisplay(booking.endTime)}
+                      value={
+                        booking.endTime
+                          ? convertHoursUtcToVN(booking.endTime)
+                          : "—"
+                      }
                       mono
                     />
                     <InfoRow
@@ -241,18 +241,17 @@ export default function BookingRequestReviewModal({
 
                   <InfoCard title="Requester">
                     <InfoRow
-                      label="Requested by"
-                      value={booking.requestedBy || "-"}
+                      label="Full Name"
+                      value={booking.requester?.fullName || "-"}
                     />
                     <InfoRow
-                      label="Requested at"
-                      value={formatIsoDateTimeForDisplay(booking.requestedAt)}
+                      label="User code"
+                      value={booking.requester?.userCode || "-"}
                       mono
                     />
                     <InfoRow
-                      label="Booking date"
-                      value={booking.date || "-"}
-                      mono
+                      label="Email"
+                      value={booking.requester?.email || "-"}
                     />
                   </InfoCard>
                 </div>
@@ -292,20 +291,20 @@ export default function BookingRequestReviewModal({
 
                 {/* Rejection Reason */}
                 {String(booking.status).trim().toLowerCase() === "rejected" && booking.reason && (
-                  <div className="overflow-hidden rounded-2xl border border-red-100 bg-red-50/30 dark:border-red-900/30 dark:bg-red-900/10">
-                    <div className="flex items-center gap-2 border-b border-red-100 bg-red-50/50 px-6 py-4 dark:border-red-900/30 dark:bg-red-900/20">
-                      <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-                      <span className="text-xs font-bold uppercase tracking-widest text-red-600 dark:text-red-400">
-                        Reason for Rejection
-                      </span>
+                    <div className="overflow-hidden rounded-2xl border border-red-100 bg-red-50/30 dark:border-red-900/30 dark:bg-red-900/10">
+                      <div className="flex items-center gap-2 border-b border-red-100 bg-red-50/50 px-6 py-4 dark:border-red-900/30 dark:bg-red-900/20">
+                        <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                        <span className="text-xs font-bold uppercase tracking-widest text-red-600 dark:text-red-400">
+                          Reason for Rejection
+                        </span>
+                      </div>
+                      <div className="px-6 py-6 font-medium leading-relaxed text-red-950 dark:text-red-200">
+                        <p className="whitespace-pre-wrap break-words text-[15px]">
+                          {booking.reason}
+                        </p>
+                      </div>
                     </div>
-                    <div className="px-6 py-6 font-medium leading-relaxed text-red-950 dark:text-red-200">
-                      <p className="whitespace-pre-wrap break-words text-[15px]">
-                        {booking.reason}
-                      </p>
-                    </div>
-                  </div>
-                )}
+                  )}
 
                 {/* Action bar */}
                 <div className="flex flex-col-reverse gap-4 rounded-2xl border border-gray-100 bg-gray-50/50 p-6 dark:border-gray-800 dark:bg-gray-800/30 sm:flex-row sm:items-center sm:justify-between">

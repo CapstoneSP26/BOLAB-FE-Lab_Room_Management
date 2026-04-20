@@ -46,13 +46,21 @@ function countActive(filters: GetSchedulesFilters): number {
 function toListParams(
   page: number,
   filters: GetSchedulesFilters,
-): GetSchedulesParams {
+): GetSchedulesParams & { page?: number; limit?: number } {
   const labRoomId =
     filters.labRoomId === "ALL" ? undefined : filters.labRoomId;
+  const buildingId = 
+    filters.buildingId === "ALL" ? undefined : filters.buildingId;
+    
   return {
+    // Phân trang đồng thời hỗ trợ cả 2 chuẩn API (pageNumber/pageSize và page/limit)
     pageNumber: page,
     pageSize: PAGE_SIZE,
-    labRoomId: labRoomId,
+    page: page,
+    limit: PAGE_SIZE,
+
+    buildingId,
+    labRoomId,
     fromDate: filters.fromDate || undefined,
     toDate: filters.toDate || undefined,
     status: filters.status === "" ? undefined : filters.status,
@@ -66,8 +74,6 @@ export default function ScheduleManagementFeature() {
   const toast = useToast();
   const [tab, setTab] = useState<"schedules" | "slots">("schedules");
   const [showFilters, setShowFilters] = useState(true);
-  const [draftFilters, setDraftFilters] =
-    useState<GetSchedulesFilters>(emptyFilters);
   const [appliedFilters, setAppliedFilters] =
     useState<GetSchedulesFilters>(emptyFilters);
   const [page, setPage] = useState(1);
@@ -84,9 +90,42 @@ export default function ScheduleManagementFeature() {
     tab === "schedules",
   );
 
-  const rows = data?.items ?? [];
-  const totalCount = data?.totalCount ?? 0;
-  const totalPages = data?.totalPages ?? 1;
+  const rawData: any = data;
+
+  const rows = useMemo<ScheduleDto[]>(() => {
+    if (!rawData) return [];
+    // Kiểm tra tất cả các kiểu bọc dữ liệu phổ biến (data, items, results)
+    const rawItems = rawData.items ?? rawData.Items ?? rawData.data ?? rawData.results ?? [];
+    if (!Array.isArray(rawItems)) return [];
+
+    // Chuẩn hóa dữ liệu để đảm bảo luôn có thuộc tính 'id' (hỗ trợ cả Id từ API)
+    return rawItems.map((item: any) => ({
+      ...item,
+      id: String(item.id ?? item.Id ?? ""),
+    }));
+  }, [rawData]);
+
+  const totalCount = useMemo(() => {
+    if (!rawData) return 0;
+    // Kiểm tra tất cả các tên thuộc tính tổng số lượng phổ biến (camelCase và PascalCase)
+    const apiTotal = 
+      rawData.totalCount ?? rawData.TotalCount ?? 
+      rawData.total ?? rawData.Total ?? 
+      rawData.count ?? rawData.Count;
+
+    if (typeof apiTotal === "number") {
+      return apiTotal;
+    }
+    return rows.length;
+  }, [rawData, rows]);
+
+  const totalPages = useMemo(() => {
+    // Lấy số trang từ API nếu có, nếu không thì tự tính
+    const apiPages = rawData?.totalPages ?? rawData?.TotalPages;
+    if (typeof apiPages === "number") return apiPages;
+    return Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  }, [rawData, totalCount]);
+
   const loading = isLoading || isFetching;
 
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
@@ -106,7 +145,7 @@ export default function ScheduleManagementFeature() {
 
   const { data: roomsData } = useManagedLabRooms({
     buildingId:
-      draftFilters.buildingId === "ALL" ? undefined : draftFilters.buildingId,
+      appliedFilters.buildingId === "ALL" ? undefined : appliedFilters.buildingId,
     pageNumber: 1,
     pageSize: 100,
   });
@@ -118,14 +157,13 @@ export default function ScheduleManagementFeature() {
 
   const activeFilterCount = countActive(appliedFilters);
 
-  const applyFilters = () => {
-    setAppliedFilters(draftFilters);
+  const handleFilterChange = (next: GetSchedulesFilters) => {
+    setAppliedFilters(next);
     setPage(1);
   };
 
   const resetFilters = () => {
     const cleared = emptyFilters();
-    setDraftFilters(cleared);
     setAppliedFilters(cleared);
     setPage(1);
   };
@@ -251,11 +289,10 @@ export default function ScheduleManagementFeature() {
           </div>
 
           <ScheduleManagementFilters
-            values={draftFilters}
-            onChange={setDraftFilters}
+            values={appliedFilters}
+            onChange={handleFilterChange}
             buildingOptions={buildingOptions}
             roomOptions={roomOptions}
-            onApply={applyFilters}
             onReset={resetFilters}
             showFilters={showFilters}
             onToggleFilters={() => setShowFilters((v) => !v)}

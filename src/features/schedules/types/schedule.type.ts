@@ -2,16 +2,14 @@ export type ScheduleStatus =
   | "Active"
   | "InProcess"
   | "Completed"
-  | "Cancelled"
-  | "NotYet"
-  | "Finish"
-  | "Done";
-
+  | "Cancelled";
+export type ScheduleType = "Academic" | "Personal" | "Maintenance" | "Examination" | "Event";
 export interface ScheduleDto {
   id: string;
   labRoomId?: number;
   subjectId?: string;
   subjectCode: string;
+  buildingName?: string;
   lecturerName: string;
   labRoomName: string;
   userCode?: string;
@@ -25,6 +23,7 @@ export interface ScheduleDto {
 }
 
 export interface GetSchedulesParams {
+  buildingId?: number;
   searchItems?: string;
   status?: ScheduleStatus | "";
   labRoomId?: number | "";
@@ -55,6 +54,7 @@ export interface CreateScheduleCommand {
   slotTypeId?: number;
   subjectId?: string;
   subjectCode: string;
+  lecturerId?: string;
   startTime: string;
   endTime: string;
   type: string;
