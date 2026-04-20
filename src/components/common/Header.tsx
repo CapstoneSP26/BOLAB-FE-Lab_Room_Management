@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { QrCode, Calendar, BookOpen } from 'lucide-react';
+import { QrCode, Calendar, BookOpen, Users } from 'lucide-react';
 import { NotificationDropdown } from './NotificationDropdown';
 import ProfileMenu from './ProfileMenu';
 import { FPTLogo } from '../icon/FPTLogo';
@@ -46,13 +46,6 @@ const Header: React.FC = () => {
     profile?.userImageUrl?.trim() ||
     'https://randomuser.me/api/portraits/men/32.jpg';
 
-  // Mock badge counts - Replace with real data from API/state
-  const badgeCounts = {
-    'book-room': 0,
-    'my-bookings': 3, // 3 pending approvals
-    attendance: 2, // 2 active sessions
-  };
-
   // Active sessions from global context (shared with AttendancePage)
   const activeSessions = activeSession && activeSession.isActive && activeSession.qrExpiry
     ? [
@@ -85,6 +78,12 @@ const Header: React.FC = () => {
       icon: QrCode,
       badgeKey: 'attendance',
     },
+    {
+      path: '/student-groups',
+      label: 'Groups',
+      icon: Users,
+      badgeKey: 'student-groups',
+    },
   ];
 
   return (
@@ -106,7 +105,6 @@ const Header: React.FC = () => {
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             const Icon = item.icon;
-            const badgeCount = badgeCounts[item.badgeKey as keyof typeof badgeCounts];
 
             return (
               <Link
@@ -124,11 +122,12 @@ const Header: React.FC = () => {
               >
                 <Icon className="w-4 h-4" />
                 <span className="text-sm">{item.label}</span>
-                {badgeCount > 0 && (
+                {/* Attendance badge: Show blue dot icon if there's an active session */}
+                {item.badgeKey === 'attendance' && activeSession?.isActive && (
                   <Badge
-                    count={badgeCount}
-                    type={item.badgeKey === 'attendance' ? 'success' : 'warning'}
-                    pulse={item.badgeKey === 'attendance'}
+                    dot={true}
+                    type="info"
+                    pulse={true}
                   />
                 )}
               </Link>
