@@ -283,18 +283,8 @@ const BookingHistoryPage: React.FC = () => {
     });
   };
 
-  // Fetch data with filters for table
+  // Fetch ALL bookings for client-side filtering and pagination
   const { data: bookingsData, isLoading } = useBookingHistoryPageState(
-    {
-      page: currentPage,
-      limit: 10,
-      status: statusFilter === 'all' ? undefined : statusFilter,
-    },
-    true,
-  );
-
-  // Fetch ALL bookings (no filter) for stats calculation
-  const { data: allBookingsData } = useBookingHistoryPageState(
     {
       limit: 1000, // Fetch all bookings
     },
@@ -305,10 +295,10 @@ const BookingHistoryPage: React.FC = () => {
 
   // Use API data or fallback to mock - Remove mock when API is ready
   const bookings = bookingsData?.data ?? MOCK_BOOKINGS;
-  const allBookings = allBookingsData?.data ?? MOCK_BOOKINGS;
+  const allBookings = bookings;
 
   const filteredBookings = useMemo(() => {
-    return bookings.filter((booking) => {
+    return bookings.filter((booking: Booking) => {
       const matchesSearch =
         booking.roomName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         booking.buildingName.toLowerCase().includes(searchQuery.toLowerCase());
@@ -319,15 +309,15 @@ const BookingHistoryPage: React.FC = () => {
   }, [bookings, searchQuery, statusFilter]);
 
   const dynamicStats: BookingStats = useMemo(() => ({
-    totalAccepted: allBookings.filter((b) => b.status === 'Approved').length,
-    totalPending: allBookings.filter((b) => b.status === 'PendingApproval').length,
-    totalRejected: allBookings.filter((b) => b.status === 'Rejected').length,
-    upcomingBookings: allBookings.filter((b) => b.status === 'Approved' && new Date(b.date) > new Date()).length,
+    totalAccepted: allBookings.filter((b: Booking) => b.status === 'Approved').length,
+    totalPending: allBookings.filter((b: Booking) => b.status === 'PendingApproval').length,
+    totalRejected: allBookings.filter((b: Booking) => b.status === 'Rejected').length,
+    upcomingBookings: allBookings.filter((b: Booking) => b.status === 'Approved' && new Date(b.date) > new Date()).length,
   }), [allBookings]);
 
   const displayStats = dynamicStats;
 
-  const ITEMS_PER_PAGE = 9;
+  const ITEMS_PER_PAGE = 10;
   const totalPages = Math.ceil(filteredBookings.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;

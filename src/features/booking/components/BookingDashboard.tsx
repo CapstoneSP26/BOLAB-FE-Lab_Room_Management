@@ -1,27 +1,57 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Calendar, FileText, Loader2 } from 'lucide-react';
 import { BookingStatsCard } from './BookingStatsCard';
 import { RecentRequestCard } from './RecentRequestCard';
 import { BookingCalendar } from './BookingCalendar';
 import { useUpcomingBookings } from '../hooks/useUpcomingBookings';
-import { useBookingStats } from '../hooks/useBookingStats';
-import { useRecentRequests } from '../hooks/useRecentRequests';
+import { useBookingHistoryPageState } from '../hooks/useBookingHistoryPageState';
+import { useAuthStore } from '../../../store/useAuthStore';
 import { RecentActivity } from '../../../components/common/RecentActivity';
-import type { Activity } from '../../../components/common/RecentActivity';
+import type { Booking, BookingRequest, BookingStats } from '../types/booking.type';
+import { useSchedules } from '../../schedules/hooks/useSchedules';
+import type { ScheduleDto } from '../../schedules/types/schedule.type';
+import { useNotifications } from '../../notifications/hooks/useNotifications';
 
 export const BookingDashboard: React.FC = () => {
   const now = new Date();
-  const activeStart = new Date(now.getTime() - 30 * 60 * 1000);
-  const activeEnd = new Date(now.getTime() + 60 * 60 * 1000);
-  const toTime = (value: Date) =>
-    `${value.getHours().toString().padStart(2, '0')}:${value.getMinutes().toString().padStart(2, '0')}`;
+  const { user } = useAuthStore();
+  const lecturerName = user?.fullName?.trim().toLowerCase();
+  const today = now.toISOString().slice(0, 10);
+  const inThreeMonths = new Date(now);
+  inThreeMonths.setMonth(inThreeMonths.getMonth() + 3);
 
-  // Fetch data using hooks
-  const { data: upcomingData, isLoading: upcomingLoading } = useUpcomingBookings({ limit: 4 });
-  const { data: statsData, isLoading: statsLoading } = useBookingStats();
-  const { data: requestsData, isLoading: requestsLoading } = useRecentRequests({ limit: 5 });
+  const schedulesParams = {
+    fromDate: today,
+    toDate: inThreeMonths.toISOString().slice(0, 10),
+    pageSize: 100,
+  };
 
-  // Mock data for when API is not available
+  const bookingHistoryParams = {
+    limit: 100,
+    startDate: today,
+    endDate: inThreeMonths.toISOString().slice(0, 10),
+    status: 'Approved' as const,
+  };
+
+  const { data: schedulesData, isLoading: schedulesLoading } = useSchedules(
+    schedulesParams,
+    true,
+  );
+  const { data: upcomingBookingsData, isLoading: upcomingBookingsLoading } = useUpcomingBookings({
+    page: 1,
+    limit: 100,
+    startDate: today,
+    endDate: inThreeMonths.toISOString().slice(0, 10),
+  });
+  const { data: bookingHistoryData, isLoading: bookingHistoryLoading } = useBookingHistoryPageState(
+    bookingHistoryParams,
+    true,
+  );
+  const { data: notificationsData, isLoading: notificationsLoading } = useNotifications({
+    pageNumber: 1,
+    pageSize: 5,
+  });
+
   const mockStats = {
     totalAccepted: 24,
     totalPending: 8,
@@ -29,140 +59,122 @@ export const BookingDashboard: React.FC = () => {
     upcomingBookings: 12,
   };
 
-  const mockUpcomingBookings = [
-    {
-      id: 1,
-      roomId: 'R101',
-      roomName: 'Lab A-101',
-      buildingName: 'Building Alpha',
-      startTime: toTime(activeStart),
-      endTime: toTime(activeEnd),
-      date: now.toISOString(),
-      status: 'Approved' as const,
-      purpose: 'Web Development Workshop',
-      lecturerName: 'Nguyen Van A',
-      scheduleType: 'Teaching Session',
-      studentCount: 32,
-      bookingSource: 'LECTURER_BOOK' as const,
-    },
-    {
-      id: 2,
-      roomId: 'R203',
-      roomName: 'Lab G-203',
-      buildingName: 'Building Gamma',
-      startTime: '14:00',
-      endTime: '16:00',
-      date: new Date(Date.now() + 172800000).toISOString(),
-      status: 'PendingApproval' as const,
-      purpose: 'AI Research Project',
-      lecturerName: 'Tran Thi B',
-      scheduleType: 'Research Session',
-      studentCount: 18,
-      bookingSource: 'AO_BOOK' as const,
-    },
-    {
-      id: 3,
-      roomId: 'R305',
-      roomName: 'Lab D-305',
-      buildingName: 'Building Delta',
-      startTime: '10:00',
-      endTime: '12:00',
-      date: new Date(Date.now() + 259200000).toISOString(),
-      status: 'Approved' as const,
-      purpose: 'Database Design Class',
-      lecturerName: 'Le Van C',
-      scheduleType: 'Practice Session',
-      studentCount: 25,
-      bookingSource: 'LECTURER_BOOK' as const,
-    },
-  ];
+  const mapScheduleToBooking = (schedule: ScheduleDto): Booking => ({
+    id: schedule.id,
+    roomId: schedule.labRoomId ?? schedule.labRoomName,
+    roomName: schedule.labRoomName,
+    buildingName: 'N/A',
+    startTime: new Date(schedule.startTime).toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }),
+    endTime: new Date(schedule.endTime).toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }),
+    date: schedule.startTime,
+    status: schedule.status === 'Cancelled' ? 'Cancelled' : 'Approved',
+    purpose: schedule.subjectCode,
+    lecturerName: schedule.lecturerName,
+    scheduleType: schedule.type,
+    studentCount: schedule.studentCount,
+    bookingSource: 'LECTURER_BOOK',
+  });
 
-  const mockRecentRequests = [
-    {
-      id: 1,
-      roomId: 'R101',
-      roomName: 'Lab A-101',
-      buildingName: 'Building Alpha',
-      requestedBy: 'Nguyen Van A',
-      requestedAt: new Date(Date.now() - 1800000).toISOString(),
-      startTime: '08:00',
-      endTime: '10:00',
-      date: new Date(Date.now() + 86400000).toISOString(),
-      status: 'pending' as const,
-    },
-    {
-      id: 2,
-      roomId: 'R203',
-      roomName: 'Lab G-203',
-      buildingName: 'Building Gamma',
-      requestedBy: 'Tran Thi B',
-      requestedAt: new Date(Date.now() - 3600000).toISOString(),
-      startTime: '14:00',
-      endTime: '16:00',
-      date: new Date(Date.now() + 172800000).toISOString(),
-      status: 'accepted' as const,
-    },
-    {
-      id: 3,
-      roomId: 'R305',
-      roomName: 'Lab D-305',
-      buildingName: 'Building Delta',
-      requestedBy: 'Le Van C',
-      requestedAt: new Date(Date.now() - 7200000).toISOString(),
-      startTime: '10:00',
-      endTime: '12:00',
-      date: new Date(Date.now() + 259200000).toISOString(),
-      status: 'accepted' as const,
-    },
-    {
-      id: 4,
-      roomId: 'R401',
-      roomName: 'Lab A-401',
-      buildingName: 'Building Alpha',
-      requestedBy: 'Pham Thi D',
-      requestedAt: new Date(Date.now() - 10800000).toISOString(),
-      startTime: '15:00',
-      endTime: '17:00',
-      date: new Date(Date.now() + 345600000).toISOString(),
-      status: 'rejected' as const,
-    },
-  ];
+  const scheduleBookings = useMemo(
+    () => (schedulesData?.items ?? []).map(mapScheduleToBooking),
+    [schedulesData],
+  );
 
-  const stats = statsData?.data || mockStats;
-  const upcomingBookings = upcomingData?.data || mockUpcomingBookings;
-  const recentRequests = requestsData?.data || mockRecentRequests;
+  const bookingHistoryBookings = useMemo(
+    () =>
+      (bookingHistoryData?.data ?? [])
+        .filter((booking) => {
+          if (!lecturerName) return true;
+          return (
+            booking.userName?.trim().toLowerCase() === lecturerName ||
+            booking.purpose?.trim().toLowerCase().includes(lecturerName)
+          );
+        })
+        .map((booking) => ({
+          id: booking.id,
+          roomId: booking.roomId,
+          roomName: booking.roomName,
+          buildingName: booking.buildingName,
+          startTime: booking.startTime,
+          endTime: booking.endTime,
+          date: booking.date,
+          status: booking.status,
+          purpose: booking.purpose,
+          userName: booking.userName,
+          lecturerName: booking.userName,
+          bookingSource: 'LECTURER_BOOK' as const,
+        })),
+    [bookingHistoryData, lecturerName],
+  );
 
-  // Mock recent activities
-  const recentActivities: Activity[] = [
-    {
-      id: '1',
-      type: 'booking',
-      title: 'Đặt phòng Lab A-101',
-      description: 'Đã đặt phòng cho ngày 25/03/2026',
-      timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 minutes ago
-    },
-    {
-      id: '2',
-      type: 'booking_approved',
-      title: 'Booking được chấp nhận',
-      description: 'Lab G-203 - Web Development Workshop',
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-    },
-    {
-      id: '3',
-      type: 'qr_generated',
-      title: 'Tạo mã QR điểm danh',
-      description: 'Lab A-101 - 12 sinh viên đã điểm danh',
-      timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), // 4 hours ago
-    },
-    {
-      id: '4',
-      type: 'report_sent',
-      title: 'Gửi báo cáo vấn đề',
-      description: 'Thiết bị hỏng - Lab D-305',
-      timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-    },
-  ];
+  const apiUpcomingBookings = useMemo(
+    () => (upcomingBookingsData?.data ?? []).filter((booking) => {
+      if (!lecturerName) return true;
+      return (
+        booking.userName?.trim().toLowerCase() === lecturerName ||
+        booking.lecturerName?.trim().toLowerCase() === lecturerName
+      );
+    }),
+    [upcomingBookingsData, lecturerName],
+  );
+
+  const approvedQueue = useMemo<BookingRequest[]>(
+    () => bookingHistoryBookings
+      .filter((booking) => booking.status === 'Approved')
+      .map((booking, index) => ({
+        id: booking.id,
+        roomId: booking.roomId,
+        roomName: booking.roomName,
+        buildingName: booking.buildingName,
+        requestedBy: booking.userName || booking.lecturerName || 'N/A',
+        requestedAt: booking.date,
+        startTime: booking.startTime,
+        endTime: booking.endTime,
+        date: booking.date,
+        status: 'accepted',
+        purpose: booking.purpose,
+      })),
+    [bookingHistoryBookings],
+  );
+
+  const recentNotifications = useMemo(
+    () => (notificationsData?.items ?? []).slice(0, 5),
+    [notificationsData],
+  );
+
+  const derivedStats: BookingStats = {
+    totalAccepted: bookingHistoryBookings.filter((booking) => booking.status === 'Approved').length,
+    totalPending: bookingHistoryBookings.filter((booking) => booking.status === 'PendingApproval').length,
+    totalRejected: bookingHistoryBookings.filter((booking) => booking.status === 'Rejected').length,
+    upcomingBookings: scheduleBookings.length || apiUpcomingBookings.length || bookingHistoryBookings.length,
+  };
+
+  const upcomingBookings = scheduleBookings.length > 0
+    ? scheduleBookings
+    : (bookingHistoryBookings.length > 0 ? bookingHistoryBookings : apiUpcomingBookings);
+  const isUpcomingDataLoading = schedulesLoading || bookingHistoryLoading || upcomingBookingsLoading;
+
+  const recentActivities: Activity[] = recentNotifications.map((notification) => ({
+    id: notification.id,
+    type: notification.type === 'success'
+      ? 'booking_approved'
+      : notification.type === 'warning'
+        ? 'booking'
+        : notification.type === 'error'
+          ? 'report_sent'
+          : 'qr_generated',
+    title: notification.title,
+    description: notification.message,
+    timestamp: notification.createdAt ?? new Date().toISOString(),
+  }));
 
   return (
     <div className="w-full h-full flex gap-6 px-6 py-8 overflow-y-auto custom-scrollbar">
@@ -173,12 +185,12 @@ export const BookingDashboard: React.FC = () => {
           <p className="mb-3 inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-700">
             Performance Snapshot
           </p>
-          {statsLoading ? (
+          {bookingHistoryLoading ? (
             <div className="flex justify-center items-center h-32">
               <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
             </div>
           ) : (
-            <BookingStatsCard stats={stats} />
+            <BookingStatsCard stats={derivedStats} />
           )}
         </div>
 
@@ -197,7 +209,7 @@ export const BookingDashboard: React.FC = () => {
             </span>
           </div>
 
-          {upcomingLoading ? (
+          {isUpcomingDataLoading ? (
             <div className="flex justify-center items-center h-96">
               <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
             </div>
@@ -206,7 +218,7 @@ export const BookingDashboard: React.FC = () => {
           ) : (
             <div className="text-center py-24 text-slate-500 bg-blue-50 rounded-xl border border-blue-200 shadow-sm">
               <Calendar className="h-16 w-16 mx-auto mb-4 opacity-50" />
-              <p className="text-lg">No upcoming bookings</p>
+              <p className="text-lg">No upcoming lecturer schedules</p>
             </div>
           )}
         </div>
@@ -225,23 +237,23 @@ export const BookingDashboard: React.FC = () => {
               Recent Requests
             </h3>
             <span className="text-slate-600 text-sm">
-              {recentRequests.length}
+              {approvedQueue.length}
             </span>
           </div>
 
           <div className="space-y-3 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
-            {requestsLoading ? (
+            {bookingHistoryLoading ? (
               <div className="flex justify-center items-center h-32">
                 <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
               </div>
-            ) : recentRequests.length > 0 ? (
-              recentRequests.map((request) => (
+            ) : approvedQueue.length > 0 ? (
+              approvedQueue.map((request) => (
                 <RecentRequestCard key={request.id} request={request} />
               ))
             ) : (
               <div className="text-center py-12 text-slate-500 bg-emerald-50 rounded-xl border border-emerald-200 shadow-sm">
                 <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No recent requests</p>
+                <p>No accepted bookings</p>
               </div>
             )}
           </div>

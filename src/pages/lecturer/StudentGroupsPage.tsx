@@ -64,10 +64,6 @@ const StudentGroupsPage: React.FC = () => {
     });
   }, [groups, filters.searchQuery]);
 
-  const handleImportGroup = () => {
-    appAlert.info('Info', 'Import group feature will be available soon.');
-  };
-
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -91,7 +87,6 @@ const StudentGroupsPage: React.FC = () => {
         <GroupSearchFilter
           onFilterChange={handleFilterChange}
           isLoading={isLoading}
-          onImportGroup={handleImportGroup}
           onAddGroup={() => setShowCreateModal(true)}
         />
 

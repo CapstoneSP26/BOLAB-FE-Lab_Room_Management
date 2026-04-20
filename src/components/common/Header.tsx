@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { QrCode, Calendar, BookOpen } from 'lucide-react';
+import { QrCode, Calendar, BookOpen, Users } from 'lucide-react';
 import { NotificationDropdown } from './NotificationDropdown';
 import ProfileMenu from './ProfileMenu';
 import { FPTLogo } from '../icon/FPTLogo';
@@ -46,13 +46,6 @@ const Header: React.FC = () => {
     profile?.userImageUrl?.trim() ||
     'https://randomuser.me/api/portraits/men/32.jpg';
 
-  // Mock badge counts - Replace with real data from API/state
-  const badgeCounts = {
-    'book-room': 0,
-    'my-bookings': 3, // 3 pending approvals
-    attendance: 2, // 2 active sessions
-  };
-
   // Active sessions from global context (shared with AttendancePage)
   const activeSessions = activeSession && activeSession.isActive && activeSession.qrExpiry
     ? [
@@ -64,6 +57,13 @@ const Header: React.FC = () => {
         },
       ]
     : [];
+
+  // Badge counts sourced from real data when available
+  const badgeCounts = {
+    'book-room': 0,
+    'my-bookings': 0,
+    attendance: activeSessions.length,
+  };
 
   // Navigation items
   const navItems = [
@@ -84,6 +84,12 @@ const Header: React.FC = () => {
       label: 'Attendance',
       icon: QrCode,
       badgeKey: 'attendance',
+    },
+    {
+      path: '/student-groups',
+      label: 'Groups',
+      icon: Users,
+      badgeKey: 'student-groups',
     },
   ];
 
@@ -106,7 +112,6 @@ const Header: React.FC = () => {
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             const Icon = item.icon;
-            const badgeCount = badgeCounts[item.badgeKey as keyof typeof badgeCounts];
 
             return (
               <Link
@@ -124,12 +129,16 @@ const Header: React.FC = () => {
               >
                 <Icon className="w-4 h-4" />
                 <span className="text-sm">{item.label}</span>
-                {badgeCount > 0 && (
+                {/* Attendance badge: Show blue dot icon if there's an active session */}
+                {item.badgeKey === 'attendance' && activeSession?.isActive && (
                   <Badge
-                    count={badgeCount}
-                    type={item.badgeKey === 'attendance' ? 'success' : 'warning'}
-                    pulse={item.badgeKey === 'attendance'}
+                    dot={true}
+                    type="info"
+                    pulse={true}
                   />
+                )}
+                {item.badgeKey === 'attendance' && badgeCount > 0 && (
+                  <span className="h-2.5 w-2.5 rounded-full bg-green-500 shadow-[0_0_0_4px_rgba(34,197,94,0.15)]" />
                 )}
               </Link>
             );
