@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { RecentActivity, type Activity } from '../../components/common/RecentActivity';
-import { useToast } from '../../hooks/useToast';
 import {
   useProfile,
   useRecentActivities,
@@ -17,7 +16,6 @@ import {
 } from '../../features/profile';
 
 export default function StudentProfilePage() {
-  const appAlert = useToast();
   const { user } = useAuthStore();
 
   // API calls

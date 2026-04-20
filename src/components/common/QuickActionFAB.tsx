@@ -8,22 +8,11 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Plus, X, Calendar, QrCode, FileText } from 'lucide-react';
 import { SendReportModal } from '../../features/reports/components/SendReportModal';
 
-export const QuickActionFAB: React.FC = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
+const QuickActionFABInner: React.FC = () => {
   const fabRef = useRef<HTMLDivElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-
-  const hiddenPaths = ['/login'];
-  const isLabManagerPage = location.pathname.startsWith('/labmanager');
-  const isStudentPage = location.pathname.startsWith('/student');
-  const isHiddenPath = hiddenPaths.includes(location.pathname);
-
-  // Lecturer routes are only shown when not in labmanager/student pages
-  if (isLabManagerPage || isStudentPage || isHiddenPath) {
-    return null;
-  }
+  const navigate = useNavigate();
 
   // Close when clicking outside
   React.useEffect(() => {
@@ -134,4 +123,21 @@ export const QuickActionFAB: React.FC = () => {
       />
     </div>
   );
+};
+
+// Wrapper component that handles visibility logic
+export const QuickActionFAB: React.FC = () => {
+  const location = useLocation();
+
+  const hiddenPaths = ['/login'];
+  const isLabManagerPage = location.pathname.startsWith('/labmanager');
+  const isStudentPage = location.pathname.startsWith('/student');
+  const isHiddenPath = hiddenPaths.includes(location.pathname);
+
+  // Return null BEFORE rendering the inner component
+  if (isLabManagerPage || isStudentPage || isHiddenPath) {
+    return null;
+  }
+
+  return <QuickActionFABInner />;
 };

@@ -275,7 +275,7 @@ export default function LabCalendar() {
       <CsvImportModal
         open={csvOpen}
         onClose={() => setCsvOpen(false)}
-        onImport={async (file) => {
+        onImport={async () => {
           await reload();
         }}
         templateFileName="schedule_template.csv"

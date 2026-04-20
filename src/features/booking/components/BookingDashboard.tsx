@@ -6,7 +6,7 @@ import { BookingCalendar } from './BookingCalendar';
 import { useUpcomingBookings } from '../hooks/useUpcomingBookings';
 import { useBookingHistoryPageState } from '../hooks/useBookingHistoryPageState';
 import { useAuthStore } from '../../../store/useAuthStore';
-import { RecentActivity } from '../../../components/common/RecentActivity';
+import { RecentActivity, type Activity } from '../../../components/common/RecentActivity';
 import type { Booking, BookingRequest, BookingStats } from '../types/booking.type';
 import { useSchedules } from '../../schedules/hooks/useSchedules';
 import type { ScheduleDto } from '../../schedules/types/schedule.type';
@@ -47,17 +47,10 @@ export const BookingDashboard: React.FC = () => {
     bookingHistoryParams,
     true,
   );
-  const { data: notificationsData, isLoading: notificationsLoading } = useNotifications({
+  const { data: notificationsData } = useNotifications({
     pageNumber: 1,
     pageSize: 5,
   });
-
-  const mockStats = {
-    totalAccepted: 24,
-    totalPending: 8,
-    totalRejected: 3,
-    upcomingBookings: 12,
-  };
 
   const mapScheduleToBooking = (schedule: ScheduleDto): Booking => ({
     id: schedule.id,
@@ -129,7 +122,7 @@ export const BookingDashboard: React.FC = () => {
   const approvedQueue = useMemo<BookingRequest[]>(
     () => bookingHistoryBookings
       .filter((booking) => booking.status === 'Approved')
-      .map((booking, index) => ({
+      .map((booking) => ({
         id: booking.id,
         roomId: booking.roomId,
         roomName: booking.roomName,
