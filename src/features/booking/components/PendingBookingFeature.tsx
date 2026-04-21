@@ -59,7 +59,7 @@ export default function PendingBookingFeature() {
 
   const params: GetBookingRequestsRequest = useMemo(
     () => ({
-      status: "PendingApproval" as BookingStatus,
+      requestStatus: "PendingApproval" as BookingStatus,
       labRoomId: roomId === "ALL" ? undefined : roomId,
       buildingId: buildingId === "ALL" ? undefined : buildingId,
       keyword: q.trim() || undefined,

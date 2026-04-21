@@ -46,6 +46,7 @@ export interface GetSchedulesFilters {
   toDate: string;
   status: ScheduleStatus | "";
   scheduleType: string;
+  q: string;
 }
 
 export interface CreateScheduleCommand {

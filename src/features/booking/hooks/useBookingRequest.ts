@@ -129,8 +129,8 @@ const matchesHistoryQuery = (
     return true;
   }
 
-  if (params.status && params.status !== "All") {
-    if (normalizeText(item.status) !== normalizeText(params.status)) {
+  if (params.requestStatus && params.requestStatus !== "All") {
+    if (normalizeText(item.status) !== normalizeText(params.requestStatus)) {
       return false;
     }
   }

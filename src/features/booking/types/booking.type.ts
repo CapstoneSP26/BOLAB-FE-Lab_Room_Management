@@ -223,7 +223,7 @@ export interface GetBookingRequestsRequest {
   labRoomId?: number;
   buildingId?: number;
   keyword?: string;
-  status?: BookingStatus;
+  requestStatus?: BookingStatus;
   slotTypeId?: number;
   slotTypeCode?: string;
   sortBy?: string;

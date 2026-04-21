@@ -71,7 +71,7 @@ export default function HistoryBookingFeature() {
       labRoomId: roomId === "ALL" ? undefined : roomId,
       buildingId: buildingId === "ALL" ? undefined : buildingId,
       keyword: q.trim() || undefined,
-      status:
+      requestStatus:
         status === "All"
           ? undefined
           : isNaN(Number(status))
