@@ -41,6 +41,8 @@ type Props = {
 };
 
 function toStatusLabel(value: string) {
+  if (value === "2") return "Approved";
+  if (value === "3") return "Rejected";
   return value
     .toLowerCase()
     .replace(/_/g, " ")
@@ -49,11 +51,11 @@ function toStatusLabel(value: string) {
 
 function getStatusBadgeColor(status: string) {
   const s = status.toUpperCase();
-  if (s === "PENDING" || s === "PENDINGAPPROVAL")
+  if (s === "PENDING" || s === "PENDINGAPPROVAL" || s === "1")
     return "bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/30";
-  if (s === "REJECTED")
+  if (s === "REJECTED" || s === "3")
     return "bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-500/30";
-  if (s === "APPROVED")
+  if (s === "APPROVED" || s === "2")
     return "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30";
   return "bg-gray-100 dark:bg-gray-500/20 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-500/30";
 }
@@ -89,10 +91,8 @@ export default function HistoryBookingFilter({
 
   const handleBuildingChange = (value: number | "ALL") => {
     onBuildingId(value);
-    // Reset room khi đổi building
-    if (value === "ALL") {
-      onRoomId("ALL");
-    }
+    onRoomId("ALL");
+
     if (onApplyFilters) {
       setTimeout(() => onApplyFilters(), 0);
     }
@@ -148,7 +148,7 @@ export default function HistoryBookingFilter({
             <input
               value={q}
               onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder="Search by ID, user, room, purpose, reason..."
+              placeholder="Search by user, room, purpose, reason..."
               className="h-12 w-full rounded-xl border border-gray-300 bg-white pl-11 pr-10 text-sm text-gray-800 placeholder:text-gray-400 transition-all focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-blue-500"
             />
             {q && (

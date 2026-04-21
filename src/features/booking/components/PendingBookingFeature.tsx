@@ -44,23 +44,32 @@ export default function PendingBookingFeature() {
   const [selected, setSelected] = useState<BookingRequest | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+
   // Reject with reason state
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejectId, setRejectId] = useState<string | null>(null);
 
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [q, buildingId, roomId, slotType]);
+
   const params: GetBookingRequestsRequest = useMemo(
     () => ({
-      status: "PendingApproval" as BookingStatus,
+      requestStatus: "PendingApproval" as BookingStatus,
       labRoomId: roomId === "ALL" ? undefined : roomId,
       buildingId: buildingId === "ALL" ? undefined : buildingId,
       keyword: q.trim() || undefined,
       slotTypeId: slotType === "ALL" ? undefined : slotType,
-      page: 1,
-      limit: 100,
+      page: page,
+      limit: limit,
       sortBy: "RequestedAt",
       isDescending: true,
     }),
-    [roomId, buildingId, q, slotType],
+    [roomId, buildingId, q, slotType, page, limit],
   );
 
   const pendingQuery = useBookingRequests(params);
@@ -75,12 +84,15 @@ export default function PendingBookingFeature() {
     setRejectModalOpen(false);
   };
 
-  const items = useMemo(
-    () => pendingQuery.data?.data ?? [],
-    [pendingQuery.data],
+  const rawData: any = pendingQuery.data;
+  const items = useMemo<BookingRequest[]>(
+    () => rawData?.data ?? rawData?.items ?? [],
+    [rawData],
   );
-  const totalCount = pendingQuery.data?.total ?? items.length;
+  const totalCount = rawData?.total ?? rawData?.totalCount ?? 0;
   const loading = pendingQuery.isLoading || pendingQuery.isFetching;
+
+  const totalPages = Math.ceil(totalCount / limit);
 
   const reload = async () => {
     await pendingQuery.refetch();
@@ -239,7 +251,7 @@ export default function PendingBookingFeature() {
           </div>
         </div>
 
-        <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-2">
           <ReportStatCard
             label="Total Items"
             value={totalCount}
@@ -279,46 +291,6 @@ export default function PendingBookingFeature() {
               </svg>
             }
             color="purple"
-          />
-          <ReportStatCard
-            label="Active Rooms"
-            value={roomOptions.length}
-            icon={
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                />
-              </svg>
-            }
-            color="emerald"
-          />
-          <ReportStatCard
-            label="Buildings"
-            value={buildingOptions.length}
-            icon={
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                />
-              </svg>
-            }
-            color="amber"
           />
         </div>
       </div>
@@ -463,7 +435,7 @@ export default function PendingBookingFeature() {
           <div className="overflow-hidden">
             <div className="border-b border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-700 dark:bg-gray-800">
               <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                Booking Requests ({rows.length})
+                Booking Requests ({totalCount})
               </h3>
             </div>
 
@@ -471,6 +443,10 @@ export default function PendingBookingFeature() {
               loading={loading}
               rows={rows}
               emptyText="No pending requests."
+              page={page}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              onPageChange={setPage}
               onView={(b) => {
                 setSelected(b);
                 setOpen(true);

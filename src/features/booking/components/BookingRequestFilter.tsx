@@ -49,10 +49,7 @@ export default function BookingFilters({
 
   const handleBuildingChange = (value: number | "ALL") => {
     onBuildingId(value);
-    // Reset room khi đổi building
-    if (value === "ALL") {
-      onRoomId("ALL");
-    }
+    onRoomId("ALL");
     if (onApplyFilters) {
       setTimeout(() => onApplyFilters(), 0);
     }

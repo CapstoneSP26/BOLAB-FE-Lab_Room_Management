@@ -102,6 +102,24 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
 
   // Handle clicking on a fixed slot
   const handleSlotClick = (date: string, frame: any) => {
+    console.log("Clicked slot on date:", date, "with frame:", frame);
+    const bookingData = {
+      date: date,
+      startTime: frame.startTime.slice(0, 5), // Lấy giờ và phút (HH:mm)
+      endTime: frame.endTime.slice(0, 5), // Lấy giờ và phút (HH:mm)
+    };
+
+    console.log("Booking Data:", bookingData);
+
+    // --- VALIDATE POLICY CHO FIXED SLOT ---
+    if (policies) {
+      const validation = checkLabPolicies(policies, bookingData);
+      if (!validation.isValid) {
+        appAlert.error("Không thể đặt lịch", validation.message);
+        return;
+      }
+    }
+
     // Thực thi callback onCreateBooking được truyền từ props
     onCreateBooking({
       date: date, // Định dạng YYYY-MM-DD
@@ -297,6 +315,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                 activeSlotType={currentSlotType}
                 events={events}
                 onSlotClick={handleSlotClick}
+                minBookingLeadTime={minBookingLeadTime}
                 maxConcurrent={maxConcurrentBookings}
               />
             ) : null}

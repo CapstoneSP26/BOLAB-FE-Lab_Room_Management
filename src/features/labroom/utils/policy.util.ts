@@ -61,6 +61,10 @@ export const checkLabPolicies = (
     return { isValid: false, message: 'Định dạng thời gian không hợp lệ.' };
   }
 
+  if (isBefore(startDateTime, now)) {
+    return { isValid: false, message: 'Thời gian bắt đầu phải lớn hơn thời gian hiện tại.' };
+  }
+
   // 2. Duyệt qua các Rule quan trọng
   // Rule: Thời gian đặt trước tối thiểu (MinBookingLeadTime - đơn vị: Giờ)
   if (policies[PolicyType.MinBookingLeadTime]) {

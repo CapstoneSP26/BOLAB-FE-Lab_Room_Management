@@ -16,16 +16,20 @@ export type LabCalendarEventProps = {
   status: string;
   roomName: string;
   buildingName: string;
+  roomId?: number;
+  buildingId?: number;
 };
 
 export type RoomLookupItem = {
   id: number;
   roomName: string;
+  buildingId: number;
   buildingName: string;
 };
 
 export type ScheduleRoomOption = {
   roomName: string;
+  buildingId: number;
   buildingName: string;
   roomId?: number;
 };
@@ -36,8 +40,8 @@ export type LabCalendarSelectOption = {
 };
 
 export type LabCalendarFilterState = {
-  selectedRoom: string;
-  selectedBuilding: string;
+  selectedRoom: string; // "ALL" or roomId string
+  selectedBuilding: string; // "ALL" or buildingId string
   selectedTimeRange: string;
   selectedStatus: string;
   selectedSlotType: string;

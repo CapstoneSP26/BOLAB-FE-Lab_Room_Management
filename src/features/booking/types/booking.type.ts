@@ -89,7 +89,9 @@ export type BookingStatus =
   | "PendingApproval"
   | "Approved"
   | "Rejected"
-  | "Cancelled";
+  | "Cancelled"
+  | string
+  | number;
 
 export interface BookingRequest {
   id: string | number;
@@ -104,6 +106,13 @@ export interface BookingRequest {
   studentCount?: number;
   status: string;
   purpose?: string;
+  reason?: string;
+  requester?: {
+    id: string;
+    fullName: string;
+    userCode: string;
+    email: string;
+  }
 }
 
 export interface BookingStats {
@@ -215,7 +224,7 @@ export interface GetBookingRequestsRequest {
   labRoomId?: number;
   buildingId?: number;
   keyword?: string;
-  status?: BookingStatus;
+  requestStatus?: BookingStatus;
   slotTypeId?: number;
   slotTypeCode?: string;
   sortBy?: string;

@@ -19,7 +19,7 @@ export const FlexibleGridView: React.FC<FlexibleGridViewProps> = ({
   weekDays,
   dragState,
   events,
-  minBookingLeadTime,
+  minBookingLeadTime = 0,
   handleMouseDown,
 }) => {
   const { START_HOUR, END_HOUR, CELL_HEIGHT } = CALENDAR_CONFIG;
@@ -175,13 +175,13 @@ export const FlexibleGridView: React.FC<FlexibleGridViewProps> = ({
         {weekDays.map((date, dayIndex) => {
           const isDraggingThisColumn = dragState && dragState.isActive && dragState.dayIndex === dayIndex;
           const dateStr = format(date, 'yyyy-MM-dd');
-          const isToday = dateStr === format(now, 'yyyy-MM-dd');
-          const isPastDay = isBefore(date, startOfHour(now)) && !isToday;
+          const isMinAllowedDay = dateStr === format(minAllowedTime, 'yyyy-MM-dd');
+          const isPastDay = isBefore(date, startOfHour(minAllowedTime)) && !isMinAllowedDay;
 
           let lockedOverlayStyle = null;
           if (isPastDay) {
             lockedOverlayStyle = { top: 0, height: "100%" };
-          } else if (isToday) {
+          } else if (isMinAllowedDay) {
             const heightPos = Math.min(timeToPosition(format(minAllowedTime, 'HH:mm')), maxHeight);
             lockedOverlayStyle = { top: 0, height: `${heightPos}px` };
           }

@@ -16,12 +16,14 @@ type LabCalendarViewProps = {
   loading: boolean;
   scheduleCount: number;
   events: EventInput[];
+  onEventClick?: (schedule: any) => void;
 };
 
 export function LabCalendarView({
   loading,
   scheduleCount,
   events,
+  onEventClick,
 }: LabCalendarViewProps) {
   useEffect(() => {
     const styleId = "fullcalendar-custom-styles";
@@ -56,7 +58,12 @@ export function LabCalendarView({
       dateClick: undefined,
       selectable: false,
       select: undefined,
-      eventClick: undefined,
+      eventClick: (info) => {
+        const schedule = info.event.extendedProps.schedule;
+        if (schedule && onEventClick) {
+          onEventClick(schedule);
+        }
+      },
       height: "auto",
       expandRows: true,
       eventContent: (arg: EventContentArg) => {
