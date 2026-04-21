@@ -18,14 +18,13 @@ import {
 } from "../../../components/ui/ComponentsParts";
 import BuildingManagementFilters from "./BuildingManagementFilters";
 import BuildingManagementTable from "./BuildingManagementTable";
-import type { BuildingDto } from "../types/building.type";
-import type { BuildingFormValues } from "../types/buildingManagement.type";
+import type { BuildingDto, BuildingFormValues } from "../types/building.type";
 import {
   useCreateBuilding,
   useDeleteBuilding,
-  useManagedBuildings,
+  useBuildings,
   useUpdateBuilding,
-} from "../hooks/useBuildingManagement";
+} from "../hooks/useBuildings";
 import { getErrorMessage } from "../../../utils/error";
 import BuildingFormModal from "./BuildingFormModal";
 
@@ -51,11 +50,13 @@ export default function BuildingManagementFeature() {
     isLoading,
     isFetching,
     refetch,
-  } = useManagedBuildings({
-    searchTerm: deferredSearch || undefined,
-    campusId: campusId === "ALL" ? undefined : campusId,
-    pageNumber: page,
-    pageSize: PAGE_SIZE,
+  } = useBuildings({
+    params: {
+      searchTerm: deferredSearch || undefined,
+      campusId: campusId === "ALL" ? undefined : campusId,
+      pageNumber: page,
+      pageSize: PAGE_SIZE,
+    }
   });
 
   const rows = useMemo(() => pagedBuildings?.items ?? [], [pagedBuildings?.items]);

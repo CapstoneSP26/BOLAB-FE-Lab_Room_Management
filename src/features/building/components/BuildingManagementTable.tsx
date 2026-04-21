@@ -85,9 +85,6 @@ export default function BuildingManagementTable({
                         <div className="font-semibold text-gray-900 dark:text-white">
                           {building.buildingName}
                         </div>
-                        <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                          ID: {building.id} • Campus ID: {building.campusId}
-                        </div>
                       </div>
                     </div>
                   </td>

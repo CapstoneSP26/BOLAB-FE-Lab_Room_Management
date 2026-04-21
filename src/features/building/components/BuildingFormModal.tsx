@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Building2, Image as ImageIcon, Loader2, X } from "lucide-react";
-import type { BuildingDto } from "../types/building.type";
-import type { BuildingFormValues } from "../types/buildingManagement.type";
+import type { BuildingDto, BuildingFormValues } from "../types/building.type";
 
 type Props = {
   isOpen: boolean;

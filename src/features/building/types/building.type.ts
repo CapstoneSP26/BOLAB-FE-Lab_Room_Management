@@ -45,3 +45,15 @@ export interface GetBuildingsRequest {
   page?: number;
   limit?: number;
 }
+
+export interface BuildingFormValues {
+  campusId: number;
+  buildingName: string;
+  description: string;
+  buildingImageUrl?: string;
+}
+
+export type CreateBuildingPayload = BuildingFormValues;
+
+export type UpdateBuildingPayload = BuildingFormValues;
+

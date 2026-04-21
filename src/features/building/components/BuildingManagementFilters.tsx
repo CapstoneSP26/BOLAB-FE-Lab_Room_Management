@@ -10,9 +10,7 @@ type Props = {
 
 export default function BuildingManagementFilters({
   search,
-  campusId,
   onSearchChange,
-  onCampusIdChange,
   onReset,
 }: Props) {
   return (
@@ -31,27 +29,6 @@ export default function BuildingManagementFilters({
               className="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-9 pr-3 text-sm font-medium text-gray-800 shadow-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900/20 dark:text-gray-100"
             />
           </div>
-        </div>
-
-        <div className="lg:col-span-3">
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">
-            Campus ID
-          </label>
-          <input
-            inputMode="numeric"
-            value={campusId === "ALL" ? "" : String(campusId)}
-            onChange={(event) => {
-              const raw = event.target.value.trim();
-              if (raw === "") {
-                onCampusIdChange("ALL");
-                return;
-              }
-              const next = Number(raw);
-              onCampusIdChange(Number.isFinite(next) ? next : "ALL");
-            }}
-            placeholder="(all)"
-            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm font-medium text-gray-800 shadow-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900/20 dark:text-gray-100"
-          />
         </div>
 
         <div className="flex items-end lg:col-span-2">
