@@ -107,6 +107,9 @@ export function BookingHistoryTable({
                 Purpose
               </th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                Created At
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                 Status
               </th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -169,6 +172,19 @@ export function BookingHistoryTable({
                 <td className="px-6 py-4">
                   <span className="text-sm text-gray-700 line-clamp-2">
                     {booking.purpose || '-'}
+                  </span>
+                </td>
+
+                {/* Created At */}
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className="text-sm text-gray-700">
+                    {booking.createdAt
+                      ? new Date(booking.createdAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })
+                      : '-'}
                   </span>
                 </td>
 
