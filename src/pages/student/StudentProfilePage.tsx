@@ -5,14 +5,13 @@
  */
 
 import {
-  User, Mail, Calendar, Loader2
+  User, Mail, Loader2
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { RecentActivity, type Activity } from '../../components/common/RecentActivity';
 import {
   useProfile,
   useRecentActivities,
-  useStudentStatistics,
 } from '../../features/profile';
 
 export default function StudentProfilePage() {
@@ -20,7 +19,6 @@ export default function StudentProfilePage() {
 
   // API calls
   const { data: profileData, isLoading: profileLoading } = useProfile();
-  const { data: statsData, isLoading: statsLoading } = useStudentStatistics();
   const { data: recentActivitiesData, isLoading: activitiesLoading } = useRecentActivities(10);
   
   // Use profile data or fallback
@@ -32,15 +30,6 @@ export default function StudentProfilePage() {
     userCode: '',
   }) as any;
 
-  // Convert stats data
-  const stats = (statsData || {
-    totalClassesAttended: 0,
-    weekAttendanceRate: 0,
-    currentStreak: 0,
-    totalClasses: 0,
-    todayAttendance: false,
-  }) as any;
-
   // Convert recent activities
   const recentActivities: Activity[] = (Array.isArray(recentActivitiesData) ? recentActivitiesData : []).map((activity: any, idx: number) => ({
     id: activity.id || String(idx),
@@ -49,8 +38,6 @@ export default function StudentProfilePage() {
     description: activity.description,
     timestamp: activity.timestamp,
   }));
-
-  let profileCompletion = statsLoading ? 0 : Math.min(85, ((statsData as any)?.totalClassesAttended || 0) * 2);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-8">
@@ -135,65 +122,6 @@ export default function StudentProfilePage() {
 
             {/* Sidebar Stats */}
             <div className="lg:col-span-1 space-y-6">
-              {/* Statistics Card */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Attendance Stats</h3>
-                {statsLoading ? (
-                  <div className="flex items-center justify-center h-40">
-                    <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          <Calendar size={16} className="inline mr-2" />
-                          Total Classes
-                        </span>
-                        <span className="font-bold text-gray-900 dark:text-white">{stats.totalClasses}</span>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Classes Attended</span>
-                        <span className="font-bold text-green-600">{stats.totalClassesAttended}</span>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Week Attendance</span>
-                        <span className="font-bold text-blue-600">{Math.round(stats.weekAttendanceRate)}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                        <div
-                          className="bg-blue-600 h-2 rounded-full"
-                          style={{ width: `${stats.weekAttendanceRate}%` }}
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Current Streak</span>
-                        <span className="font-bold text-orange-600">{stats.currentStreak} days</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Profile Completion */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Profile Completion</h3>
-                <div className="mb-2">
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                    <div
-                      className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-300"
-                      style={{ width: `${profileCompletion}%` }}
-                    />
-                  </div>
-                </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{Math.round(profileCompletion)}% Complete</p>
-              </div>
             </div>
           </div>
         )}

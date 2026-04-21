@@ -33,6 +33,19 @@ export const useSchedules = (
   });
 };
 
+export const useSchedulesStudent = (
+  params: GetSchedulesParams,
+  enabled: boolean = true,
+) => {
+  return useQuery({
+    queryKey: ["schedules-student", params],
+    queryFn: () => scheduleApi.getSchedulesStudent(params),
+    placeholderData: keepPreviousData,
+    retry: 2,
+    enabled,
+  });
+};
+
 export function useCreateSchedule(ctx?: MutationCtx) {
   const qc = useQueryClient();
 

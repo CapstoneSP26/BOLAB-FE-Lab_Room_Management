@@ -9,6 +9,7 @@ import { getStartOfDayVNInUTC } from '../../utils/date.util';
 import { addDays } from 'date-fns';
 import { useParams } from 'react-router-dom';
 import { useLabRoomDetail } from '../../features/labroom/hooks/useLabRooms';
+import { useAuthStore } from '../../store/useAuthStore';
 
 
 /**
@@ -19,8 +20,10 @@ const CalendarTabletPage: React.FC = () => {
   const { labRoomId } = useParams();
   const [weekOffset, setWeekOffset] = useState(0);
   const { START_HOUR, END_HOUR } = CALENDAR_CONFIG;
+  const { isAuthenticated } = useAuthStore();
 
-  const { data } = useLabRoomDetail(Number(labRoomId));
+  // Only fetch room details if user is authenticated
+  const { data } = useLabRoomDetail(Number(labRoomId), { enabled: isAuthenticated });
 
   const { weekDays, weekStart, weekEnd } = useMemo(() => {
     const days = getWeekDaysByOffset(weekOffset);
