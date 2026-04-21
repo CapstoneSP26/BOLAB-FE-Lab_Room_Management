@@ -1,43 +1,68 @@
-import { Building2, DoorOpen, Filter, X } from "lucide-react";
+import { Building2, DoorOpen, Filter } from "lucide-react";
 import type {
-  GetSchedulesFilters,
   ScheduleStatus,
 } from "../types/schedule.type";
 import type { BuildingDto } from "../../building/types/building.type";
 import type { LabRoomDto } from "../../labroom/types/room.type";
 
 type Props = {
-  values: GetSchedulesFilters;
-  onChange: (next: GetSchedulesFilters) => void;
+  buildingId: number | "ALL";
+  onBuildingId: (id: number | "ALL") => void;
+  labRoomId: number | "ALL";
+  onLabRoomId: (id: number | "ALL") => void;
+  status: ScheduleStatus | "";
+  onStatus: (status: ScheduleStatus | "") => void;
+  fromDate: string;
+  onFromDate: (date: string) => void;
+  toDate: string;
+  onToDate: (date: string) => void;
+  q: string;
+  onQ: (val: string) => void;
+
   buildingOptions: BuildingDto[];
   roomOptions: LabRoomDto[];
-  onApply: () => void;
-  onReset: () => void;
+
   showFilters: boolean;
   onToggleFilters: () => void;
-  activeFilterCount: number;
+  onReset?: () => void;
 };
 
 const STATUS_OPTIONS: { value: ScheduleStatus | ""; label: string }[] = [
   { value: "", label: "All status" },
-  { value: "NotYet", label: "Not yet" },
   { value: "Active", label: "Active" },
-  { value: "Finish", label: "Finish" },
+  { value: "InProcess", label: "In Process" },
+  { value: "Completed", label: "Completed" },
+  { value: "Cancelled", label: "Cancelled" },
 ];
-
 export default function ScheduleManagementFilters({
-  values,
-  onChange,
+  buildingId,
+  onBuildingId,
+  labRoomId,
+  onLabRoomId,
+  status,
+  onStatus,
+  fromDate,
+  onFromDate,
+  toDate,
+  onToDate,
+  q,
+  onQ,
+
   buildingOptions,
   roomOptions,
-  onApply,
-  onReset,
+
   showFilters,
   onToggleFilters,
-  activeFilterCount,
+  onReset,
 }: Props) {
-  const patch = (partial: Partial<GetSchedulesFilters>) =>
-    onChange({ ...values, ...partial });
+  const activeFilterCount = [
+    buildingId !== "ALL",
+    labRoomId !== "ALL",
+    status !== "",
+    fromDate !== "",
+    toDate !== "",
+    q.trim() !== "",
+  ].filter(Boolean).length;
 
   return (
     <div className="space-y-4">
@@ -56,26 +81,32 @@ export default function ScheduleManagementFilters({
           ) : null}
         </button>
 
-        <button
-          type="button"
-          onClick={onApply}
-          className="rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600"
-        >
-          Apply
-        </button>
-
-        <button
-          type="button"
-          onClick={onReset}
-          className="inline-flex items-center gap-1 rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
-        >
-          <X className="h-4 w-4" />
-          Reset
-        </button>
+        {showFilters && onReset && (
+          <button
+            type="button"
+            onClick={onReset}
+            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+          >
+            Clear Filters
+          </button>
+        )}
       </div>
 
       {showFilters ? (
         <div className="grid gap-4 rounded-2xl border border-gray-200 bg-gray-50/80 p-4 dark:border-gray-800 dark:bg-white/[0.03] md:grid-cols-2 lg:grid-cols-3">
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="font-medium text-gray-700 dark:text-gray-300">
+              Search
+            </span>
+            <input
+              type="text"
+              value={q}
+              onChange={(e) => onQ(e.target.value)}
+              placeholder="Search subject, lecturer..."
+              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 shadow-sm outline-none focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+            />
+          </label>
+
           <div className="flex flex-col gap-1.5 text-sm">
             <span className="font-medium text-gray-700 dark:text-gray-300">
               Building
@@ -83,18 +114,19 @@ export default function ScheduleManagementFilters({
             <div className="relative">
               <Building2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <select
-                value={String(values.buildingId)}
+                value={String(buildingId)}
                 onChange={(e) => {
                   const val =
                     e.target.value === "ALL" ? "ALL" : Number(e.target.value);
-                  patch({ buildingId: val, labRoomId: "ALL" });
+                  onBuildingId(val);
+                  onLabRoomId("ALL");
                 }}
                 className="w-full appearance-none rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-8 text-gray-900 shadow-sm outline-none transition-all focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
               >
                 <option value="ALL">All buildings</option>
                 {buildingOptions.map((b) => (
                   <option key={String(b.id)} value={b.id}>
-                    {b.buildingName}
+                    {b.buildingName || (b as any).name}
                   </option>
                 ))}
               </select>
@@ -108,17 +140,17 @@ export default function ScheduleManagementFilters({
             <div className="relative">
               <DoorOpen className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <select
-                value={String(values.labRoomId)}
+                value={String(labRoomId)}
                 onChange={(e) => {
                   const val =
                     e.target.value === "ALL" ? "ALL" : Number(e.target.value);
-                  patch({ labRoomId: val });
+                  onLabRoomId(val);
                 }}
-                disabled={values.buildingId === "ALL"}
+                disabled={buildingId === "ALL"}
                 className="w-full appearance-none rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-8 text-gray-900 shadow-sm outline-none transition-all focus:border-brand-500 disabled:bg-gray-100 disabled:text-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:disabled:bg-gray-700/50"
               >
                 <option value="ALL">
-                  {values.buildingId === "ALL"
+                  {buildingId === "ALL"
                     ? "Select building first"
                     : "All rooms"}
                 </option>
@@ -133,36 +165,12 @@ export default function ScheduleManagementFilters({
 
           <label className="flex flex-col gap-1.5 text-sm">
             <span className="font-medium text-gray-700 dark:text-gray-300">
-              From (occurs after)
-            </span>
-            <input
-              type="date"
-              value={values.fromDate}
-              onChange={(e) => patch({ fromDate: e.target.value })}
-              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 shadow-sm outline-none focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-            />
-          </label>
-
-          <label className="flex flex-col gap-1.5 text-sm">
-            <span className="font-medium text-gray-700 dark:text-gray-300">
-              To (ends before)
-            </span>
-            <input
-              type="date"
-              value={values.toDate}
-              onChange={(e) => patch({ toDate: e.target.value })}
-              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 shadow-sm outline-none focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-            />
-          </label>
-
-          <label className="flex flex-col gap-1.5 text-sm">
-            <span className="font-medium text-gray-700 dark:text-gray-300">
               Status
             </span>
             <select
-              value={values.status}
+              value={status}
               onChange={(e) =>
-                patch({ status: e.target.value as ScheduleStatus | "" })
+                onStatus(e.target.value as ScheduleStatus | "")
               }
               className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 shadow-sm outline-none focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
             >
@@ -174,15 +182,26 @@ export default function ScheduleManagementFilters({
             </select>
           </label>
 
-          <label className="flex flex-col gap-1.5 text-sm md:col-span-2 lg:col-span-1">
+          <label className="flex flex-col gap-1.5 text-sm">
             <span className="font-medium text-gray-700 dark:text-gray-300">
-              Schedule type
+              From (occurs after)
             </span>
             <input
-              type="text"
-              value={values.scheduleType}
-              onChange={(e) => patch({ scheduleType: e.target.value })}
-              placeholder="e.g. LECTURE, LAB"
+              type="date"
+              value={fromDate}
+              onChange={(e) => onFromDate(e.target.value)}
+              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 shadow-sm outline-none focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="font-medium text-gray-700 dark:text-gray-300">
+              To (ends before)
+            </span>
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => onToDate(e.target.value)}
               className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 shadow-sm outline-none focus:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
             />
           </label>

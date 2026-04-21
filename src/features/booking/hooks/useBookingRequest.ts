@@ -129,8 +129,8 @@ const matchesHistoryQuery = (
     return true;
   }
 
-  if (params.status && params.status !== "All") {
-    if (normalizeText(item.status) !== normalizeText(params.status)) {
+  if (params.requestStatus && params.requestStatus !== "All") {
+    if (normalizeText(item.status) !== normalizeText(params.requestStatus)) {
       return false;
     }
   }
@@ -142,8 +142,10 @@ const matchesHistoryQuery = (
     return false;
   }
 
-  if (params.buildingId !== undefined) {
-    return false;
+  if (
+    params.buildingId !== undefined &&
+    String(item.buildingName) !== String(item.buildingName) 
+  ) {
   }
 
   if (params.keyword) {

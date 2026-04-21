@@ -3,16 +3,13 @@ import { CalendarClock, Layers, Plus, RefreshCw } from "lucide-react";
 import { useToast } from "../../../hooks/useToast";
 import { getErrorMessage } from "../../../utils/error";
 import type { ScheduleDto } from "../types/schedule.type";
-import type {
-  GetSchedulesFilters,
-  GetSchedulesParams,
-} from "../types/schedule.type";
 import {
   useCreateSchedule,
   useDeleteSchedule,
   useUpdateSchedule,
   useSchedules,
 } from "../hooks/useSchedules";
+import type { ScheduleStatus } from "../types/schedule.type";
 import { useBuildings } from "../../building/hooks/useBuildings";
 import { useManagedLabRooms } from "../../labroom/hooks/useLabRooms";
 import type { CreateScheduleCommand } from "../types/schedule.type";
@@ -20,74 +17,49 @@ import ScheduleFormModal from "./ScheduleFormModal";
 import ScheduleManagementFilters from "./ScheduleManagementFilters";
 import ScheduleManagementTable from "./ScheduleManagementTable";
 import SlotTypeManagementPanel from "../../slot/components/SlotTypeManagementPanel";
-
 const PAGE_SIZE = 10;
-
-const emptyFilters = (): GetSchedulesFilters => ({
-  buildingId: "ALL",
-  labRoomId: "ALL",
-  fromDate: "",
-  toDate: "",
-  status: "",
-  scheduleType: "",
-});
-
-function countActive(filters: GetSchedulesFilters): number {
-  return [
-    filters.buildingId !== "ALL",
-    filters.labRoomId !== "ALL",
-    filters.fromDate !== "",
-    filters.toDate !== "",
-    filters.status !== "",
-    filters.scheduleType.trim() !== "",
-  ].filter(Boolean).length;
-}
-
-function toListParams(
-  page: number,
-  filters: GetSchedulesFilters,
-): GetSchedulesParams {
-  const labRoomId =
-    filters.labRoomId === "ALL" ? undefined : filters.labRoomId;
-  return {
-    pageNumber: page,
-    pageSize: PAGE_SIZE,
-    labRoomId: labRoomId,
-    fromDate: filters.fromDate || undefined,
-    toDate: filters.toDate || undefined,
-    status: filters.status === "" ? undefined : filters.status,
-    type: filters.scheduleType.trim() || undefined,
-    sortBy: "startTime",
-    isDescending: false,
-  };
-}
 
 export default function ScheduleManagementFeature() {
   const toast = useToast();
   const [tab, setTab] = useState<"schedules" | "slots">("schedules");
   const [showFilters, setShowFilters] = useState(true);
-  const [draftFilters, setDraftFilters] =
-    useState<GetSchedulesFilters>(emptyFilters);
-  const [appliedFilters, setAppliedFilters] =
-    useState<GetSchedulesFilters>(emptyFilters);
+  
+  // Flattened Filter States
+  const [buildingId, setBuildingId] = useState<number | "ALL">("ALL");
+  const [labRoomId, setLabRoomId] = useState<number | "ALL">("ALL");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [status, setStatus] = useState<ScheduleStatus | "">("");
+  const [scheduleType, setScheduleType] = useState("");
+  const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
 
-  const deferredApplied = useDeferredValue(appliedFilters);
+  const deferredQ = useDeferredValue(q.trim());
 
-  const listParams = useMemo(
-    () => toListParams(page, deferredApplied),
-    [page, deferredApplied],
-  );
-
-  const { data, isLoading, isFetching, refetch } = useSchedules(
-    listParams,
+  const { data: pagedSchedules, isLoading, isFetching, refetch } = useSchedules(
+    {
+      pageNumber: page,
+      pageSize: PAGE_SIZE,
+      buildingId: buildingId === "ALL" ? undefined : (buildingId as number),
+      labRoomId: labRoomId === "ALL" ? undefined : (labRoomId as number),
+      searchItems: deferredQ || undefined,
+      fromDate: fromDate || undefined,
+      toDate: toDate || undefined,
+      status: status || undefined,
+      type: scheduleType.trim() || undefined,
+      sortBy: "startTime",
+      isDescending: false,
+    },
     tab === "schedules",
   );
 
-  const rows = data?.items ?? [];
-  const totalCount = data?.totalCount ?? 0;
-  const totalPages = data?.totalPages ?? 1;
+  const rows = useMemo<ScheduleDto[]>(() => pagedSchedules?.items ?? [], [pagedSchedules?.items]);
+
+  const totalCount = pagedSchedules?.totalCount ?? 0;
+  const totalPages = pagedSchedules?.totalPages ?? 1;
   const loading = isLoading || isFetching;
+
+
 
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [scheduleModalMode, setScheduleModalMode] = useState<"create" | "edit">(
@@ -99,34 +71,32 @@ export default function ScheduleManagementFeature() {
   const [scheduleModalKey, setScheduleModalKey] = useState(0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const { data: buildingsData } = useBuildings({
-    params: { pageNumber: 1, pageSize: 100 },
+  const { data: pagedBuildings } = useBuildings({
+    params: { pageNumber: 1, pageSize: 1000 },
   });
-  const buildingOptions = buildingsData?.items ?? [];
+  const buildingOptions = useMemo(() => pagedBuildings?.items ?? [], [pagedBuildings?.items]);
 
-  const { data: roomsData } = useManagedLabRooms({
-    buildingId:
-      draftFilters.buildingId === "ALL" ? undefined : draftFilters.buildingId,
+  const { data: pagedRooms } = useManagedLabRooms({
+    buildingId: buildingId === "ALL" ? undefined : (buildingId as number),
     pageNumber: 1,
-    pageSize: 100,
+    pageSize: 1000,
   });
-  const roomOptions = roomsData?.items ?? [];
+  const roomOptions = useMemo(() => pagedRooms?.items ?? [], [pagedRooms?.items]);
 
   const createMut = useCreateSchedule();
   const updateMut = useUpdateSchedule();
   const deleteMut = useDeleteSchedule();
 
-  const activeFilterCount = countActive(appliedFilters);
 
-  const applyFilters = () => {
-    setAppliedFilters(draftFilters);
-    setPage(1);
-  };
 
   const resetFilters = () => {
-    const cleared = emptyFilters();
-    setDraftFilters(cleared);
-    setAppliedFilters(cleared);
+    setBuildingId("ALL");
+    setLabRoomId("ALL");
+    setFromDate("");
+    setToDate("");
+    setStatus("");
+    setScheduleType("");
+    setQ("");
     setPage(1);
   };
 
@@ -251,15 +221,41 @@ export default function ScheduleManagementFeature() {
           </div>
 
           <ScheduleManagementFilters
-            values={draftFilters}
-            onChange={setDraftFilters}
+            buildingId={buildingId}
+            onBuildingId={(id) => {
+              setBuildingId(id);
+              setPage(1);
+            }}
+            labRoomId={labRoomId}
+            onLabRoomId={(id) => {
+              setLabRoomId(id);
+              setPage(1);
+            }}
+            status={status}
+            onStatus={(st) => {
+              setStatus(st);
+              setPage(1);
+            }}
+            fromDate={fromDate}
+            onFromDate={(d) => {
+              setFromDate(d);
+              setPage(1);
+            }}
+            toDate={toDate}
+            onToDate={(d) => {
+              setToDate(d);
+              setPage(1);
+            }}
+            q={q}
+            onQ={(val) => {
+              setQ(val);
+              setPage(1);
+            }}
             buildingOptions={buildingOptions}
             roomOptions={roomOptions}
-            onApply={applyFilters}
             onReset={resetFilters}
             showFilters={showFilters}
             onToggleFilters={() => setShowFilters((v) => !v)}
-            activeFilterCount={activeFilterCount}
           />
 
           <ScheduleManagementTable
