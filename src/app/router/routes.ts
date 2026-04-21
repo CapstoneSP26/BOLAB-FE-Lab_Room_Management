@@ -37,6 +37,7 @@ const IncidentHistoryPage = lazy(() => import("../../pages/labmanager/ReportHist
 
 const RoomManagementPage = lazy(() => import("../../pages/admin/RoomManagementPage.tsx"))
 const ScheduleManagementPage = lazy(() => import("../../pages/admin/ScheduleManagementPage.tsx"));
+const BuildingManagementPage = lazy(() => import("../../pages/admin/BuildingManagementPage.tsx"));
 
 const StudentLandingPage = lazy(() => import("../../pages/student/StudentLandingPage.tsx"));
 const StudentProfilePage = lazy(() => import("../../pages/student/StudentProfilePage.tsx"));
@@ -84,10 +85,12 @@ export const managerRoutes: AppRoute[] = [
   { path: "/labmanager/reports", element: ReportListPage, roles: [Role.Manager, Role.Admin] },
   { path: "/labmanager/reports/:id", element: ReportDetailPage, roles: [Role.Manager, Role.Admin] },
   { path: "/labmanager/incident-history", element: IncidentHistoryPage, roles: [Role.Manager, Role.Admin] },
+  { path: "/labmanager/buildings", element: BuildingManagementPage, roles: [Role.Manager, Role.Admin] },
   { path: "/labmanager/room-management", element: RoomManagementPage, roles: [Role.Admin, Role.Manager] },
   { path: "/labmanager/slot-management", element: ScheduleManagementPage, roles: [Role.Admin] }
 ];
 
 export const adminRoutes = [
   { path: "/admin/users/import", element: ImportUserPage, roles: [Role.Admin] },
+  { path: "/admin/buildings", element: BuildingManagementPage, roles: [Role.Admin] },
 ];
