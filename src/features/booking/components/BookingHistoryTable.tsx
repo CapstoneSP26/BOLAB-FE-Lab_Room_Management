@@ -118,12 +118,12 @@ export function BookingHistoryTable({
                   }`}
               >
                 {/* Room Name */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="font-semibold text-gray-900">{booking.roomName}</span>
+                <td className="px-6 py-4">
+                  <span className="font-semibold text-gray-900 line-clamp-3">{booking.roomName}</span>
                 </td>
 
                 {/* Building Name */}
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-6 py-4">
                   <span className="text-sm text-gray-700">{booking.buildingName}</span>
                 </td>
 

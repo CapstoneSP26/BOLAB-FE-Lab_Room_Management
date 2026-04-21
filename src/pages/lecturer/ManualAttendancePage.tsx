@@ -53,7 +53,6 @@ export default function ManualAttendancePage() {
   const [attendanceRecords, setAttendanceRecords] = useState<Record<string, AttendanceStatus>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
 
   // Get students from API response
   const students: Student[] = attendanceArray.map((student: any) => ({
@@ -80,7 +79,6 @@ export default function ManualAttendancePage() {
     });
 
     setAttendanceRecords(initial);
-    setIsInitialized(true);
   }, [attendanceArray]);
 
   // Filter students by search query
@@ -165,13 +163,6 @@ export default function ManualAttendancePage() {
         throw new Error('Schedule ID is missing.');
       }
 
-      const alreadyMarkedPresent = new Set(
-        attendanceArray
-          .filter((record: any) => record.status === 0 || record.status === 'Present')
-          .map((record: any) => record.userId)
-      );
-
-      // Build attendance payload - use student.id (userId only)
       const attendancePayload = students.map(student => ({
         userId: student.id,  // Must be userId (not studentId)
         status: attendanceRecords[student.id] === 'Present' ? 0 : 1,  // Convert to API format: 0=Present, 1=Absent

@@ -273,7 +273,6 @@ export default function LabCalendar() {
         loading={loading}
         scheduleCount={schedules.length}
         events={filteredEventInputs}
-        onEventClick={handleEventClick}
       />
 
       <ScheduleFormModal
@@ -282,8 +281,9 @@ export default function LabCalendar() {
         schedule={selectedSchedule}
         mode="view"
         roomOptions={[]} // Not needed for view mode, but required by type
-        onSubmit={async () => {}}
+        onSubmit={async () => { }}
       />
+
 
     </div>
   );

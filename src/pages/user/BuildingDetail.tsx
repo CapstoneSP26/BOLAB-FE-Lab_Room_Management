@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { User } from '../../types';
 import { useBuildingContext } from '../../context/BuildingContext';
+import { useBreadcrumb } from '../../context/BreadcrumbContext';
 import RoomCard from '../../features/labroom/components/RoomCard';
 import { labroomApi } from '../../features/labroom/api/labroom.api';
 import { buildingApi, type BuildingResponse } from '../../features/building';
@@ -58,6 +59,7 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
   const [roomsLoading, setRoomsLoading] = useState(false);
   const itemsPerPage = 6;
   const { setActiveBuildingImage } = useBuildingContext();
+  const { setBuildingName, setRoomName } = useBreadcrumb();
 
   // Fetch building data từ backend
   useEffect(() => {
@@ -67,11 +69,17 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
         setError(null);
         if (id) {
           // Decode URL parameter in case it's encoded
-          const buildingName = decodeURIComponent(id);
-          const data = await buildingApi.getBuildingByName(buildingName);
-          setBuilding(data);
+          const buildingNameDecoded = decodeURIComponent(id);
+          const data = await buildingApi.getBuildingByName(buildingNameDecoded);
+          setBuilding(data as BuildingResponse);
+          // Update breadcrumb context with building name
+          setBuildingName(buildingNameDecoded);
+          // Reset room name when changing building
+          setRoomName('');
           // Update context với hình ảnh tòa nhà
-          setActiveBuildingImage(data.buildingImageUrl);
+          if (data.buildingImageUrl) {
+            setActiveBuildingImage(data.buildingImageUrl);
+          }
         }
       } catch (err) {
         setError(
@@ -86,7 +94,7 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
     };
 
     fetchBuilding();
-  }, [id, setActiveBuildingImage]);
+  }, [id, setActiveBuildingImage, setBuildingName, setRoomName]);
 
   useEffect(() => {
     const fetchRooms = async () => {
@@ -277,18 +285,18 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setViewMode('grid')}
-                    className={`p-3 rounded-xl transition-colors ${viewMode === 'grid'
-                      ? 'bg-brand-600 text-white shadow-lg'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    className={`p-3 rounded-xl transition-all ${viewMode === 'grid'
+                      ? 'bg-brand-600 text-brand-100 shadow-xl scale-105'
+                      : 'bg-white text-brand-600'
                       }`}
                   >
                     <LayoutGrid className="h-5 w-5" />
                   </button>
                   <button
                     onClick={() => setViewMode('list')}
-                    className={`p-3 rounded-xl transition-colors ${viewMode === 'list'
-                      ? 'bg-brand-600 text-white shadow-lg'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    className={`p-3 rounded-xl transition-all ${viewMode === 'list'
+                      ? 'bg-brand-600 text-brand-100 shadow-xl scale-105'
+                      : 'bg-white text-brand-600'
                       }`}
                   >
                     <List className="h-5 w-5" />

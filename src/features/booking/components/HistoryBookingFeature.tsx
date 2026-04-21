@@ -426,11 +426,10 @@ export default function HistoryBookingFeature() {
         </div>
 
         <div
-          className={`transition-all duration-300 ease-in-out ${
-            showFilters
+          className={`transition-all duration-300 ease-in-out ${showFilters
               ? "max-h-[1200px] opacity-100"
               : "max-h-0 overflow-hidden opacity-0"
-          }`}
+            }`}
         >
           <div className="border-t border-gray-200 p-6 dark:border-gray-700">
             <HistoryBookingFilter

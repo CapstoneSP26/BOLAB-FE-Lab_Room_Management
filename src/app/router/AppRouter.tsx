@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
-import { MainLayout, AuthLayout } from '../../layouts';
+import { MainLayout, AuthLayout, StudentLayout } from '../../layouts';
 import ManagerLayout from '../../layouts/labmanager/ManagerLayout';
 import { publicRoutes, sharedRoutes, lecturerRoutes, managerRoutes, adminRoutes, studentRoutes } from './routes';
 import { Role } from '../../constants/role';
@@ -13,7 +13,7 @@ export const AppRouter = () => {
         {publicRoutes.map(r => <Route key={r.path} path={r.path} element={<r.element />} />)}
       </Route>
 
-      {/* NHÓM 2: PRIVATE - Cần login chung (MainLayout) */}
+      {/* NHÓM 2: PRIVATE - Lecturer routes (MainLayout) */}
       <Route element={<MainLayout />}>
         {sharedRoutes.map(r => (
           <Route key={r.path} path={r.path} element={<ProtectedRoute allowedRoles={r.roles}><r.element /></ProtectedRoute>} />
@@ -21,6 +21,10 @@ export const AppRouter = () => {
         {lecturerRoutes.map(r => (
           <Route key={r.path} path={r.path} element={<ProtectedRoute allowedRoles={r.roles}><r.element /></ProtectedRoute>} />
         ))}
+      </Route>
+
+      {/* NHÓM 2B: PRIVATE - Student routes (StudentLayout) */}
+      <Route element={<StudentLayout />}>
         {studentRoutes.map(r => (
           <Route key={r.path} path={r.path} element={<ProtectedRoute allowedRoles={r.roles}><r.element /></ProtectedRoute>} />
         ))}
