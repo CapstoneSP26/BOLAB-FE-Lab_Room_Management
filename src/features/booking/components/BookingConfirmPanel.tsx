@@ -54,8 +54,7 @@ export const BookingConfirmPanel: React.FC<BookingConfirmPanelProps> = ({
     <>
       <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[1000] animate-in fade-in duration-300" onClick={onClose} />
       <div className="fixed inset-0 z-[1010] flex items-center justify-center p-4 pointer-events-none">
-        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col overflow-hidden pointer-events-auto animate-in zoom-in-95 duration-200">
-
+        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[95vh] flex flex-col overflow-hidden pointer-events-auto animate-in zoom-in-95 duration-200">
           {/* Modern Header */}
           <div className="px-6 py-6 bg-gradient-to-r from-orange-500 via-orange-500 to-orange-600 flex items-center justify-between">
             <div>
@@ -67,7 +66,7 @@ export const BookingConfirmPanel: React.FC<BookingConfirmPanelProps> = ({
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-5">
+          <div className="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar">
             {/* Summary Info Card */}
             <div className="bg-gradient-to-br from-slate-50 to-white rounded-xl p-5 border border-slate-200 shadow-sm">
               <div className="space-y-4">
@@ -170,17 +169,17 @@ export const BookingConfirmPanel: React.FC<BookingConfirmPanelProps> = ({
                       <input
                         type="range"
                         min="1"
-                        max="10"
+                        max="4"
                         value={weeks}
                         onChange={(e) => setWeeks(Number(e.target.value))}
                         style={{
-                          background: `linear-gradient(to right, #f97316 0%, #f97316 ${(weeks / 10) * 100}%, #e2e8f0 ${(weeks / 10) * 100}%, #e2e8f0 100%)`
+                          background: `linear-gradient(to right, #f97316 0%, #f97316${((weeks - 1) / (4 - 1)) * 100}%, #e2e8f0 ${(weeks / 4) * 100}%, #e2e8f0 100%)`
                         }}
                         className="w-full h-2.5 rounded-lg appearance-none cursor-pointer"
                       />
                       <div className="flex justify-between text-xs text-slate-500 font-medium mt-2">
                         <span>1 tuần</span>
-                        <span>10 tuần</span>
+                        <span>4 tuần</span>
                       </div>
                     </div>
                   </div>
@@ -190,12 +189,12 @@ export const BookingConfirmPanel: React.FC<BookingConfirmPanelProps> = ({
           </div>
 
           {/* Modern Footer */}
-          <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex gap-3">
-            <Button 
-              variant="outline" 
-              fullWidth 
-              onClick={onClose} 
-              className="rounded-lg font-bold uppercase text-xs hover:bg-slate-200 border-slate-300" 
+          <div className="flex-none px-6 py-4 bg-slate-50 border-t border-slate-200 flex gap-3">
+            <Button
+              variant="outline"
+              fullWidth
+              onClick={onClose}
+              className="rounded-lg font-bold uppercase text-xs hover:bg-slate-200 border-slate-300"
               size="md"
             >
               Hủy
