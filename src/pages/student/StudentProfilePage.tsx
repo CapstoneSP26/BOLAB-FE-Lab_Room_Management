@@ -8,10 +8,8 @@ import {
   User, Mail, Loader2
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
-import { RecentActivity, type Activity } from '../../components/common/RecentActivity';
 import {
   useProfile,
-  useRecentActivities,
 } from '../../features/profile';
 
 export default function StudentProfilePage() {
@@ -19,7 +17,6 @@ export default function StudentProfilePage() {
 
   // API calls
   const { data: profileData, isLoading: profileLoading } = useProfile();
-  const { data: recentActivitiesData, isLoading: activitiesLoading } = useRecentActivities(10);
   
   // Use profile data or fallback
   const userData = (profileData || {
@@ -29,15 +26,6 @@ export default function StudentProfilePage() {
     userImageUrl: 'https://randomuser.me/api/portraits/men/32.jpg',
     userCode: '',
   }) as any;
-
-  // Convert recent activities
-  const recentActivities: Activity[] = (Array.isArray(recentActivitiesData) ? recentActivitiesData : []).map((activity: any, idx: number) => ({
-    id: activity.id || String(idx),
-    type: activity.type || 'booking',
-    title: activity.title,
-    description: activity.description,
-    timestamp: activity.timestamp,
-  }));
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-8">
@@ -108,16 +96,6 @@ export default function StudentProfilePage() {
 
                 </div>
               </div>
-
-
-
-              {/* Recent Activities */}
-              {!activitiesLoading && recentActivities.length > 0 && (
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 mt-8">
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Recent Activities</h3>
-                  <RecentActivity activities={recentActivities} maxItems={10} />
-                </div>
-              )}
             </div>
 
             {/* Sidebar Stats */}
