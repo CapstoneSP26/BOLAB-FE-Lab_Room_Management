@@ -4,6 +4,7 @@ import { QueryProvider } from './QueryProvider';
 
 import { BuildingProvider } from '../../context/BuildingContext';
 import { ActiveSessionProvider } from '../../context/ActiveSessionContext';
+import { BreadcrumbProvider } from '../../context/BreadcrumbContext';
 
 export function AppProvider({ children }: PropsWithChildren) {
 
@@ -11,7 +12,9 @@ export function AppProvider({ children }: PropsWithChildren) {
     <BrowserRouter>
       <QueryProvider>
         <BuildingProvider>
-          <ActiveSessionProvider>{children}</ActiveSessionProvider>
+          <ActiveSessionProvider>
+            <BreadcrumbProvider>{children}</BreadcrumbProvider>
+          </ActiveSessionProvider>
         </BuildingProvider>
       </QueryProvider>
     </BrowserRouter>

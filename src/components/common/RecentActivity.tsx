@@ -4,9 +4,9 @@
  */
 
 import React from 'react';
-import { Calendar, QrCode, FileText, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Calendar, QrCode, FileText, CheckCircle, XCircle, Clock, Send } from 'lucide-react';
 
-export type ActivityType = 'booking' | 'qr_generated' | 'report_sent' | 'booking_approved' | 'booking_rejected';
+export type ActivityType = 'booking' | 'qr_generated' | 'report_sent' | 'booking_approved' | 'booking_rejected' | 'booking_submitted';
 
 export interface Activity {
   id: string;
@@ -29,14 +29,16 @@ const activityIcons: Record<ActivityType, React.ElementType> = {
   report_sent: FileText,
   booking_approved: CheckCircle,
   booking_rejected: XCircle,
+  booking_submitted: Send,
 };
 
 const activityColors: Record<ActivityType, string> = {
   booking: 'text-blue-600 bg-blue-50 border-blue-200',
   qr_generated: 'text-green-600 bg-green-50 border-green-200',
   report_sent: 'text-purple-600 bg-purple-50 border-purple-200',
-  booking_approved: 'text-green-600 bg-green-50 border-green-200',
-  booking_rejected: 'text-red-600 bg-red-50 border-red-200',
+  booking_approved: 'text-emerald-600 bg-emerald-50 border-emerald-200',
+  booking_rejected: 'text-rose-600 bg-rose-50 border-rose-200',
+  booking_submitted: 'text-amber-600 bg-amber-50 border-amber-200',
 };
 
 export const RecentActivity: React.FC<RecentActivityProps> = ({
@@ -89,27 +91,40 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({
           return (
             <div
               key={activity.id}
-              className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-200"
+              className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 transition-all duration-200 border border-transparent hover:border-gray-200"
             >
-              {/* Icon */}
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 border ${colorClass}`}>
+              <div className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 border shadow-sm ${colorClass}`}>
                 <Icon className="w-5 h-5" />
               </div>
 
-              {/* Content */}
               <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-medium text-gray-900 mb-0.5">
-                  {activity.title}
-                </h4>
-                <p className="text-xs text-gray-600 mb-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h4 className="text-sm font-semibold text-gray-900 leading-5">
+                    {activity.title}
+                  </h4>
+                  {activity.type === 'booking_approved' && (
+                    <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                      Approved
+                    </span>
+                  )}
+                  {activity.type === 'booking_submitted' && (
+                    <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
+                      Submitted
+                    </span>
+                  )}
+                  {activity.type === 'booking_rejected' && (
+                    <span className="inline-flex items-center rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-semibold text-rose-700">
+                      Rejected
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-600 mb-1 leading-5">
                   {activity.description}
                 </p>
                 <p className="text-xs text-gray-400">
                   {getTimeAgo(activity.timestamp)}
                 </p>
               </div>
-
-              {/* Timeline line - removed for cleaner UI */}
             </div>
           );
         })}

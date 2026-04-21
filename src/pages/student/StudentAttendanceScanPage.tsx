@@ -27,8 +27,6 @@ export default function StudentAttendanceScanPage() {
   const [, setScannedData] = useState('');
   const [cameraFacing, setCameraFacing] = useState<CameraFacing>('back');
   const [availableCameras, setAvailableCameras] = useState<{ id: string; label: string }[]>([]);
-  const [scanCount, setScanCount] = useState(0);
-  const [lastDetection, setLastDetection] = useState('');
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isScanning = useRef(false);
   const scanAttempts = useRef(0);
@@ -108,6 +106,9 @@ export default function StudentAttendanceScanPage() {
   const startScanning = async (facing: CameraFacing = cameraFacing) => {
     if (isScanning.current) return;
 
+    // Set flag immediately to prevent duplicate calls
+    isScanning.current = true;
+
     setScanState('scanning');
     setErrorMessage('');
 
@@ -170,9 +171,6 @@ export default function StudentAttendanceScanPage() {
         onScanSuccess,
         onScanFailure
       );
-
-      isScanning.current = true;
-      setScanState('scanning');
 
       toast.success('Camera Ready', 'Position QR code within the frame', 3000);
 
@@ -243,9 +241,7 @@ export default function StudentAttendanceScanPage() {
     provideFeedback('success');
     toast.info('QR Code Detected', 'Processing attendance...', 2000);
 
-    setLastDetection(`✅ QR DETECTED! (${decodedText.substring(0, 50)}...)`);
     scanAttempts.current = 0;
-    setScanCount(0);
     setScannedData(decodedText);
 
     await stopScanning();
@@ -256,11 +252,8 @@ export default function StudentAttendanceScanPage() {
    * Handle scan failure (not an error, just no QR detected in frame)
    */
   const onScanFailure = (_errorMessage: string) => {
+    // Silently continue scanning without updating UI state to prevent re-renders and camera duplication
     scanAttempts.current++;
-    if (scanAttempts.current % 10 === 0) {
-      setScanCount(scanAttempts.current);
-      setLastDetection(`🔍 Scanning... (${scanAttempts.current} attempts)`);
-    }
   };
 
   /**
@@ -532,8 +525,16 @@ export default function StudentAttendanceScanPage() {
               <div className="flex-1 flex items-center justify-center px-4 py-6">
                 <div className="max-w-3xl w-full">
                   {/* Scanner Container */}
-                  <div className="relative bg-black rounded-3xl shadow-2xl overflow-hidden border-4 border-blue-500/20" style={{ minHeight: '480px' }}>
-                    <div id="qr-reader" style={{ width: '100%', minHeight: '480px', borderRadius: '1.5rem' }}></div>
+                  <div className="relative bg-black rounded-3xl shadow-2xl overflow-hidden border-4 border-blue-500/20" style={{ aspectRatio: '1', maxWidth: '480px', margin: '0 auto' }}>
+                    <div 
+                      id="qr-reader" 
+                      style={{ 
+                        width: '100%', 
+                        height: '100%', 
+                        borderRadius: '1.5rem',
+                        overflow: 'hidden'
+                      }}
+                    ></div>
 
                     {/* Scanner overlay corners */}
                     <div className="absolute inset-0 pointer-events-none z-10">
@@ -562,6 +563,15 @@ export default function StudentAttendanceScanPage() {
                   .animate-scan {
                     animation: scan 2s ease-in-out infinite;
                   }
+                  #qr-reader video {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    display: block;
+                  }
+                  #qr-reader canvas {
+                    display: none;
+                  }
                 `}</style>
 
                     {/* Switch Camera Button */}
@@ -581,25 +591,6 @@ export default function StudentAttendanceScanPage() {
                         <span>{cameraFacing === 'front' ? '📷' : '📸'}</span>
                         <span>{cameraFacing === 'front' ? 'Front Camera' : 'Back Camera'}</span>
                       </span>
-                    </div>
-
-                    {/* Live Scan Status Badge */}
-                    <div className="absolute top-20 left-6 z-20 bg-slate-900/90 backdrop-blur-md px-4 py-2 rounded-lg border border-slate-700/50 shadow-lg max-w-[calc(100%-3rem)]">
-                      <div className="text-xs font-mono text-green-400 flex items-center gap-2">
-                        <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                        </span>
-                        <span className="truncate">{lastDetection || '🔍 Waiting for QR code...'}</span>
-                      </div>
-                      {scanCount > 0 && (
-                        <div className="text-xs font-mono text-slate-400 mt-1 flex items-center gap-1">
-                          <span>Attempts: {scanCount}</span>
-                          {scanCount > 50 && (
-                            <span className="text-yellow-400">• Hold steady</span>
-                          )}
-                        </div>
-                      )}
                     </div>
                   </div>
 

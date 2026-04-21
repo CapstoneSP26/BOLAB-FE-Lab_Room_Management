@@ -6,6 +6,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronRight, Home } from 'lucide-react';
+import { useBreadcrumb } from '../../context/BreadcrumbContext';
 
 interface BreadcrumbItem {
   label: string;
@@ -16,6 +17,7 @@ interface BreadcrumbItem {
 const routeNames: Record<string, string> = {
   '': 'Home',
   'book-room': 'Book Room',
+  'buildings': 'Buildings',
   'lab-room': 'Lab Room',
   'my-bookings': 'My Bookings',
   'notifications': 'Notifications',
@@ -25,12 +27,7 @@ const routeNames: Record<string, string> = {
   'scan-attendance': 'Scan Attendance',
   'manual': 'Manual Entry',
   'profile': 'Profile',
-};
-
-const dynamicDetailLabelByParent: Record<string, string> = {
-  building: 'Building Details',
-  'lab-room': 'Room Details',
-  'student-groups': 'Group Details',
+  'student-groups': 'Groups',
 };
 
 const hiddenSessionParents = new Set(['qr-display', 'scan-attendance', 'manual']);
@@ -42,6 +39,7 @@ const isLikelyDynamicId = (segment: string): boolean => {
 
 export const Breadcrumb: React.FC = () => {
   const location = useLocation();
+  const { buildingName, roomName } = useBreadcrumb();
   
   // Parse current path
   const pathSegments = location.pathname.split('/').filter(Boolean);
@@ -61,14 +59,37 @@ export const Breadcrumb: React.FC = () => {
     currentPath += `/${segment}`;
 
     const parentSegment = pathSegments[index - 1];
+    const nextSegment = pathSegments[index + 1];
+
+    // Skip intermediate 'buildings' segment if followed by building name ID
+    if (segment === 'buildings' && nextSegment && isLikelyDynamicId(nextSegment)) {
+      return;
+    }
+
+    // Skip 'lab-room' segment if followed by room ID (we'll add room name from context instead)
+    if (segment === 'lab-room' && nextSegment && isLikelyDynamicId(nextSegment)) {
+      return;
+    }
+
+    // Handle dynamic building ID - use buildingName from context
+    if (parentSegment === 'buildings' && isLikelyDynamicId(segment) && buildingName) {
+      breadcrumbs.push({ label: buildingName, path: currentPath });
+      return;
+    }
+
     if (parentSegment && isLikelyDynamicId(segment)) {
       if (hiddenSessionParents.has(parentSegment)) {
         return;
       }
 
-      const detailLabel = dynamicDetailLabelByParent[parentSegment];
-      if (detailLabel) {
-        breadcrumbs.push({ label: detailLabel, path: currentPath });
+      // Handle dynamic room ID - use roomName from context
+      // If we have roomName, skip adding "Lab Room" label
+      if (parentSegment === 'lab-room' && roomName) {
+        // Add building name if not already added
+        if (buildingName && !breadcrumbs.some((b) => b.label === buildingName)) {
+          breadcrumbs.push({ label: buildingName, path: `/lab-room/${segment}` });
+        }
+        breadcrumbs.push({ label: roomName, path: currentPath });
         return;
       }
     }

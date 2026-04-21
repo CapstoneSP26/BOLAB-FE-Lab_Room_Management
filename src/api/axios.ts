@@ -9,25 +9,6 @@ import {
   getAccessToken,
 } from "../utils/storage";
 
-/**
- * Helper: Extract JWT token from cookies (if it's not HttpOnly)
- * Some browsers/configs allow reading non-HttpOnly cookies
- */
-const extractTokenFromCookie = (): string | null => {
-  try {
-    const cookies = document.cookie.split(';');
-    for (let cookie of cookies) {
-      const [name, value] = cookie.trim().split('=');
-      if (name === 'accessToken' || name === 'access_token') {
-        return decodeURIComponent(value);
-      }
-    }
-  } catch (err) {
-    console.error('Error reading cookies:', err);
-  }
-  return null;
-};
-
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string | undefined;
 
 const axiosInstance: AxiosInstance = axios.create({

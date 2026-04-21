@@ -3,15 +3,11 @@ import type { EditableGroupRow, ValidationErrors } from "../types/importGroup.ty
 import {
   ACCEPTED_EXTENSIONS,
   MAX_FILE_SIZE_MB,
-  GROUP_COLUMNS,
-  columnLabels,
-  columnWidths,
 } from "../constants/importGroup";
 import {
   parseGroupFileToRows,
   createEmptyGroupRows,
   getGroupErrorKey,
-  validateGroupRowsLocal,
   toGroupImportRows,
 } from "../utils/importGroupUtils";
 import type { ValidateGroupImportRequest, CommitGroupImportRequest } from "../types/importGroup.type";
@@ -219,8 +215,6 @@ export default function ImportGroupPanel({ onImportComplete }: ImportGroupPanelP
   };
 
   const validateRows = async () => {
-    const clientIssues = validateGroupRowsLocal(rows);
-
     setModalError("");
 
     try {
@@ -429,12 +423,10 @@ interface GroupImportModalProps {
 
 function GroupImportModal({
   rows,
-  pageMeta,
   totalPages,
   currentPage,
   onPageChange,
   validationErrors,
-  modifiedCells,
   hasValidated,
   canCommit,
   isValidating,
