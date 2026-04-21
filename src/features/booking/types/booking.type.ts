@@ -88,7 +88,9 @@ export type BookingStatus =
   | "PendingApproval"
   | "Approved"
   | "Rejected"
-  | "Cancelled";
+  | "Cancelled"
+  | string
+  | number;
 
 export interface BookingRequest {
   id: string | number;

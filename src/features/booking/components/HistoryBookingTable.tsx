@@ -16,6 +16,14 @@ type Props = {
   onView: (id: string) => void;
 };
 
+function getStatusLabel(status: any) {
+  const s = String(status ?? "").toUpperCase();
+  if (s === "2" || s === "APPROVED" || s === "ACCEPTED") return "Approved";
+  if (s === "3" || s === "REJECTED") return "Rejected";
+  if (s === "1" || s === "PENDING" || s === "PENDINGAPPROVAL") return "Pending";
+  return s || "-";
+}
+
 export default function HistoryBookingTable({
   loading,
   rows,
@@ -111,7 +119,7 @@ export default function HistoryBookingTable({
                         b.status,
                       )}`}
                     >
-                      {String(b.status)}
+                      {getStatusLabel(b.status)}
                     </span>
                   </td>
 

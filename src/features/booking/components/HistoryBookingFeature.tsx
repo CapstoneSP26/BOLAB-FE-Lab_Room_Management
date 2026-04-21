@@ -13,7 +13,6 @@ import HistoryBookingTable from "./HistoryBookingTable";
 import HistoryBookingFilter from "./HistoryBookingFilter";
 import RejectReasonModal from "./RejectReasonModal";
 import { ReportStatCard } from "../../../components/ui/ComponentsParts";
-import { bookingRequestApi } from "../api/bookingApi";
 import { labroomApi } from "../../labroom/api/labroom.api";
 import {
   useApproveBookingRequest,
@@ -41,9 +40,10 @@ export default function HistoryBookingFeature() {
   const [buildingOptions, setBuildingOptions] = useState<BuildingDto[]>([]);
   const [roomOptions, setRoomOptions] = useState<LabRoomDto[]>([]);
 
-  const [statusOptions, setStatusOptions] = useState<BookingStatusLookupItem[]>(
-    [],
-  );
+  const [statusOptions] = useState<BookingStatusLookupItem[]>([
+    { code: "2", name: "Approved" },
+    { code: "3", name: "Rejected" },
+  ]);
 
   const [q, setQ] = useState("");
   const [buildingId, setBuildingId] = useState<number | "ALL">("ALL");
@@ -71,7 +71,12 @@ export default function HistoryBookingFeature() {
       labRoomId: roomId === "ALL" ? undefined : roomId,
       buildingId: buildingId === "ALL" ? undefined : buildingId,
       keyword: q.trim() || undefined,
-      status: status === "All" ? undefined : status,
+      status:
+        status === "All"
+          ? undefined
+          : isNaN(Number(status))
+            ? status
+            : Number(status),
       page: page,
       limit: limit,
       sortBy: "RequestedAt",
@@ -155,12 +160,11 @@ export default function HistoryBookingFeature() {
     const loadLookups = async () => {
       setLookupLoading(true);
       try {
-        const [buildingsRes, statusRes] = await Promise.allSettled([
+        const [buildingsRes] = await Promise.allSettled([
           buildingApi.getBuildings({
             pageNumber: 1,
             pageSize: 100,
           }),
-          bookingRequestApi.getBookingStatusLookup(),
         ]);
 
         if (buildingsRes.status === "fulfilled") {
@@ -170,12 +174,6 @@ export default function HistoryBookingFeature() {
           console.error("Load buildings failed:", buildingsRes.reason);
         }
 
-        if (statusRes.status === "fulfilled") {
-          setStatusOptions(statusRes.value.data ?? []);
-        } else {
-          setStatusOptions([]);
-          console.error("Load booking statuses failed:", statusRes.reason);
-        }
       } finally {
         setLookupLoading(false);
       }
@@ -243,21 +241,22 @@ export default function HistoryBookingFeature() {
   };
 
   const stats = useMemo(() => {
-    const approved = items.filter(
-      (item) =>
-        normText(item.status) === "approved" ||
-        normText(item.status) === "accepted",
-    ).length;
+    const approved = items.filter((item) => {
+      const s = normText(item.status);
+      return s === "approved" || s === "accepted" || s === "2";
+    }).length;
 
-    const rejected = items.filter(
-      (item) => normText(item.status) === "rejected",
-    ).length;
+    const rejected = items.filter((item) => {
+      const s = normText(item.status);
+      return s === "rejected" || s === "3";
+    }).length;
 
-    const pending = items.filter(
-      (item) =>
-        normText(item.status) === "pending" ||
-        normText(item.status) === "pendingapproval",
-    ).length;
+    const pending = items.filter((item) => {
+      const s = normText(item.status);
+      return (
+        s === "pending" || s === "pendingapproval" || s === "1" || s === "0"
+      );
+    }).length;
 
     return {
       total: totalCount,
@@ -301,7 +300,7 @@ export default function HistoryBookingFeature() {
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <ReportStatCard
               label="Total Records"
               value={stats.total}
@@ -350,28 +349,6 @@ export default function HistoryBookingFeature() {
               icon={<X className="h-5 w-5" />}
               color="blue"
             />
-
-            <ReportStatCard
-              label="Pending"
-              value={stats.pending}
-              icon={
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              }
-              color="amber"
-            />
-
             <ReportStatCard
               label="Approval Rate"
               value={`${stats.approvalRate}%`}
@@ -475,6 +452,7 @@ export default function HistoryBookingFeature() {
               onFrom={setFrom}
               to={to}
               onTo={setTo}
+              onApplyFilters={reload}
             />
           </div>
         </div>

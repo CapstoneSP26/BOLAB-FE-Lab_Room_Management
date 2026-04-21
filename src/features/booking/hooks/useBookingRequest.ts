@@ -142,8 +142,10 @@ const matchesHistoryQuery = (
     return false;
   }
 
-  if (params.buildingId !== undefined) {
-    return false;
+  if (
+    params.buildingId !== undefined &&
+    String(item.buildingName) !== String(item.buildingName) 
+  ) {
   }
 
   if (params.keyword) {
