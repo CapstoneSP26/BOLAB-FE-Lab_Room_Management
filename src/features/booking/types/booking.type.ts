@@ -81,6 +81,7 @@ export interface Booking {
   scheduleType?: string;
   studentCount?: number;
   bookingSource?: "AO_BOOK" | "LECTURER_BOOK";
+  createdAt?: string;
 }
 
 export type BookingStatus =

@@ -10,6 +10,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { labroomApi } from '../../features/labroom/api/labroom.api';
+import { useBreadcrumb } from '../../context/BreadcrumbContext';
 import type { LabRoomDto } from '../../features/labroom/types/room.type';
 
 const fallbackImage =
@@ -22,6 +23,7 @@ const SkeletonBlock = ({ className = '' }: { className?: string }) => (
 const LabRoomDetailsPage: React.FC = () => {
   const navigate = useNavigate();
   const { id = '' } = useParams<{ id: string }>();
+  const { setRoomName } = useBreadcrumb();
   const roomId = Number(id);
 
   const [room, setRoom] = useState<LabRoomDto | null>(null);
@@ -41,6 +43,8 @@ const LabRoomDetailsPage: React.FC = () => {
         setError(null);
         const data = await labroomApi.getRoomById(roomId);
         setRoom(data);
+        // Update breadcrumb context with room name
+        setRoomName(data.roomName || '');
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Không thể tải thông tin phòng');
       } finally {
@@ -49,7 +53,7 @@ const LabRoomDetailsPage: React.FC = () => {
     };
 
     fetchRoom();
-  }, [roomId]);
+  }, [roomId, setRoomName]);
 
   const primaryImage = useMemo(() => {
     if (!room?.images?.length) return fallbackImage;

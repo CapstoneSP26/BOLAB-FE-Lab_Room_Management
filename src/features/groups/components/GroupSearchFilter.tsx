@@ -1,18 +1,16 @@
 import React, { useCallback, useState } from 'react';
-import { Search, X, Filter, Upload, Plus } from 'lucide-react';
+import { Search, X, Filter, Plus } from 'lucide-react';
 import type { GroupFilterState } from '../types/group.type';
 
 interface GroupSearchFilterProps {
   onFilterChange: (filters: GroupFilterState) => void;
   isLoading?: boolean;
-  onImportGroup?: () => void;
   onAddGroup?: () => void;
 }
 
 export const GroupSearchFilter: React.FC<GroupSearchFilterProps> = ({
   onFilterChange,
   isLoading = false,
-  onImportGroup,
   onAddGroup,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -63,16 +61,6 @@ export const GroupSearchFilter: React.FC<GroupSearchFilterProps> = ({
         </div>
 
         <div className="flex items-center gap-2 flex-wrap md:flex-nowrap md:justify-end">
-          <button
-            type="button"
-            onClick={onImportGroup}
-            disabled={isLoading}
-            className="inline-flex min-w-[132px] items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-xl shadow-theme-xs transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-100 hover:shadow-theme-sm disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <Upload size={16} />
-            Import Group
-          </button>
-
           <button
             type="button"
             onClick={onAddGroup}

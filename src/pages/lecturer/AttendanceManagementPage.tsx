@@ -3,7 +3,7 @@
  * Lecturer's page to manage attendance and active QR sessions
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, Calendar, QrCode, RefreshCw, XCircle } from 'lucide-react';
 import {
@@ -40,21 +40,26 @@ export default function AttendanceManagementPage() {
     isLoading: bookingScheduleLoading,
     isFetching: bookingScheduleFetching,
   } = useSchedulesAttendance(bookingScheduleParams, true);
+  console.log("Booking ", bookingScheduleData)
 
   const generateQrCodeMutation = useGenerateQRCode();
   const removeQrCodeMutation = useRemoveQRCode();
 
   const legacyScheduleEnvelope = bookingScheduleData as
     | {
-        data?: {
-          items?: ScheduleDto[];
-          result?: { items?: ScheduleDto[] };
-        };
+      data?: {
+        items?: ScheduleDto[];
+        result?: { items?: ScheduleDto[] };
+      };
+      result?: {
+        items?: ScheduleDto[];
       }
+    }
     | undefined;
 
   const bookingScheduleItems: ScheduleDto[] =
     bookingScheduleData?.items
+    || legacyScheduleEnvelope?.result?.items
     || legacyScheduleEnvelope?.data?.result?.items
     || legacyScheduleEnvelope?.data?.items
     || [];
@@ -71,7 +76,6 @@ export default function AttendanceManagementPage() {
     bookingScheduleItems,
     bookingScheduleData,
   });
-
   const filteredBookings = useMemo(() => {
     const items = state.bookings.filter((booking) => {
       const upcoming = isBookingUpcoming(booking);
@@ -159,7 +163,7 @@ export default function AttendanceManagementPage() {
     try {
       await removeQrCodeMutation.mutateAsync({ scheduleId: scheduleIdForEnd, isCheckIn: true });
       setStoppedQrBySessionId(prev => ({ ...prev, [scheduleIdForEnd]: true }));
-      
+
       appAlert.success('QR stopped', 'QR image has been turned off for this session.');
     } catch {
       appAlert.error('End session failed', 'Could not end this session. Please try again.');
