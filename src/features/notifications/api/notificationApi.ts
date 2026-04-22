@@ -9,6 +9,7 @@ import { getRelativeTime } from "../../../utils/formatDate";
 
 const NOTIFICATION_API = {
   LIST: "/notifications",
+  BOOKING_NOTIFICATION: "/booking-notifications",
 } as const;
 
 type MaybeRecord = Record<string, unknown>;
@@ -350,5 +351,17 @@ export const notificationApi = {
 
   async markAsRead(id: string): Promise<void> {
     await axiosInstance.put(`${NOTIFICATION_API.LIST}/${id}/read`);
+  },
+
+  async getBookingNotification(bookingId: string): Promise<NotificationItem> {
+    try {
+      const response = await axiosInstance.get(
+        `${NOTIFICATION_API.BOOKING_NOTIFICATION}/${bookingId}`,
+      );
+      return mapNotificationDtoToItem(response.data);
+    } catch (error) {
+      console.error(`Failed to fetch notification for booking ${bookingId}:`, error);
+      throw error;
+    }
   },
 };
