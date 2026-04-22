@@ -20,7 +20,7 @@ export const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
   if (!isOpen || !booking) return null;
 
   const getStatusConfig = (status: BookingStatus) => {
-    const configs = {
+    const configs: Record<string, any> = {
       All: {
         icon: AlertCircle,
         bgColor: 'bg-amber-100',
@@ -57,7 +57,7 @@ export const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
         label: 'Cancelled'
       }
     };
-    return configs[status];
+    return configs[String(status)];
   };
 
   const statusConfig = getStatusConfig(booking.status);
