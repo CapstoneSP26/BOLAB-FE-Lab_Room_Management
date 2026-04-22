@@ -7,6 +7,11 @@
 import type { ScheduleStatus } from '../../schedules/types/schedule.type';
 
 /**
+ * Booking Status - uses ScheduleStatus values
+ */
+export type BookingStatus = ScheduleStatus;
+
+/**
  * Attendance Status
  */
 export type AttendanceStatus = 'Present' | 'Absent';
@@ -119,7 +124,7 @@ export interface BookingWithQR {
   date: string;
   startTime: string;
   endTime: string;
-  status: ScheduleStatus;
+  status: BookingStatus;
   purpose: string;
   hasQRSession: boolean;
   qrSessionId?: string;
