@@ -41,7 +41,7 @@ const ScheduleManagementPage = lazy(() => import("../../pages/admin/ScheduleMana
 const StudentLandingPage = lazy(() => import("../../pages/student/StudentLandingPage.tsx"));
 const StudentProfilePage = lazy(() => import("../../pages/student/StudentProfilePage.tsx"));
 const StudentAttendanceScanPage = lazy(() => import("../../pages/student/StudentAttendanceScanPage.tsx"));
-
+const UserManagementPage = lazy(() => import("../../pages/admin/UserManagementPage.tsx"));
 export const publicRoutes: AppRoute[] = [
   { path: "/login", element: LoginPage },
   { path: "/unauthorized", element: UnauthorizedPage },
@@ -90,4 +90,5 @@ export const managerRoutes: AppRoute[] = [
 
 export const adminRoutes = [
   { path: "/admin/users/import", element: ImportUserPage, roles: [Role.Admin] },
+  { path: "/admin/users/users", element: UserManagementPage, roles: [Role.Admin] },
 ];

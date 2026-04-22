@@ -45,7 +45,7 @@ export default function UserManagementTable({
         <table className="w-full min-w-[1000px] text-left text-sm">
           <thead className="bg-gray-50 text-xs font-semibold uppercase text-gray-500 dark:bg-white/[0.04] dark:text-gray-400">
             <tr>
-              <th className="px-4 py-3">User ID</th>
+              <th className="px-4 py-3">User Code</th>
               <th className="px-4 py-3">User</th>
               <th className="px-4 py-3">Role</th>
               <th className="px-4 py-3">Status</th>
@@ -73,10 +73,7 @@ export default function UserManagementTable({
                 <tr key={user.id} className="bg-white dark:bg-transparent">
                   <td className="px-4 py-4">
                     <div className="font-semibold text-gray-900 dark:text-white">
-                      {user.id || "-"}
-                    </div>
-                    <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      {user.userCode || "No code"}
+                      {user.userCode || "-"}
                     </div>
                   </td>
 
@@ -113,12 +110,12 @@ export default function UserManagementTable({
                     {user.updatedAt ? formatDate(user.updatedAt, "DD/MM/YYYY") : "-"}
                   </td>
 
-                  <td className="px-4 py-4">
-                    <div className="flex justify-end gap-2">
+                  <td className="whitespace-nowrap px-4 py-4">
+                    <div className="flex flex-nowrap items-center justify-end gap-2">
                       <button
                         type="button"
                         onClick={() => onEdit(user)}
-                        className="inline-flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-white/[0.04]"
+                        className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-200 dark:hover:bg-slate-800/60"
                       >
                         <Pencil className="h-3.5 w-3.5" />
                         Edit
@@ -128,11 +125,11 @@ export default function UserManagementTable({
                         type="button"
                         onClick={() => onToggleStatus(user)}
                         disabled={actionLoadingId === user.id}
-                        className={`inline-flex items-center gap-1 rounded-lg px-3 py-2 text-xs font-semibold text-white ${
+                        className={`inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border px-3 py-2 text-xs font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 ${
                           user.isActive
-                            ? "bg-amber-600 hover:bg-amber-700"
-                            : "bg-emerald-600 hover:bg-emerald-700"
-                        } disabled:cursor-not-allowed disabled:opacity-60`}
+                            ? "border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-200 dark:hover:bg-slate-800/70"
+                            : "border-sky-400/45 bg-sky-50/90 text-sky-900 hover:bg-sky-100/80 dark:border-sky-600/45 dark:bg-sky-950/35 dark:text-sky-100 dark:hover:bg-sky-900/45"
+                        }`}
                       >
                         <Power className="h-3.5 w-3.5" />
                         {user.isActive ? "De-activate" : "Activate"}
@@ -142,7 +139,7 @@ export default function UserManagementTable({
                         type="button"
                         onClick={() => onDelete(user)}
                         disabled={actionLoadingId === user.id}
-                        className="inline-flex items-center gap-1 rounded-lg bg-rose-600 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 shadow-sm transition-all hover:bg-red-100 hover:text-red-800 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-900/30 dark:bg-red-950/20 dark:text-red-400 dark:hover:bg-red-900/40 dark:hover:text-red-300"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                         Delete

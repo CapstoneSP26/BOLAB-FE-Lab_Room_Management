@@ -1,4 +1,4 @@
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
   ChevronDown,
   Filter,
@@ -29,6 +29,7 @@ import {
   useUsers,
 } from "../hooks/useUserManagement";
 import type {
+  GetUsersRequest,
   UserFormValues,
   UserListItem,
   UserRole,
@@ -57,20 +58,30 @@ export default function UserManagementFeature() {
 
   const deferredSearch = useDeferredValue(search.trim());
 
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [deferredSearch, role, status]);
+
+  const params: GetUsersRequest = useMemo(
+    () => ({
+      q: deferredSearch || undefined,
+      role: role === "ALL" ? undefined : role,
+      isActive: status === "ALL" ? undefined : status === "ACTIVE",
+      page,
+      limit: PAGE_SIZE,
+      sortBy: "CreatedAt",
+      isDescending: sortOrder === "DESC",
+    }),
+    [deferredSearch, role, status, page, sortOrder],
+  );
+
   const {
     data: pagedUsers,
     isLoading,
     isFetching,
     refetch,
-  } = useUsers({
-    q: deferredSearch || undefined,
-    role: role === "ALL" ? undefined : role,
-    isActive: status === "ALL" ? undefined : status === "ACTIVE",
-    page,
-    limit: PAGE_SIZE,
-    sortBy: "CreatedAt",
-    isDescending: sortOrder === "DESC",
-  });
+  } = useUsers(params);
 
   const users = useMemo(() => pagedUsers?.items ?? [], [pagedUsers?.items]);
   const totalCount = pagedUsers?.totalCount ?? 0;
@@ -362,19 +373,15 @@ export default function UserManagementFeature() {
                   sortOrder={sortOrder}
                   onSearchChange={(value) => {
                     setSearch(value);
-                    setPage(1);
                   }}
                   onRoleChange={(value) => {
                     setRole(value);
-                    setPage(1);
                   }}
                   onStatusChange={(value) => {
                     setStatus(value);
-                    setPage(1);
                   }}
                   onSortOrderChange={(value) => {
                     setSortOrder(value);
-                    setPage(1);
                   }}
                   onReset={handleResetFilters}
                 />
@@ -403,7 +410,7 @@ export default function UserManagementFeature() {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                      User Directory
+                      User Directory ({totalCount})
                     </h3>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                       Search by ID, name, or email. Filter by role, created time, and status.

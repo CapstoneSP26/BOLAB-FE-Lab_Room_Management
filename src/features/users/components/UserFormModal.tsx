@@ -57,10 +57,6 @@ export default function UserFormModal({
       nextErrors.password = "Password is required when creating a user.";
     }
 
-    if (values.password && values.password.length > 0 && values.password.length < 6) {
-      nextErrors.password = "Password must be at least 6 characters.";
-    }
-
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
@@ -213,27 +209,6 @@ export default function UserFormModal({
                 <option value="ACTIVE">Activate</option>
                 <option value="DEACTIVATED">De-activate</option>
               </select>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Password {mode === "create" ? "*" : ""}
-              </label>
-              <input
-                type="password"
-                value={values.password}
-                onChange={(event) => handleChange("password", event.target.value)}
-                disabled={isLoading}
-                className="h-11 w-full rounded-xl border border-gray-300 px-4 text-sm text-gray-900 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 disabled:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:disabled:bg-gray-800/60"
-                placeholder={
-                  mode === "create"
-                    ? "Enter password"
-                    : "Leave blank to keep current password"
-                }
-              />
-              {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password}</p>
-              )}
             </div>
           </div>
 

@@ -9,8 +9,6 @@ import type {
 
 type MaybeRecord = Record<string, unknown>;
 
-const USER_ROLES: UserRole[] = ["ADMIN", "LAB_MANAGER", "LECTURER", "STUDENT"];
-
 const asRecord = (value: unknown): MaybeRecord =>
   value && typeof value === "object" ? (value as MaybeRecord) : {};
 
@@ -67,18 +65,23 @@ const getNumber = (value: unknown, fallback: number) => {
 };
 
 export const normalizeUserRole = (value: unknown): UserRole => {
-  const normalized = String(value ?? "")
+  if (value && typeof value === "object") {
+    const r = value as Record<string, unknown>;
+    return normalizeUserRole(
+      r.name ?? r.roleName ?? r.value ?? r.title ?? r.RoleName ?? r.Role,
+    );
+  }
+
+  const s = String(value ?? "")
     .trim()
-    .toUpperCase()
+    .toLowerCase()
     .replace(/[\s-]+/g, "_");
 
-  if (normalized === "LABMANAGER") {
+  if (s === "admin") return "ADMIN";
+  if (s === "lab_manager" || s === "labmanager" || s === "manager")
     return "LAB_MANAGER";
-  }
-
-  if (USER_ROLES.includes(normalized as UserRole)) {
-    return normalized as UserRole;
-  }
+  if (s === "lecturer" || s === "lectuer") return "LECTURER";
+  if (s === "student") return "STUDENT";
 
   return "STUDENT";
 };
@@ -88,7 +91,7 @@ const normalizeUserRoles = (value: unknown): UserRole[] => {
     return value.map(normalizeUserRole);
   }
 
-  if (typeof value === "string" && value.trim() !== "") {
+  if (value) {
     return [normalizeUserRole(value)];
   }
 
@@ -108,11 +111,18 @@ const unwrapPayload = (value: unknown): unknown => {
 export const mapUserDtoToUserListItem = (dto: unknown): UserListItem => {
   const record = asRecord(dto);
   const roles = normalizeUserRoles(
-    record.roles ?? record.Roles ?? record.role ?? record.Role,
+    record.roles ??
+      record.Roles ??
+      record.role ??
+      record.Role ??
+      record.userRoles ??
+      record.UserRoles ??
+      record.primaryRole ??
+      record.PrimaryRole,
   );
 
   return {
-    id: getString(record.id, record.Id, record.userId, record.UserId),
+    id: getString(record.userId, record.UserId),
     userCode: getString(record.userCode, record.UserCode, record.code, record.Code),
     fullName: getString(
       record.fullName,
@@ -167,7 +177,12 @@ export const normalizeUsersPagedResponse = (
     : [];
 
   const totalCount = getNumber(
-    record.totalCount ?? record.TotalCount ?? record.count ?? record.Count,
+    record.totalCount ??
+      record.TotalCount ??
+      record.total ??
+      record.Total ??
+      record.count ??
+      record.Count,
     items.length,
   );
   const pageSize = Math.max(
