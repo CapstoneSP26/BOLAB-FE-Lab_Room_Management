@@ -1,13 +1,52 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useToast } from "../../hooks/useToast";
 import { AuthLayout } from "./AuthLayout";
 
 type Form = { email: string; password: string };
+
+const ERROR_MESSAGES: Record<string, { title: string; message: string }> = {
+  User_not_found: {
+    title: "Không thể đăng nhập",
+    message: "Tài khoản Google của bạn chưa được đăng ký trong hệ thống",
+  },
+  User_role_not_found: {
+    title: "Lỗi cấu hình tài khoản",
+    message: "Tài khoản của bạn chưa được cấp quyền. Vui lòng liên hệ quản trị viên",
+  },
+  Google_auth_failed: {
+    title: "Đăng nhập Google thất bại",
+    message: "Không thể xác thực với Google. Vui lòng thử lại",
+  },
+};
 
 export default function LoginPage() {
   const [show, setShow] = useState(false);
   const [err, setErr] = useState("");
   const [form, setForm] = useState<Form>({ email: "", password: "" });
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { error: showError } = useToast();
+  const handledErrorRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const errorCode = searchParams.get("error");
+    if (!errorCode) {
+      handledErrorRef.current = null;
+      return;
+    }
+
+    if (handledErrorRef.current === errorCode) return;
+    handledErrorRef.current = errorCode;
+
+    const errorConfig = ERROR_MESSAGES[errorCode as keyof typeof ERROR_MESSAGES];
+    if (errorConfig) {
+      showError(errorConfig.title, errorConfig.message);
+    }
+
+    navigate("/login", { replace: true });
+  }, [searchParams, showError, navigate]);
+
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
   };
@@ -23,7 +62,7 @@ export default function LoginPage() {
   };
 
   const LoginGoogle = () => {
-    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/login/google?returnUrl=${import.meta.env.VITE_FE_BASE_URL}`;
+    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/login/google?returnUrl=${import.meta.env.VITE_FE_BASE_URL}/login`;
   }
 
   return (
