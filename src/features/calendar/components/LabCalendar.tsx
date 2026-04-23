@@ -44,7 +44,7 @@ export default function LabCalendar() {
   const [filters, setFilters] = useState<LabCalendarFilterState>(
     DEFAULT_LAB_CALENDAR_FILTERS,
   );
-  const [selectedSchedule, setSelectedSchedule] = useState<any | null>(null);
+  const [selectedSchedule] = useState<any | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
   const schedulesQuery = useSchedules(
@@ -247,10 +247,7 @@ export default function LabCalendar() {
     [],
   );
 
-  const handleEventClick = useCallback((schedule: any) => {
-    setSelectedSchedule(schedule);
-    setDetailOpen(true);
-  }, []);
+
 
   const clearFilters = useCallback(() => {
     setFilters(DEFAULT_LAB_CALENDAR_FILTERS);

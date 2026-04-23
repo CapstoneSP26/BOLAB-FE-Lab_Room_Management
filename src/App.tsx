@@ -6,9 +6,12 @@ import { ErrorBoundary } from "./components/ui/ErrorBoundary";
 import { LoadingFallback } from "./components/ui/LoadingFallback";
 import { AppRouter } from "./app/router/AppRouter";
 import { useAuth } from "./features/auth/hooks/useAuth";
+import { useAuthStore } from "./store/useAuthStore";
+
 export default function App() {
   const { toasts, removeToast } = useToastStore();
-  const { } = useAuth();
+  const { isAuthenticated } = useAuthStore();
+  const { isLoading } = useAuth();
   return (
     <ErrorBoundary>
       <Suspense fallback={<LoadingFallback />}>
@@ -16,7 +19,7 @@ export default function App() {
       </Suspense>
 
       <ToastContainer toasts={toasts} onClose={removeToast} />
-      <QuickActionFAB />
+      {!isLoading && isAuthenticated && <QuickActionFAB />}
     </ErrorBoundary>
   );
 }

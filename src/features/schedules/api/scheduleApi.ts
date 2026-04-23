@@ -39,6 +39,13 @@ export const scheduleApi = {
       })
       .then((res) => res.data),
 
+  getSchedulesStudent: (params: GetSchedulesParams) =>
+    axiosInstance
+      .get<{ items: ScheduleDto[] }>("/schedules/schedule-student", {
+        params,
+      })
+      .then((res) => res.data),
+
   getScheduleById: (id: string) =>
     axiosInstance
       .get<GetScheduleByIdResponse>(SCHEDULE_API.BY_ID(id))
