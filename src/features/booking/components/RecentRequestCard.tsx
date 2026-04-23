@@ -36,22 +36,6 @@ export const RecentRequestCard: React.FC<RecentRequestCardProps> = ({
     }
   };
 
-  const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInMs = now.getTime() - date.getTime();
-    const diffInMins = Math.floor(diffInMs / 60000);
-    const diffInHours = Math.floor(diffInMins / 60);
-    const diffInDays = Math.floor(diffInHours / 24);
-
-    if (diffInMins < 60) {
-      return `${diffInMins} phút trước`;
-    } else if (diffInHours < 24) {
-      return `${diffInHours} giờ trước`;
-    } else {
-      return `${diffInDays} ngày trước`;
-    }
-  };
 
   return (
     <div
@@ -94,9 +78,6 @@ export const RecentRequestCard: React.FC<RecentRequestCardProps> = ({
         <div className="flex items-center text-slate-500 text-xs transition-colors">
           <User className="h-3 w-3 mr-1" />
           {request.requestedBy}
-        </div>
-        <div className="text-slate-500 text-xs transition-colors">
-          {formatTimeAgo(request.requestedAt)}
         </div>
       </div>
     </div>

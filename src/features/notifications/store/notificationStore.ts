@@ -122,8 +122,9 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
     }
   },
 
-  // No backend endpoint for mark-all currently. Keep local-only behavior.
-  markAllAsRead: () => {
+  markAllAsRead: async () => {
+    const unreadNotifications = get().notifications.filter((item) => !item.isRead);
+
     set((state) => {
       const next = state.notifications.map((item) => ({
         ...item,
@@ -136,6 +137,10 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
         unreadCount: 0,
       };
     });
+
+    await Promise.allSettled(
+      unreadNotifications.map((notification) => notificationApi.markAsRead(notification.id)),
+    );
   },
 
   removeNotification: (id) => {

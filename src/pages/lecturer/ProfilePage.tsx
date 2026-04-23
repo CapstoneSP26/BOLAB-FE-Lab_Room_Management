@@ -17,6 +17,7 @@ import {
   useProfileStats,
   useRecentActivities,
 } from '../../features/profile/hooks/userProfile';
+import { useNotificationPreferences } from '../../features/profile/hooks/useNotificationPreferences';
 import { addCacheBuster } from '../../utils/imageCache';
 
 export default function ProfilePage() {
@@ -24,16 +25,17 @@ export default function ProfilePage() {
   const notificationSectionRef = useRef<HTMLDivElement>(null);
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
 
-  // Notification preferences
-  const [notificationPrefs, setNotificationPrefs] = useState({
-    emailNotifications: true,
-    pushNotifications: true,
-    bookingApproved: true,
-    bookingRejected: true,
-    bookingReminder: true,
-  });
-
   const { data: profile, isLoading: isProfileLoading } = useMyProfile();
+  const {
+    notificationPrefs,
+    updateNotificationPref,
+    isSavingPreferences,
+    saveError,
+    saveSuccess,
+    saveNotificationPreferences,
+  } = useNotificationPreferences({
+    initialPreferences: profile?.notificationPreferences ?? null,
+  });
   const { data: stats, isLoading: isStatsLoading } = useProfileStats();
   const { data: recentActivitiesData, isLoading: isActivitiesLoading } =
     useRecentActivities(10);
@@ -69,7 +71,6 @@ export default function ProfilePage() {
     profile?.campusId != null
       ? (campusNameById[profile.campusId] ?? `Campus ${profile.campusId}`)
       : '—';
-
 
   useEffect(() => {
     const shouldOpenNotifications = Boolean(
@@ -278,7 +279,7 @@ export default function ProfilePage() {
                           <input
                             type="checkbox"
                             checked={notificationPrefs.emailNotifications}
-                            onChange={(e) => setNotificationPrefs({ ...notificationPrefs, emailNotifications: e.target.checked })}
+                            onChange={(e) => updateNotificationPref('emailNotifications', e.target.checked)}
                             className="sr-only peer"
                           />
                           <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-orange-500 peer-checked:to-red-500"></div>
@@ -297,7 +298,7 @@ export default function ProfilePage() {
                           <input
                             type="checkbox"
                             checked={notificationPrefs.pushNotifications}
-                            onChange={(e) => setNotificationPrefs({ ...notificationPrefs, pushNotifications: e.target.checked })}
+                            onChange={(e) => updateNotificationPref('pushNotifications', e.target.checked)}
                             className="sr-only peer"
                           />
                           <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-orange-500 peer-checked:to-red-500"></div>
@@ -322,7 +323,7 @@ export default function ProfilePage() {
                           <input
                             type="checkbox"
                             checked={notificationPrefs.bookingApproved}
-                            onChange={(e) => setNotificationPrefs({ ...notificationPrefs, bookingApproved: e.target.checked })}
+                            onChange={(e) => updateNotificationPref('bookingApproved', e.target.checked)}
                             className="sr-only peer"
                           />
                           <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-orange-500 peer-checked:to-red-500"></div>
@@ -341,7 +342,7 @@ export default function ProfilePage() {
                           <input
                             type="checkbox"
                             checked={notificationPrefs.bookingRejected}
-                            onChange={(e) => setNotificationPrefs({ ...notificationPrefs, bookingRejected: e.target.checked })}
+                            onChange={(e) => updateNotificationPref('bookingRejected', e.target.checked)}
                             className="sr-only peer"
                           />
                           <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-orange-500 peer-checked:to-red-500"></div>
@@ -360,7 +361,7 @@ export default function ProfilePage() {
                           <input
                             type="checkbox"
                             checked={notificationPrefs.bookingReminder}
-                            onChange={(e) => setNotificationPrefs({ ...notificationPrefs, bookingReminder: e.target.checked })}
+                            onChange={(e) => updateNotificationPref('bookingReminder', e.target.checked)}
                             className="sr-only peer"
                           />
                           <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-orange-500 peer-checked:to-red-500"></div>
@@ -371,8 +372,27 @@ export default function ProfilePage() {
 
                   
 
-                  <button className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 rounded-xl hover:from-orange-600 hover:to-red-600 transition-all font-medium shadow-lg hover:scale-105">
-                    Save Preferences
+                  {saveError && (
+                    <p className="text-sm text-red-600">{saveError}</p>
+                  )}
+
+                  {saveSuccess && (
+                    <p className="text-sm text-green-600">{saveSuccess}</p>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await saveNotificationPreferences();
+                      } catch {
+                        // error state handled inside hook
+                      }
+                    }}
+                    disabled={isSavingPreferences}
+                    className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 rounded-xl hover:from-orange-600 hover:to-red-600 transition-all font-medium shadow-lg hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {isSavingPreferences ? 'Saving...' : 'Save Preferences'}
                   </button>
                 </div>
               </div>

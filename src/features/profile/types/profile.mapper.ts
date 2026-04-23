@@ -25,11 +25,7 @@ export function splitFullName(fullName: string) {
 
 export function mapUserDtoToProfile(dto: UserDto): Profile {
   return {
-    id: dto.id,
-    email: dto.email,
-    fullName: dto.fullName,
-    userCode: dto.userCode,
-    userImageUrl: dto.userImageUrl,
+    ...dto,
     phone: dto.phone ?? null,
     department: dto.department ?? null,
     role: dto.role ?? null,
@@ -42,7 +38,15 @@ export function mapUserDtoToProfile(dto: UserDto): Profile {
     createdBy: dto.createdBy ?? null,
     updatedBy: dto.updatedBy ?? null,
     lastLogin: dto.lastLogin ?? null,
+    isDeleted: dto.isDeleted ?? null,
     isActive: dto.isActive ?? null,
+    notificationPreferences: dto.notificationPreferences ?? {
+      emailNotifications: true,
+      pushNotifications: true,
+      bookingApproved: true,
+      bookingRejected: true,
+      bookingReminder: true,
+    },
   };
 }
 
