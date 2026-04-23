@@ -28,6 +28,7 @@ const routeNames: Record<string, string> = {
   'manual': 'Manual Entry',
   'profile': 'Profile',
   'student-groups': 'Groups',
+  'groups': 'Groups',
 };
 
 const hiddenSessionParents = new Set(['qr-display', 'scan-attendance', 'manual']);
@@ -39,7 +40,7 @@ const isLikelyDynamicId = (segment: string): boolean => {
 
 export const Breadcrumb: React.FC = () => {
   const location = useLocation();
-  const { buildingName, roomName } = useBreadcrumb();
+  const { buildingName, roomName, groupName } = useBreadcrumb();
   
   // Parse current path
   const pathSegments = location.pathname.split('/').filter(Boolean);
@@ -71,6 +72,16 @@ export const Breadcrumb: React.FC = () => {
       return;
     }
 
+    // Skip 'groups' segment if followed by group ID (we'll add group name from context instead)
+    if (segment === 'groups' && nextSegment && isLikelyDynamicId(nextSegment)) {
+      return;
+    }
+
+    // Skip 'student-groups' segment if followed by group ID (we'll add group name from context instead)
+    if (segment === 'student-groups' && nextSegment && isLikelyDynamicId(nextSegment)) {
+      return;
+    }
+
     // Handle dynamic building ID - use buildingName from context
     if (parentSegment === 'buildings' && isLikelyDynamicId(segment) && buildingName) {
       breadcrumbs.push({ label: buildingName, path: currentPath });
@@ -92,6 +103,12 @@ export const Breadcrumb: React.FC = () => {
         breadcrumbs.push({ label: roomName, path: currentPath });
         return;
       }
+
+      // Handle dynamic group ID - use groupName from context
+      if ((parentSegment === 'groups' || parentSegment === 'student-groups') && groupName) {
+        breadcrumbs.push({ label: groupName, path: currentPath });
+        return;
+      }
     }
 
     const label = routeNames[segment] || segment;
@@ -105,7 +122,7 @@ export const Breadcrumb: React.FC = () => {
         const isFirst = index === 0;
 
         return (
-          <React.Fragment key={item.path}>
+          <React.Fragment key={`${item.label}-${index}`}>
             {index > 0 && (
               <ChevronRight className="w-4 h-4 text-orange-300" />
             )}
