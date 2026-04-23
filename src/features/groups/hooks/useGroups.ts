@@ -16,6 +16,7 @@ import {
   addGroupMember,
   updateGroupMember,
   removeGroupMember,
+  searchStudents,
 } from '../api/groupsApi';
 import type {
   GetGroupsParams,
@@ -35,12 +36,14 @@ export const GROUPS_QUERY_KEYS = {
   members: () => [...GROUPS_QUERY_KEYS.all, 'members'] as const,
   memberList: (groupId: string) =>
     [...GROUPS_QUERY_KEYS.members(), groupId] as const,
+  search: () => [...GROUPS_QUERY_KEYS.all, 'search'] as const,
+  searchStudents: (query: string) =>
+    [...GROUPS_QUERY_KEYS.search(), 'students', query] as const,
 } as const;
 
 // ===== QUERIES =====
 
 interface UseGroupsOptions {
-  params?: GetGroupsParams;
   enabled?: boolean;
 }
 
@@ -48,11 +51,11 @@ interface UseGroupsOptions {
  * Fetch all groups belonging to current lecturer
  */
 export const useGroups = (options: UseGroupsOptions = {}) => {
-  const { params = {}, enabled = true } = options;
+  const { enabled = true } = options;
 
   return useQuery({
-    queryKey: GROUPS_QUERY_KEYS.list(params),
-    queryFn: () => getGroups(params),
+    queryKey: GROUPS_QUERY_KEYS.lists(),
+    queryFn: () => getGroups(),
     enabled,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
@@ -240,3 +243,27 @@ export const useRemoveGroupMember = (options: MutationOptions = {}) => {
     onError,
   });
 };
+
+// ===== SEARCH QUERIES =====
+
+interface UseSearchStudentsOptions {
+  query: string;
+  excludeUserIds?: string[];
+  enabled?: boolean;
+}
+
+/**
+ * Search for available students to add to a group
+ */
+export const useSearchStudents = (options: UseSearchStudentsOptions) => {
+  const { query, excludeUserIds = [], enabled = true } = options;
+
+  return useQuery({
+    queryKey: GROUPS_QUERY_KEYS.searchStudents(query),
+    queryFn: () => searchStudents(query, excludeUserIds),
+    enabled: enabled && query.length > 0,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+

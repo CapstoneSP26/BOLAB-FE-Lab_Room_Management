@@ -12,33 +12,31 @@ import type {
   GroupDto,
   Group,
   GroupMemberDto,
-  GetGroupsParams,
   CreateGroupRequest,
   UpdateGroupRequest,
   AddGroupMemberRequest,
   UpdateGroupMemberRequest,
   GetGroupsResponse,
   GetGroupMembersResponse,
+  StudentSearchDto,
+  SearchStudentsResponse,
 } from '../types/group.type';
 
 // API endpoints
 const API_ENDPOINTS = {
-  GROUPS: '/api/groups',
-  GROUP_DETAIL: (groupId: string) => `/api/groups/${groupId}`,
-  GROUP_MEMBERS: (groupId: string) => `/api/groups/${groupId}/members`,
+  GROUPS: '/groups',
+  GROUP_DETAIL: (groupId: string) => `/groups/${groupId}`,
+  GROUP_MEMBERS: (groupId: string) => `/groups/${groupId}/members`,
   GROUP_MEMBER_DETAIL: (groupId: string, userId: string) =>
-    `/api/groups/${groupId}/members/${userId}`,
+    `/groups/${groupId}/members/${userId}`,
 } as const;
 
 /**
  * Get all groups owned by current lecturer
  */
-export const getGroups = async (
-  params: GetGroupsParams = {}
-): Promise<GetGroupsResponse> => {
+export const getGroups = async (): Promise<GetGroupsResponse> => {
   const response = await axiosInstance.get<GetGroupsResponse>(
-    API_ENDPOINTS.GROUPS,
-    { params }
+    API_ENDPOINTS.GROUPS
   );
   return response.data;
 };
@@ -144,3 +142,53 @@ export const removeGroupMember = async (
     API_ENDPOINTS.GROUP_MEMBER_DETAIL(groupId, userId)
   );
 };
+
+/**
+ * Search for available students (by keyword)
+ * Filters out students already in the group
+ * Backend role mapping: 1=Admin, 2=LabManager, 3=Lecturer, 4=Student
+ */
+export const searchStudents = async (
+  searchQuery: string,
+  excludeUserIds?: string[]
+): Promise<SearchStudentsResponse> => {
+  const response = await axiosInstance.get<any>(
+    '/users',
+    {
+      params: {
+        keyword: searchQuery,
+        role: 4, // Student role
+        limit: 10,
+        pageSize: 10,
+        sortBy: 'CreatedAt',
+        isDescending: true,
+      }
+    }
+  );
+
+  // Handle different response structures
+  let users = response.data;
+  if (response.data?.items) {
+    users = response.data.items;
+  } else if (response.data?.data) {
+    users = response.data.data;
+  } else if (!Array.isArray(response.data)) {
+    users = [];
+  }
+
+  // Map the response and filter out excluded users
+  const items = (Array.isArray(users) ? users : [])
+    .filter((user: any) => !excludeUserIds?.includes(user.id))
+    .map((user: any) => ({
+      id: user.id,
+      userCode: user.userCode,
+      fullName: user.fullName,
+      email: user.email,
+    } as StudentSearchDto));
+
+  return {
+    items,
+    total: items.length,
+  };
+};
+
