@@ -270,7 +270,6 @@ export default function LabCalendar() {
         loading={loading}
         scheduleCount={schedules.length}
         events={filteredEventInputs}
-        onEventClick={handleEventClick}
       />
 
       <ScheduleFormModal
