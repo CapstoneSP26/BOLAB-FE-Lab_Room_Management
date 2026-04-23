@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import React, { useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "../../hooks/useToast";
 import { AuthLayout } from "./AuthLayout";
 
@@ -25,18 +25,27 @@ export default function LoginPage() {
   const [err, setErr] = useState("");
   const [form, setForm] = useState<Form>({ email: "", password: "" });
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { error: showError } = useToast();
+  const handledErrorRef = useRef<string | null>(null);
 
-  // Check OAuth error from backend redirect
   useEffect(() => {
     const errorCode = searchParams.get("error");
-    if (errorCode) {
-      const errorConfig = ERROR_MESSAGES[errorCode as keyof typeof ERROR_MESSAGES];
-      if (errorConfig) {
-        showError(errorConfig.title, errorConfig.message);
-      }
+    if (!errorCode) {
+      handledErrorRef.current = null;
+      return;
     }
-  }, [searchParams, showError]);
+
+    if (handledErrorRef.current === errorCode) return;
+    handledErrorRef.current = errorCode;
+
+    const errorConfig = ERROR_MESSAGES[errorCode as keyof typeof ERROR_MESSAGES];
+    if (errorConfig) {
+      showError(errorConfig.title, errorConfig.message);
+    }
+
+    navigate("/login", { replace: true });
+  }, [searchParams, showError, navigate]);
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
