@@ -9,6 +9,7 @@ import { getStartOfDayVNInUTC } from '../../utils/date.util';
 import { addDays } from 'date-fns';
 import { useParams } from 'react-router-dom';
 import { useLabRoomDetail } from '../../features/labroom/hooks/useLabRooms';
+import { CalenderIcon } from '../../components/icon';
 
 
 /**
@@ -50,37 +51,49 @@ const { data } = useLabRoomDetail(Number(labRoomId));
     /** * THAY ĐỔI: Thêm h-[calc(100vh-2rem)] hoặc h-full 
      * Đảm bảo phần tử bao ngoài (Layout) có chiều cao cố định.
      */
-    <div className="flex flex-col h-full max-h-[100vh] bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div className="flex flex-col items-center justify-start w-full h-screen px-8 py-6 md:px-10 md:py-12 pt-0">
+      {/* Room Name - Outside calendar card */}
+      <div className="absolute top-2 left-0 right-0 px-4 md:px-6 pointer-events-none">
+        <div className="flex items-center justify-center gap-3 mb-2">
+          <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg">
+            <CalenderIcon className="w-6 h-6 text-white" />
+          </div>
+          <h1 className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-700 drop-shadow-lg">
+            {data?.roomName || 'Lab Room'}
+          </h1>
+        </div>
+        <div className="h-0.5 bg-gradient-to-r from-transparent via-blue-600 to-transparent"></div>
+      </div>
 
-      {/* 1. Navigation Header - Đứng yên */}
-      <div className="flex-none items-center justify-between px-6 py-4 border-b-2 border-gray-200 bg-white z-30">
+      <div className="flex flex-col w-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" style={{ width: '950px', height: '600px', marginTop: '20px', marginBottom: 'auto' }}>
+
+      {/* 1. Navigation Header */}
+      <div className="flex-none items-center justify-between px-3 py-2 border-b border-gray-200 bg-white z-30">
         <CalendarNavigation
           weekStart={weekStart}
           weekEnd={weekEnd}
           weekOffset={weekOffset}
           onWeekChange={setWeekOffset}
-          labRoomName={data?.roomName}
+          labRoomName={undefined}
         />
       </div>
 
       {/* 2. Container chính cho phần nội dung dưới Nav */}
-      <div className='flex-1 flex flex-col min-h-0 overflow-hidden'>
+      <div className='flex-1 flex min-h-0 overflow-hidden'>
 
-        {/* 3. Day Header - Cố định (Không nằm trong vùng cuộn dọc) */}
-        <div className="flex-none border-b border-gray-200 bg-white z-20">
-          <div className="overflow-hidden"> {/* Để đồng bộ cuộn ngang nếu có */}
-            <div style={{ minWidth: '1000px' }}>
+        {/* Phần scroll ngang - Ngày (chỉ 1 scroll container) */}
+        <div className='flex-1 overflow-y-auto overflow-x-auto bg-gray-50/30 custom-scrollbar' style={{ zoom: '0.85' }}>
+          {/* 3. Day Header - Sticky trong scroll container */}
+          <div className="sticky top-0 flex-none border-b border-gray-200 bg-white z-20">
+            <div>
               <CalendarDayHeader weekDays={weekDays} />
             </div>
           </div>
-        </div>
 
-        {/* 4. Vùng cuộn thực sự - Chỉ chứa Grid */}
-        <div className="flex-1 overflow-y-auto overflow-x-auto bg-gray-50/30 custom-scrollbar">
+          {/* 4. Grid */}
           <div
             ref={gridRef}
-            className="border-l relative select-none"
-            style={{ minWidth: '1000px' }}
+            className="relative select-none"
           >
             <FlexibleGridView
               timeSlots={timeSlots}
@@ -90,6 +103,7 @@ const { data } = useLabRoomDetail(Number(labRoomId));
             />
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

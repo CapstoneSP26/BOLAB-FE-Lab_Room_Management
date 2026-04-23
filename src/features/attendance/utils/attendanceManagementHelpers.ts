@@ -27,22 +27,6 @@ export const normalizeBookingStatus = (status: string): BookingStatus => {
   if (normalizedStatus === 'cancelled' || normalizedStatus === 'cancel') {
     return 'Cancelled';
   }
-
-  // Map NotYet to Active
-  if (normalizedStatus === 'notyet' || normalizedStatus === 'not_yet' || normalizedStatus === 'not yet') {
-    return 'Active';
-  }
-
-  // Map Done to Completed
-  if (normalizedStatus === 'done' || normalizedStatus === 'finished') {
-    return 'Completed';
-  }
-
-  // Map Finish to Completed
-  if (normalizedStatus === 'finish' || normalizedStatus === 'finishing') {
-    return 'Completed';
-  }
-
   // Default to Active for unknown statuses
   return 'Active';
 };
@@ -167,7 +151,7 @@ export const extractBackendScanUrl = (input: unknown, scheduleId?: string): stri
   // Try to find scanUrl in response first (if backend provides it)
   if (input != null && typeof input === 'object') {
     const record = input as Record<string, unknown>;
-    
+
     const priorityKeys = [
       'scanUrl',
       'qrScanUrl',

@@ -148,7 +148,7 @@ export default function HistoryBookingFilter({
             <input
               value={q}
               onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder="Search by user, room, purpose, reason..."
+              placeholder="Search by room no or room name..."
               className="h-12 w-full rounded-xl border border-gray-300 bg-white pl-11 pr-10 text-sm text-gray-800 placeholder:text-gray-400 transition-all focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-blue-500"
             />
             {q && (

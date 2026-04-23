@@ -12,7 +12,11 @@ export const PROFILE_QUERY_KEYS = {
 export const useMyProfile = (enabled: boolean = true) => {
   return useQuery({
     queryKey: [PROFILE_QUERY_KEYS.ME],
-    queryFn: () => profileService.getMe(),
+    queryFn: async () => {
+      const data = await profileService.getMe();
+      console.log('[profile.me] refetched profile', data);
+      return data;
+    },
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
     enabled,

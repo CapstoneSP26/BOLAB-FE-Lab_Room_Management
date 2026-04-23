@@ -86,7 +86,7 @@ export const useStats = (options: UseStatsOptions = {}) => {
 };
 
 interface MutationOptions<TData> {
-  onSuccess?: (data: TData) => void;
+  onSuccess?: (data: TData, message: string) => void;
   onError?: (error: Error) => void;
 }
 
@@ -105,11 +105,11 @@ export const useCreateLabRoom = (options: MutationOptions<LabRoomDto> = {}) => {
   return useMutation({
     mutationFn: (payload: CreateLabRoomRequest) =>
       labroomApi.createRoom(payload),
-    onSuccess: (data) => {
+    onSuccess: ({ data, message }) => {
       void queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.ROOMS_MANAGEMENT],
       });
-      options.onSuccess?.(data);
+      options.onSuccess?.(data, message);
     },
     onError: (error: Error) => {
       options.onError?.(error);
@@ -128,11 +128,11 @@ export const useUpdateLabRoom = (options: MutationOptions<LabRoomDto> = {}) => {
       id: number;
       payload: UpdateLabRoomRequest;
     }) => labroomApi.updateRoom(id, payload),
-    onSuccess: (data) => {
+    onSuccess: ({ data, message }) => {
       void queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.ROOMS_MANAGEMENT],
       });
-      options.onSuccess?.(data);
+      options.onSuccess?.(data, message);
     },
     onError: (error: Error) => {
       options.onError?.(error);
@@ -166,7 +166,7 @@ export const useUpdateLabRoomStatus = (
 
       return labroomApi.updateRoom(room.id, payload);
     },
-    onSuccess: (data) => {
+    onSuccess: ({ data, message }) => {
       queryClient.setQueriesData(
         { queryKey: [QUERY_KEYS.ROOMS_MANAGEMENT] },
         (oldData: PagedResponse<LabRoomDto> | undefined) => {
@@ -185,7 +185,7 @@ export const useUpdateLabRoomStatus = (
         queryKey: [QUERY_KEYS.ROOMS_MANAGEMENT],
       });
 
-      options.onSuccess?.(data);
+      options.onSuccess?.(data, message);
     },
     onError: (error: Error) => {
       options.onError?.(error);
@@ -197,11 +197,11 @@ export const useDeleteLabRoom = (options: MutationOptions<void> = {}) => {
 
   return useMutation({
     mutationFn: (id: number) => labroomApi.deleteRoom(id),
-    onSuccess: () => {
+    onSuccess: ({ message }) => {
       void queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.ROOMS_MANAGEMENT],
       });
-      options.onSuccess?.(undefined);
+      options.onSuccess?.(undefined, message);
     },
     onError: (error: Error) => {
       options.onError?.(error);
@@ -228,7 +228,7 @@ export const useUpdateRoomPolicy = (
       void queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.ROOM_POLICIES, variables.labRoomId],
       });
-      options.onSuccess?.(data);
+      options.onSuccess?.(data, "");
     },
     onError: (error: Error) => {
       options.onError?.(error);
@@ -251,7 +251,7 @@ export const useDeleteRoomPolicy = (options: MutationOptions<void> = {}) => {
       void queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.ROOM_POLICIES, variables.labRoomId],
       });
-      options.onSuccess?.(undefined);
+      options.onSuccess?.(undefined, "");
     },
     onError: (error: Error) => {
       options.onError?.(error);
