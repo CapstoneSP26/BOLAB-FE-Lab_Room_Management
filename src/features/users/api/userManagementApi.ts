@@ -22,13 +22,12 @@ const USER_API = {
 } as const;
 
 const buildListParams = (params: GetUsersRequest = {}) => ({
-  q: params.q,
+  // Backend expects only `keyword` for search.
   keyword: params.q,
-  searchTerm: params.q,
-  role: params.role,
+  // Backend expects numeric role id (e.g. 2 = Manager).
+  role: params.role ? mapRoleToBackendId(params.role) : undefined,
   isActive: params.isActive,
   page: params.page,
-  pageNumber: params.page,
   limit: params.limit,
   pageSize: params.limit,
   sortBy: params.sortBy ?? "CreatedAt",
