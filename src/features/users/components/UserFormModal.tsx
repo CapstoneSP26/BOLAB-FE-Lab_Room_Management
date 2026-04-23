@@ -51,10 +51,6 @@ export default function UserFormModal({
       nextErrors.email = "Email format is invalid.";
     }
 
-    if (mode === "create" && !values.password.trim()) {
-      nextErrors.password = "Password is required when creating a user.";
-    }
-
     if (values.roles.length === 0) {
       nextErrors.roles = "At least one role is required.";
     }
@@ -62,6 +58,7 @@ export default function UserFormModal({
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
+  
 
   const handleChange = <K extends keyof UserFormValues>(
     key: K,
@@ -74,12 +71,19 @@ export default function UserFormModal({
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     if (!validate()) return;
-    await onSubmit(values);
+
+    const finalValues = {
+      ...values,
+      password: mode === "create" ? values.email.trim() : values.password,
+    };
+
+    await onSubmit(finalValues);
   };
 
   const toggleRole = (role: UserRole) => {
     const nextRoles = values.roles.includes(role)
       ? values.roles.filter((r) => r !== role)
+      
       : [...values.roles, role];
     handleChange("roles", nextRoles);
   };
