@@ -16,15 +16,19 @@ export const normalizeBookingStatus = (status: string): BookingWithQR['status'] 
     return 'Active';
   }
 
-  if (normalizedStatus === 'done') {
-    return 'Done';
+  if (normalizedStatus === 'inprocess' || normalizedStatus === 'in_process' || normalizedStatus === 'in process') {
+    return 'InProcess';
   }
 
-  if (normalizedStatus === 'notyet' || normalizedStatus === 'not_yet' || normalizedStatus === 'not yet') {
-    return 'NotYet';
+  if (normalizedStatus === 'completed' || normalizedStatus === 'complete') {
+    return 'Completed';
   }
 
-  return 'NotYet';
+  if (normalizedStatus === 'cancelled' || normalizedStatus === 'cancel') {
+    return 'Cancelled';
+  }
+  // Default to Active for unknown statuses
+  return 'Active';
 };
 
 export const mapScheduleDtoToAttendanceBooking = (schedule: ScheduleDto): BookingWithQR => {
