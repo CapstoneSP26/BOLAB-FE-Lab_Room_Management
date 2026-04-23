@@ -20,8 +20,9 @@ const CalendarTabletPage: React.FC = () => {
   const [weekOffset, setWeekOffset] = useState(0);
   const { START_HOUR, END_HOUR } = CALENDAR_CONFIG;
 
-  const { data } = useLabRoomDetail(Number(labRoomId));
 
+  // Only fetch room details if user is authenticated
+const { data } = useLabRoomDetail(Number(labRoomId));
   const { weekDays, weekStart, weekEnd } = useMemo(() => {
     const days = getWeekDaysByOffset(weekOffset);
     return {

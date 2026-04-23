@@ -3,10 +3,12 @@ import { notificationApi } from "../api/notificationApi";
 import type {
   GetNotificationsRequest,
   GetNotificationsResponse,
+  NotificationItem,
 } from "../types/notification.type";
 
 export const NOTIFICATION_QUERY_KEYS = {
   LIST: "notifications",
+  BOOKING: (bookingId: string) => ["booking-notification", bookingId],
 } as const;
 
 export interface UseNotificationsOptions extends GetNotificationsRequest {
@@ -21,7 +23,6 @@ export const useNotifications = (options: UseNotificationsOptions = {}) => {
     queryFn: () => notificationApi.getNotifications(params),
     staleTime: 60 * 1000,
     gcTime: 5 * 60 * 1000,
-    refetchInterval: 60 * 1000,
     enabled,
   });
 };
@@ -49,5 +50,15 @@ export const useMarkAllReadNotifications = () => {
         queryKey: [NOTIFICATION_QUERY_KEYS.LIST],
       });
     },
+  });
+};
+
+export const useBookingNotification = (bookingId: string, enabled = true) => {
+  return useQuery<NotificationItem>({
+    queryKey: NOTIFICATION_QUERY_KEYS.BOOKING(bookingId),
+    queryFn: () => notificationApi.getBookingNotification(bookingId),
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    enabled,
   });
 };

@@ -2,7 +2,7 @@ import React from 'react';
 import type { SlotType } from '../../slot/types/slot.types';
 import type { CalendarEvent } from '../types/calendar.type';
 import { getPositionStyle } from '../utils/calendar-math.util';
-import { format } from 'date-fns';
+import { addHours, format, isBefore, parseISO } from 'date-fns';
 
 interface FixedGridViewProps {
   timeSlots: string[];
@@ -10,6 +10,7 @@ interface FixedGridViewProps {
   activeSlotType: SlotType;
   events: CalendarEvent[];
   onSlotClick: (date: string, frame: any) => void;
+  minBookingLeadTime: number;
   maxConcurrent: number; // Lấy từ chính LabRoomPolicy "MaxConcurrentBookings"
 }
 
@@ -19,8 +20,11 @@ export const FixedGridView: React.FC<FixedGridViewProps> = ({
   activeSlotType,
   events,
   onSlotClick,
-  maxConcurrent
+  minBookingLeadTime = 0,
+  maxConcurrent = 1
 }) => {
+  const now = new Date();
+  const minAllowedTime = addHours(now, minBookingLeadTime);
 
   return (
     <div className="flex-1 grid grid-cols-[80px_1fr] min-w-[1000px] relative bg-white">
@@ -55,57 +59,68 @@ export const FixedGridView: React.FC<FixedGridViewProps> = ({
 
           return (
             <div key={dayIndex} className="relative border-r border-gray-200 h-full">
-              {/* Vạch kẻ giờ nền */}
-              {timeSlots.map((_, i) => (
-                <div key={i} className="h-20 border-b border-gray-50 pointer-events-none" />
-              ))}
+              {/* ... Vạch kẻ giờ nền ... */}
 
-              {/* HIỂN THỊ CÁC KHUNG CA (SLOT FRAMES) */}
               {activeSlotType.slotFrames.map((frame) => {
                 const style = getPositionStyle(frame.startTime, frame.endTime);
 
-                // Lọc events thuộc Ca này (Khớp ngày và khớp giờ bắt đầu)
+                // --- LOGIC KIỂM TRA KHÓA ---
+                const slotStartTime = parseISO(`${dateStr}T${frame.startTime}`);
+                const isLocked = isBefore(slotStartTime, minAllowedTime);
+
                 const concurrentBookings = events.filter(e =>
-                  e.start.startsWith(dateStr) && e.start.includes(frame.startTime) && e.end.includes(frame.endTime) && e.slotName === activeSlotType.name
+                  e.start.startsWith(dateStr) &&
+                  e.start.includes(frame.startTime) &&
+                  e.end.includes(frame.endTime) &&
+                  e.slotName === activeSlotType.name
                 );
 
                 const isFull = concurrentBookings.length >= maxConcurrent;
+                // Chỉ cho phép click nếu không full VÀ không bị khóa
+                const canClick = !isFull && !isLocked;
 
                 return (
                   <div
                     key={frame.id}
                     style={style}
-                    onClick={() => !isFull && onSlotClick(dateStr, frame)}
-                    className={`absolute left-1 right-1 rounded-lg border-2 transition-all flex flex-col p-1 gap-1 group
-                      ${isFull
-                        ? 'border-gray-200 bg-gray-100/40 cursor-not-allowed shadow-none'
-                        : 'border-blue-100 bg-blue-50/20 hover:bg-blue-100/40 hover:border-blue-400 cursor-pointer shadow-sm z-10'
+                    onClick={() => canClick && onSlotClick(dateStr, frame)}
+                    className={`absolute left-1 right-1 rounded-lg border-2 transition-all flex flex-col p-1 gap-1 group overflow-hidden
+                      ${isLocked
+                        ? 'border-gray-100 bg-gray-50/50 cursor-not-allowed opacity-60'
+                        : isFull
+                          ? 'border-gray-200 bg-gray-100/40 cursor-not-allowed shadow-none'
+                          : 'border-blue-100 bg-blue-50/20 hover:bg-blue-100/40 hover:border-blue-400 cursor-pointer shadow-sm z-10'
                       }`}
                   >
-                    {/* Header nhỏ của Slot (Hiện: Ca X | Slot: 1/3) */}
-                    <div className="flex justify-between items-center px-1">
-                      <span className={`text-[9px] font-bold ${isFull ? 'text-gray-400' : 'text-blue-600'}`}>
-                        CA {frame.orderIndex}
+                    {/* Lớp nền gạch chéo khi bị khóa (giống Flexible) */}
+                    {isLocked && (
+                      <div
+                        className="absolute inset-0 z-0 opacity-[0.07] pointer-events-none"
+                        style={{
+                          background: `repeating-linear-gradient(135deg, #000, #000 5px, transparent 5px, transparent 10px)`
+                        }}
+                      />
+                    )}
+
+                    <div className="flex justify-between items-center px-1 relative z-10">
+                      <span className={`text-[9px] font-bold ${isLocked || isFull ? 'text-gray-400' : 'text-blue-600'}`}>
+                        CA {frame.orderIndex} {isLocked && '(Hết hạn)'}
                       </span>
-                      <span className="text-[8px] text-gray-400 font-medium">
-                        {concurrentBookings.length}/{maxConcurrent}
-                      </span>
+                      {!isLocked && (
+                        <span className="text-[8px] text-gray-400 font-medium">
+                          {concurrentBookings.length}/{maxConcurrent}
+                        </span>
+                      )}
                     </div>
 
-                    {/* Danh sách Event đã đặt */}
-                    <div className="flex-1 flex flex-col gap-0.5 overflow-hidden">
+                    <div className="flex-1 flex flex-col gap-0.5 overflow-hidden relative z-10">
                       {concurrentBookings.map(event => (
-                        <div
-                          key={event.id}
-                          className="bg-blue-600 text-white text-[9px] px-1.5 py-0.5 rounded shadow-sm truncate font-medium"
-                          title={event.title}
-                        >
+                        <div key={event.id} className="bg-blue-600 text-white text-[9px] px-1.5 py-0.5 rounded shadow-sm truncate font-medium">
                           {event.title}
                         </div>
                       ))}
 
-                      {/* Trạng thái trống (Chỉ hiện khi hover và chưa full) */}
-                      {!isFull && concurrentBookings.length < maxConcurrent && (
+                      {canClick && (
                         <div className="mt-auto opacity-0 group-hover:opacity-100 transition-opacity text-center">
                           <span className="text-[9px] text-blue-500 font-bold">+ Đặt chỗ</span>
                         </div>

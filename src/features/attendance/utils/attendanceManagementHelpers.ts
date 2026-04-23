@@ -1,4 +1,4 @@
-import type { BookingWithQR } from '../types/attendance.type';
+import type { BookingWithQR, BookingStatus } from '../types/attendance.type';
 import type { ScheduleDto } from '../../schedules/types/schedule.type';
 import { parseTimeValue } from '../../../utils/date.util';
 
@@ -9,22 +9,42 @@ export const getRoomCodeFromName = (roomName: string): string => {
   return numberMatch ? `L${numberMatch[1]}` : roomName;
 };
 
-export const normalizeBookingStatus = (status: string): BookingWithQR['status'] => {
+export const normalizeBookingStatus = (status: string): BookingStatus => {
   const normalizedStatus = status.toString().trim().toLowerCase();
 
   if (normalizedStatus === 'active') {
     return 'Active';
   }
 
-  if (normalizedStatus === 'done') {
-    return 'Done';
+  if (normalizedStatus === 'inprocess' || normalizedStatus === 'in_process' || normalizedStatus === 'in process') {
+    return 'InProcess';
   }
 
+  if (normalizedStatus === 'completed' || normalizedStatus === 'complete') {
+    return 'Completed';
+  }
+
+  if (normalizedStatus === 'cancelled' || normalizedStatus === 'cancel') {
+    return 'Cancelled';
+  }
+
+  // Map NotYet to Active
   if (normalizedStatus === 'notyet' || normalizedStatus === 'not_yet' || normalizedStatus === 'not yet') {
-    return 'NotYet';
+    return 'Active';
   }
 
-  return 'NotYet';
+  // Map Done to Completed
+  if (normalizedStatus === 'done' || normalizedStatus === 'finished') {
+    return 'Completed';
+  }
+
+  // Map Finish to Completed
+  if (normalizedStatus === 'finish' || normalizedStatus === 'finishing') {
+    return 'Completed';
+  }
+
+  // Default to Active for unknown statuses
+  return 'Active';
 };
 
 export const mapScheduleDtoToAttendanceBooking = (schedule: ScheduleDto): BookingWithQR => {

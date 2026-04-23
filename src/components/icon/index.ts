@@ -6,6 +6,9 @@ import IncidentHistoryIcon from "./IncidentHistoryIcon";
 import ListBookingRequest from "./ListBookingRequestIcon";
 import ImportFileIcon from "./ImportFileIcon";
 import { FPTLogo } from "./FPTLogo";
+import CampusIcon from "./CampusIcon";
+import DefaultUserIcon from "./DefaultUserIcon"
+
 export {
   GridIcon,
   CalenderIcon,
@@ -15,4 +18,6 @@ export {
   ListBookingRequest,
   ImportFileIcon,
   FPTLogo,
+  CampusIcon,
+  DefaultUserIcon
 };

@@ -133,12 +133,7 @@ export default function RoomManagementFeature() {
   });
 
   const updateStatusMutation = useUpdateLabRoomStatus({
-    onSuccess: (updatedRoom) => {
-      toast.success(
-        "Status updated",
-        `${updatedRoom.roomName || "Room"} is now ${updatedRoom.isActive ? "active" : "de-activated"
-        }.`,
-      );
+    onSuccess: () => {
       setActionLoadingId(null);
     },
     onError: (error) => {
@@ -233,9 +228,14 @@ export default function RoomManagementFeature() {
 
     setActionLoadingId(room.id);
     await updateStatusMutation.mutateAsync({
-      id: room.id,
+      room,
       isActive: nextActive,
     });
+
+    toast.success(
+      "Status updated",
+      `${room.roomName || "Room"} is now ${nextActive ? "active" : "de-activated"}.`,
+    );
   };
 
   const handleDelete = async (room: LabRoomDto) => {
@@ -287,9 +287,9 @@ export default function RoomManagementFeature() {
                   <button
                     type="button"
                     onClick={handleOpenCreate}
-                    className="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-400"
+                    className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-200 dark:hover:bg-slate-800/70"
                   >
-                    <Plus className="h-4 w-4" />
+                    <Plus className="h-3.5 w-3.5" />
                     Add Lab Room
                   </button>
                 ) : null}
@@ -425,7 +425,7 @@ export default function RoomManagementFeature() {
                       Lab Room Directory
                     </h3>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Search by room ID or room number. Filter by building and active status.
+                      Search by room number. Filter by building and active status.
                     </p>
                   </div>
 

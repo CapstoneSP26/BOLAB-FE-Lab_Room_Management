@@ -25,18 +25,37 @@ export default function ScheduleManagementTable({
   onDelete,
   deletingId,
 }: Props) {
-  const getStatusLabel = (status: ScheduleDto["status"]) => {
-    if (!status) return "Unknown";
-    return status;
+  const getStatusLabel = (status: any) => {
+    const s = String(status);
+    switch (s) {
+      case "0": return "Not Yet"; // Just in case
+      case "1": case "Active": return "Active";
+      case "2": case "InProcess": return "In Process";
+      case "3": case "Completed": return "Completed";
+      case "4": case "Cancelled": return "Cancelled";
+      default: return s || "Unknown";
+    }
+  };
+
+  const getTypeLabel = (type: any) => {
+    const t = String(type);
+    switch (t) {
+      case "1": case "Academic": return "Academic";
+      case "2": case "Personal": return "Personal";
+      case "3": case "Maintenance": return "Maintenance";
+      case "4": case "Examination": return "Examination";
+      case "5": case "Event": return "Event";
+      default: return t || "Unknown";
+    }
   };
 
   const pageButtons = Array.from(
-    { length: Math.min(5, Math.max(totalPages, 1)) },
+    { length: Math.min(5, Math.max(1, totalPages)) },
     (_, index) => {
       const startPage = Math.max(1, Math.min(page - 2, totalPages - 4));
       return startPage + index;
     },
-  ).filter((value) => value <= totalPages);
+  ).filter((value) => value <= totalPages && value > 0);
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
@@ -58,7 +77,7 @@ export default function ScheduleManagementTable({
             {loading ? (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={7}
                   className="px-4 py-6 text-gray-500 dark:text-gray-400"
                 >
                   Loading schedules...
@@ -67,7 +86,7 @@ export default function ScheduleManagementTable({
             ) : rows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={7}
                   className="px-4 py-6 text-gray-500 dark:text-gray-400"
                 >
                   No schedules found.
@@ -98,7 +117,7 @@ export default function ScheduleManagementTable({
                       : "—"}
                   </td>
                   <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
-                    {row.type || "—"}
+                    {getTypeLabel(row.type)}
                   </td>
                   <td className="px-4 py-3">
                     <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-white/10 dark:text-gray-200">
@@ -109,8 +128,11 @@ export default function ScheduleManagementTable({
                     <div className="flex justify-end gap-2">
                       <button
                         type="button"
-                        onClick={() => onEdit(row)}
-                        className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEdit(row);
+                        }}
+                        className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
                       >
                         <Pencil className="h-3.5 w-3.5" />
                         Edit
@@ -133,49 +155,55 @@ export default function ScheduleManagementTable({
         </table>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 px-4 py-3 text-sm text-gray-600 dark:border-gray-800 dark:text-gray-400">
-        <span>
-          Total: <strong>{totalCount}</strong> · Page {page} /{" "}
-          {Math.max(totalPages, 1)}
-        </span>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            disabled={page <= 1}
-            onClick={() => onPageChange(page - 1)}
-            className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:hover:bg-gray-800"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Prev
-          </button>
-          <div className="flex items-center gap-1">
-            {pageButtons.map((p) => (
+      <div className="flex flex-col gap-4 border-t border-gray-200 bg-gray-50/80 px-4 py-4 sm:flex-row sm:items-center sm:justify-between dark:border-gray-800 dark:bg-gray-900/40">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Page{" "}
+            <span className="font-semibold text-gray-900 dark:text-white">
+              {page}
+            </span>{" "}
+            / {Math.max(totalPages, 1)}. Total items:{" "}
+            <span className="font-semibold text-gray-900 dark:text-white">
+              {totalCount}
+            </span>
+          </p>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onPageChange(Math.max(1, page - 1))}
+              disabled={page <= 1}
+              className="inline-flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </button>
+
+            {pageButtons.map((value) => (
               <button
-                key={p}
+                key={value}
                 type="button"
-                onClick={() => onPageChange(p)}
-                className={[
-                  "h-8 min-w-[2rem] rounded-lg text-xs font-semibold",
-                  p === page
+                onClick={() => onPageChange(value)}
+                className={`h-10 w-10 rounded-lg text-sm font-semibold transition ${
+                  value === page
                     ? "bg-brand-500 text-white"
-                    : "border border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800",
-                ].join(" ")}
+                    : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                }`}
               >
-                {p}
+                {value}
               </button>
             ))}
+
+            <button
+              type="button"
+              onClick={() => onPageChange(Math.min(totalPages, page + 1))}
+              disabled={page >= totalPages}
+              className="inline-flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </button>
           </div>
-          <button
-            type="button"
-            disabled={page >= totalPages}
-            onClick={() => onPageChange(page + 1)}
-            className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:hover:bg-gray-800"
-          >
-            Next
-            <ChevronRight className="h-4 w-4" />
-          </button>
         </div>
-      </div>
     </div>
   );
 }

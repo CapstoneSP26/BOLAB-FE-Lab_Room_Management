@@ -3,16 +3,24 @@ import type { Role } from "../../../utils/role";
 import { splitFullName } from "../types/profile.mapper";
 import ProfileInfoField from "./ProfileInfoField";
 import { roleColors, roleIcons } from "../constants/profileCard.constants";
+import { normalizeRole } from "../../../utils/role";
+import { CampusIcon, DefaultUserIcon } from "../../../components/icon";
+import { IdCardIcon, MailIcon } from "lucide-react";
 
 type ProfileCardProps = {
   role: Role;
   profile: Profile;
 };
 
-export default function ProfileCard({ role, profile }: ProfileCardProps) {
+export default function ProfileCard({ role: propRole, profile }: ProfileCardProps) {
   const { firstName, lastName } = splitFullName(profile.fullName);
-  const roleColor = roleColors[role] || roleColors.STUDENT;
-  const roleIcon = roleIcons[role] || roleIcons.STUDENT;
+  
+  // Ưu tiên dùng Role từ Profile (Server trả về) nếu có
+  const roleValue = profile.role || propRole;
+  const normalizedRole = normalizeRole(roleValue);
+  
+  const roleColor = roleColors[normalizedRole] || roleColors.STUDENT;
+  const roleIcon = roleIcons[normalizedRole] || roleIcons.STUDENT;
 
   return (
     <div className="space-y-6">
@@ -59,13 +67,15 @@ export default function ProfileCard({ role, profile }: ProfileCardProps) {
                   <span
                     className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-semibold ${roleColor}`}
                   >
-                    {roleIcon}
-                    {role}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                    Campus: {profile.campusName || `Campus ${profile.campusId}`}
-                  </span>
-                </div>
+                      {roleIcon}
+                      {roleValue}
+                    </span>
+                    {profile.campusName && (
+                      <span className="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                        Campus: {profile.campusName}
+                      </span>
+                    )}
+                  </div>
               </div>
             </div>
 
@@ -140,15 +150,9 @@ export default function ProfileCard({ role, profile }: ProfileCardProps) {
             />
 
             <ProfileInfoField
-              label="Campus Name"
-              value={profile.campusName || `Campus ${profile.campusId}`}
+              label="Campus"
+              value={profile.campusName}
               icon={<CampusIcon />}
-            />
-
-            <ProfileInfoField
-              label="Last Login"
-              value={profile.lastLogin}
-              icon={<CalendarIcon />}
             />
           </div>
         </div>
@@ -157,92 +161,3 @@ export default function ProfileCard({ role, profile }: ProfileCardProps) {
   );
 }
 
-function DefaultUserIcon() {
-  return (
-    <svg
-      className="h-5 w-5"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-      />
-    </svg>
-  );
-}
-
-function MailIcon() {
-  return (
-    <svg
-      className="h-5 w-5"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-      />
-    </svg>
-  );
-}
-
-function IdCardIcon() {
-  return (
-    <svg
-      className="h-5 w-5"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M4 7h16M7 11h4m-4 4h6m7 4H4a2 2 0 01-2-2V7a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0 01-2 2z"
-      />
-    </svg>
-  );
-}
-
-function CampusIcon() {
-  return (
-    <svg
-      className="h-5 w-5"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5"
-      />
-    </svg>
-  );
-}
-
-function CalendarIcon() {
-  return (
-    <svg
-      className="h-5 w-5"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-      />
-    </svg>
-  );
-}

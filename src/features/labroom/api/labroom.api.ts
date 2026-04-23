@@ -69,8 +69,8 @@ export const labroomApi = {
 
   updateRoomStatus: (id: number, isActive: boolean) =>
     axiosInstance
-      .patch(LABROOM_API.STATUS(id), { isActive })
-      .then((response) => mapLabRoomDto(response.data)),
+      .patch(LABROOM_API.STATUS(id), isActive)
+      .then((response) => mapLabRoomDto(unwrapEnvelopeData(response.data))),
 
   deleteRoom: (id: number) =>
     axiosInstance.delete(LABROOM_API.DETAIL(id)).then(() => undefined),

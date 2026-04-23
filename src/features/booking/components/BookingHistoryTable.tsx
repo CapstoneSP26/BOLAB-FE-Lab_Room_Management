@@ -1,6 +1,6 @@
 import { Calendar, Clock } from 'lucide-react';
 import { useState } from 'react';
-import { BookingStatusBadge } from './BookingStatusBadge';
+import { BookingStatusBadge, getStatusAccentClass } from './BookingStatusBadge';
 import { CancelBookingModal } from './CancelBookingModal';
 import type { Booking } from '../types/booking.type';
 import { convertHoursUtcToVN } from '../../../utils/date.util';
@@ -69,21 +69,6 @@ export function BookingHistoryTable({
     );
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Approved':
-        return 'bg-green-50 border-green-200';
-      case 'PendingApproval':
-        return 'bg-yellow-50 border-yellow-200';
-      case 'Rejected':
-        return 'bg-red-50 border-red-200';
-      case 'Cancelled':
-        return 'bg-gray-50 border-gray-200';
-      default:
-        return 'bg-white border-gray-200';
-    }
-  };
-
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
@@ -107,6 +92,9 @@ export function BookingHistoryTable({
                 Purpose
               </th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                Created At
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                 Status
               </th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -120,13 +108,14 @@ export function BookingHistoryTable({
             {paginatedBookings.map((booking) => (
               <tr
                 key={booking.id}
-                className={`hover:bg-gray-50 transition-colors ${getStatusColor(booking.status)} border-l-4 ${booking.status === 'Approved'
+                className={`hover:bg-gray-50 transition-colors ${getStatusAccentClass(booking.status)} border-l-4 ${
+                    (booking.status === 'Approved' || String(booking.status) === '2')
                     ? 'border-l-green-500'
-                    : booking.status === 'PendingApproval'
+                    : (booking.status === 'PendingApproval' || String(booking.status) === '1')
                       ? 'border-l-yellow-500'
-                      : booking.status === 'Rejected'
+                      : (booking.status === 'Rejected' || String(booking.status) === '3')
                         ? 'border-l-red-500'
-                        : booking.status === 'Cancelled'
+                        : (booking.status === 'Cancelled' || String(booking.status) === '4')
                           ? 'border-l-gray-500'
                           : 'border-l-blue-500'
                   }`}
@@ -172,6 +161,19 @@ export function BookingHistoryTable({
                   </span>
                 </td>
 
+                {/* Created At */}
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className="text-sm text-gray-700">
+                    {booking.createdAt
+                      ? new Date(booking.createdAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })
+                      : '-'}
+                  </span>
+                </td>
+
                 {/* Status */}
                 <td className="px-6 py-4 whitespace-nowrap">
                   <BookingStatusBadge status={booking.status} />
@@ -186,7 +188,7 @@ export function BookingHistoryTable({
                     >
                       View
                     </button>
-                    {(booking.status === 'PendingApproval' || booking.status === 'Approved') && (
+                    {(booking.status === 'PendingApproval' || String(booking.status) === '1' || booking.status === 'Approved' || String(booking.status) === '2') && (
                       <button
                         onClick={() => handleCancelClick(booking)}
                         disabled={isCancelLoading}

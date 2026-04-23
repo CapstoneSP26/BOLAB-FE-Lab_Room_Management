@@ -20,7 +20,6 @@ export default function ReportHistoryTable({
         <table className="w-full min-w-[1100px] text-left text-sm">
           <thead className="bg-gray-50 text-xs font-semibold uppercase text-gray-500 dark:bg-white/[0.04] dark:text-gray-400">
             <tr>
-              <th className="px-4 py-3">Report</th>
               <th className="px-4 py-3">Type</th>
               <th className="px-4 py-3">User</th>
               <th className="px-4 py-3">Description</th>
@@ -53,12 +52,6 @@ export default function ReportHistoryTable({
             ) : (
               rows.map((r) => (
                 <tr key={r.id} className="bg-white dark:bg-transparent">
-                  <td className="px-4 py-4">
-                    <div className="font-semibold text-gray-800 dark:text-white/90">
-                      #{r.id}
-                    </div>
-                  </td>
-
                   <td className="px-4 py-4 font-semibold text-gray-800 dark:text-white/90">
                     {r.reportType ?? "-"}
                   </td>

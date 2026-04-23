@@ -38,7 +38,7 @@ export const UpcomingBookingCard: React.FC<UpcomingBookingCardProps> = ({
       {/* Status Badge */}
       <div className="flex items-start justify-between mb-3">
         <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(booking.status)}`}>
-          {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+          {String(booking.status).charAt(0).toUpperCase() + String(booking.status).slice(1)}
         </span>
         <div className="text-xs text-white/60">
           #{booking.id}
