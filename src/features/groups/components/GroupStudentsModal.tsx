@@ -10,7 +10,7 @@ interface GroupStudentsModalProps {
   students: GroupMemberDto[];
   isLoading?: boolean;
   onAddStudent?: (studentId: string) => Promise<void>;
-  onRemoveStudent?: (studentId: string) => Promise<void>;
+  onRemoveStudent?: (studentId: string) => void | Promise<void>;
 }
 
 export const GroupStudentsModal: React.FC<GroupStudentsModalProps> = ({
@@ -67,7 +67,7 @@ export const GroupStudentsModal: React.FC<GroupStudentsModalProps> = ({
 
     try {
       setDeletingStudentId(studentId);
-      await onRemoveStudent(studentId);
+      await Promise.resolve(onRemoveStudent(studentId));
     } catch (error) {
       console.error('Error removing student:', error);
     } finally {

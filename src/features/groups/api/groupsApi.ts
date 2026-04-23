@@ -35,20 +35,47 @@ const API_ENDPOINTS = {
  * Get all groups owned by current lecturer
  */
 export const getGroups = async (): Promise<GetGroupsResponse> => {
-  const response = await axiosInstance.get<GetGroupsResponse>(
-    API_ENDPOINTS.GROUPS
-  );
-  return response.data;
+  const response = await axiosInstance.get<any>(API_ENDPOINTS.GROUPS);
+  
+  // Handle different response structures and map field names
+  let groups: any[] = [];
+  if (response.data?.items && Array.isArray(response.data.items)) {
+    groups = response.data.items;
+  } else if (response.data?.data && Array.isArray(response.data.data)) {
+    groups = response.data.data;
+  } else if (Array.isArray(response.data)) {
+    groups = response.data;
+  }
+
+  // Map backend field names to frontend interface
+  const mappedGroups = groups.map((group: any) => ({
+    ...group,
+    memberCount: group.membersCount, // Backend uses membersCount
+  })) as Group[];
+
+  return {
+    items: mappedGroups,
+    total: mappedGroups.length,
+    pageNumber: response.data?.pageNumber || 1,
+    pageSize: response.data?.pageSize || mappedGroups.length,
+  };
 };
 
 /**
  * Get single group by ID
  */
 export const getGroupById = async (groupId: string): Promise<Group> => {
-  const response = await axiosInstance.get<Group>(
+  const response = await axiosInstance.get<any>(
     API_ENDPOINTS.GROUP_DETAIL(groupId)
   );
-  return response.data;
+  
+  const group = response.data;
+  
+  // Map backend field names to frontend interface
+  return {
+    ...group,
+    memberCount: group.membersCount, // Backend uses membersCount
+  } as Group;
 };
 
 /**
@@ -93,11 +120,52 @@ export const getGroupMembers = async (
   groupId: string,
   params?: { page?: number; pageSize?: number }
 ): Promise<GetGroupMembersResponse> => {
-  const response = await axiosInstance.get<GetGroupMembersResponse>(
+  const response = await axiosInstance.get<any>(
     API_ENDPOINTS.GROUP_MEMBERS(groupId),
     { params }
   );
-  return response.data;
+  
+  // Handle different response structures from backend
+  let members: any[] = [];
+  if (response.data?.items && Array.isArray(response.data.items)) {
+    members = response.data.items;
+  } else if (response.data?.data && Array.isArray(response.data.data)) {
+    members = response.data.data;
+  } else if (Array.isArray(response.data)) {
+    members = response.data;
+  } else if (response.data) {
+    members = [response.data];
+  }
+  
+  // Transform member data to match GroupMemberDto structure
+  const processedMembers = members.map((member: any) => {
+    // Create user object from member-level fields or nested user object
+    const userInfo = member.user || {
+      id: member.userId,
+      fullName: member.userName || member.fullName || 'Unknown',
+      email: member.userEmail || member.email,
+      studentCode: member.userCode || member.studentCode,
+      avatarUrl: member.avatarUrl,
+    };
+
+    return {
+      id: member.id || `${member.groupId}-${member.userId}`,
+      groupId: member.groupId,
+      userId: member.userId,
+      subjectCode: member.subjectCode || '',
+      user: userInfo,
+    } as GroupMemberDto;
+  });
+
+  // Return processed response with consistent structure
+  const result: GetGroupMembersResponse = {
+    items: processedMembers,
+    total: processedMembers.length,
+    pageNumber: response.data?.pageNumber || 1,
+    pageSize: response.data?.pageSize || processedMembers.length,
+  };
+
+  return result;
 };
 
 /**
