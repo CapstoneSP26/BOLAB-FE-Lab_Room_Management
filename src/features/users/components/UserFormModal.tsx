@@ -149,7 +149,7 @@ export default function UserFormModal({
                 value={values.email}
                 onChange={(e) => handleChange("email", e.target.value)}
                 disabled={isLoading}
-                placeholder="name@fpt.edu.vn"
+                placeholder="name@fe.edu.vn"
                 className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm text-gray-900 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-400/10 disabled:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:disabled:bg-gray-800/60"
               />
               {errors.email && (
