@@ -6,7 +6,7 @@
 import { useNavigate } from 'react-router';
 import { useMemo } from 'react';
 import {
-  QrCode, Clock, CheckCircle, AlertCircle,
+  QrCode, Clock, AlertCircle,
   Calendar, Loader2
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';

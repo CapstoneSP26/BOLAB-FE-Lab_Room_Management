@@ -105,8 +105,8 @@ export default function RoomManagementFeature() {
   ].filter(Boolean).length;
 
   const createRoomMutation = useCreateLabRoom({
-    onSuccess: () => {
-      toast.success("Room created", "The lab room has been added successfully.");
+    onSuccess: (_room, message) => {
+      toast.success("Success", message);
       setIsRoomModalOpen(false);
       setSelectedRoom(null);
     },
@@ -119,8 +119,8 @@ export default function RoomManagementFeature() {
   });
 
   const updateRoomMutation = useUpdateLabRoom({
-    onSuccess: () => {
-      toast.success("Room updated", "Lab room information has been updated.");
+    onSuccess: (_room, message) => {
+      toast.success("Success", message);
       setIsRoomModalOpen(false);
       setSelectedRoom(null);
     },
@@ -133,7 +133,8 @@ export default function RoomManagementFeature() {
   });
 
   const updateStatusMutation = useUpdateLabRoomStatus({
-    onSuccess: () => {
+    onSuccess: (_room, message) => {
+      toast.success("Success", message);
       setActionLoadingId(null);
     },
     onError: (error) => {
@@ -146,8 +147,8 @@ export default function RoomManagementFeature() {
   });
 
   const deleteRoomMutation = useDeleteLabRoom({
-    onSuccess: () => {
-      toast.success("Room deleted", "The lab room has been removed.");
+    onSuccess: (_void, message) => {
+      toast.success("Success", message);
       setActionLoadingId(null);
     },
     onError: (error) => {
@@ -231,11 +232,6 @@ export default function RoomManagementFeature() {
       room,
       isActive: nextActive,
     });
-
-    toast.success(
-      "Status updated",
-      `${room.roomName || "Room"} is now ${nextActive ? "active" : "de-activated"}.`,
-    );
   };
 
   const handleDelete = async (room: LabRoomDto) => {

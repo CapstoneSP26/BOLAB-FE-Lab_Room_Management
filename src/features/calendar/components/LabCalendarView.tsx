@@ -9,9 +9,6 @@ import type {
   EventInput,
 } from "@fullcalendar/core";
 
-import { statusClass, statusDot } from "../../../utils/status";
-import type { LabCalendarEventProps } from "../types/calendar.type";
-
 type LabCalendarViewProps = {
   loading: boolean;
   scheduleCount: number;
@@ -67,10 +64,9 @@ export function LabCalendarView({
       height: "auto",
       expandRows: true,
       eventContent: (arg: EventContentArg) => {
-        const ext = arg.event.extendedProps as LabCalendarEventProps | undefined;
-        const status = ext?.status;
-        const cls = statusClass(status);
-        const dot = statusDot(status);
+        // Force all calendar events to be blue as requested
+        const cls = "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:border-blue-500/30";
+        const dot = "bg-blue-500";
 
         const start = arg.event.start;
         const time = start

@@ -127,7 +127,12 @@ const AppSidebar: React.FC = () => {
         path: p("/slot-management"),
         show: isAdmin,
       },
-
+      {
+        icon: ListIcon,
+        name: "User Management",
+        path: p("/user-management"),
+        show: isAdmin,
+      },
       // --- PROFILE (Chung) ---
       { icon: UserCircleIcon, name: "User Profile", path: p("/user-profile") },
     ];

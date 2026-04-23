@@ -87,5 +87,7 @@ export interface GetScheduleByIdResponse {
 }
 
 export function getScheduleTypeValue(schedule: ScheduleDto): string {
-  return schedule.type?.trim() || schedule.slotName?.trim() || "Unknown";
+  const type = schedule.type != null ? String(schedule.type).trim() : "";
+  const slotName = schedule.slotName != null ? String(schedule.slotName).trim() : "";
+  return type || slotName || "Unknown";
 }

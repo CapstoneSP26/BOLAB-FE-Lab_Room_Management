@@ -1,4 +1,4 @@
-import type { BookingWithQR } from '../types/attendance.type';
+import type { BookingWithQR, BookingStatus } from '../types/attendance.type';
 import type { ScheduleDto } from '../../schedules/types/schedule.type';
 import { parseTimeValue } from '../../../utils/date.util';
 
@@ -9,7 +9,7 @@ export const getRoomCodeFromName = (roomName: string): string => {
   return numberMatch ? `L${numberMatch[1]}` : roomName;
 };
 
-export const normalizeBookingStatus = (status: string): BookingWithQR['status'] => {
+export const normalizeBookingStatus = (status: string): BookingStatus => {
   const normalizedStatus = status.toString().trim().toLowerCase();
 
   if (normalizedStatus === 'active') {
@@ -151,7 +151,7 @@ export const extractBackendScanUrl = (input: unknown, scheduleId?: string): stri
   // Try to find scanUrl in response first (if backend provides it)
   if (input != null && typeof input === 'object') {
     const record = input as Record<string, unknown>;
-    
+
     const priorityKeys = [
       'scanUrl',
       'qrScanUrl',
