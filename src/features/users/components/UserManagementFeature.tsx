@@ -136,10 +136,10 @@ export default function UserManagementFeature() {
   });
 
   const updateStatusMutation = useUpdateUserStatus({
-    onSuccess: (updatedUser) => {
+    onSuccess: () => {
       toast.success(
         "Status updated",
-        `${updatedUser.fullName || updatedUser.email || "User"} is now ${updatedUser.isActive ? "active" : "de-activated"}.`,
+        `User updated successfully.`,
       );
       setActionLoadingId(null);
     },

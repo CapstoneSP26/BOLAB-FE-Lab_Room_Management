@@ -234,7 +234,7 @@ export default function RoomManagementFeature() {
 
     toast.success(
       "Status updated",
-      `${room.roomName || "Room"} is now ${nextActive ? "active" : "de-activated"}.`,
+      `Update Lab Room Successfully.`,
     );
   };
 

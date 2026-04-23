@@ -85,11 +85,16 @@ export default function PendingBookingFeature() {
   };
 
   const rawData: any = pendingQuery.data;
-  const items = useMemo<BookingRequest[]>(
-    () => rawData?.data ?? rawData?.items ?? [],
-    [rawData],
-  );
-  const totalCount = rawData?.total ?? rawData?.totalCount ?? 0;
+  const items = useMemo<BookingRequest[]>(() => {
+    const raw = rawData?.data ?? rawData?.items ?? [];
+    // Chỉ giữ lại những booking thực sự đang chờ duyệt
+    return raw.filter((item: any) => {
+      const s = String(item.status ?? "").toUpperCase();
+      return s === "1" || s === "PENDINGAPPROVAL" || s === "PENDING";
+    });
+  }, [rawData]);
+
+  const totalCount = items.length;
   const loading = pendingQuery.isLoading || pendingQuery.isFetching;
 
   const totalPages = Math.ceil(totalCount / limit);
