@@ -114,8 +114,8 @@ export default function UserManagementFeature() {
   ].filter(Boolean).length;
 
   const createUserMutation = useCreateUser({
-    onSuccess: () => {
-      toast.success("User created", "The new user has been added successfully.");
+    onSuccess: (_user, message) => {
+      toast.success("Success", message);
       setIsModalOpen(false);
       setSelectedUser(null);
     },
@@ -125,8 +125,8 @@ export default function UserManagementFeature() {
   });
 
   const updateUserMutation = useUpdateUser({
-    onSuccess: () => {
-      toast.success("User updated", "User information has been updated.");
+    onSuccess: (_user, message) => {
+      toast.success("Success", message);
       setIsModalOpen(false);
       setSelectedUser(null);
     },
@@ -136,11 +136,8 @@ export default function UserManagementFeature() {
   });
 
   const updateStatusMutation = useUpdateUserStatus({
-    onSuccess: () => {
-      toast.success(
-        "Status updated",
-        `User updated successfully.`,
-      );
+    onSuccess: (_user, message) => {
+      toast.success("Success", message);
       setActionLoadingId(null);
     },
     onError: (error) => {
@@ -150,8 +147,8 @@ export default function UserManagementFeature() {
   });
 
   const deleteUserMutation = useDeleteUser({
-    onSuccess: () => {
-      toast.success("User deleted", "The user has been removed.");
+    onSuccess: (_void, message) => {
+      toast.success("Success", message);
       setActionLoadingId(null);
     },
     onError: (error) => {

@@ -21,7 +21,7 @@ export const useUsers = (params: GetUsersRequest = {}) =>
   });
 
 interface MutationOptions<TData> {
-  onSuccess?: (data: TData) => void;
+  onSuccess?: (data: TData, message: string) => void;
   onError?: (error: Error) => void;
 }
 
@@ -32,11 +32,11 @@ export const useCreateUser = (
 
   return useMutation({
     mutationFn: (payload: CreateUserRequest) => userManagementApi.createUser(payload),
-    onSuccess: (data) => {
+    onSuccess: ({ data, message }) => {
       void queryClient.invalidateQueries({
         queryKey: [USER_QUERY_KEYS.USERS],
       });
-      options.onSuccess?.(data);
+      options.onSuccess?.(data, message);
     },
     onError: (error: Error) => {
       options.onError?.(error);
@@ -57,11 +57,11 @@ export const useUpdateUser = (
       id: string;
       payload: UpdateUserRequest;
     }) => userManagementApi.updateUser(id, payload),
-    onSuccess: (data) => {
+    onSuccess: ({ data, message }) => {
       void queryClient.invalidateQueries({
         queryKey: [USER_QUERY_KEYS.USERS],
       });
-      options.onSuccess?.(data);
+      options.onSuccess?.(data, message);
     },
     onError: (error: Error) => {
       options.onError?.(error);
@@ -82,11 +82,11 @@ export const useUpdateUserStatus = (
       id: string;
       isActive: boolean;
     }) => userManagementApi.updateUserStatus(id, isActive),
-    onSuccess: (data) => {
+    onSuccess: ({ data, message }) => {
       void queryClient.invalidateQueries({
         queryKey: [USER_QUERY_KEYS.USERS],
       });
-      options.onSuccess?.(data);
+      options.onSuccess?.(data, message);
     },
     onError: (error: Error) => {
       options.onError?.(error);
@@ -94,16 +94,18 @@ export const useUpdateUserStatus = (
   });
 };
 
-export const useDeleteUser = (options: MutationOptions<void> = {}) => {
+export const useDeleteUser = (
+  options: MutationOptions<void> = {},
+) => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: string) => userManagementApi.deleteUser(id),
-    onSuccess: () => {
+    onSuccess: ({ message }) => {
       void queryClient.invalidateQueries({
         queryKey: [USER_QUERY_KEYS.USERS],
       });
-      options.onSuccess?.(undefined);
+      options.onSuccess?.(undefined, message);
     },
     onError: (error: Error) => {
       options.onError?.(error);

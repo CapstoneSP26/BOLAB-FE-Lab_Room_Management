@@ -10,6 +10,7 @@ import type {
   GetUsersResponse,
   UpdateUserRequest,
   UserListItem,
+  ApiResponse,
 } from "../types/userManagement.type";
 
 const USER_API = {
@@ -54,33 +55,75 @@ export const userManagementApi = {
     return normalizeUsersPagedResponse(response.data);
   },
 
-  async createUser(payload: CreateUserRequest): Promise<UserListItem> {
-    const response = await axiosInstance.post(
+  async createUser(
+    payload: CreateUserRequest,
+  ): Promise<{ data: UserListItem; message: string }> {
+    const response = await axiosInstance.post<ApiResponse<unknown>>(
       USER_API.CREATE,
       buildMutationPayload(payload),
     );
 
-    return mapUserDtoToUserListItem(response.data);
+    if (!response.data.success) {
+      throw new Error(response.data.message);
+    }
+
+    return {
+      data: mapUserDtoToUserListItem(response.data.data),
+      message: response.data.message,
+    };
   },
 
-  async updateUser(id: string, payload: UpdateUserRequest): Promise<UserListItem> {
-    const response = await axiosInstance.put(
+  async updateUser(
+    id: string,
+    payload: UpdateUserRequest,
+  ): Promise<{ data: UserListItem; message: string }> {
+    const response = await axiosInstance.put<ApiResponse<unknown>>(
       USER_API.DETAIL(id),
       buildMutationPayload(payload),
     );
 
-    return mapUserDtoToUserListItem(response.data);
+    if (!response.data.success) {
+      throw new Error(response.data.message);
+    }
+
+    return {
+      data: mapUserDtoToUserListItem(response.data.data),
+      message: response.data.message,
+    };
   },
 
-  async updateUserStatus(id: string, isActive: boolean): Promise<UserListItem> {
-    const response = await axiosInstance.patch(USER_API.STATUS(id), {
-      isActive,
-    });
+  async updateUserStatus(
+    id: string,
+    isActive: boolean,
+  ): Promise<{ data: UserListItem; message: string }> {
+    const response = await axiosInstance.patch<ApiResponse<unknown>>(
+      USER_API.STATUS(id),
+      {
+        isActive,
+      },
+    );
 
-    return mapUserDtoToUserListItem(response.data);
+    if (!response.data.success) {
+      throw new Error(response.data.message);
+    }
+
+    return {
+      data: mapUserDtoToUserListItem(response.data.data),
+      message: response.data.message,
+    };
   },
 
-  async deleteUser(id: string): Promise<void> {
-    await axiosInstance.delete(USER_API.DELETE(id));
+  async deleteUser(id: string): Promise<{ message: string }> {
+    const response = await axiosInstance.delete<ApiResponse<unknown>>(
+      USER_API.DELETE(id),
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.message);
+    }
+
+    return {
+      message: response.data.message,
+    };
   },
 };
