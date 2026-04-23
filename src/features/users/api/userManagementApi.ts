@@ -2,6 +2,7 @@ import axiosInstance from "../../../api/axios";
 import {
   mapUserDtoToUserListItem,
   normalizeUsersPagedResponse,
+  mapRoleToBackendId,
 } from "../types/userManagement.mapper";
 import type {
   CreateUserRequest,
@@ -39,8 +40,7 @@ const buildMutationPayload = (
   fullName: payload.fullName,
   email: payload.email,
   userCode: payload.userCode,
-  role: payload.role,
-  roles: [payload.role],
+  roles: payload.roles.map(mapRoleToBackendId),
   password: payload.password,
   isActive: payload.isActive ?? true,
 });
@@ -74,7 +74,6 @@ export const userManagementApi = {
 
   async updateUserStatus(id: string, isActive: boolean): Promise<UserListItem> {
     const response = await axiosInstance.patch(USER_API.STATUS(id), {
-      userId: id,
       isActive,
     });
 

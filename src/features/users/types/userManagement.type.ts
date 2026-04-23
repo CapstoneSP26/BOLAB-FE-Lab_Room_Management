@@ -21,7 +21,7 @@ export interface UserFormValues {
   fullName: string;
   email: string;
   userCode: string;
-  role: UserRole;
+  roles: UserRole[];
   password: string;
   isActive: boolean;
 }
@@ -40,7 +40,7 @@ export interface UserMutationPayload {
   fullName: string;
   email: string;
   userCode?: string;
-  role: UserRole;
+  roles: UserRole[];
   password?: string;
   isActive?: boolean;
 }

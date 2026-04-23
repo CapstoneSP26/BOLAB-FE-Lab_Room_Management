@@ -64,6 +64,13 @@ const getNumber = (value: unknown, fallback: number) => {
   return fallback;
 };
 
+const ROLE_CONFIG: Record<UserRole, { id: number; labels: string[] }> = {
+  ADMIN: { id: 1, labels: ["ADMIN", "1", "admin"] },
+  LAB_MANAGER: { id: 2, labels: ["labmanager", "2", "lab_manager", "manager"] },
+  LECTURER: { id: 3, labels: ["lectuer", "3", "lecturer"] },
+  STUDENT: { id: 4, labels: ["STUDENT", "4", "student"] },
+};
+
 export const normalizeUserRole = (value: unknown): UserRole => {
   if (value && typeof value === "object") {
     const r = value as Record<string, unknown>;
@@ -77,14 +84,20 @@ export const normalizeUserRole = (value: unknown): UserRole => {
     .toLowerCase()
     .replace(/[\s-]+/g, "_");
 
-  if (s === "admin") return "ADMIN";
-  if (s === "lab_manager" || s === "labmanager" || s === "manager")
-    return "LAB_MANAGER";
-  if (s === "lecturer" || s === "lectuer") return "LECTURER";
-  if (s === "student") return "STUDENT";
+  for (const [role, config] of Object.entries(ROLE_CONFIG)) {
+    if (
+      config.labels.some((l) => l.toLowerCase() === s) ||
+      role.toLowerCase() === s
+    ) {
+      return role as UserRole;
+    }
+  }
 
   return "STUDENT";
 };
+
+export const mapRoleToBackendId = (role: UserRole): number =>
+  ROLE_CONFIG[role]?.id ?? 4;
 
 const normalizeUserRoles = (value: unknown): UserRole[] => {
   if (Array.isArray(value) && value.length > 0) {
@@ -226,7 +239,7 @@ export const mapUserFormValuesToCreateRequest = (
   fullName: values.fullName.trim(),
   email: values.email.trim(),
   userCode: values.userCode.trim() || undefined,
-  role: values.role,
+  roles: values.roles,
   password: values.password,
   isActive: values.isActive,
 });
@@ -237,7 +250,7 @@ export const mapUserFormValuesToUpdateRequest = (
   fullName: values.fullName.trim(),
   email: values.email.trim(),
   userCode: values.userCode.trim() || undefined,
-  role: values.role,
+  roles: values.roles,
   password: values.password.trim() || undefined,
   isActive: values.isActive,
 });
@@ -248,7 +261,7 @@ export const getDefaultUserFormValues = (
   fullName: user?.fullName ?? "",
   email: user?.email ?? "",
   userCode: user?.userCode ?? "",
-  role: user?.primaryRole ?? "LECTURER",
+  roles: user?.roles ?? ["LECTURER"],
   password: "",
   isActive: user?.isActive ?? true,
 });

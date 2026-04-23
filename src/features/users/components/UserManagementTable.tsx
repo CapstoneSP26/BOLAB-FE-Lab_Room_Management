@@ -87,7 +87,7 @@ export default function UserManagementTable({
                   </td>
 
                   <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
-                    {getRoleLabel(user.primaryRole)}
+                    {user.roles.map(getRoleLabel).join(", ")}
                   </td>
 
                   <td className="px-4 py-4">
