@@ -73,10 +73,9 @@ export const userManagementApi = {
   },
 
   async updateUserStatus(id: string, isActive: boolean): Promise<UserListItem> {
-    const response = await axiosInstance.patch(USER_API.STATUS(id), isActive, {
-      headers: {
-        "Content-Type": "application/json",
-      },
+    const response = await axiosInstance.patch(USER_API.STATUS(id), {
+      userId: id,
+      isActive,
     });
 
     return mapUserDtoToUserListItem(response.data);
