@@ -59,7 +59,7 @@ export const STATUS_CONFIG: Record<ScheduleStatus, { label: string; color: strin
   InProcess: {
     label: "In Process",
     color:
-      "bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-500/30",
+      "bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/30",
   },
   Completed: {
     label: "Completed",

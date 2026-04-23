@@ -4,6 +4,18 @@ export type UserRole = "ADMIN" | "LAB_MANAGER" | "LECTURER" | "STUDENT";
 export type UserStatusFilter = "ALL" | "ACTIVE" | "DEACTIVATED";
 export type UserSortOrder = "ASC" | "DESC";
 
+export interface ResultMessage<T> {
+  success: boolean;
+  message: string;
+  data?: T;
+}
+
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  message: string;
+  data?: T;
+}
+
 export interface UserListItem {
   id: string;
   userCode: string;
@@ -21,7 +33,7 @@ export interface UserFormValues {
   fullName: string;
   email: string;
   userCode: string;
-  role: UserRole;
+  roles: UserRole[];
   password: string;
   isActive: boolean;
 }
@@ -40,7 +52,7 @@ export interface UserMutationPayload {
   fullName: string;
   email: string;
   userCode?: string;
-  role: UserRole;
+  roles: UserRole[];
   password?: string;
   isActive?: boolean;
 }
