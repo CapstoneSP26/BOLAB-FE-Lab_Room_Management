@@ -122,7 +122,7 @@ export const mapUserDtoToUserListItem = (dto: unknown): UserListItem => {
   );
 
   return {
-    id: getString(record.userId, record.UserId),
+    id: String(record.userId || record.id || ""),
     userCode: getString(record.userCode, record.UserCode, record.code, record.Code),
     fullName: getString(
       record.fullName,
