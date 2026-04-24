@@ -26,8 +26,8 @@ export interface LabRoomDto {
   description?: string;
   buildingId: number;
   buildingName: string;
-  roomManagerId?: string;
-  roomManagerName?: string;
+  LabOwnerId?: string;
+  LabOwnerName?: string;
   images?: LabImageDto[];
   isActive: boolean;
   isDeleted?: boolean;
@@ -59,7 +59,7 @@ export interface LabRoomFormValues {
   hasEquipment: boolean;
   description: string;
   buildingId: number | "";
-  roomManagerId?: string;
+  LabOwnerId?: string;
   isActive: boolean;
 }
 
@@ -71,7 +71,7 @@ export interface LabRoomMutationPayload {
   hasEquipment: boolean;
   description?: string;
   buildingId: number;
-  roomManagerId?: string;
+  LabOwnerId?: string;
   isActive?: boolean;
 }
 

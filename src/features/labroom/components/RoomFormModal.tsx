@@ -47,7 +47,7 @@ export default function RoomFormModal({
 
   // ─── Room manager search state ───────────────────────────────────────
   const [managerQuery, setManagerQuery] = useState<string>(() => {
-    if (room?.roomManagerName) return room.roomManagerName;
+    if (room?.LabOwnerName) return room.LabOwnerName;
     return "";
   });
   const [managerResults, setManagerResults] = useState<UserListItem[]>([]);
@@ -60,7 +60,7 @@ export default function RoomFormModal({
     if (isOpen) {
       setValues(getDefaultLabRoomFormValues(room));
       setErrors({});
-      setManagerQuery(room?.roomManagerName ?? "");
+      setManagerQuery(room?.LabOwnerName ?? "");
       setManagerResults([]);
       setManagerSearching(false);
       setSelectedManager(null);
@@ -127,7 +127,7 @@ export default function RoomFormModal({
     setSelectedManager(user);
     setManagerQuery(user.fullName);
     setManagerResults([]);
-    handleChange("roomManagerId", user.id);
+    handleChange("LabOwnerId", user.id);
   };
 
   const handleSubmit = async (event: FormEvent) => {
@@ -295,7 +295,7 @@ export default function RoomFormModal({
                 onClear={() => {
                   setSelectedManager(null);
                   setManagerQuery("");
-                  setValues((prev) => ({ ...prev, roomManagerId: undefined }));
+                  setValues((prev) => ({ ...prev, LabOwnerId: undefined }));
                 }}
                 disabled={isLoading}
               />
@@ -307,10 +307,10 @@ export default function RoomFormModal({
                     {selectedManager.userCode} · {selectedManager.email}
                   </span>
                 </div>
-              ) : room?.roomManagerName && values.roomManagerId === room.roomManagerId ? (
+              ) : room?.LabOwnerName && values.LabOwnerId === room.LabOwnerId ? (
                 <div className="mt-2 flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-800/40">
                   <span className="text-xs font-medium text-gray-700 dark:text-gray-200">
-                    Current manager: <strong>{room.roomManagerName}</strong>
+                    Current manager: <strong>{room.LabOwnerName}</strong>
                   </span>
                 </div>
               ) : null}

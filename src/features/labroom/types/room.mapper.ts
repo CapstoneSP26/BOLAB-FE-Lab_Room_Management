@@ -134,6 +134,14 @@ export const mapLabRoomDto = (dto: unknown): LabRoomDto => {
       asRecord(record.building).name,
       asRecord(record.building).Name,
     ),
+    LabOwnerId: getOptionalString(
+      record.labOwnerId,
+      record.LabOwnerId,
+    ),
+    LabOwnerName: getOptionalString(
+      record.labOwnerName,
+      record.LabOwnerName,
+    ),
     images: Array.isArray(rawImages) ? rawImages.map(mapLabImageDto) : [],
     isActive: getBoolean(
       record.isActive ?? record.IsActive ?? record.status ?? record.Status,
@@ -271,6 +279,7 @@ export const mapLabRoomPayload = (
   hasEquipment: payload.hasEquipment,
   description: payload.description?.trim() || undefined,
   buildingId: Number(payload.buildingId),
+  LabOwnerId: payload.LabOwnerId,
   isActive: payload.isActive ?? true,
 });
 
@@ -294,6 +303,7 @@ export const getDefaultLabRoomFormValues = (
   hasEquipment: room?.hasEquipment ?? true,
   description: room?.description ?? "",
   buildingId: room?.buildingId ?? "",
+  LabOwnerId: room?.LabOwnerId ?? "",
   isActive: room?.isActive ?? true,
 });
 
