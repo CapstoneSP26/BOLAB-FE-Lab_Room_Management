@@ -1,5 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
-import { Building2, Image as ImageIcon, Loader2, X } from "lucide-react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import {
+  Image as ImageIcon,
+  Loader2,
+  PencilLine,
+  PlusCircle,
+  X,
+} from "lucide-react";
 import type { BuildingDto, BuildingFormValues } from "../types/building.type";
 
 type Props = {
@@ -18,169 +24,201 @@ const toFormValues = (building?: BuildingDto | null): BuildingFormValues => ({
   buildingImageUrl: building?.buildingImageUrl ?? "",
 });
 
+type FormErrors = Partial<Record<keyof BuildingFormValues, string>>;
+
 export default function BuildingFormModal({
   isOpen,
   mode,
   building,
-  isLoading,
+  isLoading = false,
   onClose,
   onSubmit,
 }: Props) {
   const initial = useMemo(() => toFormValues(building), [building]);
   const [values, setValues] = useState<BuildingFormValues>(initial);
+  const [errors, setErrors] = useState<FormErrors>({});
 
   useEffect(() => {
     setValues(initial);
+    setErrors({});
   }, [initial]);
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return null;
+  }
 
-  const title = mode === "create" ? "Add Building" : "Edit Building";
+  const validate = () => {
+    const nextErrors: FormErrors = {};
+
+    if (!Number.isFinite(values.campusId) || Number(values.campusId) <= 0) {
+      nextErrors.campusId = "Campus ID must be greater than 0.";
+    }
+
+    if (!values.buildingName.trim()) {
+      nextErrors.buildingName = "Building name is required.";
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const handleChange = <K extends keyof BuildingFormValues>(
+    key: K,
+    value: BuildingFormValues[K],
+  ) => {
+    setValues((prev) => ({ ...prev, [key]: value }));
+    setErrors((prev) => ({ ...prev, [key]: undefined }));
+  };
+
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+
+    if (!validate()) {
+      return;
+    }
+
+    await onSubmit({
+      ...values,
+      campusId: Number(values.campusId),
+    });
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <button
-        type="button"
-        aria-label="Close"
-        onClick={() => {
-          if (isLoading) return;
-          onClose();
-        }}
-        className="absolute inset-0 bg-black/40"
-      />
-
-      <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900">
-        <div className="flex items-start justify-between gap-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100/60 px-6 py-4 dark:border-gray-700 dark:from-gray-800 dark:to-gray-800/60">
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-orange-500/15">
-              <Building2 className="h-5 w-5 text-white" />
+    <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
+      <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl dark:bg-gray-900">
+        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-5 dark:border-gray-800">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-500 dark:bg-brand-500/10 dark:text-brand-300">
+              {mode === "create" ? (
+                <PlusCircle className="h-5 w-5" />
+              ) : (
+                <PencilLine className="h-5 w-5" />
+              )}
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                {title}
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {mode === "create" ? "Add Building" : "Update Building"}
               </h2>
-              <p className="mt-0.5 text-xs text-gray-600 dark:text-gray-400">
-                Provide campus id, name, description and optional image url.
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {mode === "create"
+                  ? "Create a new building and assign campus details."
+                  : `Editing ${building?.buildingName ?? "selected building"}.`}
               </p>
             </div>
           </div>
 
           <button
             type="button"
-            onClick={() => {
-              if (isLoading) return;
-              onClose();
-            }}
-            className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white p-2 text-gray-700 shadow-sm transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+            onClick={onClose}
+            disabled={isLoading}
+            className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed dark:hover:bg-gray-800 dark:hover:text-gray-200"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        <form
-          className="space-y-5 p-6"
-          onSubmit={(event) => {
-            event.preventDefault();
-            void onSubmit(values);
-          }}
-        >
-          <div className="grid gap-4 sm:grid-cols-2">
+        <form onSubmit={handleSubmit} className="space-y-6 p-6">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            {mode === "edit" && building != null ? (
+              <div className="md:col-span-2">
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Building ID
+                </label>
+                <div className="h-11 rounded-xl border border-gray-200 bg-gray-50 px-4 font-mono text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-200">
+                  {building.id}
+                </div>
+              </div>
+            ) : null}
+
             <div>
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">
-                Campus ID
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Campus ID *
               </label>
               <input
-                inputMode="numeric"
-                value={String(values.campusId)}
+                type="number"
+                min={1}
+                value={values.campusId}
                 onChange={(event) =>
-                  setValues((prev) => ({
-                    ...prev,
-                    campusId: Number(event.target.value || 0),
-                  }))
+                  handleChange("campusId", Number(event.target.value))
                 }
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm font-semibold text-gray-800 shadow-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900/20 dark:text-gray-100"
+                disabled={isLoading}
+                className="h-11 w-full rounded-xl border border-gray-300 px-4 text-sm text-gray-900 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 disabled:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:disabled:bg-gray-800/60"
+                placeholder="1"
               />
+              {errors.campusId && (
+                <p className="mt-1 text-sm text-red-600">{errors.campusId}</p>
+              )}
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">
-                Building Name
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Building name *
               </label>
               <input
                 value={values.buildingName}
                 onChange={(event) =>
-                  setValues((prev) => ({
-                    ...prev,
-                    buildingName: event.target.value,
-                  }))
+                  handleChange("buildingName", event.target.value)
                 }
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm font-semibold text-gray-800 shadow-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900/20 dark:text-gray-100"
+                disabled={isLoading}
+                className="h-11 w-full rounded-xl border border-gray-300 px-4 text-sm text-gray-900 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 disabled:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:disabled:bg-gray-800/60"
+                placeholder="FPT Building A"
+              />
+              {errors.buildingName && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.buildingName}
+                </p>
+              )}
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Image URL (optional)
+              </label>
+              <div className="relative">
+                <ImageIcon className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  value={values.buildingImageUrl ?? ""}
+                  onChange={(event) =>
+                    handleChange("buildingImageUrl", event.target.value)
+                  }
+                  disabled={isLoading}
+                  className="h-11 w-full rounded-xl border border-gray-300 bg-white pl-11 pr-4 text-sm text-gray-900 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 disabled:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:disabled:bg-gray-800/60"
+                  placeholder="https://..."
+                />
+              </div>
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Description
+              </label>
+              <textarea
+                value={values.description}
+                onChange={(event) => handleChange("description", event.target.value)}
+                disabled={isLoading}
+                rows={4}
+                className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 disabled:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:disabled:bg-gray-800/60"
+                placeholder="Building description or internal note..."
               />
             </div>
           </div>
 
-          <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">
-              Description
-            </label>
-            <textarea
-              value={values.description}
-              onChange={(event) =>
-                setValues((prev) => ({
-                  ...prev,
-                  description: event.target.value,
-                }))
-              }
-              rows={4}
-              className="w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm font-medium text-gray-800 shadow-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900/20 dark:text-gray-100"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">
-              Image URL (optional)
-            </label>
-            <div className="relative">
-              <ImageIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <input
-                value={values.buildingImageUrl ?? ""}
-                onChange={(event) =>
-                  setValues((prev) => ({
-                    ...prev,
-                    buildingImageUrl: event.target.value,
-                  }))
-                }
-                placeholder="https://..."
-                className="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-9 pr-3 text-sm font-medium text-gray-800 shadow-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900/20 dark:text-gray-100"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-end gap-3 border-t border-gray-200 pt-5 dark:border-gray-700">
+          <div className="flex items-center justify-end gap-3 border-t border-gray-200 pt-4 dark:border-gray-800">
             <button
               type="button"
-              onClick={() => {
-                if (isLoading) return;
-                onClose();
-              }}
-              className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+              onClick={onClose}
+              disabled={isLoading}
+              className="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
             >
               Cancel
             </button>
-
             <button
               type="submit"
-              disabled={!!isLoading}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-70"
+              disabled={isLoading}
+              className="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {isLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                "Save"
-              )}
+              {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+              {mode === "create" ? "Create Building" : "Save Changes"}
             </button>
           </div>
         </form>

@@ -87,10 +87,10 @@ export const managerRoutes: AppRoute[] = [
   { path: "/labmanager/incident-history", element: IncidentHistoryPage, roles: [Role.Manager, Role.Admin] },
   { path: "/labmanager/buildings", element: BuildingManagementPage, roles: [Role.Manager, Role.Admin] },
   { path: "/labmanager/room-management", element: RoomManagementPage, roles: [Role.Admin, Role.Manager] },
-  { path: "/labmanager/slot-management", element: ScheduleManagementPage, roles: [Role.Admin] }
+  { path: "/labmanager/slot-management", element: ScheduleManagementPage, roles: [Role.Admin] },
+  { path: "/labmanager/building-management", element: BuildingManagementPage, roles: [Role.Admin] },
 ];
 
 export const adminRoutes = [
   { path: "/admin/users/import", element: ImportUserPage, roles: [Role.Admin] },
-  { path: "/admin/buildings", element: BuildingManagementPage, roles: [Role.Admin] },
 ];

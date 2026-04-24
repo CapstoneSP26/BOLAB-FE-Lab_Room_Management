@@ -111,7 +111,6 @@ export default function SlotTypeManagementPanel() {
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="bg-gray-50 text-xs font-semibold uppercase text-gray-500 dark:bg-white/[0.04] dark:text-gray-400">
               <tr>
-                <th className="px-4 py-3">ID</th>
                 <th className="px-4 py-3">Code</th>
                 <th className="px-4 py-3">Name</th>
                 <th className="px-4 py-3">Frames</th>
@@ -141,7 +140,6 @@ export default function SlotTypeManagementPanel() {
               ) : (
                 rows.map((st) => (
                   <tr key={st.id} className="bg-white dark:bg-transparent">
-                    <td className="px-4 py-3 font-mono text-xs">{st.id}</td>
                     <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
                       {st.code}
                     </td>
