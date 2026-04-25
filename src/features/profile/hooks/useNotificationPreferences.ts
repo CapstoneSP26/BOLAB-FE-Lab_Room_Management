@@ -60,10 +60,7 @@ export const useNotificationPreferences = (
 
     try {
       const savedPayload = { ...notificationPrefs };
-      console.log('[notification-preferences] before save', savedPayload);
-
       const updated = await profileService.updateNotificationPreferences(savedPayload);
-      console.log('[notification-preferences] after save response', updated);
 
       setNotificationPrefs(updated);
       queryClient.setQueryData([PROFILE_QUERY_KEYS.ME], (current: unknown) => {

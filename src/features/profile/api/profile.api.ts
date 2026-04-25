@@ -114,14 +114,11 @@ export const profileService = {
   async updateNotificationPreferences(
     payload: UpdateNotificationPreferencesRequest,
   ): Promise<NotificationPreferences> {
-    console.log('[profileService.updateNotificationPreferences] request body', payload);
 
     const response = await axiosInstance.put<UpdateNotificationPreferencesResponse>(
       PROFILE_API.NOTIFICATION_PREFERENCES,
       payload,
     );
-
-    console.log('[profileService.updateNotificationPreferences] response body', response.data);
 
     return response.data.data ?? payload;
   },

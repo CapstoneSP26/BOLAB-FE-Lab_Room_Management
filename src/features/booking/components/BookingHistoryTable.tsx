@@ -37,7 +37,6 @@ export function BookingHistoryTable({
       await onCancelBooking(cancellingBooking.id.toString());
       setCancellingBooking(null);
     } catch (error) {
-      console.error('Failed to cancel booking:', error);
     } finally {
       setIsCancelLoading(false);
     }
@@ -108,8 +107,7 @@ export function BookingHistoryTable({
             {paginatedBookings.map((booking) => (
               <tr
                 key={booking.id}
-                className={`hover:bg-gray-50 transition-colors ${getStatusAccentClass(booking.status)} border-l-4 ${
-                    (booking.status === 'Approved' || String(booking.status) === '2')
+                className={`hover:bg-gray-50 transition-colors ${getStatusAccentClass(booking.status)} border-l-4 ${(booking.status === 'Approved' || String(booking.status) === '2')
                     ? 'border-l-green-500'
                     : (booking.status === 'PendingApproval' || String(booking.status) === '1')
                       ? 'border-l-yellow-500'
@@ -166,10 +164,10 @@ export function BookingHistoryTable({
                   <span className="text-sm text-gray-700">
                     {booking.createdAt
                       ? new Date(booking.createdAt).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })
                       : '-'}
                   </span>
                 </td>

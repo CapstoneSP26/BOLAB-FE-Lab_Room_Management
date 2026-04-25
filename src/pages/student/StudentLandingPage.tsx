@@ -25,17 +25,17 @@ const formatTimeSlot = (startTime: string, endTime: string): string => {
   try {
     const start = new Date(startTime);
     const end = new Date(endTime);
-    
+
     // Convert to UTC+7 by adding 7 hours to milliseconds
     const startUTC7 = new Date(start.getTime() + 7 * 60 * 60 * 1000);
     const endUTC7 = new Date(end.getTime() + 7 * 60 * 60 * 1000);
-    
+
     // Use getUTC methods to get hours/minutes from UTC+7 adjusted time
     const startHours = startUTC7.getUTCHours().toString().padStart(2, '0');
     const startMinutes = startUTC7.getUTCMinutes().toString().padStart(2, '0');
     const endHours = endUTC7.getUTCHours().toString().padStart(2, '0');
     const endMinutes = endUTC7.getUTCMinutes().toString().padStart(2, '0');
-    
+
     return `${startHours}:${startMinutes} - ${endHours}:${endMinutes}`;
   } catch {
     return 'Unknown';
@@ -51,10 +51,6 @@ const transformScheduleData = (data: any) => ({
 
 export default function StudentLandingPage() {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
-
-  // Debug JWT
-  console.log('🔐 StudentLandingPage - Current User:', user);
 
   // Fetch today's schedules from /api/schedules/schedule-student
   // Get today's date in UTC+7 (Vietnam timezone)
