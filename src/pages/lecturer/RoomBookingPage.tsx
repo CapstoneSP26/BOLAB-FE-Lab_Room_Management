@@ -138,7 +138,6 @@ const RoomBookingPage: React.FC = () => {
         setPendingBooking(null);
         setShowConfirmPanel(false);
         setShowSuccessModal(true);
-        queryClient.invalidateQueries({ queryKey: ["calendar-events"] });
 
         // Push booking-related notification immediately (without waiting polling/realtime).
         await fetchLatestByBookingId(data.id);

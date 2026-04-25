@@ -14,7 +14,6 @@ export const useMyProfile = (enabled: boolean = true) => {
     queryKey: [PROFILE_QUERY_KEYS.ME],
     queryFn: async () => {
       const data = await profileService.getMe();
-      console.log('[profile.me] refetched profile', data);
       return data;
     },
     staleTime: 2 * 60 * 1000,
