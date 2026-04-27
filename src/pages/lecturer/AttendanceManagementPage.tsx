@@ -40,7 +40,6 @@ export default function AttendanceManagementPage() {
     isLoading: bookingScheduleLoading,
     isFetching: bookingScheduleFetching,
   } = useSchedulesAttendance(bookingScheduleParams, true);
-  console.log("Booking ", bookingScheduleData)
 
   const generateQrCodeMutation = useGenerateQRCode();
   const removeQrCodeMutation = useRemoveQRCode();

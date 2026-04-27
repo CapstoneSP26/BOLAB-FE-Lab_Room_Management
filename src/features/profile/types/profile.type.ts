@@ -1,3 +1,11 @@
+export interface NotificationPreferences {
+  emailNotifications: boolean;
+  pushNotifications: boolean;
+  bookingApproved: boolean;
+  bookingRejected: boolean;
+  bookingReminder: boolean;
+}
+
 export interface UserDto {
   id: string;
   email: string;
@@ -20,27 +28,12 @@ export interface UserDto {
   lastLogin: string;
   isDeleted?: boolean | null;
   isActive?: boolean | null;
+  notificationPreferences?: NotificationPreferences;
 }
 
-export interface Profile {
-  id: string;
-  email: string;
-  fullName: string;
-  userCode: string;
-  userImageUrl: string;
-  phone?: string | null;
-  department?: string | null;
-  role?: string | null;
-  avatarUrl?: string | null;
-  bio?: string | null;
-  campusId: number;
-  campusName?: string | null;
-  createdAt: string;
-  updatedAt?: string | null;
-  createdBy?: string | null;
-  updatedBy?: string | null;
+export interface Profile extends Omit<UserDto, "lastLogin"> {
   lastLogin?: string | null;
-  isActive?: boolean | null;
+  notificationPreferences?: NotificationPreferences;
 }
 
 export interface ProfileStatisticsDto {

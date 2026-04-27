@@ -9,8 +9,6 @@ import type {
 
 type MaybeRecord = Record<string, unknown>;
 
-const USER_ROLES: UserRole[] = ["ADMIN", "LAB_MANAGER", "LECTURER", "STUDENT"];
-
 const asRecord = (value: unknown): MaybeRecord =>
   value && typeof value === "object" ? (value as MaybeRecord) : {};
 
@@ -66,29 +64,47 @@ const getNumber = (value: unknown, fallback: number) => {
   return fallback;
 };
 
-export const normalizeUserRole = (value: unknown): UserRole => {
-  const normalized = String(value ?? "")
-    .trim()
-    .toUpperCase()
-    .replace(/[\s-]+/g, "_");
+const ROLE_CONFIG: Record<UserRole, { id: number; labels: string[] }> = {
+  ADMIN: { id: 1, labels: ["ADMIN", "1", "admin"] },
+  LAB_MANAGER: { id: 2, labels: ["labmanager", "2", "lab_manager", "manager"] },
+  LECTURER: { id: 3, labels: ["lectuer", "3", "lecturer"] },
+  STUDENT: { id: 4, labels: ["STUDENT", "4", "student"] },
+};
 
-  if (normalized === "LABMANAGER") {
-    return "LAB_MANAGER";
+export const normalizeUserRole = (value: unknown): UserRole => {
+  if (value && typeof value === "object") {
+    const r = value as Record<string, unknown>;
+    return normalizeUserRole(
+      r.name ?? r.roleName ?? r.value ?? r.title ?? r.RoleName ?? r.Role,
+    );
   }
 
-  if (USER_ROLES.includes(normalized as UserRole)) {
-    return normalized as UserRole;
+  const s = String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
+
+  for (const [role, config] of Object.entries(ROLE_CONFIG)) {
+    if (
+      config.labels.some((l) => l.toLowerCase() === s) ||
+      role.toLowerCase() === s
+    ) {
+      return role as UserRole;
+    }
   }
 
   return "STUDENT";
 };
+
+export const mapRoleToBackendId = (role: UserRole): number =>
+  ROLE_CONFIG[role]?.id ?? 4;
 
 const normalizeUserRoles = (value: unknown): UserRole[] => {
   if (Array.isArray(value) && value.length > 0) {
     return value.map(normalizeUserRole);
   }
 
-  if (typeof value === "string" && value.trim() !== "") {
+  if (value) {
     return [normalizeUserRole(value)];
   }
 
@@ -108,11 +124,18 @@ const unwrapPayload = (value: unknown): unknown => {
 export const mapUserDtoToUserListItem = (dto: unknown): UserListItem => {
   const record = asRecord(dto);
   const roles = normalizeUserRoles(
-    record.roles ?? record.Roles ?? record.role ?? record.Role,
+    record.roles ??
+      record.Roles ??
+      record.role ??
+      record.Role ??
+      record.userRoles ??
+      record.UserRoles ??
+      record.primaryRole ??
+      record.PrimaryRole,
   );
 
   return {
-    id: getString(record.id, record.Id, record.userId, record.UserId),
+    id: String(record.userId || record.id || ""),
     userCode: getString(record.userCode, record.UserCode, record.code, record.Code),
     fullName: getString(
       record.fullName,
@@ -167,7 +190,12 @@ export const normalizeUsersPagedResponse = (
     : [];
 
   const totalCount = getNumber(
-    record.totalCount ?? record.TotalCount ?? record.count ?? record.Count,
+    record.totalCount ??
+      record.TotalCount ??
+      record.total ??
+      record.Total ??
+      record.count ??
+      record.Count,
     items.length,
   );
   const pageSize = Math.max(
@@ -211,7 +239,7 @@ export const mapUserFormValuesToCreateRequest = (
   fullName: values.fullName.trim(),
   email: values.email.trim(),
   userCode: values.userCode.trim() || undefined,
-  role: values.role,
+  roles: values.roles,
   password: values.password,
   isActive: values.isActive,
 });
@@ -222,7 +250,7 @@ export const mapUserFormValuesToUpdateRequest = (
   fullName: values.fullName.trim(),
   email: values.email.trim(),
   userCode: values.userCode.trim() || undefined,
-  role: values.role,
+  roles: values.roles,
   password: values.password.trim() || undefined,
   isActive: values.isActive,
 });
@@ -233,7 +261,7 @@ export const getDefaultUserFormValues = (
   fullName: user?.fullName ?? "",
   email: user?.email ?? "",
   userCode: user?.userCode ?? "",
-  role: user?.primaryRole ?? "LECTURER",
+  roles: user?.roles ?? ["LECTURER"],
   password: "",
   isActive: user?.isActive ?? true,
 });

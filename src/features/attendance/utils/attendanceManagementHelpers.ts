@@ -1,4 +1,4 @@
-import type { BookingWithQR } from '../types/attendance.type';
+import type { BookingWithQR, BookingStatus } from '../types/attendance.type';
 import type { ScheduleDto } from '../../schedules/types/schedule.type';
 import { parseTimeValue } from '../../../utils/date.util';
 
@@ -9,22 +9,26 @@ export const getRoomCodeFromName = (roomName: string): string => {
   return numberMatch ? `L${numberMatch[1]}` : roomName;
 };
 
-export const normalizeBookingStatus = (status: string): BookingWithQR['status'] => {
+export const normalizeBookingStatus = (status: string): BookingStatus => {
   const normalizedStatus = status.toString().trim().toLowerCase();
 
   if (normalizedStatus === 'active') {
     return 'Active';
   }
 
-  if (normalizedStatus === 'done') {
-    return 'Done';
+  if (normalizedStatus === 'inprocess' || normalizedStatus === 'in_process' || normalizedStatus === 'in process') {
+    return 'InProcess';
   }
 
-  if (normalizedStatus === 'notyet' || normalizedStatus === 'not_yet' || normalizedStatus === 'not yet') {
-    return 'NotYet';
+  if (normalizedStatus === 'completed' || normalizedStatus === 'complete') {
+    return 'Completed';
   }
 
-  return 'NotYet';
+  if (normalizedStatus === 'cancelled' || normalizedStatus === 'cancel') {
+    return 'Cancelled';
+  }
+  // Default to Active for unknown statuses
+  return 'Active';
 };
 
 export const mapScheduleDtoToAttendanceBooking = (schedule: ScheduleDto): BookingWithQR => {
@@ -147,7 +151,7 @@ export const extractBackendScanUrl = (input: unknown, scheduleId?: string): stri
   // Try to find scanUrl in response first (if backend provides it)
   if (input != null && typeof input === 'object') {
     const record = input as Record<string, unknown>;
-    
+
     const priorityKeys = [
       'scanUrl',
       'qrScanUrl',

@@ -4,67 +4,92 @@
  */
 
 import { useNavigate } from 'react-router';
+import { useMemo } from 'react';
 import {
-  QrCode, Clock, CheckCircle, AlertCircle,
+  QrCode, Clock, AlertCircle,
   Calendar, Loader2
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
-import { scheduleApi } from '../../features/schedules/api/scheduleApi';
-import { useQuery } from '@tanstack/react-query';
+import { useSchedulesStudent } from '../../features/schedules/hooks/useSchedules';
+
+// Status mapping: active = lecturer session is running, inactive = otherwise
+const STATUS_MAP: Record<number, string> = {
+  1: 'inactive',
+  2: 'active',
+  3: 'inactive',
+  4: 'inactive',
+};
+
+// Format time from ISO string to HH:mm - HH:mm (UTC+7)
+const formatTimeSlot = (startTime: string, endTime: string): string => {
+  try {
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+
+    // Convert to UTC+7 by adding 7 hours to milliseconds
+    const startUTC7 = new Date(start.getTime() + 7 * 60 * 60 * 1000);
+    const endUTC7 = new Date(end.getTime() + 7 * 60 * 60 * 1000);
+
+    // Use getUTC methods to get hours/minutes from UTC+7 adjusted time
+    const startHours = startUTC7.getUTCHours().toString().padStart(2, '0');
+    const startMinutes = startUTC7.getUTCMinutes().toString().padStart(2, '0');
+    const endHours = endUTC7.getUTCHours().toString().padStart(2, '0');
+    const endMinutes = endUTC7.getUTCMinutes().toString().padStart(2, '0');
+
+    return `${startHours}:${startMinutes} - ${endHours}:${endMinutes}`;
+  } catch {
+    return 'Unknown';
+  }
+};
+
+// Transform raw API data to match ScheduleDto structure
+const transformScheduleData = (data: any) => ({
+  ...data,
+  status: STATUS_MAP[data.status] || data.status,
+  slotName: formatTimeSlot(data.startTime, data.endTime),
+});
 
 export default function StudentLandingPage() {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
 
-  // Debug JWT
-  console.log('🔐 StudentLandingPage - Current User:', user);
-
-  // Fetch today's schedules from /api/schedules
-  // Filter by today's date and current user
-  const { data: scheduleData, isLoading: classesLoading, error: classesError } = useQuery({
-    queryKey: ['schedules-today'],
-    queryFn: async () => {
-      const today = new Date().toISOString().split('T')[0];
-      const response = await scheduleApi.getSchedules({
-        fromDate: today,
-        toDate: today,
-        status: 'Active',
-      });
-      return response?.items || [];
-    },
-    staleTime: 10 * 60 * 1000, // 10 minutes
+  // Fetch today's schedules from /api/schedules/schedule-student
+  // Get today's date in UTC+7 (Vietnam timezone)
+  const today = new Date(new Date().getTime() + 7 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const { data: scheduleResponse, isLoading: classesLoading, error: classesError } = useSchedulesStudent({
+    fromDate: today,
+    toDate: today,
+    pageSize: 100,
   });
 
-  const upcomingClasses = scheduleData || [];
+  // Transform raw API data to match ScheduleDto structure
+  const upcomingClasses = useMemo(() => {
+    const items = scheduleResponse?.items || [];
+    return items.map(transformScheduleData);
+  }, [scheduleResponse]);
 
   const handleScanQRFromClass = (scheduleId: string) => {
     navigate(`/student/scan-attendance/${scheduleId}`);
   };
 
   const getStatusColor = (status: string) => {
-    // Map actual API statuses to display categories
-    if (status === 'NotYet') return 'bg-blue-50 border-blue-200 text-blue-700'; // upcoming
-    if (status === 'Active' || status === 'InProcess') return 'bg-amber-50 border-amber-200 text-amber-700'; // ongoing
-    if (status === 'Completed' || status === 'Done' || status === 'Finish') return 'bg-emerald-50 border-emerald-200 text-emerald-700'; // completed
+    if (status === 'active') return 'bg-emerald-50 border-emerald-200 text-emerald-700'; // green for active session
+    if (status === 'inactive') return 'bg-blue-50 border-blue-200 text-blue-700'; // blue for scheduled
     return 'bg-slate-50 border-slate-200 text-slate-700';
   };
 
   const getStatusBadge = (status: string) => {
-    // Map actual API statuses to display categories
-    if (status === 'NotYet') return <Clock className="w-4 h-4" />; // upcoming
-    if (status === 'Active' || status === 'InProcess') return <AlertCircle className="w-4 h-4" />; // ongoing
-    if (status === 'Completed' || status === 'Done' || status === 'Finish') return <CheckCircle className="w-4 h-4" />; // completed
+    if (status === 'active') return <AlertCircle className="w-4 h-4" />; // actively in session
+    if (status === 'inactive') return <Clock className="w-4 h-4" />; // waiting
     return null;
   };
 
   const getStatusLabel = (status: string) => {
-    if (status === 'NotYet') return 'Upcoming';
-    if (status === 'Active' || status === 'InProcess') return 'Ongoing';
-    if (status === 'Completed' || status === 'Done' || status === 'Finish') return 'Completed';
+    if (status === 'active') return 'Ongoing';
+    if (status === 'inactive') return 'Scheduled';
     return status;
   };
 
-  const isOngoing = (status: string) => status === 'Active' || status === 'InProcess';
+  const isOngoing = (status: string) => status === 'active';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50">
@@ -142,13 +167,8 @@ export default function StudentLandingPage() {
                             <span className="hidden xs:inline">Scan</span>
                           </button>
                         )}
-                        {cls.status === 'NotYet' && (
-                          <div className="text-slate-500 text-xs">Soon</div>
-                        )}
-                        {(cls.status === 'Completed' || cls.status === 'Done' || cls.status === 'Finish') && (
-                          <div className="text-emerald-600 text-xs flex items-center justify-center gap-1">
-                            <CheckCircle className="w-4 h-4" />
-                          </div>
+                        {cls.status === 'inactive' && (
+                          <div className="text-slate-500 text-xs">Scheduled</div>
                         )}
                       </td>
                     </tr>

@@ -20,13 +20,7 @@ const StudentGroupsPage: React.FC = () => {
   const appAlert = useToast();
 
   // API Queries
-  const { data: groupsData, isLoading: isLoadingGroups } = useGroups({
-    params: {
-      searchQuery: filters.searchQuery,
-      sortBy: filters.sortBy,
-      sortOrder: filters.sortOrder,
-    },
-  });
+  const { data: groupsData, isLoading: isLoadingGroups } = useGroups();
 
   // Mutations
   const createMutation = useCreateGroup({

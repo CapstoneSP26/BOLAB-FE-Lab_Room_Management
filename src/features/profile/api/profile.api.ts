@@ -1,5 +1,6 @@
 import axiosInstance from "../../../api/axios";
 import type {
+  NotificationPreferences,
   Profile,
   ProfileRecentActivity,
   ProfileStatistics,
@@ -19,6 +20,7 @@ export const PROFILE_API = {
   RECENT_ACTIVITIES: "/profile/recent-activities",
   AVATAR: "/profile/avatar",
   CHANGE_PASSWORD: "/profile/change-password",
+  NOTIFICATION_PREFERENCES: "/profile/notification-preferences",
 } as const;
 
 export interface GetMyProfileResponse {
@@ -46,6 +48,12 @@ export interface UploadAvatarResponse {
 export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
+}
+
+export type UpdateNotificationPreferencesRequest = NotificationPreferences;
+
+export interface UpdateNotificationPreferencesResponse {
+  data?: NotificationPreferences;
 }
 
 export const profileService = {
@@ -101,6 +109,18 @@ export const profileService = {
     const payload = response.data.data;
     if (typeof payload === "string") return payload;
     return payload.avatarUrl || payload.userImageUrl || "";
+  },
+
+  async updateNotificationPreferences(
+    payload: UpdateNotificationPreferencesRequest,
+  ): Promise<NotificationPreferences> {
+
+    const response = await axiosInstance.put<UpdateNotificationPreferencesResponse>(
+      PROFILE_API.NOTIFICATION_PREFERENCES,
+      payload,
+    );
+
+    return response.data.data ?? payload;
   },
 
   async changePassword(payload: ChangePasswordRequest): Promise<void> {

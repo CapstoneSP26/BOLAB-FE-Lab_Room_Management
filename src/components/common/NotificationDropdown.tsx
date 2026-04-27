@@ -87,11 +87,10 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         }`}
         aria-label="Notifications"
         onClick={() => {
-          setIsOpen(!isOpen);
-          // Mark all as read when opening the dropdown
-          if (!isOpen && unreadCount > 0) {
-            markAllAsRead();
+          if (unreadCount > 0) {
+            void markAllAsRead();
           }
+          setIsOpen(!isOpen);
         }}
       >
         <svg

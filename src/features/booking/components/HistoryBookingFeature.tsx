@@ -171,7 +171,6 @@ export default function HistoryBookingFeature() {
           setBuildingOptions(buildingsRes.value.items ?? []);
         } else {
           setBuildingOptions([]);
-          console.error("Load buildings failed:", buildingsRes.reason);
         }
 
       } finally {
@@ -427,8 +426,8 @@ export default function HistoryBookingFeature() {
 
         <div
           className={`transition-all duration-300 ease-in-out ${showFilters
-              ? "max-h-[1200px] opacity-100"
-              : "max-h-0 overflow-hidden opacity-0"
+            ? "max-h-[1200px] opacity-100"
+            : "max-h-0 overflow-hidden opacity-0"
             }`}
         >
           <div className="border-t border-gray-200 p-6 dark:border-gray-700">

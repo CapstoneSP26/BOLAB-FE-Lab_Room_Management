@@ -4,6 +4,18 @@ export interface LabImageDto {
   isPrimary: boolean;
 }
 
+export interface ResultMessage<T> {
+  success: boolean;
+  message: string;
+  data?: T;
+}
+
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  message: string;
+  data?: T;
+}
+
 export interface LabRoomDto {
   id: number;
   roomName: string;
@@ -14,6 +26,8 @@ export interface LabRoomDto {
   description?: string;
   buildingId: number;
   buildingName: string;
+  roomManagerId?: string;
+  roomManagerName?: string;
   images?: LabImageDto[];
   isActive: boolean;
   isDeleted?: boolean;
@@ -45,6 +59,7 @@ export interface LabRoomFormValues {
   hasEquipment: boolean;
   description: string;
   buildingId: number | "";
+  roomManagerId?: string;
   isActive: boolean;
 }
 
@@ -56,6 +71,7 @@ export interface LabRoomMutationPayload {
   hasEquipment: boolean;
   description?: string;
   buildingId: number;
+  roomManagerId?: string;
   isActive?: boolean;
 }
 

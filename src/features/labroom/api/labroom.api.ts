@@ -8,6 +8,8 @@ import type {
   GetLabRoomsQuery,
   GetStatsResponse,
   UpdateLabRoomRequest,
+  ApiResponse,
+  LabRoomDto,
 } from "../types/room.type";
 import {
   mapLabRoomDto,
@@ -57,23 +59,64 @@ export const labroomApi = {
       .get(LABROOM_API.POLICIES(labRoomId))
       .then((response) => normalizeLabRoomPolicies(response.data)),
 
-  createRoom: (payload: CreateLabRoomRequest) =>
+  createRoom: (
+    payload: CreateLabRoomRequest,
+  ): Promise<{ data: LabRoomDto; message: string }> =>
     axiosInstance
-      .post(LABROOM_API.LIST, mapLabRoomPayload(payload))
-      .then((response) => mapLabRoomDto(response.data)),
+      .post<ApiResponse<unknown>>(LABROOM_API.LIST, mapLabRoomPayload(payload))
+      .then((response) => {
+        if (!response.data.success) {
+          throw new Error(response.data.message || "Failed to create room");
+        }
+        return {
+          data: mapLabRoomDto(response.data.data),
+          message: response.data.message,
+        };
+      }),
 
-  updateRoom: (id: number, payload: UpdateLabRoomRequest) =>
+  updateRoom: (
+    id: number,
+    payload: UpdateLabRoomRequest,
+  ): Promise<{ data: LabRoomDto; message: string }> =>
     axiosInstance
-      .put(LABROOM_API.DETAIL(id), mapLabRoomPayload(payload))
-      .then((response) => mapLabRoomDto(response.data)),
+      .put<ApiResponse<unknown>>(LABROOM_API.DETAIL(id), mapLabRoomPayload(payload))
+      .then((response) => {
+        if (!response.data.success) {
+          throw new Error(response.data.message || "Failed to update room");
+        }
+        return {
+          data: mapLabRoomDto(response.data.data),
+          message: response.data.message,
+        };
+      }),
 
-  updateRoomStatus: (id: number, isActive: boolean) =>
+  updateRoomStatus: (
+    id: number,
+    isActive: boolean,
+  ): Promise<{ data: LabRoomDto; message: string }> =>
     axiosInstance
-      .patch(LABROOM_API.STATUS(id), isActive)
-      .then((response) => mapLabRoomDto(unwrapEnvelopeData(response.data))),
+      .patch<ApiResponse<unknown>>(LABROOM_API.STATUS(id), { isActive })
+      .then((response) => {
+        if (!response.data.success) {
+          throw new Error(response.data.message || "Failed to update room status");
+        }
+        return {
+          data: mapLabRoomDto(unwrapEnvelopeData(response.data.data)),
+          message: response.data.message,
+        };
+      }),
 
-  deleteRoom: (id: number) =>
-    axiosInstance.delete(LABROOM_API.DETAIL(id)).then(() => undefined),
+  deleteRoom: (id: number): Promise<{ message: string }> =>
+    axiosInstance
+      .delete<ApiResponse<unknown>>(LABROOM_API.DETAIL(id))
+      .then((response) => {
+        if (!response.data.success) {
+          throw new Error(response.data.message || "Failed to delete room");
+        }
+        return {
+          message: response.data.message,
+        };
+      }),
 
   updateLabPolicy: (
     labRoomId: number,

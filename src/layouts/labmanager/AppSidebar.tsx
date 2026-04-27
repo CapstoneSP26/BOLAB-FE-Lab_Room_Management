@@ -131,6 +131,11 @@ const AppSidebar: React.FC = () => {
         icon: Building,
         name: "Building Management",
         path: p("/building-management"),
+},
+      {
+        icon: ListIcon,
+        name: "User Management",
+        path: p("/user-management"),
         show: isAdmin,
       },
       // --- PROFILE (Chung) ---

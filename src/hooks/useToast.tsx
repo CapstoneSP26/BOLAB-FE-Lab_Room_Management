@@ -4,6 +4,7 @@
  */
 
 import { create } from 'zustand';
+import { useCallback, useMemo } from 'react';
 import type { ToastType } from '../components/ui/Toast';
 
 interface ToastItem {
@@ -36,21 +37,45 @@ export const useToastStore = create<ToastStore>((set) => ({
 }));
 
 export const useToast = () => {
-  const { addToast, removeToast } = useToastStore();
+  const addToast = useToastStore((state) => state.addToast);
+  const removeToast = useToastStore((state) => state.removeToast);
 
-  return {
-    success: (title: string, message?: string, duration?: number) => {
+  const success = useCallback(
+    (title: string, message?: string, duration?: number) => {
       addToast({ type: 'success', title, message, duration });
     },
-    error: (title: string, message?: string, duration?: number) => {
+    [addToast],
+  );
+
+  const error = useCallback(
+    (title: string, message?: string, duration?: number) => {
       addToast({ type: 'error', title, message, duration });
     },
-    warning: (title: string, message?: string, duration?: number) => {
+    [addToast],
+  );
+
+  const warning = useCallback(
+    (title: string, message?: string, duration?: number) => {
       addToast({ type: 'warning', title, message, duration });
     },
-    info: (title: string, message?: string, duration?: number) => {
+    [addToast],
+  );
+
+  const info = useCallback(
+    (title: string, message?: string, duration?: number) => {
       addToast({ type: 'info', title, message, duration });
     },
-    remove: removeToast,
-  };
+    [addToast],
+  );
+
+  return useMemo(
+    () => ({
+      success,
+      error,
+      warning,
+      info,
+      remove: removeToast,
+    }),
+    [success, error, warning, info, removeToast],
+  );
 };

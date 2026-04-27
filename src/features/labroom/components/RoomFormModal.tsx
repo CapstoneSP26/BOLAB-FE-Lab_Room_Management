@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import {
   Building2,
   Cpu,
@@ -6,9 +6,13 @@ import {
   MapPin,
   PencilLine,
   PlusCircle,
+  User,
   X,
 } from "lucide-react";
 import type { BuildingDto } from "../../building/types/building.type";
+import { SearchDropdown } from "../../../components/ui/SearchDropdown";
+import { userManagementApi } from "../../users/api/userManagementApi";
+import type { UserListItem } from "../../users/types/userManagement.type";
 import { getDefaultLabRoomFormValues } from "../types/room.mapper";
 import type { LabRoomDto, LabRoomFormValues } from "../types/room.type";
 
@@ -40,6 +44,28 @@ export default function RoomFormModal({
     getDefaultLabRoomFormValues(room),
   );
   const [errors, setErrors] = useState<FormErrors>({});
+
+  // ─── Room manager search state ───────────────────────────────────────
+  const [managerQuery, setManagerQuery] = useState<string>(() => {
+    if (room?.roomManagerName) return room.roomManagerName;
+    return "";
+  });
+  const [managerResults, setManagerResults] = useState<UserListItem[]>([]);
+  const [managerSearching, setManagerSearching] = useState(false);
+  const [selectedManager, setSelectedManager] = useState<UserListItem | null>(
+    null,
+  );
+
+  useEffect(() => {
+    if (isOpen) {
+      setValues(getDefaultLabRoomFormValues(room));
+      setErrors({});
+      setManagerQuery(room?.roomManagerName ?? "");
+      setManagerResults([]);
+      setManagerSearching(false);
+      setSelectedManager(null);
+    }
+  }, [isOpen, room]);
 
   if (!isOpen) {
     return null;
@@ -74,6 +100,34 @@ export default function RoomFormModal({
   ) => {
     setValues((prev) => ({ ...prev, [key]: value }));
     setErrors((prev) => ({ ...prev, [key]: undefined }));
+  };
+
+  const handleManagerSearch = useCallback(async (q: string) => {
+    setManagerQuery(q);
+    if (!q.trim()) {
+      setManagerResults([]);
+      return;
+    }
+    setManagerSearching(true);
+    try {
+      const res = await userManagementApi.getUsers({
+        q,
+        role: "LAB_MANAGER",
+        limit: 10,
+      });
+      setManagerResults(res.items ?? []);
+    } catch {
+      setManagerResults([]);
+    } finally {
+      setManagerSearching(false);
+    }
+  }, []);
+
+  const handleManagerSelect = (user: UserListItem) => {
+    setSelectedManager(user);
+    setManagerQuery(user.fullName);
+    setManagerResults([]);
+    handleChange("roomManagerId", user.id);
   };
 
   const handleSubmit = async (event: FormEvent) => {
@@ -215,6 +269,51 @@ export default function RoomFormModal({
               {errors.buildingId && (
                 <p className="mt-1 text-sm text-red-600">{errors.buildingId}</p>
               )}
+            </div>
+
+            <div className="md:col-span-2">
+              <SearchDropdown<UserListItem>
+                label="Room manager"
+                icon={<User className="h-4 w-4 text-teal-600 dark:text-teal-400" />}
+                placeholder="Search by full name, user code or email..."
+                value={managerQuery}
+                onSearch={(q) => void handleManagerSearch(q)}
+                results={managerResults}
+                isSearching={managerSearching}
+                getKey={(u) => u.id}
+                renderResult={(u) => (
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-semibold text-gray-800 dark:text-white">
+                      {u.fullName}
+                    </span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {u.userCode} · {u.email}
+                    </span>
+                  </div>
+                )}
+                onSelect={handleManagerSelect}
+                onClear={() => {
+                  setSelectedManager(null);
+                  setManagerQuery("");
+                  setValues((prev) => ({ ...prev, roomManagerId: undefined }));
+                }}
+                disabled={isLoading}
+              />
+
+              {selectedManager ? (
+                <div className="mt-2 flex items-center gap-2 rounded-lg border border-teal-200 bg-teal-50 px-3 py-2 dark:border-teal-500/30 dark:bg-teal-500/10">
+                  <span className="text-xs font-medium text-teal-800 dark:text-teal-200">
+                    <strong>{selectedManager.fullName}</strong> ·{" "}
+                    {selectedManager.userCode} · {selectedManager.email}
+                  </span>
+                </div>
+              ) : room?.roomManagerName && values.roomManagerId === room.roomManagerId ? (
+                <div className="mt-2 flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-800/40">
+                  <span className="text-xs font-medium text-gray-700 dark:text-gray-200">
+                    Current manager: <strong>{room.roomManagerName}</strong>
+                  </span>
+                </div>
+              ) : null}
             </div>
 
             <div>

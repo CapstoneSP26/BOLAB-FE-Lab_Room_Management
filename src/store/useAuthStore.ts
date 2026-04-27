@@ -34,7 +34,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   setAuth: (user: UserAuth | null) => {
-    set({ user, isAuthenticated: user ? true : false, isLoading: false });
+    set({ user, isAuthenticated: user?.email != "" ? true : false, isLoading: false });
   },
 
   logout: async () => {

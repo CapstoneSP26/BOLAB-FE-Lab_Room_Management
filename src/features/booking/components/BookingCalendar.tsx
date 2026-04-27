@@ -4,9 +4,19 @@ import type { Booking } from '../types/booking.type';
 
 interface BookingCalendarProps {
   bookings: Booking[];
+  currentUserId?: string;
+  currentUserEmail?: string;
+  currentUserName?: string;
+  currentUserCode?: string;
 }
 
-export const BookingCalendar: React.FC<BookingCalendarProps> = ({ bookings }) => {
+export const BookingCalendar: React.FC<BookingCalendarProps> = ({
+  bookings,
+  currentUserId,
+  currentUserEmail,
+  currentUserName,
+  currentUserCode,
+}) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
@@ -118,6 +128,38 @@ export const BookingCalendar: React.FC<BookingCalendarProps> = ({ bookings }) =>
       badgeClass: 'bg-violet-100 text-violet-700',
       label: 'Lecturer Book',
     };
+  };
+
+  const normalizeText = (value: unknown) => String(value ?? '').trim().toLowerCase();
+
+  const isCurrentLecturerBooking = (booking: Booking): boolean => {
+    const candidates = [
+      booking.userName,
+      booking.lecturerName,
+      booking.purpose,
+      booking.scheduleType,
+    ];
+
+    const bookingUserId = normalizeText((booking as Booking & { userId?: string | number }).userId);
+    const bookingUserCode = normalizeText((booking as Booking & { userCode?: string }).userCode);
+    const bookingUserEmail = normalizeText((booking as Booking & { userEmail?: string }).userEmail);
+    const bookingCreatedBy = normalizeText((booking as Booking & { createdBy?: string | number }).createdBy);
+    const bookingCreatedByName = normalizeText((booking as Booking & { createdByName?: string }).createdByName);
+
+    if (currentUserId && bookingUserId && normalizeText(currentUserId) === bookingUserId) return true;
+    if (currentUserCode && bookingUserCode && normalizeText(currentUserCode) === bookingUserCode) return true;
+    if (currentUserEmail && bookingUserEmail && normalizeText(currentUserEmail) === bookingUserEmail) return true;
+    if (currentUserId && bookingCreatedBy && normalizeText(currentUserId) === bookingCreatedBy) return true;
+
+    const currentName = normalizeText(currentUserName);
+    if (currentName) {
+      if (normalizeText(booking.userName) === currentName) return true;
+      if (normalizeText(booking.lecturerName) === currentName) return true;
+      if (normalizeText(bookingCreatedByName) === currentName) return true;
+      if (candidates.some((candidate) => normalizeText(candidate) === currentName)) return true;
+    }
+
+    return false;
   };
 
   const getStatusConfig = (status: Booking['status']) => {
@@ -245,10 +287,14 @@ export const BookingCalendar: React.FC<BookingCalendarProps> = ({ bookings }) =>
                         (() => {
                           const sourceConfig = getBookingSourceConfig(booking);
                           const active = isBookingActive(booking);
+                          const isMine = isCurrentLecturerBooking(booking);
+                          const mineClass = isMine
+                            ? 'ring-2 ring-emerald-400 bg-emerald-100 text-emerald-900'
+                            : '';
                           return (
                             <div
                               key={idx}
-                              className={`text-xs px-1.5 py-0.5 rounded truncate font-medium ${sourceConfig.badgeClass}`}
+                              className={`text-xs px-1.5 py-0.5 rounded truncate font-medium ${sourceConfig.badgeClass} ${mineClass}`}
                               title={`${booking.startTime} ${booking.roomName}`}
                             >
                               {active ? '● ' : ''}
@@ -316,11 +362,15 @@ export const BookingCalendar: React.FC<BookingCalendarProps> = ({ bookings }) =>
                         const sourceConfig = getBookingSourceConfig(booking);
                         const statusConfig = getStatusConfig(booking.status);
                         const active = isBookingActive(booking);
+                        const isMine = isCurrentLecturerBooking(booking);
+                        const cardClass = isMine
+                          ? 'bg-emerald-50 border-emerald-300 hover:bg-emerald-100'
+                          : 'bg-slate-50 border-slate-200 hover:bg-slate-100';
 
                         return (
                           <div
                             key={booking.id}
-                            className="bg-slate-50 rounded-xl p-4 border border-slate-200 hover:bg-slate-100 transition-all group"
+                            className={`${cardClass} rounded-xl p-4 border transition-all group`}
                           >
                             <div className="flex items-start justify-between mb-3 gap-3">
                               <div className="flex-1">
@@ -338,6 +388,11 @@ export const BookingCalendar: React.FC<BookingCalendarProps> = ({ bookings }) =>
                                 <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${sourceConfig.badgeClass}`}>
                                   {sourceConfig.label}
                                 </span>
+                                {isMine && (
+                                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500 text-white">
+                                    My booking
+                                  </span>
+                                )}
                               </div>
                             </div>
 

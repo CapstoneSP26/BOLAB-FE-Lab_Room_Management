@@ -24,11 +24,12 @@ import type { SemesterInfo } from "../../../utils/semester.util";
 interface FixedImportPanelProps {
   onImportComplete?: () => void;
   semester: SemesterInfo;
+  editingBatchId?: string | null; // Thêm prop để nhận batch đang chỉnh sửa (nếu có)
 }
 
 const pageSize = 10;
 
-export default function FixedImportPanel({ onImportComplete, semester }: FixedImportPanelProps) {
+export default function FixedImportPanel({ onImportComplete, semester, editingBatchId }: FixedImportPanelProps) {
   const {
     validateScheduleRows,
     commitScheduleRows,
@@ -241,7 +242,8 @@ export default function FixedImportPanel({ onImportComplete, semester }: FixedIm
       const payload: ValidateImportQuery = {
         Schedules: toScheduleRows(rows),
         StartTime: semester.startDate.toISOString(),
-        EndTime: semester.endDate.toISOString()
+        EndTime: semester.endDate.toISOString(),
+        ImportBatchId: editingBatchId,
       };
 
       const response = await validateScheduleRows(payload);
@@ -316,7 +318,9 @@ export default function FixedImportPanel({ onImportComplete, semester }: FixedIm
       const payload: CommitImportCommand = {
         Schedules: toScheduleRows(rows),
         StartTime: semester.startDate.toISOString(),
-        EndTime: semester.endDate.toISOString()
+        EndTime: semester.endDate.toISOString(),
+        ImportBatchId: editingBatchId,
+        BatchName: selectedFile.name,
       };
 
       const response = await commitScheduleRows(payload);

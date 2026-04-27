@@ -61,24 +61,30 @@ export interface ValidateImportQuery {
   Schedules: ScheduleImportDto[];
   StartTime: string;
   EndTime: string;
+  ImportBatchId?: string | null; // Thêm trường này để truyền batch đang chỉnh sửa (nếu có)
 }
 
 export interface CommitImportCommand {
   Schedules: ScheduleImportDto[];
   StartTime: string;
   EndTime: string;
+  ImportBatchId?: string | null; // Thêm trường này để truyền batch đang chỉnh sửa (nếu có)
+  BatchName?: string; // Tên Batch (có thể để trống nếu không cần)
 }
 
 export interface ValidateFlexibleSlotImportRequest {
   Schedules: FlexibleSlotImportDto[];
   StartTime: string;
   EndTime: string;
+  ImportBatchId?: string | null; // Thêm trường này để truyền batch đang chỉnh sửa (nếu có)
 }
 
 export interface CommitFlexibleSlotImportRequest {
   Schedules: FlexibleSlotImportDto[];
   StartTime: string;
   EndTime: string;
+  ImportBatchId?: string | null; // Thêm trường này để truyền batch đang chỉnh sửa (nếu có)
+  BatchName?: string; // Tên Batch (có thể để trống nếu không cần)
 }
 
 export interface CommitScheduleImportResponse {

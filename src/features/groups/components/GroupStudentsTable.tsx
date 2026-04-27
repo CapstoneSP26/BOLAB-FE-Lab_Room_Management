@@ -5,7 +5,7 @@ import type { GroupMemberDto } from '../types/group.type';
 interface GroupStudentsTableProps {
   students: GroupMemberDto[];
   isLoading?: boolean;
-  onRemoveStudent?: (studentId: string) => Promise<void>;
+  onRemoveStudent?: (studentId: string) => void | Promise<void>;
 }
 
 export const GroupStudentsTable: React.FC<GroupStudentsTableProps> = ({
@@ -19,7 +19,7 @@ export const GroupStudentsTable: React.FC<GroupStudentsTableProps> = ({
     if (!onRemoveStudent) return;
     setRemovingStudentId(studentId);
     try {
-      await onRemoveStudent(studentId);
+      await Promise.resolve(onRemoveStudent(studentId));
     } finally {
       setRemovingStudentId(null);
     }
@@ -63,7 +63,7 @@ export const GroupStudentsTable: React.FC<GroupStudentsTableProps> = ({
         </thead>
         <tbody className="divide-y divide-gray-200">
           {students.map((member, index) => (
-            <tr key={member.id} className="hover:bg-gray-50 transition">
+            <tr key={member.id || `${member.groupId}-${member.userId}-${index}`} className="hover:bg-gray-50 transition">
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                 {index + 1}
               </td>

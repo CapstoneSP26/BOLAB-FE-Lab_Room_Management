@@ -104,6 +104,27 @@ export type GetGroupsResponse = PaginatedResponse<Group>;
 export type GetGroupMembersResponse = PaginatedResponse<GroupMemberDto>;
 
 /**
+ * ===== STUDENT SEARCH =====
+ */
+
+export interface StudentSearchDto {
+  id: string;
+  userCode: string;
+  fullName: string;
+  email: string;
+}
+
+export interface SearchStudentsRequest {
+  q?: string;
+  role?: string;
+}
+
+export interface SearchStudentsResponse {
+  items: StudentSearchDto[];
+  total: number;
+}
+
+/**
  * ===== FILTER & SEARCH STATE =====
  */
 
