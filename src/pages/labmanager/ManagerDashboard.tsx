@@ -4,6 +4,7 @@ import LecturerBookingRequestsPanel from "../../features/dashboard/components/Le
 import OperationsSummaryPanel from "../../features/dashboard/components/OperationsSummaryPanel";
 import RoomBookingStatsTable from "../../features/dashboard/components/RoomBookingStatsTable";
 import { useDashboardStats } from "../../features/dashboard/hooks/useDashboard";
+import { useDashboardRealtime } from "../../features/dashboard/hooks/useDashboardRealtime";
 import { LoadingFallback } from "../../components/ui/LoadingFallback";
 import { getErrorMessage } from "../../utils/error";
 
@@ -11,6 +12,7 @@ const getDashboardRoleLabel = (role: string) =>
   role === "ADMIN" ? "Admin" : "Lab Manager";
 
 export default function ManagerDashboard() {
+  useDashboardRealtime();
   const { data, isLoading, error } = useDashboardStats();
 
   if (isLoading) {

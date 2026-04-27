@@ -13,7 +13,10 @@ import type {
 type MaybeRecord = Record<string, unknown>;
 
 const DASHBOARD_API = {
-  OVERVIEW: "/dashboard/overview",
+  OVERVIEW_CANDIDATES: [
+    "/dashboard/overview",
+    "/labmanager/dashboard/overview",
+  ],
   LEGACY_STATS: "/dashboard/stats",
   PENDING_REQUESTS: "/dashboard/pending-requests",
   UNRESOLVED_INCIDENTS: "/incidents/unresolved",
@@ -63,8 +66,12 @@ const toArrayValue = (value: unknown) => (Array.isArray(value) ? value : []);
 const toRoleScope = (value: unknown): DashboardRoleScope => {
   const normalized = String(value ?? "").trim().toUpperCase();
 
-  if (normalized === "ADMIN") {
+  if (normalized === "ADMIN" || normalized === "1") {
     return "ADMIN";
+  }
+
+  if (normalized === "LAB_MANAGER" || normalized === "2") {
+    return "LAB_MANAGER";
   }
 
   return "LAB_MANAGER";
@@ -359,20 +366,31 @@ const normalizeDashboardOverview = (
 };
 
 export const getDashboardStats = async (): Promise<DashboardStatsDto> => {
+  let overviewError: unknown;
+
   try {
-    const overviewResponse = await axiosInstance.get(DASHBOARD_API.OVERVIEW);
-    return normalizeDashboardOverview(overviewResponse.data, "api");
-  } catch (overviewError) {
-    try {
-      const legacyResponse = await axiosInstance.get(DASHBOARD_API.LEGACY_STATS);
-      return normalizeDashboardOverview(legacyResponse.data, "legacy");
-    } catch (legacyError) {
-      console.error("Failed to fetch dashboard overview:", {
-        overviewError,
-        legacyError,
-      });
-      throw legacyError;
+    for (const endpoint of DASHBOARD_API.OVERVIEW_CANDIDATES) {
+      try {
+        const overviewResponse = await axiosInstance.get(endpoint);
+        return normalizeDashboardOverview(overviewResponse.data, "api");
+      } catch (error) {
+        overviewError = error;
+      }
     }
+  } catch (error) {
+    overviewError = error;
+  }
+
+  try {
+    const legacyResponse = await axiosInstance.get(DASHBOARD_API.LEGACY_STATS);
+    return normalizeDashboardOverview(legacyResponse.data, "legacy");
+  } catch (legacyError) {
+    console.error("Failed to fetch dashboard overview:", {
+      overviewError,
+      legacyError,
+      triedOverviewEndpoints: DASHBOARD_API.OVERVIEW_CANDIDATES,
+    });
+    throw legacyError;
   }
 };
 

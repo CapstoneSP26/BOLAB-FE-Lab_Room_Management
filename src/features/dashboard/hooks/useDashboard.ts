@@ -11,6 +11,10 @@ export const useDashboardStats = () => {
     queryKey: ["dashboard-stats"],
     queryFn: getDashboardStats,
     retry: false,
+    refetchOnReconnect: true,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+    staleTime: 15000,
   });
 };
 

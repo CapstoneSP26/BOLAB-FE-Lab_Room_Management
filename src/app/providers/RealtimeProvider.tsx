@@ -15,22 +15,24 @@ export const RealtimeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (isAuthenticated && !isLoading && !connectionRef.current) {
 
       const hubUrl = `${import.meta.env.VITE_API_BASE_URL.replace(/\/api\/?$/i, '')}/hubs/notifications`;
+      const token = localStorage.getItem('access_token') || '';
 
       const newConnection = new signalR.HubConnectionBuilder()
         .withUrl(hubUrl, {
           // QUAN TRỌNG: Với HttpOnly Cookie, ta phải bật withCredentials
           // và KHÔNG dùng accessTokenFactory
+          accessTokenFactory: () => token,
           withCredentials: true,
         })
         .withAutomaticReconnect()
         .configureLogging(signalR.LogLevel.Warning)
         .build();
 
+      connectionRef.current = newConnection;
+      setConnection(newConnection);
+
       newConnection.start()
-        .then(() => {
-          connectionRef.current = newConnection;
-          setConnection(newConnection);
-        })
+        .then(() => undefined)
         .catch(err => console.error("SignalR Connection Error: ", err));
     }
 
