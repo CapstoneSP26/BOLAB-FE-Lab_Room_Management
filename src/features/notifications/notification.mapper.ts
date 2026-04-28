@@ -76,12 +76,46 @@ export const mapNotificationType = (rawType?: string): NotificationType => {
   }
 };
 
+const normalizeMetadata = (
+  metadata: NotificationDto['metadata'],
+): Record<string, unknown> | null => {
+  if (!metadata) return null;
+  if (typeof metadata === 'object') return metadata;
+
+  if (typeof metadata === 'string') {
+    try {
+      const parsed = JSON.parse(metadata);
+      return typeof parsed === 'object' && parsed ? (parsed as Record<string, unknown>) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+};
+
+const getBookingIdFromMetadata = (
+  metadata: NotificationDto['metadata'],
+): string | undefined => {
+  const normalized = normalizeMetadata(metadata);
+  if (!normalized) return undefined;
+
+  const bookingIdCandidate =
+    normalized.bookingId ??
+    normalized.BookingId ??
+    normalized.bookingID ??
+    normalized.booking_id ??
+    normalized.BookingID;
+
+  if (typeof bookingIdCandidate === 'string' || typeof bookingIdCandidate === 'number') {
+    return String(bookingIdCandidate);
+  }
+
+  return undefined;
+};
+
 export const mapNotificationDto = (dto: NotificationDto): AppNotification => {
-  const metadataBookingId = dto.metadata?.bookingId;
-  const bookingId =
-    typeof metadataBookingId === 'string' || typeof metadataBookingId === 'number'
-      ? String(metadataBookingId)
-      : undefined;
+  const bookingId = getBookingIdFromMetadata(dto.metadata);
 
   return {
     id: dto.id,
@@ -94,7 +128,7 @@ export const mapNotificationDto = (dto: NotificationDto): AppNotification => {
     createdAt: dto.createdAt,
     readAt: dto.readAt ?? null,
     metadata: dto.metadata ?? null,
-    relatedPath: bookingId ? `/my-bookings?bookingId=${bookingId}` : '/notifications',
+    relatedPath: bookingId ? `/my-bookings?bookingId=${bookingId}` : '/my-bookings',
   };
 };
 
