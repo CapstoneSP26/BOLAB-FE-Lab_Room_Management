@@ -12,7 +12,7 @@ import {
   FPTLogo,
 } from "../../components/icon/index.ts";
 import { useAuthStore } from "../../store/useAuthStore.ts";
-
+import { Building } from "lucide-react"
 type IconProps = React.SVGProps<SVGSVGElement> & { size?: number };
 type IconComp = React.ComponentType<IconProps>;
 
@@ -127,6 +127,11 @@ const AppSidebar: React.FC = () => {
         path: p("/slot-management"),
         show: isAdmin,
       },
+{
+        icon: Building,
+        name: "Building Management",
+        path: p("/building-management"),
+},
       {
         icon: ListIcon,
         name: "User Management",
