@@ -53,6 +53,7 @@ export default function ManualAttendancePage() {
   const [attendanceRecords, setAttendanceRecords] = useState<Record<string, AttendanceStatus>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [updatingStudentIds, setUpdatingStudentIds] = useState<Set<string>>(new Set());
 
   // Get students from API response
   const students: Student[] = attendanceArray.map((student: any) => ({
@@ -107,13 +108,56 @@ export default function ManualAttendancePage() {
     return { total, present, absent };
   }, [attendanceRecords, students]);
 
-  // Handle status change
-  const handleStatusChange = (studentId: string, status: AttendanceStatus) => {
+  // Handle status change with real-time update
+  const handleStatusChange = async (studentId: string, status: AttendanceStatus) => {
     if (!isEditable) return; // Prevent editing past sessions
+    
+    // Update local state optimistically
     setAttendanceRecords(prev => ({
       ...prev,
       [studentId]: status,
     }));
+
+    // Mark as updating
+    setUpdatingStudentIds(prev => new Set(prev).add(studentId));
+
+    try {
+      if (!scheduleId) {
+        throw new Error('Schedule ID is missing.');
+      }
+
+      // Send immediate update to backend for this single student
+      await submitAttendance.mutateAsync({
+        scheduleId: scheduleId,
+        attendanceItems: [{
+          userId: studentId,
+          status: status === 'Present' ? 0 : 1, // Convert to API format: 0=Present, 1=Absent
+        }],
+      });
+
+      // Show success notification
+      const student = students.find(s => s.id === studentId);
+      appAlert.success(
+        'Status updated',
+        `${student?.name} marked as ${status}`,
+        2000
+      );
+    } catch (error) {
+      // Revert on error
+      setAttendanceRecords(prev => {
+        const updated = { ...prev };
+        delete updated[studentId];
+        return updated;
+      });
+      appAlert.error('Update failed', 'Could not update attendance status. Please try again.');
+    } finally {
+      // Mark as no longer updating
+      setUpdatingStudentIds(prev => {
+        const updated = new Set(prev);
+        updated.delete(studentId);
+        return updated;
+      });
+    }
   };
 
   // Bulk actions
@@ -476,30 +520,42 @@ export default function ManualAttendancePage() {
                     <div className="col-span-4 flex items-center justify-center gap-2">
                       <button
                         onClick={() => handleStatusChange(student.id, 'Present')}
-                        disabled={!isEditable}
+                        disabled={!isEditable || updatingStudentIds.has(student.id)}
                         className={`flex items-center gap-1.5 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${!isEditable
                           ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                          : status === 'Present'
-                            ? 'bg-emerald-600 text-white shadow-md'
-                            : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
+                          : updatingStudentIds.has(student.id)
+                            ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                            : status === 'Present'
+                              ? 'bg-emerald-600 text-white shadow-md'
+                              : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
                           }`}
                       >
-                        <CheckCircle className="w-4 h-4" />
-                        <span>Present</span>
+                        {updatingStudentIds.has(student.id) ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <CheckCircle className="w-4 h-4" />
+                        )}
+                        <span>{updatingStudentIds.has(student.id) ? 'Updating...' : 'Present'}</span>
                       </button>
 
                       <button
                         onClick={() => handleStatusChange(student.id, 'Absent')}
-                        disabled={!isEditable}
+                        disabled={!isEditable || updatingStudentIds.has(student.id)}
                         className={`flex items-center gap-1.5 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${!isEditable
                           ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                          : status === 'Absent'
-                            ? 'bg-red-600 text-white shadow-md'
-                            : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
+                          : updatingStudentIds.has(student.id)
+                            ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                            : status === 'Absent'
+                              ? 'bg-red-600 text-white shadow-md'
+                              : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
                           }`}
                       >
-                        <XCircle className="w-4 h-4" />
-                        <span>Absent</span>
+                        {updatingStudentIds.has(student.id) ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <XCircle className="w-4 h-4" />
+                        )}
+                        <span>{updatingStudentIds.has(student.id) ? 'Updating...' : 'Absent'}</span>
                       </button>
                     </div>
                   </div>
@@ -509,15 +565,15 @@ export default function ManualAttendancePage() {
           </div>
         </div>
 
-        {/* Footer Info */}
-        <div className="mt-6 text-center text-sm text-slate-500">
-          <p>
-            💡 <strong>Tip:</strong> QR-scanned students are auto-filled as Present when this page opens.
-          </p>
-          <p className="mt-1">
-            Mock data: 30 students · Will be replaced with real Student Group data
-          </p>
-        </div>
+      {/* Footer Info */}
+      <div className="mt-6 text-center text-sm text-slate-500">
+        <p>
+          💡 <strong>Tip:</strong> Each attendance status update is saved immediately - no need to reload!
+        </p>
+        <p className="mt-1">
+          QR-scanned students are auto-filled as Present when this page opens.
+        </p>
+      </div>
       </div>
 
       {/* Confirmation Modal */}
@@ -531,14 +587,21 @@ export default function ManualAttendancePage() {
                   <AlertCircle className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-slate-900">Xác Nhận Nộp Điểm Danh</h3>
-                  <p className="text-sm text-slate-600">Vui lòng kiểm tra lại thông tin</p>
+                  <h3 className="text-xl font-bold text-slate-900">Bulk Update Attendance</h3>
+                  <p className="text-sm text-slate-600">Individual updates are saved in real-time</p>
                 </div>
               </div>
             </div>
 
             {/* Modal Body */}
             <div className="p-6">
+              {/* Info */}
+              <div className="bg-blue-50 rounded-xl p-4 mb-4 border border-blue-200">
+                <p className="text-sm font-semibold text-blue-900">
+                  💾 Individual changes are already saved automatically
+                </p>
+              </div>
+
               {/* Session Info */}
               <div className="bg-slate-50 rounded-xl p-4 mb-4 border border-slate-200">
                 <div className="flex items-center gap-2 mb-2">
@@ -551,12 +614,12 @@ export default function ManualAttendancePage() {
 
               {/* Stats Summary */}
               <div className="mb-4">
-                <p className="text-sm font-semibold text-slate-700 mb-3">Tóm tắt điểm danh:</p>
+                <p className="text-sm font-semibold text-slate-700 mb-3">Current Status Summary:</p>
                 <div className="grid grid-cols-3 gap-3">
                   <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-200">
                     <div className="flex items-center gap-2 mb-1">
                       <CheckCircle className="w-4 h-4 text-emerald-600" />
-                      <span className="text-xs font-medium text-emerald-700">Có mặt</span>
+                      <span className="text-xs font-medium text-emerald-700">Present</span>
                     </div>
                     <p className="text-2xl font-bold text-emerald-900 tabular-nums">{stats.present}</p>
                   </div>
@@ -564,7 +627,7 @@ export default function ManualAttendancePage() {
                   <div className="bg-red-50 rounded-xl p-3 border border-red-200">
                     <div className="flex items-center gap-2 mb-1">
                       <XCircle className="w-4 h-4 text-red-600" />
-                      <span className="text-xs font-medium text-red-700">Vắng</span>
+                      <span className="text-xs font-medium text-red-700">Absent</span>
                     </div>
                     <p className="text-2xl font-bold text-red-900 tabular-nums">{stats.absent}</p>
                   </div>
@@ -572,7 +635,7 @@ export default function ManualAttendancePage() {
                   <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
                     <div className="flex items-center gap-2 mb-1">
                       <Users className="w-4 h-4 text-slate-600" />
-                      <span className="text-xs font-medium text-slate-700">Tổng số</span>
+                      <span className="text-xs font-medium text-slate-700">Total</span>
                     </div>
                     <p className="text-2xl font-bold text-slate-900 tabular-nums">{stats.total}</p>
                   </div>
@@ -582,7 +645,7 @@ export default function ManualAttendancePage() {
               {/* Total */}
               <div className="bg-blue-50 rounded-xl p-3 border border-blue-200">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-blue-900">Tổng số sinh viên:</span>
+                  <span className="text-sm font-semibold text-blue-900">Total students:</span>
                   <span className="text-xl font-bold text-blue-900 tabular-nums">{stats.total}</span>
                 </div>
               </div>
@@ -594,14 +657,14 @@ export default function ManualAttendancePage() {
                 onClick={() => setShowConfirmModal(false)}
                 className="px-5 py-2.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold rounded-xl border border-slate-300 transition-colors"
               >
-                Hủy
+                Cancel
               </button>
               <button
                 onClick={confirmAndSave}
                 className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2"
               >
                 <Save className="w-5 h-5" />
-                <span>Xác Nhận Nộp</span>
+                <span>Confirm</span>
               </button>
             </div>
           </div>

@@ -4,12 +4,12 @@
  */
 
 import { useNavigate } from 'react-router';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   QrCode, Clock, AlertCircle,
-  Calendar, Loader2
+  Calendar, Loader2, ChevronLeft, ChevronRight
+
 } from 'lucide-react';
-import { useAuthStore } from '../../store/useAuthStore';
 import { useSchedulesStudent } from '../../features/schedules/hooks/useSchedules';
 
 // Status mapping: active = lecturer session is running, inactive = otherwise
@@ -51,6 +51,8 @@ const transformScheduleData = (data: any) => ({
 
 export default function StudentLandingPage() {
   const navigate = useNavigate();
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   // Fetch today's schedules from /api/schedules/schedule-student
   // Get today's date in UTC+7 (Vietnam timezone)
@@ -58,7 +60,8 @@ export default function StudentLandingPage() {
   const { data: scheduleResponse, isLoading: classesLoading, error: classesError } = useSchedulesStudent({
     fromDate: today,
     toDate: today,
-    pageSize: 100,
+    pageNumber: currentPage,
+    pageSize: ITEMS_PER_PAGE,
   });
 
   // Transform raw API data to match ScheduleDto structure
@@ -180,6 +183,34 @@ export default function StudentLandingPage() {
             <div className="px-4 md:px-8 py-12 text-center text-slate-500">
               <Calendar className="w-12 h-12 mx-auto mb-3 text-slate-300" />
               <p className="text-sm md:text-base">No classes scheduled for today</p>
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {upcomingClasses.length > 0 && scheduleResponse && (
+            <div className="px-4 md:px-8 py-4 border-t border-slate-100 flex items-center justify-between">
+              <div className="text-xs md:text-sm text-slate-600">
+                Page {scheduleResponse.pageNumber} of {scheduleResponse.totalPages} •{' '}
+                {scheduleResponse.totalCount} classes
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={!scheduleResponse.hasPreviousPage}
+                  className="flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs md:text-sm"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <span className="hidden xs:inline">Previous</span>
+                </button>
+                <button
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                  disabled={!scheduleResponse.hasNextPage}
+                  className="flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs md:text-sm"
+                >
+                  <span className="hidden xs:inline">Next</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           )}
         </div>

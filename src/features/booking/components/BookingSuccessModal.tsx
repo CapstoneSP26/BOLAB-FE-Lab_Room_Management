@@ -78,12 +78,7 @@ export const BookingSuccessModal: React.FC<BookingSuccessModalProps> = ({
               </div>
             </div>
 
-            {/* Mã ID nhỏ xinh ở dưới */}
-            {bookingId && (
-              <p className="text-center text-[9px] font-bold text-gray-300 uppercase tracking-tighter">
-                Mã định danh: {bookingId}
-              </p>
-            )}
+
           </div>
 
           {/* Action Buttons - Layout dọc cho Mobile-friendly */}

@@ -202,10 +202,7 @@ export default function AttendanceManagementPage() {
     }
   };
 
-  const handleOpenTVDisplay = () => {
-    if (!state.activeBooking) return;
-    window.open(`/qr-display/${state.activeBooking.bookingId}`, '_blank');
-  };
+
 
   const handleManualAttendance = () => {
     if (!state.activeBooking) return;
@@ -259,7 +256,6 @@ export default function AttendanceManagementPage() {
           activeDisplayBuilding={activeDisplayBuilding}
           isExpired={isExpired}
           isCreatingQr={isCreatingQr}
-          onOpenTVDisplay={handleOpenTVDisplay}
           onManualAttendance={handleManualAttendance}
           onViewQR={handleViewQR}
           onExport={handleExport}

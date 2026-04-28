@@ -70,6 +70,7 @@ export interface Booking {
   id: string | number;
   roomId: string | number;
   roomName: string;
+  roomNo?: string;
   buildingName: string;
   startTime: string;
   endTime: string;

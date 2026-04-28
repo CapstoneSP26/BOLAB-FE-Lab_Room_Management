@@ -18,6 +18,7 @@ export const CalendarDayHeader: React.FC<CalendarDayHeaderProps> = ({ weekDays }
         const isToday = date.toDateString() === todayStr;
         const dayName = formatDate(date, 'ddd'); // Mon, Tue...
         const dayNumber = date.getDate();
+        const isWeekend = date.getDay() === 0 || date.getDay() === 6; // 0 = Sunday, 6 = Saturday
 
         return (
           <div
@@ -26,8 +27,13 @@ export const CalendarDayHeader: React.FC<CalendarDayHeaderProps> = ({ weekDays }
           >
             <div className="flex flex-col items-center justify-center gap-1">
               {/* Tên thứ - Nhỏ và thanh thoát */}
-              <span className={`text-[11px] font-bold uppercase tracking-wider ${isToday ? 'text-blue-600' : 'text-gray-400'
-                }`}>
+              <span className={`text-[11px] font-bold uppercase tracking-wider ${
+                isToday 
+                  ? 'text-blue-600' 
+                  : isWeekend 
+                    ? 'text-red-600'
+                    : 'text-gray-400'
+              }`}>
                 {dayName}
               </span>
 
@@ -37,7 +43,9 @@ export const CalendarDayHeader: React.FC<CalendarDayHeaderProps> = ({ weekDays }
                 w-9 h-9 text-lg font-bold rounded-full transition-colors
                 ${isToday
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
-                  : 'text-gray-700 hover:bg-gray-100'
+                  : isWeekend
+                    ? 'bg-red-500 text-white shadow-md shadow-red-200'
+                    : 'text-gray-700 hover:bg-gray-100'
                 }
               `}>
                 {dayNumber}
