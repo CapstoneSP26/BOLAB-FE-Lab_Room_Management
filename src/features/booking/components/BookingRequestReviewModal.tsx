@@ -253,6 +253,14 @@ export default function BookingRequestReviewModal({
                       label="Email"
                       value={booking.requester?.email || "-"}
                     />
+                    <InfoRow
+                      label="Subject code"
+                      value={booking.requester?.subjectCode || "-"}
+                    />
+                    <InfoRow
+                      label="Group"
+                      value={booking.requester?.group || "-"}
+                    />
                   </InfoCard>
                 </div>
 
