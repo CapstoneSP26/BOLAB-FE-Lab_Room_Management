@@ -43,7 +43,7 @@ export const mapScheduleDtoToAttendanceBooking = (schedule: ScheduleDto): Bookin
     bookingId: schedule.id,
     roomName: schedule.labRoomName || 'Unknown Room',
     roomCode: getRoomCodeFromName(schedule.labRoomName || 'Room'),
-    buildingName: 'Unknown Building',
+    buildingName: schedule.buildingName,
     date: hasValidStart ? start.toISOString() : dateSource,
     startTime: schedule.startTime,
     endTime: schedule.endTime,

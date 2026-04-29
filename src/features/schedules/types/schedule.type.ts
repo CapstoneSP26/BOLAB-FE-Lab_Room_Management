@@ -12,6 +12,7 @@ export interface ScheduleDto {
   buildingName?: string;
   lecturerName: string;
   labRoomName: string;
+  buildingName: string;
   userCode?: string;
   slotName: string;
   groupName?: string;
