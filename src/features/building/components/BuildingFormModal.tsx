@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, useRef, type FormEvent } from "react";
 import {
-  Image as ImageIcon,
   Loader2,
   PencilLine,
   PlusCircle,
   X,
+  Upload,
+  Trash2,
 } from "lucide-react";
 import type { BuildingDto, BuildingFormValues } from "../types/building.type";
 
@@ -18,10 +19,9 @@ type Props = {
 };
 
 const toFormValues = (building?: BuildingDto | null): BuildingFormValues => ({
-  campusId: building?.campusId ?? 0,
-  buildingName: building?.buildingName ?? "",
-  description: building?.description ?? "",
-  buildingImageUrl: building?.buildingImageUrl ?? "",
+  BuildingName: building?.buildingName ?? "",
+  Descriptions: building?.description ?? "",
+  Images: building?.buildingImageUrl ? new File([], "image.jpg") : null,
 });
 
 type FormErrors = Partial<Record<keyof BuildingFormValues, string>>;
@@ -37,10 +37,13 @@ export default function BuildingFormModal({
   const initial = useMemo(() => toFormValues(building), [building]);
   const [values, setValues] = useState<BuildingFormValues>(initial);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setValues(initial);
     setErrors({});
+    setImagePreview(null);
   }, [initial]);
 
   if (!isOpen) {
@@ -50,12 +53,8 @@ export default function BuildingFormModal({
   const validate = () => {
     const nextErrors: FormErrors = {};
 
-    if (!Number.isFinite(values.campusId) || Number(values.campusId) <= 0) {
-      nextErrors.campusId = "Campus ID must be greater than 0.";
-    }
-
-    if (!values.buildingName.trim()) {
-      nextErrors.buildingName = "Building name is required.";
+    if (!values.BuildingName.trim()) {
+      nextErrors.BuildingName = "Building name is required.";
     }
 
     setErrors(nextErrors);
@@ -70,6 +69,26 @@ export default function BuildingFormModal({
     setErrors((prev) => ({ ...prev, [key]: undefined }));
   };
 
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      handleChange("Images", file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    handleChange("Images", null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
 
@@ -77,10 +96,7 @@ export default function BuildingFormModal({
       return;
     }
 
-    await onSubmit({
-      ...values,
-      campusId: Number(values.campusId),
-    });
+    await onSubmit(values);
   };
 
   return (
@@ -119,73 +135,68 @@ export default function BuildingFormModal({
 
         <form onSubmit={handleSubmit} className="space-y-6 p-6">
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            {mode === "edit" && building != null ? (
-              <div className="md:col-span-2">
-                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Building ID
-                </label>
-                <div className="h-11 rounded-xl border border-gray-200 bg-gray-50 px-4 font-mono text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-200">
-                  {building.id}
-                </div>
-              </div>
-            ) : null}
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Campus ID *
-              </label>
-              <input
-                type="number"
-                min={1}
-                value={values.campusId}
-                onChange={(event) =>
-                  handleChange("campusId", Number(event.target.value))
-                }
-                disabled={isLoading}
-                className="h-11 w-full rounded-xl border border-gray-300 px-4 text-sm text-gray-900 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 disabled:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:disabled:bg-gray-800/60"
-                placeholder="1"
-              />
-              {errors.campusId && (
-                <p className="mt-1 text-sm text-red-600">{errors.campusId}</p>
-              )}
-            </div>
-
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Building name *
               </label>
               <input
-                value={values.buildingName}
+                value={values.BuildingName}
                 onChange={(event) =>
-                  handleChange("buildingName", event.target.value)
+                  handleChange("BuildingName", event.target.value)
                 }
                 disabled={isLoading}
                 className="h-11 w-full rounded-xl border border-gray-300 px-4 text-sm text-gray-900 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 disabled:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:disabled:bg-gray-800/60"
                 placeholder="FPT Building A"
               />
-              {errors.buildingName && (
+              {errors.BuildingName && (
                 <p className="mt-1 text-sm text-red-600">
-                  {errors.buildingName}
+                  {errors.BuildingName}
                 </p>
               )}
             </div>
 
             <div className="md:col-span-2">
               <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Image URL (optional)
+                Building Image (optional)
               </label>
-              <div className="relative">
-                <ImageIcon className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <input
-                  value={values.buildingImageUrl ?? ""}
-                  onChange={(event) =>
-                    handleChange("buildingImageUrl", event.target.value)
-                  }
-                  disabled={isLoading}
-                  className="h-11 w-full rounded-xl border border-gray-300 bg-white pl-11 pr-4 text-sm text-gray-900 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 disabled:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:disabled:bg-gray-800/60"
-                  placeholder="https://..."
-                />
-              </div>
+              
+              {/* Image Preview */}
+              {imagePreview && (
+                <div className="relative mb-4 h-48 w-full overflow-hidden rounded-xl border border-gray-300 bg-gray-100 dark:border-gray-700 dark:bg-gray-800">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="h-full w-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    disabled={isLoading}
+                    className="absolute right-2 top-2 flex items-center justify-center rounded-lg bg-red-500 p-2 text-white transition hover:bg-red-600 disabled:cursor-not-allowed"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+              
+              {/* File Input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageSelect}
+                disabled={isLoading}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 px-4 py-6 text-sm font-medium text-gray-600 transition hover:border-brand-500 hover:bg-brand-50/30 disabled:cursor-not-allowed dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-400 dark:hover:bg-brand-500/5"
+              >
+                <Upload className="h-5 w-5" />
+                Choose Image from Device
+              </button>
             </div>
 
             <div className="md:col-span-2">
@@ -193,8 +204,8 @@ export default function BuildingFormModal({
                 Description
               </label>
               <textarea
-                value={values.description}
-                onChange={(event) => handleChange("description", event.target.value)}
+                value={values.Descriptions}
+                onChange={(event) => handleChange("Descriptions", event.target.value)}
                 disabled={isLoading}
                 rows={4}
                 className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 disabled:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:disabled:bg-gray-800/60"
