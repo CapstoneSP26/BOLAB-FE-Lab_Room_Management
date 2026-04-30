@@ -1,17 +1,14 @@
-/**
- * QuickActionFAB Component
- * Floating Action Button with expandable menu
- */
-
 import React, { useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Plus, X, Calendar, QrCode, FileText } from 'lucide-react';
+import { Plus, X, Calendar, QrCode, FileText, Sparkles } from 'lucide-react';
 import { SendReportModal } from '../../features/reports/components/SendReportModal';
+import { AIBookingModal } from '../../features/ai/components/AIBookingModal';
 
 const QuickActionFABInner: React.FC = () => {
   const fabRef = useRef<HTMLDivElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isAIModalOpen, setIsAIModalOpen] = useState(false); // State quản lý AI Modal
   const navigate = useNavigate();
 
   // Close when clicking outside
@@ -32,6 +29,15 @@ const QuickActionFABInner: React.FC = () => {
   }, [isOpen]);
 
   const actions = [
+    {
+      icon: Sparkles,
+      label: 'AI Booking (Beta)',
+      color: 'from-orange-500 to-amber-500', // Màu cam rực rỡ cho AI
+      action: () => {
+        setIsAIModalOpen(true);
+        setIsOpen(false);
+      },
+    },
     {
       icon: Calendar,
       label: 'Quick Book',
@@ -115,6 +121,12 @@ const QuickActionFABInner: React.FC = () => {
       >
         {isOpen ? <X className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
       </button>
+
+      {/* --- CÁC MODAL ĐẶT Ở ĐÂY --- */}
+      <AIBookingModal
+        isOpen={isAIModalOpen}
+        onClose={() => setIsAIModalOpen(false)}
+      />
 
       {/* Send Report Modal */}
       <SendReportModal
