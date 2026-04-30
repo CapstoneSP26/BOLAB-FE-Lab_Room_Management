@@ -56,7 +56,8 @@ export default function ReportDetailFeature() {
       }
 
       setReport(item);
-      setImages(Array.isArray(item.images) ? item.images : []);
+      const imagesData = (item as any).images || (item as any).Images || [];
+      setImages(Array.isArray(imagesData) ? imagesData : []);
     } catch {
       setReport(null);
       setImages([]);

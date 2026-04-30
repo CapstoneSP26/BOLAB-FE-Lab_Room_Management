@@ -1,3 +1,4 @@
+import { addCacheBuster } from "../../../utils/imageCache";
 import type { ReportImage } from "../types/report.type";
 
 export default function ReportImages({ images }: { images: ReportImage[] }) {
@@ -11,29 +12,36 @@ export default function ReportImages({ images }: { images: ReportImage[] }) {
 
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      {images.map((img) => (
-        <a
-          key={img.Id}
-          href={img.ImageLink}
-          target="_blank"
-          rel="noreferrer"
-          className="group overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
-          title="Open image"
-        >
-          <div className="aspect-video w-full overflow-hidden bg-gray-100 dark:bg-white/[0.04]">
-            <img
-              src={img.ImageLink}
-              alt="report"
-              className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.03]"
-              loading="lazy"
-            />
-          </div>
-          <div className="flex items-center justify-between px-3 py-2 text-xs text-gray-500 dark:text-gray-400">
-            <span className="uppercase">{img.FileType}</span>
-            <span>{Math.round(img.Size)} KB</span>
-          </div>
-        </a>
-      ))}
+      {images.map((img) => {
+        const imageLink = img.ImageLink || (img as any).imageLink || (img as any).url;
+        const fileType = img.FileType || (img as any).fileType || "IMAGE";
+        const fileSize = img.Size || (img as any).size || 0;
+        const id = img.Id || (img as any).id || Math.random();
+
+        return (
+          <a
+            key={id}
+            href={addCacheBuster(imageLink)}
+            target="_blank"
+            rel="noreferrer"
+            className="group overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
+            title="Open image"
+          >
+            <div className="aspect-video w-full overflow-hidden bg-gray-100 dark:bg-white/[0.04]">
+              <img
+                src={addCacheBuster(imageLink)}
+                alt="report"
+                className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.03]"
+                loading="lazy"
+              />
+            </div>
+            <div className="flex items-center justify-between px-3 py-2 text-xs text-gray-500 dark:text-gray-400">
+              <span className="uppercase">{fileType}</span>
+              <span>{Math.round(fileSize)} KB</span>
+            </div>
+          </a>
+        );
+      })}
     </div>
   );
 }
