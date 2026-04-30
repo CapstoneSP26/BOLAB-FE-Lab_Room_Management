@@ -8,7 +8,7 @@ import {
   Trash2,
 } from "lucide-react";
 import type { BuildingDto, BuildingFormValues } from "../types/building.type";
-
+import { addCacheBuster } from "../../../utils/imageCache";
 type Props = {
   isOpen: boolean;
   mode: "create" | "edit";
@@ -21,7 +21,7 @@ type Props = {
 const toFormValues = (building?: BuildingDto | null): BuildingFormValues => ({
   BuildingName: building?.buildingName ?? "",
   Descriptions: building?.description ?? "",
-  Images: building?.buildingImageUrl ? new File([], "image.jpg") : null,
+  Images: null,
 });
 
 type FormErrors = Partial<Record<keyof BuildingFormValues, string>>;
@@ -43,8 +43,18 @@ export default function BuildingFormModal({
   useEffect(() => {
     setValues(initial);
     setErrors({});
-    setImagePreview(null);
-  }, [initial]);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+
+    // Show existing image when editing
+    if (mode === "edit" && building?.buildingImageUrl) {
+      setImagePreview(addCacheBuster(building.buildingImageUrl));
+    } else {
+      setImagePreview(null);
+    }
+  }, [initial, mode, building]);
 
   if (!isOpen) {
     return null;
@@ -159,7 +169,7 @@ export default function BuildingFormModal({
               <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Building Image (optional)
               </label>
-              
+
               {/* Image Preview */}
               {imagePreview && (
                 <div className="relative mb-4 h-48 w-full overflow-hidden rounded-xl border border-gray-300 bg-gray-100 dark:border-gray-700 dark:bg-gray-800">
@@ -167,6 +177,13 @@ export default function BuildingFormModal({
                     src={imagePreview}
                     alt="Preview"
                     className="h-full w-full object-cover"
+                    onError={() => {
+                      console.log("Modal preview image failed:", imagePreview);
+                      console.log(
+                        "Original building image:",
+                        building?.buildingImageUrl,
+                      );
+                    }}
                   />
                   <button
                     type="button"
@@ -178,7 +195,7 @@ export default function BuildingFormModal({
                   </button>
                 </div>
               )}
-              
+
               {/* File Input */}
               <input
                 ref={fileInputRef}
@@ -205,7 +222,9 @@ export default function BuildingFormModal({
               </label>
               <textarea
                 value={values.Descriptions}
-                onChange={(event) => handleChange("Descriptions", event.target.value)}
+                onChange={(event) =>
+                  handleChange("Descriptions", event.target.value)
+                }
                 disabled={isLoading}
                 rows={4}
                 className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 disabled:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:disabled:bg-gray-800/60"
@@ -237,4 +256,3 @@ export default function BuildingFormModal({
     </div>
   );
 }
-

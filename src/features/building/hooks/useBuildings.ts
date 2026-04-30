@@ -86,7 +86,7 @@ export const useDeleteBuilding = (options?: {
   return useMutation({
     mutationFn: (id: number) => buildingApi.deleteBuilding(id),
     onSuccess: async (result) => {
-      await queryClient.invalidateQueries({ queryKey: [BUILDINGS_KEY], exact: false });
+      await queryClient.resetQueries({ queryKey: [BUILDINGS_KEY], exact: false });
       options?.onSuccess?.(result.message);
     },
     onError: (error) => options?.onError?.(error),

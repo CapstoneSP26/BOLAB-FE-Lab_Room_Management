@@ -96,6 +96,7 @@ export default function BuildingManagementFeature() {
     onSuccess: (message) => {
       toast.success("Success", message || "Building deleted");
       setActionLoadingId(null);
+      void refetch();
     },
     onError: (error) => {
       toast.error(

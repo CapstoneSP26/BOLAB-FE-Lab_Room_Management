@@ -118,10 +118,13 @@ export const buildingApi = {
   },
 
   deleteBuilding: async (id: number): Promise<{ message: string }> => {
-    const response = await axiosInstance.delete<ApiResponse<null>>(`/buildings/${id}`);
-    if (!response.data.success) {
-      throw new Error(response.data.message || "Failed to delete building");
+    const response = await axiosInstance.delete<any>(`/buildings/${id}`);
+    
+    const rawData = response.data;
+    if (rawData && rawData.success === false) {
+      throw new Error(rawData.message || "Failed to delete building");
     }
-    return { message: response.data.message };
+    
+    return { message: rawData?.message || "Building deleted successfully" };
   },
 };
