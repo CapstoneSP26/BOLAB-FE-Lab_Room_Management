@@ -129,6 +129,21 @@ export const useUpdateLabRoom = (options: MutationOptions<LabRoomDto> = {}) => {
       payload: UpdateLabRoomRequest;
     }) => labroomApi.updateRoom(id, payload),
     onSuccess: ({ data, message }) => {
+      // Update cache với prefix matching (exact: false)
+      queryClient.setQueriesData(
+        { queryKey: [QUERY_KEYS.ROOMS_MANAGEMENT], exact: false },
+        (oldData: PagedResponse<LabRoomDto> | undefined) => {
+          if (!oldData?.items) return oldData;
+
+          return {
+            ...oldData,
+            items: oldData.items.map((item) =>
+              item.id === data.id ? { ...item, ...data } : item,
+            ),
+          };
+        },
+      );
+
       void queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.ROOMS_MANAGEMENT],
       });
@@ -161,6 +176,7 @@ export const useUpdateLabRoomStatus = (
         capacity: room.capacity,
         hasEquipment: room.hasEquipment,
         description: room.description ?? "",
+        labOwnerId: room.labOwnerId ?? room.labOwner?.id,
         isActive,
       };
 
