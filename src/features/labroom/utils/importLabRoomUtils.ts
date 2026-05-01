@@ -11,7 +11,7 @@ import type {
 export const createEmptyLabRoomRows = (count: number): EditableLabRoomRow[] =>
   Array.from({ length: count }, (_, index) => ({
     id: `row-${index + 1}`,
-    BuildingId: "",
+    BuildingCode: "",
     RoomName: "",
     RoomNo: "",
     Location: "",
@@ -27,14 +27,12 @@ export const normalizeHeader = (value: string) =>
 
 // Header to field mapping
 const headerToField: Record<string, LabRoomImportField> = {
-  buildingid: "BuildingId",
+  buildingcode: "BuildingCode",
   roomname: "RoomName",
   roomno: "RoomNo",
   location: "Location",
   capacity: "Capacity",
   hasequipment: "HasEquipment",
-  overridenumber: "OverrideNumber",
-  description: "Description",
 };
 
 // Parse Excel file to rows
@@ -92,14 +90,12 @@ export const parseLabRoomFileToRows = (
         const rows: EditableLabRoomRow[] = data.map((row, index) => {
           const editableRow: EditableLabRoomRow = {
             id: `row-${index + 1}`,
-            BuildingId: "",
+            BuildingCode: "",
             RoomName: "",
             RoomNo: "",
             Location: "",
             Capacity: "",
             HasEquipment: "",
-            OverrideNumber: "",
-            Description: "",
           };
 
           Object.entries(headerMap).forEach(([header, field]) => {
@@ -131,11 +127,11 @@ export const validateLabRoomRowsLocal = (
   rows.forEach((row, index) => {
     const rowNum = index + 1;
 
-    if (!row.BuildingId?.trim()) {
+    if (!row.BuildingCode?.trim()) {
       issues.push({
         row: rowNum,
-        field: "BuildingId",
-        message: "BuildingId is required",
+        field: "BuildingCode",
+        message: "BuildingCode is required",
       });
     }
 
@@ -181,14 +177,12 @@ export const toLabRoomImportRows = (
   rows: EditableLabRoomRow[]
 ): LabRoomImportDto[] => {
   return rows.map((row) => ({
-    BuildingId: parseInt(row.BuildingId.trim(), 10) || 0,
+    BuildingCode: row.BuildingCode.trim(),
     RoomName: row.RoomName.trim(),
     RoomNo: row.RoomNo.trim(),
     Location: row.Location.trim() || null,
     Capacity: parseInt(row.Capacity.trim(), 10) || 0,
     HasEquipment: row.HasEquipment.trim().toLowerCase() === "true" || row.HasEquipment.trim() === "1",
-    OverrideNumber: parseInt(row.OverrideNumber.trim(), 10) || 0,
-    Description: row.Description.trim() || null,
   }));
 };
 

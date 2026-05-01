@@ -22,7 +22,7 @@ export const labRoomImportApi = {
     payload: ValidateLabRoomImportRequest,
   ): Promise<ImportValidationResult<LabRoomImportDto>> => {
     return axiosInstance
-      .post<ImportValidationResult<LabRoomImportDto>>("/labrooms/import/validate", payload)
+      .post<ImportValidationResult<LabRoomImportDto>>("/labroom/import/validate", payload)
       .then((res: AxiosResponse<ImportValidationResult<LabRoomImportDto>>) => res.data);
   },
 
@@ -30,7 +30,7 @@ export const labRoomImportApi = {
     payload: CommitLabRoomImportRequest,
   ): Promise<CommitLabRoomImportResponse> => {
     return axiosInstance
-      .post<CommitLabRoomImportResponse>("/labrooms/import/commit", payload)
+      .post<CommitLabRoomImportResponse>("/labroom/import/commit", payload)
       .then((res: AxiosResponse<CommitLabRoomImportResponse>) => res.data);
   },
 };

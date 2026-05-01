@@ -1,14 +1,12 @@
 // ===== Backend API Types (DTO, Request, Response) =====
 
 export interface LabRoomImportDto {
-  BuildingId: number;
+  BuildingCode: string;
   RoomName: string;
   RoomNo: string;
   Location?: string | null;
   Capacity: number;
   HasEquipment: boolean;
-  OverrideNumber: number;
-  Description?: string | null;
 }
 
 export const ErrorSeverity = {
@@ -69,14 +67,12 @@ export type ValidationIssue = {
 
 export type EditableLabRoomRow = {
   id: string;
-  BuildingId: string;
+  BuildingCode: string;
   RoomName: string;
   RoomNo: string;
   Location: string;
   Capacity: string;
   HasEquipment: string;
-  OverrideNumber: string;
-  Description: string;
 };
 
 export type LabRoomImportField = keyof EditableLabRoomRow;

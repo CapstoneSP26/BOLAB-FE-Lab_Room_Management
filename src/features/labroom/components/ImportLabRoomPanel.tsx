@@ -235,7 +235,7 @@ export default function ImportLabRoomPanel({ onImportComplete }: ImportLabRoomPa
       rowsData.forEach((rowResult: any) => {
         const rowNum = rowResult.RowNumber ?? rowResult.rowNumber ?? 0;
         const errorsData = rowResult.Errors ?? rowResult.errors ?? [];
-        
+
         errorsData.forEach((error: any) => {
           const fieldName = error.FieldName ?? error.fieldName ?? "Unknown";
           const message = error.Message ?? error.message ?? "Unknown error";
@@ -500,7 +500,7 @@ function LabRoomImportModal({
                       ID
                     </th>
                     <th className="border-r border-gray-300 px-3 py-2 text-left font-semibold text-gray-700 dark:border-gray-700 dark:text-gray-200">
-                      BuildingId
+                      BuildingCode
                     </th>
                     <th className="border-r border-gray-300 px-3 py-2 text-left font-semibold text-gray-700 dark:border-gray-700 dark:text-gray-200">
                       RoomName
@@ -517,12 +517,6 @@ function LabRoomImportModal({
                     <th className="border-r border-gray-300 px-3 py-2 text-left font-semibold text-gray-700 dark:border-gray-700 dark:text-gray-200">
                       HasEquipment
                     </th>
-                    <th className="border-r border-gray-300 px-3 py-2 text-left font-semibold text-gray-700 dark:border-gray-700 dark:text-gray-200">
-                      OverrideNumber
-                    </th>
-                    <th className="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200">
-                      Description
-                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -534,13 +528,11 @@ function LabRoomImportModal({
                       <td className="border-r border-gray-200 px-3 py-2 text-gray-500 dark:border-gray-700 dark:text-gray-400">
                         {row.id}
                       </td>
-                      {(["BuildingId", "RoomName", "RoomNo", "Location", "Capacity", "HasEquipment", "OverrideNumber", "Description"] as const).map(
+                      {(["BuildingCode", "RoomName", "RoomNo", "Location", "Capacity", "HasEquipment"] as const).map(
                         (field) => (
                           <td
                             key={field}
-                            className={`border-r border-gray-200 px-3 py-2 dark:border-gray-700 ${
-                              field !== "Description" ? "border-r" : ""
-                            }`}
+                            className={`border-r border-gray-200 px-3 py-2 dark:border-gray-700`}
                           >
                             <input
                               type="text"
@@ -548,11 +540,10 @@ function LabRoomImportModal({
                               onChange={(e) =>
                                 onUpdateCell(row.id, field, e.target.value)
                               }
-                              className={`w-full rounded px-2 py-1 text-xs font-medium border ${
-                                validationErrors[`${row.id}-${field}`]
-                                  ? "border-red-400 bg-red-50 text-red-900 dark:bg-red-900/20 dark:text-red-200"
-                                  : "border-gray-300 bg-white text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                              }`}
+                              className={`w-full rounded px-2 py-1 text-xs font-medium border ${validationErrors[`${row.id}-${field}`]
+                                ? "border-red-400 bg-red-50 text-red-900 dark:bg-red-900/20 dark:text-red-200"
+                                : "border-gray-300 bg-white text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                                }`}
                             />
                             {validationErrors[`${row.id}-${field}`] && (
                               <p className="mt-1 text-xs text-red-600 dark:text-red-400">
