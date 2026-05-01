@@ -44,22 +44,22 @@ export const useUserRoles = () => {
       }
 
       // Redirect to appropriate dashboard after role change
-    //   setTimeout(() => {
-    //     const roleRoutes: Record<number, string> = {
-    //       1: '/admin/dashboard',
-    //       2: '/labmanager/dashboard',
-    //       3: '/lecturer/dashboard',
-    //       4: '/',
-    //     };
-    //     window.location.href = roleRoutes[roleId] || '/';
-    //   }, 500);
-    // },
-    // onError: (error: any) => {
-    //   errorToast(
-    //     'Error',
-    //     error?.response?.data?.message ||
-    //       'Failed to change role. Please try again.',
-    //   );
+      setTimeout(() => {
+        const roleRoutes: Record<number, string> = {
+          1: '/labmanager/dashboard', // Admin
+          2: '/labmanager/dashboard', // Lab Manager
+          3: '/',                     // Lecturer
+          4: '/student',              // Student
+        };
+        window.location.href = roleRoutes[roleId] || '/';
+      }, 500);
+    },
+    onError: (error: any) => {
+      errorToast(
+        'Error',
+        error?.response?.data?.message ||
+          'Failed to change role. Please try again.',
+      );
     },
   });
 

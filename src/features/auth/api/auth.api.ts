@@ -2,12 +2,10 @@
 import { axiosInstance } from "../../../api";
 import type { UserAuth } from "../types/auth.types";
 
-export interface UserRole {
-  roleId: number;
-}
-
-export interface UserRoles {
-  roles: number[];
+export interface ChangeRoleResponse {
+  success: boolean;
+  redirectUrl?: string;
+  message?: string;
 }
 
 export const authApi = {
@@ -32,8 +30,11 @@ export const authApi = {
    * Đổi role
    * @param roleId - ID của role muốn đổi sang
    */
-  changeRole: async (roleId: number): Promise<void> => {
-    await axiosInstance.get(`/auth/change-role/${roleId}`);
+  changeRole: async (roleId: number): Promise<ChangeRoleResponse> => {
+    const response = await axiosInstance.post<ChangeRoleResponse>(
+      `/auth/change-role/${roleId}`
+    );
+    return response.data;
   },
 
   /**

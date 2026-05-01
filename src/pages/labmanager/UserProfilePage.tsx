@@ -1,15 +1,13 @@
-import { useNavigate } from "react-router-dom";
 import PageBreadcrumb from "../../components/common/PageBreadcrumb";
 import { LoadingFallback } from "../../components/ui/LoadingFallback";
 import ProfileCard from "../../features/profile/components/ProfileCard";
 import { RoleSwitcher } from "../../features/profile/components/RoleSwitcher";
 import { useMyProfile } from "../../features/profile/hooks/userProfile";
 import { getErrorMessage } from "../../utils/error";
-import { getRole, setRole } from "../../utils/role";
+import { getRole } from "../../utils/role";
 
 export default function UserProfilePage() {
   const currentPageTitle = "User Profile";
-  const navigate = useNavigate();
   const role = getRole();
   const { data: profile, isLoading, error } = useMyProfile();
 
