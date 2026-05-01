@@ -87,6 +87,7 @@ const AppSidebar: React.FC = () => {
           { name: "Import Booking", path: p("/booking-requests/import") },
           { name: "Import User", path: p("/users/import") },
           { name: "Import Groups", path: p("/groups/import") },
+          { name: "Import LabRoom", path: p("/labrooms/import") },
         ],
       },
 
