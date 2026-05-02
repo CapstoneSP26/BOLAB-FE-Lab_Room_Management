@@ -34,6 +34,7 @@ const ImportGroupPage = lazy(() => import("../../pages/labmanager/ImportGroupPag
 const ReportListPage = lazy(() => import("../../pages/labmanager/ReportListPage.tsx"));
 const ReportDetailPage = lazy(() => import("../../pages/labmanager/ReportDetailPage.tsx"));
 const IncidentHistoryPage = lazy(() => import("../../pages/labmanager/ReportHistoryPage.tsx"));
+const ManagerNotificationsPage = lazy(() => import("../../pages/labmanager/NotificationsPage.tsx"));
 
 const RoomManagementPage = lazy(() => import("../../pages/admin/RoomManagementPage.tsx"))
 const ScheduleManagementPage = lazy(() => import("../../pages/admin/ScheduleManagementPage.tsx"));
@@ -77,6 +78,7 @@ export const lecturerRoutes: AppRoute[] = [
 
 export const managerRoutes: AppRoute[] = [
   { path: "/labmanager/dashboard", element: ManagerDashboard, roles: [Role.Manager] },
+  { path: "/labmanager/notifications", element: ManagerNotificationsPage, roles: [Role.Manager, Role.Admin] },
   { path: "/labmanager/lab-scheduler", element: LabSchedulerPage, roles: [Role.Manager] },
   { path: "/labmanager/booking-requests/pending", element: BookingRequestsPendingPage, roles: [Role.Manager] },
   { path: "/labmanager/booking-requests/history", element: BookingRequestsHistoryPage, roles: [Role.Manager] },

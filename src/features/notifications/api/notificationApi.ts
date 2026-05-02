@@ -71,16 +71,21 @@ const normalizeNotificationType = (value: unknown): NotificationType => {
     .trim()
     .toLowerCase();
 
-  if (["warning", "warn", "alert", "pending"].includes(normalized)) {
-    return "warning";
+  if (!normalized) {
+    return "info";
   }
 
-  if (["success", "approved", "completed", "done"].includes(normalized)) {
+  // Support both exact enums and rich names like BookingApproved / booking_approved
+  if (normalized.includes("approve") || normalized.includes("accepted") || normalized.includes("success")) {
     return "success";
   }
 
-  if (["error", "failed", "reject", "rejected", "danger"].includes(normalized)) {
+  if (normalized.includes("reject") || normalized.includes("fail") || normalized.includes("error") || normalized.includes("deny")) {
     return "error";
+  }
+
+  if (normalized.includes("cancel") || normalized.includes("warning") || normalized.includes("warn") || normalized.includes("alert") || normalized.includes("pending")) {
+    return "warning";
   }
 
   return "info";
@@ -145,6 +150,68 @@ const getReferencePath = (record: MaybeRecord): string | null => {
     referenceRecord.id,
   );
 
+  // Metadata-based routing (added by backend).
+  const rawMetadata = record.metadata;
+  let metadataRecord: MaybeRecord = {};
+  if (rawMetadata && typeof rawMetadata === "object") {
+    metadataRecord = asRecord(rawMetadata);
+  } else if (typeof rawMetadata === "string" && rawMetadata.trim() !== "") {
+    try {
+      metadataRecord = asRecord(JSON.parse(rawMetadata));
+    } catch {
+      metadataRecord = {};
+    }
+  }
+
+  const metadataPath = getString(
+    metadataRecord.referencePath,
+    metadataRecord.relatedPath,
+    metadataRecord.path,
+    metadataRecord.url,
+    metadataRecord.href,
+    metadataRecord.redirectUrl,
+    metadataRecord.targetUrl,
+  );
+
+  if (metadataPath) {
+    return normalizePath(metadataPath);
+  }
+
+  const bookingIdFromMetadata = getString(
+    metadataRecord.bookingId,
+    metadataRecord.BookingId,
+    metadataRecord.bookingID,
+    metadataRecord.BookingID,
+  );
+
+  const kindFromType = String(record.type ?? record.notificationType ?? "").toLowerCase();
+  const actionFromMetadata = getString(metadataRecord.action, metadataRecord.Action).toLowerCase();
+
+  // For labmanager: no booking details page, route to Pending/History.
+  if (
+    kindFromType.includes("created") ||
+    actionFromMetadata.includes("create") ||
+    actionFromMetadata.includes("submit")
+  ) {
+    return "/labmanager/booking-requests/pending";
+  }
+
+  if (
+    kindFromType.includes("approve") ||
+    kindFromType.includes("reject") ||
+    kindFromType.includes("cancel") ||
+    actionFromMetadata.includes("approve") ||
+    actionFromMetadata.includes("reject") ||
+    actionFromMetadata.includes("cancel")
+  ) {
+    return "/labmanager/booking-requests/history";
+  }
+
+  if (bookingIdFromMetadata) {
+    // Default to history if booking id exists but no action is known.
+    return "/labmanager/booking-requests/history";
+  }
+
   switch (referenceType) {
     case "REPORT":
     case "INCIDENT_REPORT":
@@ -199,12 +266,16 @@ const mapNotificationDtoToItem = (dto: unknown): NotificationItem => {
     record.name,
     record.header,
   );
-  const message = getString(
+  const rawMessage = getString(
     record.message,
     record.content,
     record.body,
     record.description,
     record.text,
+  );
+  const message = rawMessage.replace(
+    /\bbooking\s+[0-9a-f-]+\s+for\s+room\b/i,
+    "Booking for room",
   );
 
   return {
@@ -346,11 +417,11 @@ export const notificationApi = {
   },
 
   async markAllRead(): Promise<void> {
-    await axiosInstance.put(`${NOTIFICATION_API.LIST}/read-all`);
+    await axiosInstance.put("/Profile/notifications/read-all");
   },
 
   async markAsRead(id: string): Promise<void> {
-    await axiosInstance.put(`${NOTIFICATION_API.LIST}/${id}/read`);
+    await axiosInstance.put(`/Profile/notifications/${id}/read`);
   },
 
   async getBookingNotification(bookingId: string): Promise<NotificationItem> {

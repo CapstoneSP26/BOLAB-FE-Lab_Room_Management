@@ -31,7 +31,7 @@ export const getTypeDotClass = (type: NotificationType) => {
   }
 };
 
-export const getNotificationFallbackRoute = () => "/labmanager/dashboard";
+export const getNotificationFallbackRoute = () => "/labmanager/notifications";
 
 export const openNotificationTarget = (
   navigate: (path: string) => void,
