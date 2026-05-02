@@ -22,6 +22,7 @@ const toFormValues = (building?: BuildingDto | null): BuildingFormValues => ({
   BuildingName: building?.buildingName ?? "",
   Descriptions: building?.description ?? "",
   Images: null,
+  IsImageUpdate: false,
 });
 
 type FormErrors = Partial<Record<keyof BuildingFormValues, string>>;
@@ -83,6 +84,7 @@ export default function BuildingFormModal({
     const file = event.target.files?.[0];
     if (file) {
       handleChange("Images", file);
+      handleChange("IsImageUpdate", true);
       const reader = new FileReader();
       reader.onload = (e) => {
         setImagePreview(e.target?.result as string);
@@ -93,6 +95,7 @@ export default function BuildingFormModal({
 
   const handleRemoveImage = () => {
     handleChange("Images", null);
+    handleChange("IsImageUpdate", true);
     setImagePreview(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";

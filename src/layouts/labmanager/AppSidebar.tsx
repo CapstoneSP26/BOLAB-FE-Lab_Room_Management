@@ -127,11 +127,12 @@ const AppSidebar: React.FC = () => {
         path: p("/slot-management"),
         show: isAdmin,
       },
-{
+      {
         icon: Building,
         name: "Building Management",
         path: p("/building-management"),
-},
+        show: isAdmin,
+      },
       {
         icon: ListIcon,
         name: "User Management",

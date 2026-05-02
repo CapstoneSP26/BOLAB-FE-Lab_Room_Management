@@ -212,7 +212,7 @@ export default function BookingRequestReviewModal({
                     />
                     <InfoRow
                       label="Date"
-                      value={formatUtcDateLabel(booking.date) || "-"}
+                      value={booking.date || "-"}
                       mono
                     />
                     <InfoRow
@@ -252,14 +252,6 @@ export default function BookingRequestReviewModal({
                     <InfoRow
                       label="Email"
                       value={booking.requester?.email || "-"}
-                    />
-                    <InfoRow
-                      label="Subject code"
-                      value={booking.requester?.subjectCode || "-"}
-                    />
-                    <InfoRow
-                      label="Group"
-                      value={booking.requester?.group || "-"}
                     />
                   </InfoCard>
                 </div>

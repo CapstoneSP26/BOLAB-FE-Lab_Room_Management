@@ -6,10 +6,11 @@ const buildFormData = (payload: CreateBuildingPayload | UpdateBuildingPayload) =
   const formData = new FormData();
   formData.append("BuildingName", payload.BuildingName);
   formData.append("Descriptions", payload.Descriptions);
+  formData.append("IsImageUpdate", payload.IsImageUpdate.toString());
   
   if (payload.Images instanceof File) {
-  formData.append("Images", payload.Images);
-}
+    formData.append("Images", payload.Images);
+  }
 
   return formData;
 };

@@ -112,8 +112,6 @@ export interface BookingRequest {
     fullName: string;
     userCode: string;
     email: string;
-    subjectCode: string;
-    group: string;
   }
 }
 

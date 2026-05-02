@@ -178,13 +178,14 @@ export interface GetMyReportsResponse {
 
 export interface GetReportDetailResponse {
   success: boolean;
-  data: Report & {
-    images?: ReportImage[];
-  };
+  data: Report;
+  images?: ReportImage[];
 }
 
 export interface ResolveReportResponse {
+  success: boolean;
   data: Report;
+  images?: ReportImage[];
 }
 
 export interface ImagePreview {

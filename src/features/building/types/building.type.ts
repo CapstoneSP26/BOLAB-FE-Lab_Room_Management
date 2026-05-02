@@ -56,6 +56,7 @@ export interface BuildingFormValues {
   BuildingName: string;
   Descriptions: string;
   Images?: File | null;
+  IsImageUpdate: boolean;
 }
 
 export type CreateBuildingPayload = BuildingFormValues;

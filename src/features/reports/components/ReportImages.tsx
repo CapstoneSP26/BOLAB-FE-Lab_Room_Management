@@ -12,11 +12,15 @@ export default function ReportImages({ images }: { images: ReportImage[] }) {
 
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      {images.map((img) => {
-        const imageLink = img.ImageLink || (img as any).imageLink || (img as any).url;
-        const fileType = img.FileType || (img as any).fileType || "IMAGE";
-        const fileSize = img.Size || (img as any).size || 0;
-        const id = img.Id || (img as any).id || Math.random();
+      {images.map((img, index) => {
+        const isString = typeof img === "string";
+        const imageLink = isString 
+          ? img 
+          : img.ImageLink || (img as any).imageLink || (img as any).url || (img as any).ImageURL;
+          
+        const fileType = isString ? "IMAGE" : img.FileType || (img as any).fileType || "IMAGE";
+        const fileSize = isString ? 0 : img.Size || (img as any).size || 0;
+        const id = isString ? `img-${index}` : img.Id || (img as any).id || `img-${index}`;
 
         return (
           <a
