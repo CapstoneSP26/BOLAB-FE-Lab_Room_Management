@@ -46,7 +46,7 @@ const UserManagementPage = lazy(() => import("../../pages/admin/UserManagementPa
 export const publicRoutes: AppRoute[] = [
   { path: "/login", element: LoginPage },
   { path: "/unauthorized", element: UnauthorizedPage },
-  { path: "/calendar/:labRoomId", element: CalendarTabletPage },
+  { path: "/calendar/:roomNo", element: CalendarTabletPage },
 ];
 
 export const sharedRoutes: AppRoute[] = [
