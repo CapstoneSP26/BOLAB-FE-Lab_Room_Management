@@ -1,15 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { AlertCircle, Download, Clock, Users } from 'lucide-react';
+import { AlertCircle, Camera } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { FaceScanContainer } from '../../features/attendance/components/FaceScanContainer';
 import { scheduleApi } from '../../features/schedules/api/scheduleApi';
 import type { ScheduleDto } from '../../features/schedules/types/schedule.type';
-
-interface ScannedStudent {
-  studentId: string;
-  scanTime: string;
-  confidence: number;
-}
 
 export const CameraAttendancePage: React.FC = () => {
   const { roomNo } = useParams<{ roomNo: string }>();
@@ -17,8 +11,6 @@ export const CameraAttendancePage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [schedules, setSchedules] = useState<ScheduleDto[]>([]);
   const [selectedSchedule, setSelectedSchedule] = useState<ScheduleDto | null>(null);
-  const [scannedStudents, setScannedStudents] = useState<ScannedStudent[]>([]);
-  const [totalScanned, setTotalScanned] = useState(0);
 
   const loadActiveSchedules = async (room: string) => {
     if (!room?.trim()) {
@@ -62,204 +54,81 @@ export const CameraAttendancePage: React.FC = () => {
     }
   }, [roomNo]);
 
-  const handleFaceScanned = (result: { success: boolean; studentId: string; date: string }) => {
-    if (!result.success || !result.studentId) return;
-
-    setScannedStudents((prev) => [
-      {
-        studentId: result.studentId,
-        scanTime: new Date(result.date).toLocaleTimeString(),
-        confidence: 0.95,
-      },
-      ...prev,
-    ]);
-    setTotalScanned((prev) => prev + 1);
-    setError(null);
-  };
-
-  const handleExportAttendance = () => {
-    const data = {
-      timestamp: new Date().toISOString(),
-      roomNo,
-      schedule: selectedSchedule,
-      totalScanned,
-      students: scannedStudents,
-    };
-
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `attendance-${roomNo ?? 'room'}-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8 space-y-8">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Face Recognition Attendance</h1>
-          <p className="text-gray-600 mt-1">Room: {roomNo ?? 'Unknown'} · Quick attendance tracking using facial recognition</p>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-lg p-5 border border-gray-100">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Current schedules in room</h2>
-              <p className="text-sm text-gray-600">Auto-loaded from the route room number.</p>
-            </div>
-            <button
-              onClick={() => roomNo && loadActiveSchedules(roomNo)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
-              disabled={loading || !roomNo}
-            >
-              {loading ? 'Loading...' : 'Refresh'}
-            </button>
+    <div className="relative flex flex-col items-center justify-start w-full h-screen px-8 py-6 md:px-10 md:py-12 pt-0 bg-slate-50">
+      {/* Header - Outside container */}
+      <div className="absolute top-3 left-0 right-0 px-4 md:px-6 pointer-events-none">
+        <div className="max-w-4xl mx-auto rounded-2xl border border-slate-200 bg-white/95 shadow-sm backdrop-blur px-6 py-4">
+          <div className="flex items-center justify-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white">
+              <Camera size={20} />
+            </span>
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900">Face Recognition Attendance</h1>
           </div>
-
-          <div className="mt-4">
-            {loading ? (
-              <div className="text-gray-500 text-sm">Loading schedules...</div>
-            ) : schedules.length === 0 ? (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex gap-3">
-                <AlertCircle className="text-red-600 flex-shrink-0" size={20} />
-                <p className="text-red-800 text-sm">{error ?? 'No active schedules found.'}</p>
-              </div>
-            ) : (
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {schedules.map((schedule) => (
-                  <button
-                    key={schedule.id}
-                    onClick={() => setSelectedSchedule(schedule)}
-                    className={`w-full p-4 border-2 rounded-lg text-left transition ${
-                      selectedSchedule?.id === schedule.id
-                        ? 'border-blue-600 bg-blue-50'
-                        : 'border-gray-200 hover:border-blue-600 hover:bg-blue-50'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900">
-                          {schedule.subjectCode} - {schedule.lecturerName}
-                        </h3>
-                        <p className="text-sm text-gray-600 mt-1">{schedule.slotName}</p>
-                        <div className="flex flex-wrap gap-4 mt-2 text-xs text-gray-500">
-                          <span className="flex items-center gap-1">
-                            <Clock size={14} />
-                            {new Date(schedule.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(schedule.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Users size={14} />
-                            {schedule.studentCount} students
-                          </span>
-                        </div>
-                      </div>
-                      <span className="inline-block px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
-                        {schedule.status}
-                      </span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
+          <div className="mt-3 flex items-center justify-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-5 py-2">
+              <span className="text-sm font-semibold text-blue-700 uppercase tracking-wide">Room</span>
+              <span className="text-2xl md:text-3xl font-black text-blue-900 leading-none">{roomNo ?? 'Unknown'}</span>
+            </div>
           </div>
         </div>
+      </div>
 
-        {selectedSchedule && (
-          <>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <div className="flex justify-between items-start gap-4">
-                <div>
-                  <h3 className="font-semibold text-blue-900">{selectedSchedule.subjectCode}</h3>
-                  <p className="text-sm text-blue-700 mt-1">Lecturer: {selectedSchedule.lecturerName}</p>
-                  <p className="text-sm text-blue-700">Slot: {selectedSchedule.slotName}</p>
-                </div>
-              </div>
+      {/* Main Container - Fixed size centered */}
+      <div className="flex flex-col w-full bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden" style={{ width: '900px', height: '700px', marginTop: '150px', marginBottom: 'auto' }}>
+        
+        {/* Schedules Section */}
+        <div className="flex-none px-6 py-4 border-b border-gray-200 bg-gray-50 max-h-40">
+          <h2 className="text-lg font-semibold text-gray-900 mb-3">Select Schedule</h2>
+          
+          {loading ? (
+            <div className="text-gray-500 text-sm">Loading schedules...</div>
+          ) : schedules.length === 0 ? (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex gap-3">
+              <AlertCircle className="text-red-600 flex-shrink-0" size={20} />
+              <p className="text-red-800 text-sm">{error ?? 'No active schedules found.'}</p>
             </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-4">
-                <div className="bg-white rounded-lg shadow-lg p-6">
-                  <h2 className="text-xl font-semibold mb-4">Face Scanner</h2>
-                  <FaceScanContainer
-                    onFaceScanned={handleFaceScanned}
-                    onError={(message: string) => {
-                      setError(message);
-                      setTimeout(() => setError(null), 3000);
-                    }}
-                    isLoading={false}
-                    scheduleId={String(selectedSchedule.id)}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="bg-white rounded-lg shadow-lg p-6 space-y-4">
-                  <h3 className="text-lg font-semibold">Statistics</h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-                      <span className="text-gray-700">Total Scanned</span>
-                      <span className="text-2xl font-bold text-blue-600">{totalScanned}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                      <span className="text-gray-700">Present</span>
-                      <span className="text-2xl font-bold text-green-600">{totalScanned}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
-                      <span className="text-gray-700">Absent</span>
-                      <span className="text-2xl font-bold text-red-600">0</span>
-                    </div>
-                  </div>
-                </div>
-
-                {error && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex gap-3">
-                    <AlertCircle className="text-red-600 flex-shrink-0" size={20} />
-                    <p className="text-red-800 text-sm">{error}</p>
-                  </div>
-                )}
-              </div>
+          ) : (
+            <div className="grid gap-2 grid-cols-1 md:grid-cols-2">
+              {schedules.map((schedule) => (
+                <button
+                  key={schedule.id}
+                  onClick={() => setSelectedSchedule(schedule)}
+                  className={`w-full p-3 border-2 rounded-lg text-left text-sm transition ${
+                    selectedSchedule?.id === schedule.id
+                      ? 'border-blue-600 bg-blue-50'
+                      : 'border-gray-200 hover:border-blue-600 hover:bg-blue-50'
+                  }`}
+                >
+                  <h3 className="font-semibold text-gray-900">
+                    {schedule.subjectCode} - {schedule.lecturerName}
+                  </h3>
+                  <p className="text-xs text-gray-600">{schedule.slotName}</p>
+                </button>
+              ))}
             </div>
+          )}
+        </div>
 
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-semibold">Scanned Students ({scannedStudents.length})</h3>
-                {scannedStudents.length > 0 && (
-                  <button
-                    onClick={handleExportAttendance}
-                    className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  >
-                    <Download size={16} />
-                    Export
-                  </button>
-                )}
-              </div>
-
-              {scannedStudents.length === 0 ? (
-                <p className="text-center py-8 text-gray-500">No students scanned yet.</p>
-              ) : (
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50">
-                    <tr className="border-b">
-                      <th className="text-left p-3">Student ID</th>
-                      <th className="text-left p-3">Scan Time</th>
-                      <th className="text-left p-3">Confidence</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {scannedStudents.map((student, i) => (
-                      <tr key={i} className="border-b hover:bg-gray-50">
-                        <td className="p-3">{student.studentId}</td>
-                        <td className="p-3">{student.scanTime}</td>
-                        <td className="p-3">{(student.confidence * 100).toFixed(0)}%</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+        {/* Face Scanner - Main content */}
+        {selectedSchedule ? (
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex-1 px-6 py-6">
+              <FaceScanContainer
+                onFaceScanned={() => {}}
+                onError={(message: string) => {
+                  setError(message);
+                  setTimeout(() => setError(null), 3000);
+                }}
+                isLoading={false}
+                scheduleId={String(selectedSchedule.id)}
+              />
             </div>
-          </>
+          </div>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-gray-500">
+            <p>Select a schedule to start scanning</p>
+          </div>
         )}
       </div>
     </div>

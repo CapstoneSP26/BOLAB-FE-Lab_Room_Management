@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Camera, X, CheckCircle } from 'lucide-react';
+import { Camera, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { useCameraStream } from '../hooks/useCameraStream';
 import { useFaceApiDetection } from '../hooks/useFaceApiDetection';
 
 interface RecognitionResult {
   success: boolean;
-  studentId: string;
+  studentCode?: string;
+  studentId?: string;
   date: string;
   image?: string; // base64 encoded image from backend
 }
@@ -35,6 +36,7 @@ export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [detectedCount, setDetectedCount] = useState(0);
   const [pendingRecognition, setPendingRecognition] = useState<PendingRecognition | null>(null);
+  const [isDetectionActive, setIsDetectionActive] = useState(true);
   const detectionIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastCaptureRef = useRef<number>(0);
   const CAPTURE_COOLDOWN = 500; // ms between detection checks
@@ -73,7 +75,7 @@ export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
 
   // Smart face detection with tracking - only send NEW faces
   useEffect(() => {
-    if (!isStreaming || !isModelLoaded || isProcessing) return;
+    if (!isStreaming || !isModelLoaded || isProcessing || !isDetectionActive) return;
 
     console.log('📹 Starting face detection loop...');
     let detectionCount = 0;
@@ -130,14 +132,14 @@ export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
 
             setIsProcessing(true);
             const formData = new FormData();
-            formData.append('image', blob, 'face.png');
+            formData.append('file', blob, 'face.png');
             if (scheduleId) {
               formData.append('scheduleId', scheduleId);
             }
 
             try {
               console.log('📤 Sending face to backend API...');
-              const response = await fetch('/api/attendance/recognize-face', {
+              const response = await fetch('https://chance-unpledged-coauthor.ngrok-free.dev/api/recognize', {
                 method: 'POST',
                 body: formData,
               });
@@ -149,11 +151,12 @@ export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
               const result: RecognitionResult = await response.json();
               console.log('✅ API Response:', result);
 
-              // Process successful face recognition - show confirmation modal
-              if (result.success && result.studentId) {
-                console.log('👤 Student matched:', result.studentId);
+              // Process successful or failed face recognition - show result modal
+              if (result.studentCode) {
+                console.log('👤 Recognition result:', result);
+                setIsDetectionActive(false);
                 setPendingRecognition({ result });
-                console.log('🖼️ Showing confirmation modal...');
+                console.log('🖼️ Showing result modal...');
               }
 
               setStatus('ready');
@@ -178,7 +181,7 @@ export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
       console.log('🛑 Stopping detection loop');
       if (detectionIntervalRef.current) clearInterval(detectionIntervalRef.current);
     };
-  }, [isStreaming, isModelLoaded, isProcessing, captureFrame, detectFaces, onFaceScanned, onCaptureComplete, onError]);
+  }, [isStreaming, isModelLoaded, isProcessing, isDetectionActive, captureFrame, detectFaces, onFaceScanned, onCaptureComplete, onError]);
 
   const getStatusColor = () => {
     switch (status) {
@@ -210,21 +213,15 @@ export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
     }
   };
 
-  const handleConfirmRecognition = () => {
+  const handleContinueScan = () => {
     if (pendingRecognition) {
-      console.log('✅ Confirmed recognition for:', pendingRecognition.result.studentId);
+      console.log('🔄 Continuing scan...');
       onFaceScanned?.(pendingRecognition.result);
-      onCaptureComplete?.();
       setPendingRecognition(null);
-    }
-  };
-
-  const handleRejectRecognition = () => {
-    if (pendingRecognition) {
-      console.log('❌ Rejected recognition');
-      setPendingRecognition(null);
-      setStatus('ready');
+      setDetectedCount(0);
       clearTrackedFaces();
+      setIsDetectionActive(true);
+      setStatus('ready');
     }
   };
 
@@ -266,24 +263,61 @@ export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
         )}
       </div>
 
-      {/* Confirmation Modal */}
+      {/* Result Modal */}
       {pendingRecognition && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-sm mx-4 space-y-4">
-            <h3 className="text-lg font-semibold">Confirm Recognition</h3>
-            <p className="text-gray-600">Student ID: <strong>{pendingRecognition.result.studentId}</strong></p>
-            <div className="flex gap-2">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-8 max-w-2xl w-full space-y-6">
+            {/* Status Header */}
+            <div className="flex items-center gap-4">
+              {pendingRecognition.result.success ? (
+                <CheckCircle size={48} className="text-green-500 flex-shrink-0" />
+              ) : (
+                <AlertCircle size={48} className="text-red-500 flex-shrink-0" />
+              )}
+              <h3 className="text-2xl font-bold">
+                {pendingRecognition.result.success ? 'Điểm danh thành công' : 'Điểm danh thất bại'}
+              </h3>
+            </div>
+
+            {/* Scanned Image */}
+            {pendingRecognition.result.image && (
+              <div className="flex justify-center bg-gray-100 p-4 rounded-lg">
+                <img
+                  src={`data:image/png;base64,${pendingRecognition.result.image}`}
+                  alt="Scanned face"
+                  className="w-80 h-80 object-cover rounded-lg border-4 border-gray-300 shadow-lg"
+                />
+              </div>
+            )}
+
+            {/* Student Info */}
+            <div className="space-y-3 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg">
+              <p className="text-base text-gray-700">
+                <span className="font-bold text-lg">Mã sinh viên:</span>
+                <span className="ml-3 text-lg font-semibold text-blue-600">{pendingRecognition.result.studentCode || 'N/A'}</span>
+              </p>
+              <p className="text-base text-gray-700">
+                <span className="font-bold text-lg">Thời gian quét:</span>
+                <span className="ml-3 text-lg">{new Date(pendingRecognition.result.date).toLocaleString('vi-VN', { timeZone: 'UTC' })}</span>
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-4 pt-4">
               <button
-                onClick={handleConfirmRecognition}
-                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                onClick={handleContinueScan}
+                className="flex-1 px-6 py-3 bg-blue-600 text-white text-lg font-semibold rounded-lg hover:bg-blue-700 transition"
               >
-                Confirm
+                Tiếp tục quét?
               </button>
               <button
-                onClick={handleRejectRecognition}
-                className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                onClick={() => {
+                  onCaptureComplete?.();
+                  setPendingRecognition(null);
+                }}
+                className="flex-1 px-6 py-3 bg-gray-500 text-white text-lg font-semibold rounded-lg hover:bg-gray-600 transition"
               >
-                Reject
+                Dừng
               </button>
             </div>
           </div>

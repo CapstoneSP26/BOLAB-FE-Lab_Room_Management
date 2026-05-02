@@ -48,11 +48,10 @@ export const publicRoutes: AppRoute[] = [
   { path: "/login", element: LoginPage },
   { path: "/unauthorized", element: UnauthorizedPage },
   { path: "/calendar/:labRoomId", element: CalendarTabletPage },
-];
-
-export const sharedRoutes: AppRoute[] = [
   { path: "/attendance/camera/:roomNo", element: CameraAttendancePage },
 ];
+
+export const sharedRoutes: AppRoute[] = [];
 
 export const studentRoutes: AppRoute[] = [
   { path: "/student", element: StudentLandingPage, roles: [Role.Student] },
