@@ -4,7 +4,7 @@
  */
 
 import { useNavigate } from 'react-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   QrCode, Clock, AlertCircle,
   Calendar, Loader2, ChevronLeft, ChevronRight
@@ -70,6 +70,35 @@ export default function StudentLandingPage() {
     return items.map(transformScheduleData);
   }, [scheduleResponse]);
 
+  // Fallback pagination: if backend returns more than pageSize items, paginate safely on client.
+  const serverPageSize = scheduleResponse?.pageSize ?? ITEMS_PER_PAGE;
+  const isServerPaginationBroken =
+    !!scheduleResponse && upcomingClasses.length > serverPageSize;
+
+  const totalClasses = isServerPaginationBroken
+    ? upcomingClasses.length
+    : scheduleResponse?.totalCount ?? upcomingClasses.length;
+
+  const totalPages = isServerPaginationBroken
+    ? Math.max(1, Math.ceil(totalClasses / ITEMS_PER_PAGE))
+    : Math.max(1, scheduleResponse?.totalPages ?? 1);
+
+  const paginatedClasses = useMemo(() => {
+    if (!isServerPaginationBroken) {
+      return upcomingClasses;
+    }
+
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    return upcomingClasses.slice(start, end);
+  }, [upcomingClasses, isServerPaginationBroken, currentPage]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
   const handleScanQRFromClass = (scheduleId: string) => {
     navigate(`/student/scan-attendance/${scheduleId}`);
   };
@@ -119,7 +148,7 @@ export default function StudentLandingPage() {
               <AlertCircle className="w-8 h-8 mx-auto mb-3" />
               <p className="text-sm">Failed to load schedule</p>
             </div>
-          ) : upcomingClasses.length > 0 ? (
+          ) : paginatedClasses.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
@@ -133,7 +162,7 @@ export default function StudentLandingPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {upcomingClasses.map((cls) => (
+                  {paginatedClasses.map((cls) => (
                     <tr key={cls.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 md:px-6 py-4">
                         <div className="font-semibold text-slate-900 text-xs md:text-sm">{cls.subjectCode}</div>
@@ -187,16 +216,15 @@ export default function StudentLandingPage() {
           )}
 
           {/* Pagination Controls */}
-          {upcomingClasses.length > 0 && scheduleResponse && (
+          {totalClasses > 0 && (
             <div className="px-4 md:px-8 py-4 border-t border-slate-100 flex items-center justify-between">
               <div className="text-xs md:text-sm text-slate-600">
-                Page {scheduleResponse.pageNumber} of {scheduleResponse.totalPages} •{' '}
-                {scheduleResponse.totalCount} classes
+                Page {currentPage} of {totalPages} • {totalClasses} classes
               </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={!scheduleResponse.hasPreviousPage}
+                  disabled={currentPage <= 1}
                   className="flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs md:text-sm"
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -204,7 +232,7 @@ export default function StudentLandingPage() {
                 </button>
                 <button
                   onClick={() => setCurrentPage((p) => p + 1)}
-                  disabled={!scheduleResponse.hasNextPage}
+                  disabled={currentPage >= totalPages}
                   className="flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs md:text-sm"
                 >
                   <span className="hidden xs:inline">Next</span>
