@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Camera, X, CheckCircle } from 'lucide-react';
 import { useCameraStream } from '../hooks/useCameraStream';
-import { useMl5FaceDetection } from '../hooks/useMl5FaceDetection';
+import { useFaceApiDetection } from '../hooks/useFaceApiDetection';
 
 interface RecognitionResult {
   success: boolean;
@@ -20,16 +20,17 @@ interface FaceScanContainerProps {
 export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
   onFaceScanned,
   onError,
+  isLoading = false,
   onCaptureComplete,
 }) => {
   const { videoRef, isStreaming, error: cameraError, startCamera, stopCamera, captureFrame } = useCameraStream();
-  const { isModelLoaded, loadModel, detectFaces, clearTrackedFaces } = useMl5FaceDetection();
+  const { isModelLoaded, loadModel, detectFaces } = useFaceApiDetection();
   const [status, setStatus] = useState<'loading' | 'ready' | 'detecting' | 'error'>('loading');
   const [isProcessing, setIsProcessing] = useState(false);
   const [detectedCount, setDetectedCount] = useState(0);
   const detectionIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastCaptureRef = useRef<number>(0);
-  const CAPTURE_COOLDOWN = 1200;
+  const CAPTURE_COOLDOWN = 20000;
 
   useEffect(() => {
     const initialize = async () => {
@@ -37,7 +38,6 @@ export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
         setStatus('loading');
         await loadModel();
         await startCamera();
-        clearTrackedFaces();
         setStatus('ready');
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : 'Initialization failed';
@@ -47,10 +47,11 @@ export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
     };
 
     initialize();
+
     return () => {
       stopCamera();
     };
-  }, [loadModel, startCamera, stopCamera, clearTrackedFaces, onError]);
+  }, [loadModel, startCamera, stopCamera, onError]);
 
   useEffect(() => {
     if (!isStreaming || !isModelLoaded || isProcessing) return;
@@ -87,7 +88,6 @@ export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
             const formData = new FormData();
             formData.append('file', blob, 'face.png');
 
-            console.log('[FaceScan] sending POST /api/recognize', { fileSize: blob.size });
             const response = await fetch('https://chance-unpledged-coauthor.ngrok-free.dev/api/recognize', {
               method: 'POST',
               body: formData,
@@ -115,7 +115,7 @@ export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
       } catch {
         setStatus('ready');
       }
-    }, 100);
+    }, 500);
 
     return () => {
       if (detectionIntervalRef.current) clearInterval(detectionIntervalRef.current);
@@ -124,7 +124,11 @@ export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
 
   return (
     <div className="w-full space-y-4">
-      <div className={`flex items-center gap-2 p-4 rounded-lg text-white ${status === 'loading' ? 'bg-yellow-500' : status === 'detecting' ? 'bg-blue-500' : status === 'error' ? 'bg-red-500' : 'bg-green-500'}`}>
+      <div
+        className={`flex items-center gap-2 p-4 rounded-lg text-white ${
+          status === 'loading' ? 'bg-yellow-500' : status === 'detecting' ? 'bg-blue-500' : status === 'error' ? 'bg-red-500' : 'bg-green-500'
+        }`}
+      >
         {status === 'loading' && <Camera className="animate-spin" size={20} />}
         {status === 'detecting' && <CheckCircle size={20} />}
         <span className="font-medium">
@@ -142,6 +146,12 @@ export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg flex items-start gap-3">
           <X size={20} className="flex-shrink-0 mt-0.5" />
           <p>{cameraError}</p>
+        </div>
+      )}
+
+      {isLoading && (
+        <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg">
+          Processing...
         </div>
       )}
 
@@ -164,3 +174,5 @@ export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
     </div>
   );
 };
+
+export default FaceScanContainer;

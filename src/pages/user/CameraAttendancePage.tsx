@@ -18,6 +18,7 @@ export const CameraAttendancePage: React.FC = () => {
   const [schedules, setSchedules] = useState<ScheduleDto[]>([]);
   const [selectedSchedule, setSelectedSchedule] = useState<ScheduleDto | null>(null);
   const [scannedStudents, setScannedStudents] = useState<ScannedStudent[]>([]);
+  const [totalScanned, setTotalScanned] = useState(0);
 
   const loadActiveSchedules = async (room: string) => {
     if (!room?.trim()) {
@@ -31,8 +32,8 @@ export const CameraAttendancePage: React.FC = () => {
     setError(null);
 
     try {
-      const data = await scheduleApi.getCurrentScheduleInRoom(room.trim());
-      const activeNow = (data ?? []).filter((schedule) => {
+      const data = await scheduleApi.getCurrentSchedule(room.trim());
+      const activeNow = (data ?? []).filter((schedule: ScheduleDto) => {
         const now = Date.now();
         const start = new Date(schedule.startTime).getTime();
         const end = new Date(schedule.endTime).getTime();
@@ -72,6 +73,7 @@ export const CameraAttendancePage: React.FC = () => {
       },
       ...prev,
     ]);
+    setTotalScanned((prev) => prev + 1);
     setError(null);
   };
 
@@ -80,7 +82,7 @@ export const CameraAttendancePage: React.FC = () => {
       timestamp: new Date().toISOString(),
       roomNo,
       schedule: selectedSchedule,
-      totalScanned: scannedStudents.length,
+      totalScanned,
       students: scannedStudents,
     };
 
@@ -197,11 +199,11 @@ export const CameraAttendancePage: React.FC = () => {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
                       <span className="text-gray-700">Total Scanned</span>
-                      <span className="text-2xl font-bold text-blue-600">{scannedStudents.length}</span>
+                      <span className="text-2xl font-bold text-blue-600">{totalScanned}</span>
                     </div>
                     <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
                       <span className="text-gray-700">Present</span>
-                      <span className="text-2xl font-bold text-green-600">{scannedStudents.length}</span>
+                      <span className="text-2xl font-bold text-green-600">{totalScanned}</span>
                     </div>
                     <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
                       <span className="text-gray-700">Absent</span>

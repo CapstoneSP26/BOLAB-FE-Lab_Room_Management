@@ -13,11 +13,10 @@ export const useCameraStream = () => {
   const startCamera = useCallback(async () => {
     try {
       setError(null);
-      
-      // Request camera permission
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode: 'user', // Front camera for face detection
+          facingMode: 'user',
           width: { ideal: 1280 },
           height: { ideal: 720 },
         },
@@ -27,6 +26,31 @@ export const useCameraStream = () => {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
+
+        await new Promise<void>((resolve, reject) => {
+          const video = videoRef.current;
+          if (!video) {
+            reject(new Error('Video element not available'));
+            return;
+          }
+
+          const handleLoadedMetadata = () => {
+            video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+            video.removeEventListener('error', handleError);
+            resolve();
+          };
+
+          const handleError = () => {
+            video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+            video.removeEventListener('error', handleError);
+            reject(new Error('Failed to load camera metadata'));
+          };
+
+          video.addEventListener('loadedmetadata', handleLoadedMetadata);
+          video.addEventListener('error', handleError);
+        });
+
+        await videoRef.current.play();
         setIsStreaming(true);
         setHasPermission(true);
       }
@@ -49,14 +73,19 @@ export const useCameraStream = () => {
   const captureFrame = useCallback((): HTMLCanvasElement | null => {
     if (!videoRef.current) return null;
 
+    const video = videoRef.current;
+    if (!video.videoWidth || !video.videoHeight || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+      return null;
+    }
+
     const canvas = document.createElement('canvas');
-    canvas.width = videoRef.current.videoWidth;
-    canvas.height = videoRef.current.videoHeight;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
 
-    ctx.drawImage(videoRef.current, 0, 0);
+    ctx.drawImage(video, 0, 0);
     return canvas;
   }, []);
 

@@ -55,8 +55,8 @@ export {
 } from './hooks/useCameraStream';
 
 export {
-  useMl5FaceDetection,
-} from './hooks/useMl5FaceDetection';
+  useFaceApiDetection,
+} from './hooks/useFaceApiDetection';
 
 // Components - Face Recognition (NEW - BOLAB-31)
 export {

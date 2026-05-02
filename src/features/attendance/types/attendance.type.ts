@@ -151,7 +151,7 @@ export interface FaceRecognitionResult {
 }
 
 /**
- * Detected Face from ml5.js
+ * Detected Face from face-api.js
  */
 export interface DetectedFace {
   confidence: number;
