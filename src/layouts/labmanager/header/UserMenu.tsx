@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 type MenuItem = {
   href: string;
@@ -93,10 +93,9 @@ import { useAuthStore } from "../../../store/useAuthStore";
 export default function UserMenu() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
-  const navigate = useNavigate();
 
   const { data: profile, isLoading } = useMyProfile();
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
 
   const menuItems = useMemo<MenuItem[]>(
     () => [
@@ -116,10 +115,9 @@ export default function UserMenu() {
 
   const closeDropdown = () => setDropdownOpen(false);
 
-  const signOut = () => {
+  const signOut = async () => {
     closeDropdown();
-    // Logic clear auth should be added here
-    navigate("/signin");
+    await logout();
   };
 
   useEffect(() => {
