@@ -19,6 +19,7 @@ const NotificationsPage = lazy(() => import("../../pages/lecturer/NotificationsP
 const AttendanceManagementPage = lazy(() => import("../../pages/lecturer/AttendanceManagementPage.tsx"));
 const QRDisplayPage = lazy(() => import("../../pages/lecturer/QRDisplayPage.tsx"));
 const ManualAttendancePage = lazy(() => import("../../pages/lecturer/ManualAttendancePage.tsx"));
+const CameraAttendancePage = lazy(() => import("../../pages/user/CameraAttendancePage.tsx"));
 const ProfilePage = lazy(() => import("../../pages/lecturer/ProfilePage.tsx"));
 const StudentGroupsPage = lazy(() => import("../../pages/lecturer/StudentGroupsPage.tsx"));
 const GroupOverviewPage = lazy(() => import("../../pages/lecturer/GroupOverviewPage.tsx"));
@@ -50,6 +51,7 @@ export const publicRoutes: AppRoute[] = [
 ];
 
 export const sharedRoutes: AppRoute[] = [
+  { path: "/attendance/camera/:roomNo", element: CameraAttendancePage },
 ];
 
 export const studentRoutes: AppRoute[] = [

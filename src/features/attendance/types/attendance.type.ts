@@ -132,4 +132,45 @@ export interface BookingWithQR {
   isPast: boolean;
 }
 
+/**
+ * ============================================
+ * BOLAB-31: Face Recognition Types
+ * ============================================
+ */
+
+/**
+ * Face Recognition Result
+ * Returned from POST /api/attendance/recognize-face
+ */
+export interface FaceRecognitionResult {
+  success: boolean;
+  studentId: string;
+  date: string; // ISO format
+  image?: string; // base64 encoded image
+  confidence?: number; // 0-1
+}
+
+/**
+ * Detected Face from ml5.js
+ */
+export interface DetectedFace {
+  confidence: number;
+  box: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+}
+
+/**
+ * Face Scan Result
+ */
+export interface FaceScanResult {
+  success: boolean;
+  faces: DetectedFace[];
+  isNewFace: boolean;
+  faceId?: string;
+}
+
 
