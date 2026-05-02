@@ -278,10 +278,38 @@ const mapNotificationDtoToItem = (dto: unknown): NotificationItem => {
     "Booking for room",
   );
 
+  const rawMetadata = record.metadata;
+  let metadataRecord: MaybeRecord = {};
+  if (rawMetadata && typeof rawMetadata === "object") {
+    metadataRecord = asRecord(rawMetadata);
+  } else if (typeof rawMetadata === "string" && rawMetadata.trim() !== "") {
+    try {
+      metadataRecord = asRecord(JSON.parse(rawMetadata));
+    } catch {
+      metadataRecord = {};
+    }
+  }
+
+  const roomName = getString(
+    metadataRecord.roomName,
+    metadataRecord.RoomName,
+    metadataRecord.labName,
+    metadataRecord.LabName,
+    metadataRecord.labRoomName,
+    metadataRecord.LabRoomName,
+    metadataRecord.room,
+    metadataRecord.Room,
+  );
+
+  const normalizedMessage =
+    roomName && !message.toLowerCase().includes(roomName.toLowerCase())
+      ? message.replace(/\broom\s+([0-9a-f-]{6,}|\d+)\b/i, `room ${roomName}`)
+      : message;
+
   return {
     id: getString(record.id, record.notificationId, record.Id) || crypto.randomUUID(),
     title: title || "Notification",
-    message: message || "You have a new notification.",
+    message: normalizedMessage || "You have a new notification.",
     type: normalizeNotificationType(
       record.type ?? record.notificationType ?? record.level ?? record.status,
     ),
