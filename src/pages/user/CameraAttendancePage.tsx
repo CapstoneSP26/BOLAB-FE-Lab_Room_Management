@@ -189,6 +189,7 @@ export const CameraAttendancePage: React.FC = () => {
                       setTimeout(() => setError(null), 3000);
                     }}
                     isLoading={false}
+                    scheduleId={String(selectedSchedule.id)}
                   />
                 </div>
               </div>
