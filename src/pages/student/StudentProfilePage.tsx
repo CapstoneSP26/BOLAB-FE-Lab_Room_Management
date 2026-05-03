@@ -11,6 +11,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import {
   useProfile,
 } from '../../features/profile';
+import { RoleSwitcher } from '../../features/profile/components/RoleSwitcher';
 
 export default function StudentProfilePage() {
   const { user } = useAuthStore();
@@ -100,6 +101,7 @@ export default function StudentProfilePage() {
 
             {/* Sidebar Stats */}
             <div className="lg:col-span-1 space-y-6">
+              <RoleSwitcher />
             </div>
           </div>
         )}
