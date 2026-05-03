@@ -52,6 +52,18 @@ export const userManagementApi = {
     return normalizeUsersPagedResponse(response.data);
   },
 
+  async getUserById(id: string): Promise<UserListItem> {
+    const response = await axiosInstance.get<ApiResponse<unknown>>(
+      USER_API.DETAIL(id),
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.message ?? "Failed to get user");
+    }
+
+    return mapUserDtoToUserListItem(response.data.data);
+  },
+
   async createUser(
     payload: CreateUserRequest,
   ): Promise<{ data: UserListItem; message: string }> {

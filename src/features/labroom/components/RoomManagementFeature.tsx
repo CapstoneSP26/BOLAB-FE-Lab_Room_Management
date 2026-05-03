@@ -197,6 +197,7 @@ export default function RoomManagementFeature() {
       description: values.description,
       buildingId: Number(values.buildingId),
       isActive: values.isActive,
+      labOwnerId: values.labOwnerId,
     };
 
     if (modalMode === "create" && isAdmin) {

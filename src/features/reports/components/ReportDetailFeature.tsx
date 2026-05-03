@@ -56,7 +56,11 @@ export default function ReportDetailFeature() {
       }
 
       setReport(item);
-      setImages(Array.isArray(item.images) ? item.images : []);
+      // Access images from the response object as defined in GetReportDetailResponse
+      // Fallback to item.images or item.Images just in case
+      const imagesData = 
+        (response as any).images;
+      setImages(Array.isArray(imagesData) ? imagesData : []);
     } catch {
       setReport(null);
       setImages([]);
@@ -130,6 +134,12 @@ export default function ReportDetailFeature() {
                         isResolved: !report.isResolved,
                       });
                       setReport(response.data);
+                      
+                      const imagesData = 
+                        (response as any).images;
+                      if (imagesData.length > 0) {
+                        setImages(imagesData);
+                      }
                     } finally {
                       setSaving(false);
                     }

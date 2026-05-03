@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
 import type { BuildingDto } from "../types/building.type";
+import { addCacheBuster } from "../../../utils/imageCache";
 
 type Props = {
   rows: BuildingDto[];
@@ -74,7 +75,7 @@ export default function BuildingManagementTable({
                       <div className="h-10 w-10 overflow-hidden rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/30">
                         {building.buildingImageUrl ? (
                           <img
-                            src={building.buildingImageUrl}
+                            src={addCacheBuster(building.buildingImageUrl)}
                             alt={building.buildingName}
                             className="h-full w-full object-cover"
                             loading="lazy"

@@ -1,4 +1,3 @@
-import { DatabaseZap } from "lucide-react";
 import DashboardMetrics from "../../features/dashboard/components/DashboardMetrics";
 import LecturerBookingRequestsPanel from "../../features/dashboard/components/LecturerBookingRequestsPanel";
 import OperationsSummaryPanel from "../../features/dashboard/components/OperationsSummaryPanel";
@@ -6,9 +5,6 @@ import RoomBookingStatsTable from "../../features/dashboard/components/RoomBooki
 import { useDashboardStats } from "../../features/dashboard/hooks/useDashboard";
 import { LoadingFallback } from "../../components/ui/LoadingFallback";
 import { getErrorMessage } from "../../utils/error";
-
-const getDashboardRoleLabel = (role: string) =>
-  role === "ADMIN" ? "Admin" : "Lab Manager";
 
 export default function ManagerDashboard() {
   const { data, isLoading, error } = useDashboardStats();
@@ -32,17 +28,12 @@ export default function ManagerDashboard() {
   }
 
   const stats = data;
-  const roleLabel = getDashboardRoleLabel(stats.scope);
 
   return (
     <div className="space-y-6">
       <section className="rounded-2xl border border-gray-200 bg-gradient-to-br from-white via-slate-50 to-blue-50 p-6 shadow-sm dark:border-gray-800 dark:from-gray-900 dark:via-gray-900 dark:to-blue-950/20">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-gray-600 shadow-sm dark:bg-white/10 dark:text-gray-300">
-              <DatabaseZap className="h-3.5 w-3.5" />
-              {roleLabel} Dashboard
-            </div>
             <h1 className="mt-3 text-2xl font-bold text-gray-900 dark:text-white">
               Operational overview for booking, incidents, and room usage
             </h1>
