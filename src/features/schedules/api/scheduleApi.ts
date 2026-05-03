@@ -51,6 +51,21 @@ export const scheduleApi = {
       .get<GetScheduleByIdResponse>(SCHEDULE_API.BY_ID(id))
       .then((res) => res.data),
 
+  /**
+   * Get current active schedules in a room
+   * GET /api/schedules/current_schedule/{roomNo}
+   * @param roomNo - Room number (e.g., "A101")
+   */
+  getCurrentSchedule: (roomNo: string) =>
+    axiosInstance
+      .get<{ result: ScheduleDto[] }>(`/schedules/current_schedule/${roomNo}`)
+      .then((res) => res.data.result),
+
+  getCurrentScheduleInRoom: (roomNo: string) =>
+    axiosInstance
+      .get<{ result: ScheduleDto[] }>(`/schedules/current_schedule/${roomNo}`)
+      .then((res) => res.data.result),
+
   createSchedule: (payload: CreateScheduleCommand) =>
     axiosInstance
       .post<CreateScheduleResponse>(SCHEDULE_API.SCHEDULES, payload)

@@ -19,6 +19,7 @@ const NotificationsPage = lazy(() => import("../../pages/lecturer/NotificationsP
 const AttendanceManagementPage = lazy(() => import("../../pages/lecturer/AttendanceManagementPage.tsx"));
 const QRDisplayPage = lazy(() => import("../../pages/lecturer/QRDisplayPage.tsx"));
 const ManualAttendancePage = lazy(() => import("../../pages/lecturer/ManualAttendancePage.tsx"));
+const CameraAttendancePage = lazy(() => import("../../pages/user/CameraAttendancePage.tsx"));
 const ProfilePage = lazy(() => import("../../pages/lecturer/ProfilePage.tsx"));
 const StudentGroupsPage = lazy(() => import("../../pages/lecturer/StudentGroupsPage.tsx"));
 const GroupOverviewPage = lazy(() => import("../../pages/lecturer/GroupOverviewPage.tsx"));
@@ -50,10 +51,10 @@ export const publicRoutes: AppRoute[] = [
   { path: "/login", element: LoginPage },
   { path: "/unauthorized", element: UnauthorizedPage },
   { path: "/calendar/:labRoomId", element: CalendarTabletPage },
+  { path: "/attendance/camera/:roomNo", element: CameraAttendancePage },
 ];
 
-export const sharedRoutes: AppRoute[] = [
-];
+export const sharedRoutes: AppRoute[] = [];
 
 export const studentRoutes: AppRoute[] = [
   { path: "/student", element: StudentLandingPage, roles: [Role.Student] },
