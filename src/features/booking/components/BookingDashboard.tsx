@@ -3,7 +3,6 @@ import { Calendar, FileText, Loader2 } from 'lucide-react';
 import { BookingStatsCard } from './BookingStatsCard';
 import { RecentRequestCard } from './RecentRequestCard';
 import { BookingCalendar } from './BookingCalendar';
-import { useUpcomingBookings } from '../hooks/useUpcomingBookings';
 import { useBookingHistoryPageState } from '../hooks/useBookingHistoryPageState';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { RecentActivity, type Activity } from '../../../components/common/RecentActivity';
@@ -24,6 +23,7 @@ export const BookingDashboard: React.FC = () => {
     fromDate: today,
     toDate: inThreeMonths.toISOString().slice(0, 10),
     pageSize: 100,
+    lecturerId: user?.id,
   };
 
   const bookingHistoryParams = {
@@ -37,12 +37,6 @@ export const BookingDashboard: React.FC = () => {
     schedulesParams,
     true,
   );
-  const { data: upcomingBookingsData, isLoading: upcomingBookingsLoading } = useUpcomingBookings({
-    page: 1,
-    limit: 100,
-    startDate: today,
-    endDate: inThreeMonths.toISOString().slice(0, 10),
-  });
   const { data: bookingHistoryData, isLoading: bookingHistoryLoading } = useBookingHistoryPageState(
     bookingHistoryParams,
     true,
@@ -56,7 +50,8 @@ export const BookingDashboard: React.FC = () => {
     id: schedule.id,
     roomId: schedule.labRoomId ?? schedule.labRoomName,
     roomName: schedule.labRoomName,
-    buildingName: 'N/A',
+    roomNo: schedule.roomNo,
+    buildingName: schedule.buildingName || '',
     startTime: new Date(schedule.startTime).toLocaleTimeString('vi-VN', {
       hour: '2-digit',
       minute: '2-digit',
@@ -108,16 +103,7 @@ export const BookingDashboard: React.FC = () => {
     [bookingHistoryData, lecturerName],
   );
 
-  const apiUpcomingBookings = useMemo(
-    () => (upcomingBookingsData?.data ?? []).filter((booking) => {
-      if (!lecturerName) return true;
-      return (
-        booking.userName?.trim().toLowerCase() === lecturerName ||
-        booking.lecturerName?.trim().toLowerCase() === lecturerName
-      );
-    }),
-    [upcomingBookingsData, lecturerName],
-  );
+
 
   const approvedQueue = useMemo<BookingRequest[]>(
     () => bookingHistoryBookings
@@ -147,13 +133,13 @@ export const BookingDashboard: React.FC = () => {
     totalAccepted: bookingHistoryBookings.filter((booking) => booking.status === 'Approved').length,
     totalPending: bookingHistoryBookings.filter((booking) => booking.status === 'PendingApproval').length,
     totalRejected: bookingHistoryBookings.filter((booking) => booking.status === 'Rejected').length,
-    upcomingBookings: scheduleBookings.length || apiUpcomingBookings.length || bookingHistoryBookings.length,
+    upcomingBookings: scheduleBookings.length || bookingHistoryBookings.length,
   };
 
   const upcomingBookings = scheduleBookings.length > 0
     ? scheduleBookings
-    : (bookingHistoryBookings.length > 0 ? bookingHistoryBookings : apiUpcomingBookings);
-  const isUpcomingDataLoading = schedulesLoading || bookingHistoryLoading || upcomingBookingsLoading;
+    : bookingHistoryBookings;
+  const isUpcomingDataLoading = schedulesLoading || bookingHistoryLoading;
 
   const recentActivities: Activity[] = recentNotifications.map((notification) => ({
     id: notification.id,

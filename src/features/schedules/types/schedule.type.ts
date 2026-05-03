@@ -7,11 +7,12 @@ export type ScheduleType = "Academic" | "Personal" | "Maintenance" | "Examinatio
 export interface ScheduleDto {
   id: string;
   labRoomId?: number;
+  labRoomName: string;
+  roomNo?: string;
   subjectId?: string;
   subjectCode: string;
   buildingName?: string;
   lecturerName: string;
-  labRoomName: string;
   userCode?: string;
   slotName: string;
   groupName?: string;

@@ -10,7 +10,6 @@ import { BookingHistoryFilters } from '../../features/booking/components/Booking
 import { BookingHistoryTable } from '../../features/booking/components/BookingHistoryTable';
 import { BookingHistoryPagination } from '../../features/booking/components/BookingHistoryPagination';
 import { useBookingHistoryPageState } from '../../features/booking/hooks/useBookingHistoryPageState';
-import { useBookingHistoryRealtime } from '../../features/booking/hooks/useBookingHistoryRealtime';
 
 // Mock data - Remove when API is ready
 // Testing different time periods: Week (±7 days), Month (±30 days), Semester (±120 days)
@@ -298,7 +297,7 @@ const BookingHistoryPage: React.FC = () => {
   );
 
   const { data: statsData } = useBookingStats();
-  useBookingHistoryRealtime(true, bookingHistoryParams);
+  // useBookingHistoryRealtime(true, bookingHistoryParams); // Disabled: use polling instead
 
   // Use API data or fallback to mock - Remove mock when API is ready
   const bookings = bookingsData?.data ?? MOCK_BOOKINGS;

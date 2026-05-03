@@ -41,7 +41,7 @@ export const scheduleApi = {
 
   getSchedulesStudent: (params: GetSchedulesParams) =>
     axiosInstance
-      .get<{ items: ScheduleDto[] }>("/schedules/schedule-student", {
+      .get<PagedResponse<ScheduleDto>>("/schedules/schedule-student", {
         params,
       })
       .then((res) => res.data),
