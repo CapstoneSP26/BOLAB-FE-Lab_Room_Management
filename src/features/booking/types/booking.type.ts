@@ -50,6 +50,7 @@ export interface CreateBookingCommand {
 
 export interface CreateBookingResponse {
   id: string; // Guid trả về từ Backend
+  warningMessage?: string; // Nếu có cảnh báo về công suất thì sẽ có message này
 }
 
 export interface PurposeTypeDto {

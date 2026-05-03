@@ -40,6 +40,7 @@ const RoomBookingPage: React.FC = () => {
     timeSlot: string;
   } | null>(null);
   const [lastBookingId, setLastBookingId] = useState<string>("");
+  const [warningMessage, setWarningMessage] = useState<string>();
 
   const [selectedBuildingId, setSelectedBuildingId] = useState<string>(buildingIdParam);
   const [selectedRoomId, setSelectedRoomId] = useState<string>(roomIdParam);
@@ -131,6 +132,7 @@ const RoomBookingPage: React.FC = () => {
         );
         setLastBookingId(data.id);
         setSuccessData(currentBookingInfo);
+        setWarningMessage(data.warningMessage);
 
         setPendingBooking(null);
         setShowConfirmPanel(false);
@@ -270,6 +272,7 @@ const RoomBookingPage: React.FC = () => {
         isOpen={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
         bookingId={lastBookingId}
+        warningMessage={warningMessage}
         roomName={selectedRoom?.roomName || ""}
         date={successData?.date || ""}
         timeSlot={successData?.timeSlot || ""}
