@@ -59,36 +59,61 @@ export const labroomApi = {
       .get(LABROOM_API.POLICIES(labRoomId))
       .then((response) => normalizeLabRoomPolicies(response.data)),
 
-  createRoom: (
+  createRoom: async (
     payload: CreateLabRoomRequest,
-  ): Promise<{ data: LabRoomDto; message: string }> =>
-    axiosInstance
-      .post<ApiResponse<unknown>>(LABROOM_API.LIST, mapLabRoomPayload(payload))
-      .then((response) => {
-        if (!response.data.success) {
-          throw new Error(response.data.message || "Failed to create room");
-        }
-        return {
-          data: mapLabRoomDto(response.data.data),
-          message: response.data.message,
-        };
-      }),
+  ): Promise<{ data: LabRoomDto; message: string }> => {
+    const body = mapLabRoomPayload(payload);
+    // Debug: xem payload thực tế gửi lên
+    console.log("[createRoom] payload →", JSON.stringify(body, null, 2));
 
-  updateRoom: (
+    const response = await axiosInstance.post<ApiResponse<unknown>>(
+      LABROOM_API.LIST,
+      body,
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.message || "Failed to create room");
+    }
+
+    const created = mapLabRoomDto(response.data.data);
+    const message = response.data.message;
+
+    try {
+      const full = await axiosInstance
+        .get(LABROOM_API.DETAIL(created.id))
+        .then((r) => mapLabRoomDto(unwrapEnvelopeData(r.data)));
+      return { data: full, message };
+    } catch {
+      return { data: created, message };
+    }
+  },
+
+  updateRoom: async (
     id: number,
     payload: UpdateLabRoomRequest,
-  ): Promise<{ data: LabRoomDto; message: string }> =>
-    axiosInstance
-      .put<ApiResponse<unknown>>(LABROOM_API.DETAIL(id), mapLabRoomPayload(payload))
-      .then((response) => {
-        if (!response.data.success) {
-          throw new Error(response.data.message || "Failed to update room");
-        }
-        return {
-          data: mapLabRoomDto(response.data.data),
-          message: response.data.message,
-        };
-      }),
+  ): Promise<{ data: LabRoomDto; message: string }> => {
+    const response = await axiosInstance.put<ApiResponse<unknown>>(
+      LABROOM_API.DETAIL(id),
+      mapLabRoomPayload(payload),
+    );
+console.log("[updateRoom] Payload →", payload);
+    if (!response.data.success) {
+      throw new Error(response.data.message || "Failed to update room");
+    }
+
+    const updated = mapLabRoomDto(response.data.data);
+    const message = response.data.message;
+
+    // Fetch lại room đầy đủ (có labOwner nested)
+    try {
+      const full = await axiosInstance
+        .get(LABROOM_API.DETAIL(id))
+        .then((r) => mapLabRoomDto(unwrapEnvelopeData(r.data)));
+      return { data: full, message };
+    } catch {
+      return { data: updated, message };
+    }
+  },
 
   updateRoomStatus: (
     id: number,

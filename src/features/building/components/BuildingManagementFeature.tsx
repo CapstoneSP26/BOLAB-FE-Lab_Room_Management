@@ -65,8 +65,8 @@ export default function BuildingManagementFeature() {
   const loading = isLoading || isFetching;
 
   const createMutation = useCreateBuilding({
-    onSuccess: () => {
-      toast.success("Building created", "New building has been added.");
+    onSuccess: (_data, message) => {
+      toast.success("Success", message || "Building created");
       setIsModalOpen(false);
       setSelectedBuilding(null);
     },
@@ -79,8 +79,8 @@ export default function BuildingManagementFeature() {
   });
 
   const updateMutation = useUpdateBuilding({
-    onSuccess: () => {
-      toast.success("Building updated", "Building information has been updated.");
+    onSuccess: (_data, message) => {
+      toast.success("Success", message || "Building updated");
       setIsModalOpen(false);
       setSelectedBuilding(null);
     },
@@ -93,9 +93,10 @@ export default function BuildingManagementFeature() {
   });
 
   const deleteMutation = useDeleteBuilding({
-    onSuccess: () => {
-      toast.success("Building deleted", "The building has been removed.");
+    onSuccess: (message) => {
+      toast.success("Success", message || "Building deleted");
       setActionLoadingId(null);
+      void refetch();
     },
     onError: (error) => {
       toast.error(

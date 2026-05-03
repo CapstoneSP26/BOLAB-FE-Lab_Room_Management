@@ -374,10 +374,17 @@ export const BookingCalendar: React.FC<BookingCalendarProps> = ({
                           >
                             <div className="flex items-start justify-between mb-3 gap-3">
                               <div className="flex-1">
-                                <h4 className="text-slate-900 font-semibold text-base group-hover:text-orange-600 transition-colors">
-                                  {booking.roomName}
-                                </h4>
-                                <p className="text-slate-600 text-sm mt-1">{booking.buildingName}</p>
+                                <div className="flex items-baseline gap-2">
+                                  <h4 className="text-slate-900 font-semibold text-base group-hover:text-orange-600 transition-colors">
+                                    {booking.roomName}
+                                  </h4>
+                                  {booking.roomNo && (
+                                    <span className="text-slate-500 text-sm font-medium">({booking.roomNo})</span>
+                                  )}
+                                </div>
+                                {booking.buildingName && (
+                                  <p className="text-slate-600 text-sm mt-1">{booking.buildingName}</p>
+                                )}
                               </div>
                               <div className="flex items-center gap-2 flex-wrap justify-end">
                                 {active && (
@@ -403,8 +410,6 @@ export const BookingCalendar: React.FC<BookingCalendarProps> = ({
                                 </svg>
                                 <span className="font-medium">{booking.startTime} - {booking.endTime}</span>
                               </div>
-                              <div className="text-slate-300">•</div>
-                              <div className="text-slate-500">#{booking.id}</div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-2 text-xs mb-3">

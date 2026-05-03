@@ -17,7 +17,6 @@ import { FLEXIBLE_ID } from "../../features/slot/constants/slot.constant";
 import { WeeklyCalendar } from "../../features/calendar/components/WeeklyCalendar";
 import { usePurposeTypes } from "../../features/booking/hooks/usePurposeTypes";
 import { useLabPolicies } from "../../features/labroom/hooks/useLabPolicies";
-import { useQueryClient } from "@tanstack/react-query";
 import { PolicyType } from "../../features/labroom";
 import { useSlotStore } from "../../store/slotStore";
 import { useNotificationStore } from "../../features/notifications/store/notificationStore";
@@ -52,8 +51,6 @@ const RoomBookingPage: React.FC = () => {
   const [pendingBooking, setPendingBooking] = useState<PendingBooking | null>(
     null,
   );
-
-  const queryClient = useQueryClient();
 
   // Fetch Slot Types for dropdown & calendar rendering
   const { } = useSlotTypes(1);

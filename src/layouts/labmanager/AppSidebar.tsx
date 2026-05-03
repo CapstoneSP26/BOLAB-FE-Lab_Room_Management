@@ -87,6 +87,7 @@ const AppSidebar: React.FC = () => {
           { name: "Import Booking", path: p("/booking-requests/import") },
           { name: "Import User", path: p("/users/import") },
           { name: "Import Groups", path: p("/groups/import") },
+          { name: "Import LabRoom", path: p("/labrooms/import") },
         ],
       },
 
@@ -127,11 +128,12 @@ const AppSidebar: React.FC = () => {
         path: p("/slot-management"),
         show: isAdmin,
       },
-{
+      {
         icon: Building,
         name: "Building Management",
         path: p("/building-management"),
-},
+        show: isAdmin,
+      },
       {
         icon: ListIcon,
         name: "User Management",

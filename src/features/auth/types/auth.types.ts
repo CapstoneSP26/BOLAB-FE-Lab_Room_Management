@@ -3,6 +3,7 @@ export interface UserAuth {
   email: string;
   fullName: string;
   roles: string[];
+  roleId?: string;
   campusId: number;
   avatarUrl?: string;
 }

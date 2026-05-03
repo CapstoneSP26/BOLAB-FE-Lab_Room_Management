@@ -3,10 +3,8 @@ import type { BookingWithQR } from '../types/attendance.type';
 import type { GetSchedulesParams, ScheduleDto } from '../../schedules/types/schedule.type';
 import {
   mapScheduleDtoToAttendanceBooking,
-  normalizeRoomName,
 } from '../utils/attendanceManagementHelpers';
 import {
-  isNowInsideFeatureBookingWindow,
   isNowInsideScheduleWindow,
 } from '../../../utils/date.util';
 
@@ -20,6 +18,12 @@ export const DEFAULT_ATTENDANCE_SCHEDULE_PARAMS: GetSchedulesParams = {
   pageSize: 100,
   sortBy: 'startTime',
   isDescending: false,
+};
+
+const toComparableTime = (value?: string) => {
+  if (!value) return Number.NaN;
+  const parsed = new Date(value);
+  return parsed.getTime();
 };
 
 /**
@@ -42,33 +46,30 @@ export const useAttendanceManagementState = ({
     return [];
   }, [bookingScheduleData, bookingScheduleItems]);
 
-  // Find active room names from schedule windows
-  const activeRoomNamesFromSchedule = useMemo(() => {
+  const activeScheduleItems = useMemo(() => {
     if (bookingScheduleItems.length === 0) {
-      return new Set(
-        bookings
-          .filter(item => item.status === 'Active' && isNowInsideFeatureBookingWindow(item))
-          .map(item => normalizeRoomName(item.roomName)),
-      );
+      return [] as ScheduleDto[];
     }
 
-    return new Set(
-      bookingScheduleItems
-        .filter(isNowInsideScheduleWindow)
-        .map(item => normalizeRoomName(item.labRoomName || '')),
-    );
-  }, [bookingScheduleItems, bookings]);
+    return bookingScheduleItems.filter(isNowInsideScheduleWindow);
+  }, [bookingScheduleItems]);
 
   // Find active booking by time
   const activeBooking = useMemo(() => {
-    if (activeRoomNamesFromSchedule.size === 0) {
+    if (activeScheduleItems.length === 0) {
       return null;
     }
 
-    return bookings.find(
-      booking => activeRoomNamesFromSchedule.has(normalizeRoomName(booking.roomName)),
-    ) || null;
-  }, [bookings, activeRoomNamesFromSchedule]);
+    const currentSchedule = activeScheduleItems
+      .slice()
+      .sort((a, b) => toComparableTime(b.startTime) - toComparableTime(a.startTime))[0];
+
+    if (!currentSchedule) {
+      return null;
+    }
+
+    return mapScheduleDtoToAttendanceBooking(currentSchedule);
+  }, [activeScheduleItems]);
 
   return {
     bookings,

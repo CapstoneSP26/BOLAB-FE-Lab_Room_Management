@@ -1,6 +1,7 @@
 /**
  * Attendance Feature Exports
  * BOLAB-30: QR Code Attendance System
+ * BOLAB-31: Face Recognition Attendance System
  */
 
 // Types
@@ -18,6 +19,9 @@ export type {
   SubmitAttendanceCommand,
   SubmitAttendanceResponse,
   BookingWithQR,
+  FaceRecognitionResult,
+  DetectedFace,
+  FaceScanResult,
 } from './types/attendance.type';
 
 // Hooks - QR Code Management
@@ -44,3 +48,17 @@ export {
   useAttendanceManagementState,
   DEFAULT_ATTENDANCE_SCHEDULE_PARAMS,
 } from './hooks/useAttendanceManagementState';
+
+// Hooks - Face Recognition (NEW - BOLAB-31)
+export {
+  useCameraStream,
+} from './hooks/useCameraStream';
+
+export {
+  useFaceApiDetection,
+} from './hooks/useFaceApiDetection';
+
+// Components - Face Recognition (NEW - BOLAB-31)
+export {
+  FaceScanContainer,
+} from './components/FaceScanContainer';

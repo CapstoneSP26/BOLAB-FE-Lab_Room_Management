@@ -16,6 +16,18 @@ export interface ApiResponse<T = unknown> {
   data?: T;
 }
 
+export interface LabOwnerDto {
+  id: string;
+  email: string;
+  fullName: string;
+  userCode: string;
+  avatarUrl?: string | null;
+  campusId?: number;
+  isActive?: boolean | null;
+  roleIds?: string[];
+  roles?: string[];
+}
+
 export interface LabRoomDto {
   id: number;
   roomName: string;
@@ -26,8 +38,8 @@ export interface LabRoomDto {
   description?: string;
   buildingId: number;
   buildingName: string;
-  LabOwnerId?: string;
-  LabOwnerName?: string;
+  labOwnerId?: string | null;
+  labOwner: LabOwnerDto;
   images?: LabImageDto[];
   isActive: boolean;
   isDeleted?: boolean;
@@ -59,7 +71,8 @@ export interface LabRoomFormValues {
   hasEquipment: boolean;
   description: string;
   buildingId: number | "";
-  LabOwnerId?: string;
+  labOwnerId?: string;
+  labOwner?: LabOwnerDto | null;
   isActive: boolean;
 }
 
@@ -71,7 +84,7 @@ export interface LabRoomMutationPayload {
   hasEquipment: boolean;
   description?: string;
   buildingId: number;
-  LabOwnerId?: string;
+  labOwnerId?: string;
   isActive?: boolean;
 }
 
