@@ -50,7 +50,7 @@ const ImportLabRoomPage = lazy(() => import("../../pages/labmanager/ImportLabRoo
 export const publicRoutes: AppRoute[] = [
   { path: "/login", element: LoginPage },
   { path: "/unauthorized", element: UnauthorizedPage },
-  { path: "/calendar/:labRoomId", element: CalendarTabletPage },
+  { path: "/calendar/:roomNo", element: CalendarTabletPage },
   { path: "/attendance/camera/:roomNo", element: CameraAttendancePage },
 ];
 
