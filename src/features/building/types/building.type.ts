@@ -1,3 +1,9 @@
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  message: string;
+  data?: T;
+}
+
 export interface BuildingDto {
   id: number;
   campusId: number;
@@ -45,3 +51,15 @@ export interface GetBuildingsRequest {
   page?: number;
   limit?: number;
 }
+
+export interface BuildingFormValues {
+  BuildingName: string;
+  Descriptions: string;
+  Images?: File | null;
+  IsImageUpdate: boolean;
+}
+
+export type CreateBuildingPayload = BuildingFormValues;
+
+export type UpdateBuildingPayload = BuildingFormValues;
+

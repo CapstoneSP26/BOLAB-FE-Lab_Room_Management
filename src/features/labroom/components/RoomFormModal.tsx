@@ -46,10 +46,9 @@ export default function RoomFormModal({
   const [errors, setErrors] = useState<FormErrors>({});
 
   // ─── Room manager search state ───────────────────────────────────────
-  const [managerQuery, setManagerQuery] = useState<string>(() => {
-    if (room?.roomManagerName) return room.roomManagerName;
-    return "";
-  });
+  const [managerQuery, setManagerQuery] = useState<string>(() =>
+    room?.labOwner?.fullName ?? ""
+  );
   const [managerResults, setManagerResults] = useState<UserListItem[]>([]);
   const [managerSearching, setManagerSearching] = useState(false);
   const [selectedManager, setSelectedManager] = useState<UserListItem | null>(
@@ -60,10 +59,25 @@ export default function RoomFormModal({
     if (isOpen) {
       setValues(getDefaultLabRoomFormValues(room));
       setErrors({});
-      setManagerQuery(room?.roomManagerName ?? "");
+      // Hiển thị tên manager từ object labOwner nhúng sẵn trong DTO
+      setManagerQuery(room?.labOwner?.fullName ?? "");
       setManagerResults([]);
       setManagerSearching(false);
-      setSelectedManager(null);
+      // Nếu phòng đã có labOwner → set luôn vào selectedManager để hiện card
+      setSelectedManager(
+        room?.labOwner?.id
+          ? {
+              id: room.labOwner.id,
+              fullName: room.labOwner.fullName,
+              email: room.labOwner.email,
+              userCode: room.labOwner.userCode,
+              roles: [],
+              primaryRole: "LAB_MANAGER",
+              createdAt: "",
+              isActive: room.labOwner.isActive ?? true,
+            }
+          : null,
+      );
     }
   }, [isOpen, room]);
 
@@ -127,7 +141,17 @@ export default function RoomFormModal({
     setSelectedManager(user);
     setManagerQuery(user.fullName);
     setManagerResults([]);
-    handleChange("roomManagerId", user.id);
+    setValues((prev) => ({
+      ...prev,
+      labOwnerId: user.id,
+      labOwner: {
+        id: user.id,
+        fullName: user.fullName,
+        email: user.email,
+        userCode: user.userCode,
+        isActive: user.isActive,
+      },
+    }));
   };
 
   const handleSubmit = async (event: FormEvent) => {
@@ -295,7 +319,7 @@ export default function RoomFormModal({
                 onClear={() => {
                   setSelectedManager(null);
                   setManagerQuery("");
-                  setValues((prev) => ({ ...prev, roomManagerId: undefined }));
+                  setValues((prev) => ({ ...prev, labOwnerId: undefined, labOwner: null }));
                 }}
                 disabled={isLoading}
               />
@@ -305,12 +329,6 @@ export default function RoomFormModal({
                   <span className="text-xs font-medium text-teal-800 dark:text-teal-200">
                     <strong>{selectedManager.fullName}</strong> ·{" "}
                     {selectedManager.userCode} · {selectedManager.email}
-                  </span>
-                </div>
-              ) : room?.roomManagerName && values.roomManagerId === room.roomManagerId ? (
-                <div className="mt-2 flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-800/40">
-                  <span className="text-xs font-medium text-gray-700 dark:text-gray-200">
-                    Current manager: <strong>{room.roomManagerName}</strong>
                   </span>
                 </div>
               ) : null}

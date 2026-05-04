@@ -127,6 +127,11 @@ export const adminMenuGroups: MenuGroup[] = [
         name: "Buildings Management",
         path: "/admin/buildings",
       },
+      {
+        icon: ListIcon,
+        name: "Buildings Management",
+        path: "/labmanager/buildings",
+      },
       { icon: ListIcon, name: "Rooms Management", path: "/admin/rooms" },
 
       { icon: ListIcon, name: "Slot Management", path: "/admin/slots" },

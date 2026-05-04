@@ -212,7 +212,7 @@ export default function BookingRequestReviewModal({
                     />
                     <InfoRow
                       label="Date"
-                      value={formatUtcDateLabel(booking.date) || "-"}
+                      value={booking.date || "-"}
                       mono
                     />
                     <InfoRow

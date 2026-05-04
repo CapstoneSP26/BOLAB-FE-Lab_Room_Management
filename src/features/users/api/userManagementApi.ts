@@ -22,9 +22,7 @@ const USER_API = {
 } as const;
 
 const buildListParams = (params: GetUsersRequest = {}) => ({
-  // Backend expects only `keyword` for search.
   keyword: params.q,
-  // Backend expects numeric role id (e.g. 2 = Manager).
   role: params.role ? mapRoleToBackendId(params.role) : undefined,
   isActive: params.isActive,
   page: params.page,
@@ -52,6 +50,18 @@ export const userManagementApi = {
     });
 
     return normalizeUsersPagedResponse(response.data);
+  },
+
+  async getUserById(id: string): Promise<UserListItem> {
+    const response = await axiosInstance.get<ApiResponse<unknown>>(
+      USER_API.DETAIL(id),
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.message ?? "Failed to get user");
+    }
+
+    return mapUserDtoToUserListItem(response.data.data);
   },
 
   async createUser(

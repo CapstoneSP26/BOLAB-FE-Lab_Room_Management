@@ -29,7 +29,8 @@ import type { SemesterInfo } from "../../../utils/semester.util";
 
 interface FlexibleImportPanelProps {
   onImportComplete?: () => void;
-  semester: SemesterInfo
+  semester: SemesterInfo;
+  editingBatchId?: string | null; // Thêm prop để nhận batch đang chỉnh sửa (nếu có)
 }
 
 const pageSize = 10;
@@ -37,6 +38,7 @@ const pageSize = 10;
 export default function FlexibleImportPanel({
   onImportComplete,
   semester,
+  editingBatchId,
 }: FlexibleImportPanelProps) {
   const toast = useToast();
   const {
@@ -229,7 +231,8 @@ export default function FlexibleImportPanel({
       const payload: ValidateFlexibleSlotImportRequest = {
         Schedules: toFlexibleSlotRows(flexibleRows),
         StartTime: semester.startDate.toISOString(),
-        EndTime: semester.endDate.toISOString()
+        EndTime: semester.endDate.toISOString(),
+        ImportBatchId: editingBatchId,
       };
 
       const response = await validateFlexibleScheduleMutation.mutateAsync(payload);
@@ -302,7 +305,9 @@ export default function FlexibleImportPanel({
       const payload: CommitFlexibleSlotImportRequest = {
         Schedules: toFlexibleSlotRows(flexibleRows),
         StartTime: semester.startDate.toISOString(),
-        EndTime: semester.endDate.toISOString()
+        EndTime: semester.endDate.toISOString(),
+        ImportBatchId: editingBatchId,
+        BatchName: selectedFlexibleFile.name,
       };
 
       const response = await commitFlexibleScheduleMutation.mutateAsync(payload);

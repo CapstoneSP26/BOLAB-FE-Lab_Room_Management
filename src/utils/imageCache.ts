@@ -10,8 +10,13 @@ function resolveImageUrl(imageUrl: string | undefined): string {
     return "/images/user/default-avatar.png";
   }
 
-  if (imageUrl.startsWith("http")) {
-    return imageUrl;
+  const normalizedImageUrl = imageUrl.trim().replace(/\\/g, "/");
+
+  if (
+    normalizedImageUrl.startsWith("http://") ||
+    normalizedImageUrl.startsWith("https://")
+  ) {
+    return encodeURI(normalizedImageUrl);
   }
 
   // Prefer API origin to avoid mixing FE origin with BE relative paths
@@ -26,8 +31,12 @@ function resolveImageUrl(imageUrl: string | undefined): string {
   })();
 
   const origin = apiOrigin || window.location.origin;
-  const normalizedPath = imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`;
-  return `${origin}${normalizedPath}`;
+
+  const normalizedPath = normalizedImageUrl.startsWith("/")
+    ? normalizedImageUrl
+    : `/${normalizedImageUrl}`;
+
+  return encodeURI(`${origin}${normalizedPath}`);
 }
 
 /**

@@ -2,6 +2,7 @@ import type { PagedResponse } from "../../../types/pagination.types";
 import type {
   CreateLabRoomRequest,
   LabImageDto,
+  LabOwnerDto,
   LabRoomDto,
   LabRoomFormValues,
   UpdateLabRoomRequest,
@@ -98,6 +99,21 @@ const mapLabImageDto = (dto: unknown): LabImageDto => {
   };
 };
 
+const mapLabOwnerDto = (dto: unknown): LabOwnerDto => {
+  const record = asRecord(dto);
+  return {
+    id: getString(record.id, record.Id),
+    email: getString(record.email, record.Email),
+    fullName: getString(record.fullName, record.FullName, record.name, record.Name),
+    userCode: getString(record.userCode, record.UserCode, record.code, record.Code),
+    avatarUrl: getOptionalString(record.avatarUrl, record.AvatarUrl) ?? null,
+    campusId: typeof record.campusId === "number" ? record.campusId : undefined,
+    isActive: typeof record.isActive === "boolean" ? record.isActive : null,
+    roleIds: Array.isArray(record.roleIds) ? (record.roleIds as string[]) : undefined,
+    roles: Array.isArray(record.roles) ? (record.roles as string[]) : undefined,
+  };
+};
+
 export const mapLabRoomDto = (dto: unknown): LabRoomDto => {
   const record = asRecord(dto);
   const rawImages = record.images ?? record.Images;
@@ -134,6 +150,41 @@ export const mapLabRoomDto = (dto: unknown): LabRoomDto => {
       asRecord(record.building).name,
       asRecord(record.building).Name,
     ),
+    labOwnerId: getOptionalString(
+      record.labOwnerId,
+      record.LabOwnerId,
+      // flat fallback nếu labOwner là object
+      asRecord(record.labOwner).id,
+      asRecord(record.labOwner).Id,
+    ) ?? null,
+    labOwner: (() => {
+      // Ưu tiên nested object labOwner/LabOwner/owner từ API
+      const raw = record.labOwner ?? record.LabOwner ?? record.owner;
+      if (raw && typeof raw === "object") {
+        return mapLabOwnerDto(raw);
+      }
+      // Fallback: build từ flat fields mà một số API list endpoint trả về
+      const id = getString(record.labOwnerId, record.LabOwnerId);
+      const fullName = getString(
+        record.labOwnerName,
+        record.LabOwnerName,
+        record.ownerName,
+        record.OwnerName,
+        record.managerName,
+        record.ManagerName,
+      );
+      const email = getString(
+        record.labOwnerEmail,
+        record.LabOwnerEmail,
+        record.ownerEmail,
+      );
+      const userCode = getString(
+        record.labOwnerCode,
+        record.LabOwnerCode,
+        record.ownerCode,
+      );
+      return { id, fullName, email, userCode };
+    })(),
     images: Array.isArray(rawImages) ? rawImages.map(mapLabImageDto) : [],
     isActive: getBoolean(
       record.isActive ?? record.IsActive ?? record.status ?? record.Status,
@@ -271,6 +322,7 @@ export const mapLabRoomPayload = (
   hasEquipment: payload.hasEquipment,
   description: payload.description?.trim() || undefined,
   buildingId: Number(payload.buildingId),
+  labOwnerId: payload.labOwnerId || undefined,
   isActive: payload.isActive ?? true,
 });
 
@@ -294,6 +346,8 @@ export const getDefaultLabRoomFormValues = (
   hasEquipment: room?.hasEquipment ?? true,
   description: room?.description ?? "",
   buildingId: room?.buildingId ?? "",
+  labOwnerId: room?.labOwnerId ?? room?.labOwner?.id ?? "",
+  labOwner: room?.labOwner ?? null,
   isActive: room?.isActive ?? true,
 });
 

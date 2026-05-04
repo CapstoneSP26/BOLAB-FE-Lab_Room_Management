@@ -3,7 +3,7 @@
  * Lecturer's page to manage attendance and active QR sessions
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, Calendar, QrCode, RefreshCw, XCircle } from 'lucide-react';
 import {
@@ -40,7 +40,6 @@ export default function AttendanceManagementPage() {
     isLoading: bookingScheduleLoading,
     isFetching: bookingScheduleFetching,
   } = useSchedulesAttendance(bookingScheduleParams, true);
-  console.log("Booking ", bookingScheduleData)
 
   const generateQrCodeMutation = useGenerateQRCode();
   const removeQrCodeMutation = useRemoveQRCode();
@@ -117,20 +116,18 @@ export default function AttendanceManagementPage() {
   const shouldHideQrImage = isExpired || isQrStopped;
 
   const handleRefreshQR = async () => {
+    const bookingIdForRefresh = state.activeBooking?.bookingId;
+    if (!bookingIdForRefresh) {
+      return;
+    }
+
     setIsRefreshingQr(true);
     try {
-      const bookingIdForRefresh = state.activeBooking?.bookingId;
-      if (!bookingIdForRefresh) {
-        appAlert.warning('No active class', 'No booking is available to generate a new QR.');
-        return;
-      }
-
       const response = await generateQrCodeMutation.mutateAsync({
         scheduleId: bookingIdForRefresh,
         isCheckIn: true,
       });
 
-      // Extract base64 image from backend response
       const qrImageBase64 = response?.data || '';
       if (qrImageBase64) {
         setLatestQRImageBase64(qrImageBase64);
@@ -140,8 +137,6 @@ export default function AttendanceManagementPage() {
         ...prev,
         [bookingIdForRefresh]: false,
       }));
-
-      appAlert.success('QR refreshed', 'New QR code is ready.');
     } catch {
       appAlert.error('Refresh failed', 'Could not create a new QR from backend.');
     } finally {
@@ -184,7 +179,6 @@ export default function AttendanceManagementPage() {
         isCheckIn: true,
       });
 
-      // Extract base64 image from backend response
       const qrImageBase64 = response?.data || '';
       if (qrImageBase64) {
         setLatestQRImageBase64(qrImageBase64);
@@ -203,10 +197,19 @@ export default function AttendanceManagementPage() {
     }
   };
 
-  const handleOpenTVDisplay = () => {
-    if (!state.activeBooking) return;
-    window.open(`/qr-display/${state.activeBooking.bookingId}`, '_blank');
-  };
+
+
+  useEffect(() => {
+    if (!showQRModal || !state.activeBooking) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      void handleRefreshQR();
+    }, 10000);
+
+    return () => window.clearInterval(intervalId);
+  }, [showQRModal, state.activeBooking?.bookingId]);
 
   const handleManualAttendance = () => {
     if (!state.activeBooking) return;
@@ -260,7 +263,6 @@ export default function AttendanceManagementPage() {
           activeDisplayBuilding={activeDisplayBuilding}
           isExpired={isExpired}
           isCreatingQr={isCreatingQr}
-          onOpenTVDisplay={handleOpenTVDisplay}
           onManualAttendance={handleManualAttendance}
           onViewQR={handleViewQR}
           onExport={handleExport}

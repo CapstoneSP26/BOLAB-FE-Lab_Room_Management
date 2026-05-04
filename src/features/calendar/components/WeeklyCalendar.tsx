@@ -17,6 +17,8 @@ import { PolicyType, type PolicyTypeEnum } from '../../labroom';
 import { checkLabPolicies } from '../../labroom/utils/policy.util';
 import { useToast } from '../../../hooks/useToast';
 import type { SlotType } from '../../slot/types/slot.types';
+import { useSignalRListener } from '../../../hooks/useSignalRListener';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface DragState {
   isActive: boolean;
@@ -65,6 +67,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     endTime: "",
   });
 
+  const queryClient = useQueryClient();
 
   const currentSlotType = useMemo(() =>
     slotTypes.find(t => t.id === selectedSlotTypeId),
@@ -92,6 +95,31 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     endDate: getStartOfDayVNInUTC(addDays(weekEnd, 1)),
   });
 
+  useSignalRListener("calendar.statusUpdated", async (payload: any) => {
+    // 1. XÓA NGAY LẬP TỨC cache của Bookings
+    // Vì chắc chắn cái Booking này không còn là "Pending", xóa đi để UI không hiện nó nữa
+    queryClient.removeQueries({
+      predicate: (query) =>
+        query.queryKey[0] === "bookings" &&
+        (query.queryKey[1] as any)?.labRoomId === payload.labRoomId
+    });
+
+    // 2. ĐỢI 1 KHOẢNG NGẮN (Ví dụ 1s) để Backend xử lý xong MediatR Event (tạo Schedule)
+    // Trong lúc này UI sẽ mượt hơn vì Booking cũ đã biến mất
+    const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+    await delay(1000);
+
+    // 3. REFETCH cưỡng chế cho Schedules
+    // Sử dụng refetch thay vì invalidate để đảm bảo nó gọi API ngay lập tức
+    await queryClient.refetchQueries({
+      predicate: (query) =>
+        query.queryKey[0] === "schedules" &&
+        (query.queryKey[1] as any)?.labRoomId === payload.labRoomId,
+      type: 'active' // Chỉ fetch lại những gì đang hiện trên màn hình
+    });
+
+    appAlert.success("Cập nhật", "Lịch phòng đã được đồng bộ mới nhất.");
+  });
   const gridRef = useRef<HTMLDivElement>(null);
 
   // Generate time slots (7:00 AM - 10:00 PM, hourly display only)
@@ -102,14 +130,11 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
 
   // Handle clicking on a fixed slot
   const handleSlotClick = (date: string, frame: any) => {
-    console.log("Clicked slot on date:", date, "with frame:", frame);
     const bookingData = {
       date: date,
       startTime: frame.startTime.slice(0, 5), // Lấy giờ và phút (HH:mm)
       endTime: frame.endTime.slice(0, 5), // Lấy giờ và phút (HH:mm)
     };
-
-    console.log("Booking Data:", bookingData);
 
     // --- VALIDATE POLICY CHO FIXED SLOT ---
     if (policies) {

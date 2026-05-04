@@ -3,22 +3,36 @@ import FixedImportPanel from "./FixedImportPanel";
 import FlexibleImportPanel from "./FlexibleImportPanel";
 import { getDynamicSemesters, getSemesterDetails } from "../../../utils/semester.util";
 import { formatDate } from "date-fns";
+import type { ImportBatchDto } from "../../schedules/types/import-batch.type";
+import { useImportBatches } from "../../schedules/hooks/useImportBatches";
+import { ImportBatchList } from "../../schedules/components/ImportBatchList";
+import { RefreshCw } from "lucide-react";
 
 export default function ImportBookingFeature() {
-  const handleImportComplete = () => {
-    // Optional: Trigger any post-import actions (e.g., refresh data, close modals, etc.)
-  };
-
   // Tự động suy ra danh sách kỳ dựa trên thời gian thực (ví dụ: tháng 4/2026)
   const availableSemesters = useMemo(() => getDynamicSemesters(), []);
 
   // Mặc định chọn kỳ đầu tiên (thường là kỳ hiện tại)
   const [selectedCode, setSelectedCode] = useState(availableSemesters[0]);
+  const [editingBatch, setEditingBatch] = useState<ImportBatchDto | null>(null);
+
+  // Gọi Hook lấy danh sách Batch theo học kỳ đang chọn
+  const { batchesQuery, deleteMutation } = useImportBatches(selectedCode);
 
   const semesterDetails = useMemo(() =>
     getSemesterDetails(selectedCode),
     [selectedCode]
   );
+
+  const handleReimport = (batch: ImportBatchDto) => {
+    setEditingBatch(batch);
+    // Cuộn lên đầu trang để người dùng thấy Panel Upload
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleImportComplete = () => {
+    batchesQuery.refetch();
+  };
 
   return (
     <div className="space-y-6">
@@ -47,6 +61,7 @@ export default function ImportBookingFeature() {
           </select>
         </div>
       </div>
+
       {/* Hiển thị chi tiết ngày để user kiểm tra trước khi Import */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-8">
         <div>
@@ -60,10 +75,33 @@ export default function ImportBookingFeature() {
         </div>
       </div>
 
+      {/* Thông báo nếu đang ở chế độ Re-import */}
+      {editingBatch && (
+        <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg flex justify-between items-center animate-in fade-in slide-in-from-left-4">
+          <div className="flex items-center gap-3 text-amber-800 text-sm">
+            <RefreshCw className="w-5 h-5 animate-spin-slow" />
+            <span>Đang ở chế độ <b>Cập nhật đợt Import: {editingBatch.name}</b>. File tải lên sẽ ghi đè đợt này.</span>
+          </div>
+          <button
+            onClick={() => setEditingBatch(null)}
+            className="text-xs font-bold text-amber-900 underline"
+          >
+            Hủy và tạo đợt mới
+          </button>
+        </div>
+      )}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <FixedImportPanel semester={semesterDetails} onImportComplete={handleImportComplete} />
-        <FlexibleImportPanel semester={semesterDetails} onImportComplete={handleImportComplete} />
+        <FixedImportPanel semester={semesterDetails} onImportComplete={handleImportComplete} editingBatchId={editingBatch?.id || null} />
+        <FlexibleImportPanel semester={semesterDetails} onImportComplete={handleImportComplete} editingBatchId={editingBatch?.id || null} />
       </div>
+
+      {/* Danh sách Batch hiển thị bên dưới */}
+      <ImportBatchList
+        batches={batchesQuery.data || []}
+        onDelete={(id) => deleteMutation.mutate(id)}
+        onReimport={handleReimport}
+        isDeleting={deleteMutation.isPending}
+      />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, Calendar, Clock, ArrowRight, Plus } from 'lucide-react';
+import { CheckCircle2, Calendar, Clock, ArrowRight, Plus, AlertTriangle } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { formatDate } from '../../../utils/formatDate';
 
@@ -8,6 +8,7 @@ interface BookingSuccessModalProps {
   onClose: () => void;
   // Chỉ nhận những thứ tối thiểu cần thiết
   bookingId?: string;
+  warningMessage?: string;
   roomName: string;
   date: string;
   timeSlot: string; // "07:00 - 09:00"
@@ -18,7 +19,7 @@ interface BookingSuccessModalProps {
 export const BookingSuccessModal: React.FC<BookingSuccessModalProps> = ({
   isOpen,
   onClose,
-  bookingId,
+  warningMessage,
   roomName,
   date,
   timeSlot,
@@ -52,6 +53,21 @@ export const BookingSuccessModal: React.FC<BookingSuccessModalProps> = ({
           </div>
 
           <div className="p-6 space-y-4">
+            {/* Hiển thị Warning Message từ Backend (Peak Occupancy Warning) */}
+            {warningMessage && (
+              <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4 flex gap-3 animate-in slide-in-from-top-2 duration-300">
+                <div className="bg-orange-100 p-2 rounded-xl h-fit">
+                  <AlertTriangle className="w-4 h-4 text-orange-600" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-orange-400 uppercase tracking-tight">Lưu ý về sức chứa</p>
+                  <p className="text-[11px] text-orange-900 font-semibold leading-snug mt-0.5">
+                    {warningMessage}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Warning nhẹ về việc chờ duyệt */}
             <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 flex gap-3">
               <div className="w-2 h-2 bg-amber-400 rounded-full mt-1.5 animate-pulse" />
@@ -78,12 +94,7 @@ export const BookingSuccessModal: React.FC<BookingSuccessModalProps> = ({
               </div>
             </div>
 
-            {/* Mã ID nhỏ xinh ở dưới */}
-            {bookingId && (
-              <p className="text-center text-[9px] font-bold text-gray-300 uppercase tracking-tighter">
-                Mã định danh: {bookingId}
-              </p>
-            )}
+
           </div>
 
           {/* Action Buttons - Layout dọc cho Mobile-friendly */}

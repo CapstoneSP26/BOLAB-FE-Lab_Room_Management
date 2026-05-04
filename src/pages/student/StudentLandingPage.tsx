@@ -4,12 +4,12 @@
  */
 
 import { useNavigate } from 'react-router';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   QrCode, Clock, AlertCircle,
-  Calendar, Loader2
+  Calendar, Loader2, ChevronLeft, ChevronRight
+
 } from 'lucide-react';
-import { useAuthStore } from '../../store/useAuthStore';
 import { useSchedulesStudent } from '../../features/schedules/hooks/useSchedules';
 
 // Status mapping: active = lecturer session is running, inactive = otherwise
@@ -25,17 +25,17 @@ const formatTimeSlot = (startTime: string, endTime: string): string => {
   try {
     const start = new Date(startTime);
     const end = new Date(endTime);
-    
+
     // Convert to UTC+7 by adding 7 hours to milliseconds
     const startUTC7 = new Date(start.getTime() + 7 * 60 * 60 * 1000);
     const endUTC7 = new Date(end.getTime() + 7 * 60 * 60 * 1000);
-    
+
     // Use getUTC methods to get hours/minutes from UTC+7 adjusted time
     const startHours = startUTC7.getUTCHours().toString().padStart(2, '0');
     const startMinutes = startUTC7.getUTCMinutes().toString().padStart(2, '0');
     const endHours = endUTC7.getUTCHours().toString().padStart(2, '0');
     const endMinutes = endUTC7.getUTCMinutes().toString().padStart(2, '0');
-    
+
     return `${startHours}:${startMinutes} - ${endHours}:${endMinutes}`;
   } catch {
     return 'Unknown';
@@ -51,10 +51,8 @@ const transformScheduleData = (data: any) => ({
 
 export default function StudentLandingPage() {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
-
-  // Debug JWT
-  console.log('🔐 StudentLandingPage - Current User:', user);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   // Fetch today's schedules from /api/schedules/schedule-student
   // Get today's date in UTC+7 (Vietnam timezone)
@@ -62,7 +60,8 @@ export default function StudentLandingPage() {
   const { data: scheduleResponse, isLoading: classesLoading, error: classesError } = useSchedulesStudent({
     fromDate: today,
     toDate: today,
-    pageSize: 100,
+    pageNumber: currentPage,
+    pageSize: ITEMS_PER_PAGE,
   });
 
   // Transform raw API data to match ScheduleDto structure
@@ -70,6 +69,35 @@ export default function StudentLandingPage() {
     const items = scheduleResponse?.items || [];
     return items.map(transformScheduleData);
   }, [scheduleResponse]);
+
+  // Fallback pagination: if backend returns more than pageSize items, paginate safely on client.
+  const serverPageSize = scheduleResponse?.pageSize ?? ITEMS_PER_PAGE;
+  const isServerPaginationBroken =
+    !!scheduleResponse && upcomingClasses.length > serverPageSize;
+
+  const totalClasses = isServerPaginationBroken
+    ? upcomingClasses.length
+    : scheduleResponse?.totalCount ?? upcomingClasses.length;
+
+  const totalPages = isServerPaginationBroken
+    ? Math.max(1, Math.ceil(totalClasses / ITEMS_PER_PAGE))
+    : Math.max(1, scheduleResponse?.totalPages ?? 1);
+
+  const paginatedClasses = useMemo(() => {
+    if (!isServerPaginationBroken) {
+      return upcomingClasses;
+    }
+
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    return upcomingClasses.slice(start, end);
+  }, [upcomingClasses, isServerPaginationBroken, currentPage]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   const handleScanQRFromClass = (scheduleId: string) => {
     navigate(`/student/scan-attendance/${scheduleId}`);
@@ -120,7 +148,7 @@ export default function StudentLandingPage() {
               <AlertCircle className="w-8 h-8 mx-auto mb-3" />
               <p className="text-sm">Failed to load schedule</p>
             </div>
-          ) : upcomingClasses.length > 0 ? (
+          ) : paginatedClasses.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
@@ -134,7 +162,7 @@ export default function StudentLandingPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {upcomingClasses.map((cls) => (
+                  {paginatedClasses.map((cls) => (
                     <tr key={cls.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 md:px-6 py-4">
                         <div className="font-semibold text-slate-900 text-xs md:text-sm">{cls.subjectCode}</div>
@@ -184,6 +212,33 @@ export default function StudentLandingPage() {
             <div className="px-4 md:px-8 py-12 text-center text-slate-500">
               <Calendar className="w-12 h-12 mx-auto mb-3 text-slate-300" />
               <p className="text-sm md:text-base">No classes scheduled for today</p>
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {totalClasses > 0 && (
+            <div className="px-4 md:px-8 py-4 border-t border-slate-100 flex items-center justify-between">
+              <div className="text-xs md:text-sm text-slate-600">
+                Page {currentPage} of {totalPages} • {totalClasses} classes
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage <= 1}
+                  className="flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs md:text-sm"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <span className="hidden xs:inline">Previous</span>
+                </button>
+                <button
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                  disabled={currentPage >= totalPages}
+                  className="flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs md:text-sm"
+                >
+                  <span className="hidden xs:inline">Next</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           )}
         </div>
