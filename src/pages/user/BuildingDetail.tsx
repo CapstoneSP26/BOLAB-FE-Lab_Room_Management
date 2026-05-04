@@ -6,6 +6,7 @@ import { useBreadcrumb } from '../../context/BreadcrumbContext';
 import RoomCard from '../../features/labroom/components/RoomCard';
 import { labroomApi } from '../../features/labroom/api/labroom.api';
 import { buildingApi, type BuildingResponse } from '../../features/building';
+import { addCacheBuster } from '../../utils/imageCache';
 
 import {
   Search,
@@ -78,7 +79,7 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
           setRoomName('');
           // Update context với hình ảnh tòa nhà
           if (data.buildingImageUrl) {
-            setActiveBuildingImage(data.buildingImageUrl);
+            setActiveBuildingImage(addCacheBuster(data.buildingImageUrl));
           }
         }
       } catch (err) {
@@ -209,7 +210,7 @@ const BuildingDetail: React.FC<BuildingDetailProps> = () => {
         <div
           className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
           style={{
-            backgroundImage: `url(${currentBuilding.buildingImageUrl})`,
+            backgroundImage: `url(${addCacheBuster(currentBuilding.buildingImageUrl)})`,
             filter: 'blur(15px) brightness(0.8)',
           }}
         />
