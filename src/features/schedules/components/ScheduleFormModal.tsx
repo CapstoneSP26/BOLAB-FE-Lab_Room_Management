@@ -163,12 +163,9 @@ export default function ScheduleFormModal({
     }
     setGroupSearching(true);
     try {
-      // Filter groups based on search query
-      const res = await getGroups();
-      const filtered = (res.items ?? []).filter(g => 
-        g.groupName.toLowerCase().includes(q.toLowerCase())
-      );
-      setGroupResults(filtered);
+      // Backend handles search now
+      const res = await getGroups({ searchQuery: q });
+      setGroupResults(res.items ?? []);
     } catch {
       setGroupResults([]);
     } finally {

@@ -20,6 +20,7 @@ import type {
   GetGroupMembersResponse,
   StudentSearchDto,
   SearchStudentsResponse,
+  GetGroupsParams,
 } from '../types/group.type';
 
 // API endpoints
@@ -31,11 +32,22 @@ const API_ENDPOINTS = {
     `/groups/${groupId}/members/${userId}`,
 } as const;
 
+const buildGroupsParams = (params: GetGroupsParams = {}) => ({
+  keyword: params.searchQuery,
+  page: params.page,
+  limit: params.pageSize || 10,
+  pageSize: params.pageSize || 10,
+  sortBy: params.sortBy ?? "CreatedAt",
+  isDescending: true, // Typically for search we want newest or matching
+});
+
 /**
  * Get all groups owned by current lecturer
  */
-export const getGroups = async (): Promise<GetGroupsResponse> => {
-  const response = await axiosInstance.get<any>(API_ENDPOINTS.GROUPS);
+export const getGroups = async (params: GetGroupsParams = {}): Promise<GetGroupsResponse> => {
+  const response = await axiosInstance.get<any>(API_ENDPOINTS.GROUPS, {
+    params: buildGroupsParams(params),
+  });
   
   // Handle different response structures and map field names
   let groups: any[] = [];
