@@ -1,186 +1,246 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Calendar, FileText, Loader2 } from 'lucide-react';
 import { BookingStatsCard } from './BookingStatsCard';
 import { RecentRequestCard } from './RecentRequestCard';
 import { BookingCalendar } from './BookingCalendar';
-import { useUpcomingBookings } from '../hooks/useUpcomingBookings';
-import { useBookingStats } from '../hooks/useBookingStats';
-import { useRecentRequests } from '../hooks/useRecentRequests';
+import { useBookingHistoryPageState } from '../hooks/useBookingHistoryPageState';
+import { useAuthStore } from '../../../store/useAuthStore';
+import { RecentActivity, type Activity } from '../../../components/common/RecentActivity';
+import type { Booking, BookingRequest, BookingStats } from '../types/booking.type';
+import { useSchedules } from '../../schedules/hooks/useSchedules';
+import type { ScheduleDto } from '../../schedules/types/schedule.type';
+import { useNotifications } from '../../notifications/hooks/useNotifications';
 
 export const BookingDashboard: React.FC = () => {
-  // Fetch data using hooks
-  const { data: upcomingData, isLoading: upcomingLoading } = useUpcomingBookings({ limit: 4 });
-  const { data: statsData, isLoading: statsLoading } = useBookingStats();
-  const { data: requestsData, isLoading: requestsLoading } = useRecentRequests({ limit: 5 });
+  const now = new Date();
+  const { user } = useAuthStore();
+  const lecturerName = user?.fullName?.trim().toLowerCase();
+  const today = now.toISOString().slice(0, 10);
+  const inThreeMonths = new Date(now);
+  inThreeMonths.setMonth(inThreeMonths.getMonth() + 3);
 
-  // Mock data for when API is not available
-  const mockStats = {
-    totalAccepted: 24,
-    totalPending: 8,
-    totalRejected: 3,
-    upcomingBookings: 12,
+  const schedulesParams = {
+    fromDate: today,
+    toDate: inThreeMonths.toISOString().slice(0, 10),
+    pageSize: 100,
+    lecturerId: user?.id,
   };
 
-  const mockUpcomingBookings = [
-    {
-      id: 1,
-      roomId: 'R101',
-      roomName: 'Lab A-101',
-      buildingName: 'Building Alpha',
-      startTime: '08:00',
-      endTime: '10:00',
-      date: new Date(Date.now() + 86400000).toISOString(),
-      status: 'Approved' as const,
-      purpose: 'Web Development Workshop',
-    },
-    {
-      id: 2,
-      roomId: 'R203',
-      roomName: 'Lab G-203',
-      buildingName: 'Building Gamma',
-      startTime: '14:00',
-      endTime: '16:00',
-      date: new Date(Date.now() + 172800000).toISOString(),
-      status: 'PendingApproval' as const,
-      purpose: 'AI Research Project',
-    },
-    {
-      id: 3,
-      roomId: 'R305',
-      roomName: 'Lab D-305',
-      buildingName: 'Building Delta',
-      startTime: '10:00',
-      endTime: '12:00',
-      date: new Date(Date.now() + 259200000).toISOString(),
-      status: 'Approved' as const,
-      purpose: 'Database Design Class',
-    },
-  ];
+  const bookingHistoryParams = {
+    limit: 100,
+    startDate: today,
+    endDate: inThreeMonths.toISOString().slice(0, 10),
+    status: 'Approved' as const,
+  };
 
-  const mockRecentRequests = [
-    {
-      id: 1,
-      roomId: 'R101',
-      roomName: 'Lab A-101',
-      buildingName: 'Building Alpha',
-      requestedBy: 'Nguyen Van A',
-      requestedAt: new Date(Date.now() - 1800000).toISOString(),
-      startTime: '08:00',
-      endTime: '10:00',
-      date: new Date(Date.now() + 86400000).toISOString(),
-      status: 'PendingApproval' as const,
-    },
-    {
-      id: 2,
-      roomId: 'R203',
-      roomName: 'Lab G-203',
-      buildingName: 'Building Gamma',
-      requestedBy: 'Tran Thi B',
-      requestedAt: new Date(Date.now() - 3600000).toISOString(),
-      startTime: '14:00',
-      endTime: '16:00',
-      date: new Date(Date.now() + 172800000).toISOString(),
-      status: 'accepted' as const,
-    },
-    {
-      id: 3,
-      roomId: 'R305',
-      roomName: 'Lab D-305',
-      buildingName: 'Building Delta',
-      requestedBy: 'Le Van C',
-      requestedAt: new Date(Date.now() - 7200000).toISOString(),
-      startTime: '10:00',
-      endTime: '12:00',
-      date: new Date(Date.now() + 259200000).toISOString(),
-      status: 'accepted' as const,
-    },
-    {
-      id: 4,
-      roomId: 'R401',
-      roomName: 'Lab A-401',
-      buildingName: 'Building Alpha',
-      requestedBy: 'Pham Thi D',
-      requestedAt: new Date(Date.now() - 10800000).toISOString(),
-      startTime: '15:00',
-      endTime: '17:00',
-      date: new Date(Date.now() + 345600000).toISOString(),
-      status: 'rejected' as const,
-    },
-  ];
+  const { data: schedulesData, isLoading: schedulesLoading } = useSchedules(
+    schedulesParams,
+    true,
+  );
+  const { data: bookingHistoryData, isLoading: bookingHistoryLoading } = useBookingHistoryPageState(
+    bookingHistoryParams,
+    true,
+  );
+  const { data: notificationsData } = useNotifications({
+    pageNumber: 1,
+    pageSize: 5,
+  });
 
-  const stats = statsData?.data || mockStats;
-  const upcomingBookings = upcomingData?.data || mockUpcomingBookings;
-  const recentRequests = requestsData?.data || mockRecentRequests;
+  const mapScheduleToBooking = (schedule: ScheduleDto): Booking => ({
+    id: schedule.id,
+    roomId: schedule.labRoomId ?? schedule.labRoomName,
+    roomName: schedule.labRoomName,
+    roomNo: schedule.roomNo,
+    buildingName: schedule.buildingName || '',
+    startTime: new Date(schedule.startTime).toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }),
+    endTime: new Date(schedule.endTime).toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }),
+    date: schedule.startTime,
+    status: schedule.status === 'Cancelled' ? 'Cancelled' : 'Approved',
+    purpose: schedule.subjectCode,
+    lecturerName: schedule.lecturerName,
+    scheduleType: schedule.type,
+    studentCount: schedule.studentCount,
+    bookingSource: 'LECTURER_BOOK',
+  });
+
+  const scheduleBookings = useMemo(
+    () => (schedulesData?.items ?? []).map(mapScheduleToBooking),
+    [schedulesData],
+  );
+
+  const bookingHistoryBookings = useMemo(
+    () =>
+      (bookingHistoryData?.data ?? [])
+        .filter((booking) => {
+          if (!lecturerName) return true;
+          return (
+            booking.userName?.trim().toLowerCase() === lecturerName ||
+            booking.purpose?.trim().toLowerCase().includes(lecturerName)
+          );
+        })
+        .map((booking) => ({
+          id: booking.id,
+          roomId: booking.roomId,
+          roomName: booking.roomName,
+          buildingName: booking.buildingName,
+          startTime: booking.startTime,
+          endTime: booking.endTime,
+          date: booking.date,
+          status: booking.status,
+          purpose: booking.purpose,
+          userName: booking.userName,
+          lecturerName: booking.userName,
+          bookingSource: 'LECTURER_BOOK' as const,
+        })),
+    [bookingHistoryData, lecturerName],
+  );
+
+
+
+  const approvedQueue = useMemo<BookingRequest[]>(
+    () => bookingHistoryBookings
+      .filter((booking) => booking.status === 'Approved')
+      .map((booking) => ({
+        id: booking.id,
+        roomId: booking.roomId,
+        roomName: booking.roomName,
+        buildingName: booking.buildingName,
+        requestedBy: booking.userName || booking.lecturerName || 'N/A',
+        requestedAt: booking.date,
+        startTime: booking.startTime,
+        endTime: booking.endTime,
+        date: booking.date,
+        status: 'accepted',
+        purpose: booking.purpose,
+      })),
+    [bookingHistoryBookings],
+  );
+
+  const recentNotifications = useMemo(
+    () => (notificationsData?.items ?? []).slice(0, 5),
+    [notificationsData],
+  );
+
+  const derivedStats: BookingStats = {
+    totalAccepted: bookingHistoryBookings.filter((booking) => booking.status === 'Approved').length,
+    totalPending: bookingHistoryBookings.filter((booking) => booking.status === 'PendingApproval').length,
+    totalRejected: bookingHistoryBookings.filter((booking) => booking.status === 'Rejected').length,
+    upcomingBookings: scheduleBookings.length || bookingHistoryBookings.length,
+  };
+
+  const upcomingBookings = scheduleBookings.length > 0
+    ? scheduleBookings
+    : bookingHistoryBookings;
+  const isUpcomingDataLoading = schedulesLoading || bookingHistoryLoading;
+
+  const recentActivities: Activity[] = recentNotifications.map((notification) => ({
+    id: notification.id,
+    type: notification.type === 'success'
+      ? 'booking_approved'
+      : notification.type === 'warning'
+        ? 'booking'
+        : notification.type === 'error'
+          ? 'report_sent'
+          : 'qr_generated',
+    title: notification.title,
+    description: notification.message,
+    timestamp: notification.createdAt ?? new Date().toISOString(),
+  }));
 
   return (
     <div className="w-full h-full flex gap-6 px-6 py-8 overflow-y-auto custom-scrollbar">
       {/* Main Content Area - Left & Center */}
       <div className="flex-1 space-y-6 min-h-0">
         {/* Booking Statistics */}
-        <div className="animate-fade-in">
-          {statsLoading ? (
+        <div className="animate-fade-in rounded-2xl border border-amber-200 bg-amber-50/70 p-4">
+          <p className="mb-3 inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-700">
+            Performance Snapshot
+          </p>
+          {bookingHistoryLoading ? (
             <div className="flex justify-center items-center h-32">
-              <Loader2 className="h-8 w-8 animate-spin text-white" />
+              <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
             </div>
           ) : (
-            <BookingStatsCard stats={stats} />
+            <BookingStatsCard stats={derivedStats} />
           )}
         </div>
 
         {/* Upcoming Bookings Calendar */}
-        <div className="space-y-4 animate-fade-in flex-1 min-h-0" style={{ animationDelay: '0.1s' }}>
+        <div className="space-y-4 animate-fade-in flex-1 min-h-0 rounded-2xl border border-blue-200 bg-blue-50/70 p-4" style={{ animationDelay: '0.1s' }}>
+          <p className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
+            Calendar Focus
+          </p>
           <div className="flex items-center justify-between">
-            <h3 className="text-white font-bold text-2xl flex items-center drop-shadow-md">
-              <Calendar className="h-7 w-7 mr-3 text-orange-400 drop-shadow-md" />
+            <h3 className="text-slate-900 font-bold text-2xl flex items-center">
+              <Calendar className="h-7 w-7 mr-3 text-blue-500" />
               Upcoming Bookings
             </h3>
-            <span className="text-white/90 text-sm font-medium">
+            <span className="text-slate-600 text-sm font-medium">
               {upcomingBookings.length} bookings
             </span>
           </div>
-          
-          {upcomingLoading ? (
+
+          {isUpcomingDataLoading ? (
             <div className="flex justify-center items-center h-96">
-              <Loader2 className="h-8 w-8 animate-spin text-white" />
+              <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
             </div>
           ) : upcomingBookings.length > 0 ? (
             <BookingCalendar bookings={upcomingBookings} />
           ) : (
-            <div className="text-center py-24 text-white/60 bg-white/5 rounded-xl border border-white/10">
+            <div className="text-center py-24 text-slate-500 bg-blue-50 rounded-xl border border-blue-200 shadow-sm">
               <Calendar className="h-16 w-16 mx-auto mb-4 opacity-50" />
-              <p className="text-lg">No upcoming bookings</p>
+              <p className="text-lg">No upcoming lecturer schedules</p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Sidebar - Recent Requests */}
+      {/* Sidebar - Recent Requests & Activities */}
       <div className="w-96 space-y-4 animate-fade-in flex-shrink-0" style={{ animationDelay: '0.2s' }}>
-        <div className="flex items-center justify-between">
-            <h3 className="text-white font-bold text-xl flex items-center drop-shadow-md">
-              <FileText className="h-6 w-6 mr-2 text-orange-400 drop-shadow-md" />
-            Recent Requests
-          </h3>
-          <span className="text-white/80 text-sm">
-            {recentRequests.length}
-          </span>
+        {/* Recent Requests */}
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
+          <p className="mb-3 inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-700">
+            Approval Queue
+          </p>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-slate-900 font-bold text-xl flex items-center">
+              <FileText className="h-6 w-6 mr-2 text-emerald-500" />
+              Recent Requests
+            </h3>
+            <span className="text-slate-600 text-sm">
+              {approvedQueue.length}
+            </span>
+          </div>
+
+          <div className="space-y-3 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
+            {bookingHistoryLoading ? (
+              <div className="flex justify-center items-center h-32">
+                <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
+              </div>
+            ) : approvedQueue.length > 0 ? (
+              approvedQueue.map((request) => (
+                <RecentRequestCard key={request.id} request={request} />
+              ))
+            ) : (
+              <div className="text-center py-12 text-slate-500 bg-emerald-50 rounded-xl border border-emerald-200 shadow-sm">
+                <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No accepted bookings</p>
+              </div>
+            )}
+          </div>
         </div>
-        
-        <div className="space-y-3 max-h-[calc(100vh-220px)] overflow-y-auto pr-2 custom-scrollbar">
-          {requestsLoading ? (
-            <div className="flex justify-center items-center h-32">
-              <Loader2 className="h-6 w-6 animate-spin text-white" />
-            </div>
-          ) : recentRequests.length > 0 ? (
-            recentRequests.map((request) => (
-              <RecentRequestCard key={request.id} request={request} />
-            ))
-          ) : (
-            <div className="text-center py-12 text-white/60">
-              <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No recent requests</p>
-            </div>
-          )}
+
+        {/* Recent Activities */}
+        <div className="mt-6 rounded-2xl border border-violet-200 bg-violet-50/70 p-3">
+          <RecentActivity activities={recentActivities} maxItems={5} />
         </div>
       </div>
     </div>

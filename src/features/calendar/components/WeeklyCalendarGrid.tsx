@@ -1,0 +1,981 @@
+import React, { useState, useRef } from 'react';
+import { ChevronLeft, ChevronRight, LayoutGrid, Timer, Settings } from 'lucide-react';
+import type { TimeSlot } from '../../slot/types/slot.types';
+import { formatDate } from '../../../utils/formatDate';
+import type { BookingMode } from '../../slot/types/slot.types';
+
+interface SlotConfig {
+  slotDuration: number; // in hours
+  breakDuration: number; // in hours
+  numberOfSlots: number;
+}
+
+interface DragState {
+  isActive: boolean;
+  dayIndex: number | null;
+  startY: number | null;
+  currentY: number | null;
+  startTime: string;
+  endTime: string;
+}
+
+interface WeeklyCalendarGridProps {
+  selectedRoomId: string;
+  existingBookings: TimeSlot[];
+  onCreateBooking: (data: {
+    date: string;
+    startTime: string;
+    endTime: string;
+  }) => void;
+  weekOffset?: number;
+  onWeekChange?: (offset: number) => void;
+}
+
+/**
+ * 🗓️ Weekly Calendar Grid Component (Google Calendar Style)
+ * Click-and-drag to create bookings, resize blocks, visual conflict detection
+ */
+export const WeeklyCalendarGrid: React.FC<WeeklyCalendarGridProps> = ({
+  existingBookings,
+  onCreateBooking,
+  weekOffset = 0,
+  onWeekChange,
+}) => {
+  const [bookingMode, setBookingMode] = useState<BookingMode>('OutSlot');
+  const [showSlotConfig, setShowSlotConfig] = useState(false);
+  const [slotConfig, setSlotConfig] = useState<SlotConfig>({
+    slotDuration: 2.5,
+    breakDuration: 0,
+    numberOfSlots: 6,
+  });
+  const [dragState, setDragState] = useState<DragState>({
+    isActive: false,
+    dayIndex: null,
+    startY: null,
+    currentY: null,
+    startTime: '',
+    endTime: '',
+  });
+  const [selectedBooking, setSelectedBooking] = useState<TimeSlot | null>(null);
+
+  const gridRef = useRef<HTMLDivElement>(null);
+  const CELL_HEIGHT = 80; // 80px per hour slot
+  const START_HOUR = 7;
+
+  // Generate time slots (7:00 AM - 10:00 PM, hourly display only)
+  const timeSlots: string[] = [];
+  for (let hour = 7; hour <= 22; hour++) {
+    timeSlots.push(`${hour.toString().padStart(2, '0')}:00`);
+  }
+
+  // Generate fixed slots for OldSlot mode
+  const fixedSlots: Array<{ slotNumber: number; label: string; startTime: string; endTime: string }> = [];
+
+  const formatTime = (hour: number) => {
+    const h = Math.floor(hour);
+    const m = Math.round((hour - h) * 60);
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+  };
+
+  for (let i = 1; i <= slotConfig.numberOfSlots; i++) {
+    const startHour = START_HOUR + (i - 1) * (slotConfig.slotDuration + slotConfig.breakDuration);
+    const endHour = startHour + slotConfig.slotDuration;
+
+    fixedSlots.push({
+      slotNumber: i,
+      label: `Slot ${i}`,
+      startTime: formatTime(startHour),
+      endTime: formatTime(endHour),
+    });
+  }
+
+  // Generate week days (Monday - Sunday)
+  const getWeekDays = (offset: number) => {
+    const today = new Date();
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - today.getDay() + 1 + offset * 7); // Monday of current week + offset
+
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(monday);
+      date.setDate(monday.getDate() + i);
+      days.push(date);
+    }
+    return days;
+  };
+
+  const weekDays = getWeekDays(weekOffset);
+  const weekStart = weekDays[0];
+  const weekEnd = weekDays[6];
+
+  // Check if time slot is in the past
+  const isPastSlot = (dayIndex: number, timeSlot: string): boolean => {
+    const now = new Date();
+    const slotDate = new Date(weekDays[dayIndex]);
+    const [hours, minutes] = timeSlot.split(':').map(Number);
+    slotDate.setHours(hours, minutes, 0, 0);
+    return slotDate < now;
+  };
+
+  // Check if fixed slot (OldSlot mode) is in the past
+  const isPastFixedSlot = (dayIndex: number, startTime: string): boolean => {
+    return isPastSlot(dayIndex, startTime);
+  };
+
+  // Check if time slot has booking
+  const hasBooking = (dayIndex: number, timeSlot: string): TimeSlot | null => {
+    const date = weekDays[dayIndex].toISOString().split('T')[0];
+    return (
+      existingBookings.find(
+        (booking) =>
+          booking.date === date &&
+          booking.startTime <= timeSlot &&
+          booking.endTime > timeSlot
+      ) || null
+    );
+  };
+
+  const getBookingSource = (booking: TimeSlot): 'AO_BOOK' | 'LECTURER_BOOK' => {
+    if (booking.bookingSource) {
+      return booking.bookingSource;
+    }
+
+    const scheduleType = booking.scheduleType?.toLowerCase() || '';
+    if (scheduleType.includes('ao')) {
+      return 'AO_BOOK';
+    }
+
+    return 'LECTURER_BOOK';
+  };
+
+  const getSourceConfig = (booking: TimeSlot) => {
+    const source = getBookingSource(booking);
+
+    if (source === 'AO_BOOK') {
+      return {
+        label: 'Academic Office Book',
+        badgeClass: 'bg-sky-100 text-sky-800',
+      };
+    }
+
+    return {
+      label: 'Lecturer Book',
+      badgeClass: 'bg-violet-100 text-violet-800',
+    };
+  };
+
+  const getStatusConfig = (booking: TimeSlot) => {
+    if (booking.status === 'Pending') {
+      return {
+        label: 'Pending',
+        badgeClass: 'bg-amber-100 text-amber-800',
+      };
+    }
+
+    if (booking.status === 'Available') {
+      return {
+        label: 'Available',
+        badgeClass: 'bg-emerald-100 text-emerald-800',
+      };
+    }
+
+    if (booking.status === 'Maintenance') {
+      return {
+        label: 'Maintenance',
+        badgeClass: 'bg-slate-200 text-slate-700',
+      };
+    }
+
+    // Booked status follows the same source color palette used on cards.
+    const sourceConfig = getSourceConfig(booking);
+    return {
+      label: 'Booked',
+      badgeClass: sourceConfig.badgeClass,
+    };
+  };
+
+  const timeToMinutes = (time: string): number => {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  const getBookingBlockMetrics = (
+    booking: TimeSlot,
+    timeSlot: string
+  ): { top: number; height: number } | null => {
+    const slotStart = timeToMinutes(timeSlot);
+    const slotEnd = slotStart + 60;
+
+    const bookingStart = timeToMinutes(booking.startTime);
+    let bookingEnd = timeToMinutes(booking.endTime);
+
+    if (bookingEnd <= bookingStart) {
+      bookingEnd += 24 * 60;
+    }
+
+    const isStartCell = bookingStart >= slotStart && bookingStart < slotEnd;
+    if (!isStartCell) {
+      return null;
+    }
+
+    const topOffset = ((bookingStart - slotStart) / 60) * CELL_HEIGHT + 4;
+    const blockHeight = ((bookingEnd - bookingStart) / 60) * CELL_HEIGHT - 8;
+
+    return {
+      top: topOffset,
+      height: Math.max(blockHeight, 24),
+    };
+  };
+
+  const getBookerName = (booking: TimeSlot): string => {
+    return booking.userName || booking.bookedBy || booking.lecturerName || 'N/A';
+  };
+
+  const isSlotActive = (booking: TimeSlot): boolean => {
+    if (booking.status !== 'Booked') {
+      return false;
+    }
+
+    const [startHour, startMinute] = booking.startTime.split(':').map(Number);
+    const [endHour, endMinute] = booking.endTime.split(':').map(Number);
+
+    const startDate = new Date(booking.date);
+    const endDate = new Date(booking.date);
+    startDate.setHours(startHour, startMinute, 0, 0);
+    endDate.setHours(endHour, endMinute, 0, 0);
+
+    // Handle overnight schedules (e.g. 23:00 - 01:00).
+    if (endDate <= startDate) {
+      endDate.setDate(endDate.getDate() + 1);
+    }
+
+    const now = new Date();
+    return now >= startDate && now <= endDate;
+  };
+
+  // Check if cell is in drag selection
+  const isInDragSelection = (dayIndex: number, timeSlotIndex: number): boolean => {
+    if (!dragState.isActive || dragState.dayIndex === null || dragState.startY === null || dragState.currentY === null) return false;
+    if (dayIndex !== dragState.dayIndex) return false;
+
+    const minY = Math.min(dragState.startY, dragState.currentY);
+    const maxY = Math.max(dragState.startY, dragState.currentY);
+    const cellY = timeSlotIndex * CELL_HEIGHT;
+    const cellEndY = cellY + CELL_HEIGHT;
+
+    return cellEndY > minY && cellY < maxY;
+  };
+
+  // Convert Y position to time string (snap to 15-minute intervals)
+  const positionToTime = (yPos: number): string => {
+    const totalMinutes = Math.floor((yPos / CELL_HEIGHT) * 60); // 80px = 1 hour = 60 minutes
+    // Snap to nearest 15-minute interval
+    const snappedMinutes = Math.floor(totalMinutes / 15) * 15;
+    const hours = START_HOUR + Math.floor(snappedMinutes / 60);
+    const minutes = snappedMinutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+  };
+
+  // Check if drag selection has conflict
+  const hasConflict = (): boolean => {
+    if (!dragState.isActive || dragState.dayIndex === null) return false;
+
+    const dayIndex = dragState.dayIndex;
+    const startTime = dragState.startTime;
+    const endTime = dragState.endTime;
+
+    return existingBookings.some((booking) => {
+      const date = weekDays[dayIndex].toISOString().split('T')[0];
+      if (booking.date !== date) return false;
+
+      // Check for overlap
+      return !(endTime <= booking.startTime || startTime >= booking.endTime);
+    });
+  };
+
+  // Handle mouse down (start drag)
+  const handleMouseDown = (e: React.MouseEvent, dayIndex: number, timeSlotIndex: number) => {
+    // Only allow drag in OutSlot mode
+    if (bookingMode === 'OldSlot') return;
+
+    // Don't allow booking in the past
+    if (isPastSlot(dayIndex, timeSlots[timeSlotIndex])) return;
+
+    // Don't start drag if cell already has booking
+    if (hasBooking(dayIndex, timeSlots[timeSlotIndex])) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const yOffset = e.clientY - rect.top;
+    const startY = timeSlotIndex * CELL_HEIGHT + yOffset;
+
+    const startTime = positionToTime(startY);
+    const endTime = positionToTime(startY + CELL_HEIGHT); // Default 1 slot (15 min)
+
+    setDragState({
+      isActive: true,
+      dayIndex,
+      startY,
+      currentY: startY + CELL_HEIGHT,
+      startTime,
+      endTime,
+    });
+  };
+
+  // Handle OldSlot click (one-click booking for fixed slots)
+  const handleOldSlotClick = (dayIndex: number, slotNumber: number) => {
+    if (bookingMode !== 'OldSlot') return;
+
+    const date = weekDays[dayIndex].toISOString().split('T')[0];
+
+    // Get slot start time to check if it's in the past
+    const slot = fixedSlots.find(s => s.slotNumber === slotNumber);
+    if (slot && isPastFixedSlot(dayIndex, slot.startTime)) return; // Don't allow booking past slots
+
+    // Check if this slot is already booked
+    const existingBooking = existingBookings.find(
+      (b) => b.date === date && b.slotNumber === slotNumber && b.slotType === 'OldSlot'
+    );
+
+    if (existingBooking) {
+      setSelectedBooking(existingBooking);
+      return;
+    }
+
+    // Calculate time based on slot number (each slot = 2.5 hours starting from 7:00)
+    const startMinutes = (slotNumber - 1) * 150; // 150 minutes = 2.5 hours
+    const endMinutes = slotNumber * 150;
+
+    const startHour = START_HOUR + Math.floor(startMinutes / 60);
+    const startMin = startMinutes % 60;
+    const endHour = START_HOUR + Math.floor(endMinutes / 60);
+    const endMin = endMinutes % 60;
+
+    const startTime = `${startHour.toString().padStart(2, '0')}:${startMin.toString().padStart(2, '0')}`;
+    const endTime = `${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`;
+
+    onCreateBooking({
+      date,
+      startTime,
+      endTime,
+    });
+  };
+
+  // Handle mouse move (update drag) - Global mouse move
+  const handleGlobalMouseMove = (e: MouseEvent) => {
+    if (!dragState.isActive || !gridRef.current || dragState.dayIndex === null || dragState.startY === null) return;
+
+    const gridRect = gridRef.current.getBoundingClientRect();
+    const scrollContainer = gridRef.current.parentElement;
+
+    // Auto-scroll when dragging near edges
+    if (scrollContainer) {
+      const containerRect = scrollContainer.getBoundingClientRect();
+      const scrollThreshold = 80; // Distance from edge to trigger scroll
+      const scrollSpeed = 15; // Pixels to scroll per frame
+
+      // Check if mouse is near top edge
+      if (e.clientY < containerRect.top + scrollThreshold) {
+        scrollContainer.scrollTop -= scrollSpeed;
+      }
+      // Check if mouse is near bottom edge
+      else if (e.clientY > containerRect.bottom - scrollThreshold) {
+        scrollContainer.scrollTop += scrollSpeed;
+      }
+    }
+
+    // Get actual header height by finding the day header element (not time column)
+    const dayHeader = gridRef.current.querySelector('[data-day-header]');
+    const headerHeight = dayHeader?.getBoundingClientRect().height || 0;
+
+    // Calculate Y position relative to grid content (after headers)
+    // gridRect.top already accounts for scroll (can be negative), so just subtract it and header
+    const relativeY = e.clientY - gridRect.top - headerHeight;
+    const currentY = Math.max(0, Math.min(relativeY, timeSlots.length * CELL_HEIGHT));
+
+    const minY = Math.min(dragState.startY, currentY);
+    const maxY = Math.max(dragState.startY, currentY);
+
+    const startTime = positionToTime(minY);
+    const endTime = positionToTime(maxY);
+
+    setDragState((prev) => ({
+      ...prev,
+      currentY,
+      startTime,
+      endTime,
+    }));
+  };
+
+  // Handle mouse up (complete drag)
+  const handleMouseUp = () => {
+    if (!dragState.isActive || dragState.dayIndex === null) {
+      setDragState({
+        isActive: false,
+        dayIndex: null,
+        startY: null,
+        currentY: null,
+        startTime: '',
+        endTime: '',
+      });
+      return;
+    }
+
+    // Don't create booking if there's a conflict
+    if (hasConflict()) {
+      setDragState({
+        isActive: false,
+        dayIndex: null,
+        startY: null,
+        currentY: null,
+        startTime: '',
+        endTime: '',
+      });
+      return;
+    }
+
+    const dayIndex = dragState.dayIndex;
+    const date = weekDays[dayIndex].toISOString().split('T')[0];
+
+    onCreateBooking({
+      date,
+      startTime: dragState.startTime,
+      endTime: dragState.endTime,
+    });
+
+    setDragState({
+      isActive: false,
+      dayIndex: null,
+      startY: null,
+      currentY: null,
+      startTime: '',
+      endTime: '',
+    });
+  };
+
+  // Handle global mouse events
+  React.useEffect(() => {
+    if (dragState.isActive) {
+      document.addEventListener('mousemove', handleGlobalMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleGlobalMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [dragState]);
+
+  const handlePrevWeek = () => {
+    onWeekChange?.(weekOffset - 1);
+  };
+
+  const handleNextWeek = () => {
+    onWeekChange?.(weekOffset + 1);
+  };
+
+  const handleToday = () => {
+    onWeekChange?.(0);
+  };
+
+  const conflict = hasConflict();
+
+  return (
+    <div className="flex flex-col h-full bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+      {/* Week Navigation Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b-2 border-gray-200 bg-gradient-to-r from-gray-50 via-white to-gray-50">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={handleToday}
+            className="px-5 py-2.5 text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all border border-blue-200 hover:border-blue-300"
+          >
+            Today
+          </button>
+          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={handlePrevWeek}
+              className="p-2 hover:bg-white rounded-md transition-all group"
+            >
+              <ChevronLeft className="w-5 h-5 text-gray-600 group-hover:text-blue-600 transition-colors" />
+            </button>
+            <button
+              onClick={handleNextWeek}
+              className="p-2 hover:bg-white rounded-md transition-all group"
+            >
+              <ChevronRight className="w-5 h-5 text-gray-600 group-hover:text-blue-600 transition-colors" />
+            </button>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-1 h-8 bg-gradient-to-b from-blue-400 to-blue-500 rounded-full"></div>
+            <h2 className="text-xl font-bold text-gray-900">
+              {formatDate(weekStart, 'MMM DD')} – {formatDate(weekEnd, 'MMM DD, YYYY')}
+            </h2>
+          </div>
+        </div>
+
+        {/* Booking Mode Toggle */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setBookingMode('OutSlot')}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-md text-sm font-medium transition-all ${bookingMode === 'OutSlot'
+                ? 'bg-white text-blue-700 shadow-sm border border-blue-200'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-white/70'
+                }`}
+            >
+              <Timer className="w-4 h-4" />
+              <span>Flexible</span>
+            </button>
+            <button
+              onClick={() => setBookingMode('OldSlot')}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-md text-sm font-medium transition-all ${bookingMode === 'OldSlot'
+                ? 'bg-white text-blue-700 shadow-sm border border-blue-200'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-white/70'
+                }`}
+            >
+              <LayoutGrid className="w-4 h-4" />
+              <span>Fixed Slots</span>
+            </button>
+          </div>
+
+          {/* Slot Settings Button */}
+          {bookingMode === 'OldSlot' && (
+            <button
+              onClick={() => setShowSlotConfig(true)}
+              className="p-2.5 text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all border border-gray-200 hover:border-blue-300"
+              title="Configure Slot Settings"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Calendar Grid */}
+      <div className="flex-1 overflow-auto bg-gradient-to-b from-white to-gray-50">
+        <div
+          ref={gridRef}
+          className="grid grid-cols-[80px_repeat(7,1fr)] border-l border-t border-gray-200 relative select-none"
+          style={{ minWidth: '1000px' }}
+        >
+          {/* Time column header */}
+          <div className="sticky top-0 bg-white border-b-2 border-r border-gray-200 z-20 shadow-sm"></div>
+
+          {/* Day headers */}
+          {weekDays.map((date, dayIndex) => {
+            const isToday = date.toDateString() === new Date().toDateString();
+            const dayName = formatDate(date, 'ddd');
+            const dayNumber = date.getDate();
+            const monthName = formatDate(date, 'MMM');
+
+            return (
+              <div
+                key={dayIndex}
+                data-day-header
+                className={`sticky top-0 z-50 border-b-2 border-r border-gray-200 transition-all ${isToday
+                  ? 'bg-gradient-to-b from-blue-50 to-blue-100 shadow-sm'
+                  : 'bg-white hover:bg-gray-50 shadow-sm'
+                  }`}
+              >
+                <div className="px-4 py-3">
+                  {/* Day name */}
+                  <div className={`text-xs font-bold uppercase tracking-widest mb-2 ${isToday ? 'text-blue-600' : 'text-gray-500'
+                    }`}>
+                    {dayName}
+                  </div>
+
+                  {/* Date display */}
+                  <div className="flex items-baseline justify-center gap-1.5">
+                    <div className={`text-3xl font-extrabold leading-none ${isToday ? 'text-blue-700' : 'text-gray-900'
+                      }`}>
+                      {dayNumber}
+                    </div>
+                    <div className={`text-sm font-semibold ${isToday ? 'text-blue-500' : 'text-gray-500'
+                      }`}>
+                      {monthName}
+                    </div>
+                  </div>
+
+                  {/* Today indicator badge */}
+                  {isToday && (
+                    <div className="mt-2">
+                      <span className="inline-block px-3 py-0.5 bg-blue-600 text-white text-xs font-semibold rounded-full">
+                        Today
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Time slots or Fixed slots - Conditional rendering based on booking mode */}
+          {bookingMode === 'OutSlot' ? (
+            // OutSlot Mode: Show hourly time slots with drag-to-book
+            timeSlots.map((time, timeSlotIndex) => {
+              return (
+                <React.Fragment key={timeSlotIndex}>
+                  {/* Time label */}
+                  <div className="h-20 border-b border-r border-gray-300 bg-gradient-to-r from-gray-50 to-white flex items-start justify-end pr-3 pt-1">
+                    <span className="text-xs text-gray-600 font-semibold">{time}</span>
+                  </div>
+
+                  {/* Day cells */}
+                  {weekDays.map((_date, dayIndex) => {
+                    const booking = hasBooking(dayIndex, time);
+                    const bookingBlockMetrics =
+                      booking && booking.status !== 'Available'
+                        ? getBookingBlockMetrics(booking, time)
+                        : null;
+                    const inSelection = isInDragSelection(dayIndex, timeSlotIndex);
+                    const isDraggingThisColumn = dragState.isActive && dragState.dayIndex === dayIndex;
+                    const isPast = isPastSlot(dayIndex, time);
+
+                    return (
+                      <div
+                        key={`${dayIndex}-${timeSlotIndex}`}
+                        data-time-cell
+                        data-slot-index={timeSlotIndex}
+                        className={`h-20 border-b border-r border-gray-300 relative transition-all ${isPast
+                          ? 'bg-gray-200 cursor-not-allowed opacity-80'
+                          : inSelection && conflict
+                            ? 'bg-red-50 border-red-200 cursor-pointer'
+                            : inSelection
+                              ? 'bg-blue-50 border-blue-200 cursor-pointer'
+                              : 'bg-white hover:bg-gray-50 hover:shadow-sm cursor-pointer'
+                          }`}
+                        onMouseDown={(e) => handleMouseDown(e, dayIndex, timeSlotIndex)}
+                      >
+                        {/* Existing booking block */}
+                        {booking && booking.status !== 'Available' && bookingBlockMetrics && (
+                          <div
+                            className={`absolute left-1 right-1 rounded-lg px-3 py-2 text-xs font-medium border-l-4 z-30 ${booking.status === 'Booked'
+                              ? getBookingSource(booking) === 'AO_BOOK'
+                                ? 'bg-sky-100 text-sky-900 border-sky-400'
+                                : 'bg-violet-100 text-violet-900 border-violet-400'
+                              : 'bg-amber-100 text-amber-900 border-amber-400 border-dashed'
+                              }`}
+                            style={{
+                              top: `${bookingBlockMetrics.top}px`,
+                              height: `${bookingBlockMetrics.height}px`,
+                            }}
+                            title={`${booking.bookedBy || 'Booked'} - ${booking.groupName || ''}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedBooking(booking);
+                            }}
+                          >
+                            <div className="flex items-center justify-between gap-1 mb-1">
+                              <span className="truncate font-semibold">{booking.groupName || 'Booked'}</span>
+                              {booking.status === 'Booked' && isSlotActive(booking) && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500 text-white">
+                                  Active
+                                </span>
+                              )}
+                            </div>
+                            {booking.status === 'Booked' && (
+                              <div className="text-[10px] opacity-80 truncate">
+                                {getBookingSource(booking) === 'AO_BOOK' ? 'AO Book' : 'Lecturer Book'}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Drag preview - render only in the first cell of dragging column */}
+                        {isDraggingThisColumn && timeSlotIndex === 0 && dragState.startY !== null && dragState.currentY !== null && (() => {
+                          const isDraggingDown = dragState.currentY > dragState.startY;
+                          const height = Math.abs(dragState.currentY - dragState.startY);
+                          const showContent = height >= 35;
+
+                          return (
+                            <div
+                              className={`absolute left-1 right-1 rounded-lg overflow-hidden text-xs font-medium pointer-events-none z-40 border-l-4 ${conflict
+                                ? 'bg-red-100 text-red-900 border-red-400'
+                                : 'bg-blue-100 text-blue-900 border-blue-400'
+                                }`}
+                              style={{
+                                top: `${Math.min(dragState.startY, dragState.currentY)}px`,
+                                height: `${height}px`,
+                              }}
+                            >
+                              {showContent && (
+                                <div className={`absolute inset-x-0 px-3 py-2 ${isDraggingDown ? 'bottom-0' : 'top-0'
+                                  }`}>
+                                  <div className="font-semibold truncate">(No title)</div>
+                                  <div className="text-xs opacity-90 mt-0.5 truncate">
+                                    {dragState.startTime} - {dragState.endTime}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    );
+                  })}
+                </React.Fragment>
+              );
+            })
+          ) : (
+            // OldSlot Mode: Show fixed slots (slot 1, slot 2, etc.)
+            fixedSlots.map((slot, slotIndex) => {
+              return (
+                <React.Fragment key={slotIndex}>
+                  {/* Slot label */}
+                  <div className="h-32 border-b border-r border-gray-300 bg-gradient-to-b from-gray-50 to-gray-100 flex flex-col items-center justify-center px-2">
+                    <span className="text-sm text-gray-700 font-semibold">{slot.label}</span>
+                    <span className="text-xs text-gray-600 mt-1 font-medium">
+                      {slot.startTime} - {slot.endTime}
+                    </span>
+                  </div>
+
+                  {/* Day cells for fixed slots */}
+                  {weekDays.map((_date, dayIndex) => {
+                    const date = weekDays[dayIndex].toISOString().split('T')[0];
+                    const existingSlot = existingBookings.find(
+                      (b) => b.date === date && b.slotNumber === slot.slotNumber && b.slotType === 'OldSlot'
+                    );
+                    const isPast = isPastFixedSlot(dayIndex, slot.startTime);
+
+                    return (
+                      <div
+                        key={`${dayIndex}-${slotIndex}`}
+                        onClick={() => handleOldSlotClick(dayIndex, slot.slotNumber)}
+                        className={`h-32 border-b border-r border-gray-300 relative transition-all ${isPast
+                          ? 'bg-gray-200 cursor-not-allowed opacity-80'
+                          : existingSlot
+                            ? existingSlot.status === 'Booked'
+                              ? getBookingSource(existingSlot) === 'AO_BOOK'
+                                ? 'bg-sky-100 cursor-pointer border-l-4 border-l-sky-400'
+                                : 'bg-violet-100 cursor-pointer border-l-4 border-l-violet-400'
+                              : 'bg-amber-100 cursor-pointer border-l-4 border-l-amber-400 border-dashed'
+                            : 'bg-white hover:bg-gray-50 hover:shadow-sm cursor-pointer'
+                          }`}
+                      >
+                        {isPast ? (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="text-gray-600 font-semibold text-sm">Past</div>
+                          </div>
+                        ) : existingSlot ? (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center p-3">
+                            <div className={`font-semibold text-sm truncate w-full text-center ${existingSlot.status === 'Booked'
+                              ? getBookingSource(existingSlot) === 'AO_BOOK'
+                                ? 'text-sky-900'
+                                : 'text-violet-900'
+                              : 'text-amber-900'
+                              }`}>
+                              {existingSlot.groupName || 'Booked'}
+                            </div>
+                            <div className={`text-xs mt-1 ${existingSlot.status === 'Booked'
+                              ? getBookingSource(existingSlot) === 'AO_BOOK'
+                                ? 'text-sky-700'
+                                : 'text-violet-700'
+                              : 'text-amber-700'
+                              }`}>
+                              {existingSlot.startTime} - {existingSlot.endTime}
+                            </div>
+                            {existingSlot.status === 'Booked' && (
+                              <div className="mt-1 flex items-center gap-1">
+                                <span className="text-[10px] font-semibold text-gray-700">
+                                  {getBookingSource(existingSlot) === 'AO_BOOK' ? 'AO Book' : 'Lecturer Book'}
+                                </span>
+                                {isSlotActive(existingSlot) && (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500 text-white">
+                                    Active
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                            <div className="text-gray-600 font-medium text-sm">Click to book</div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </React.Fragment>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      {/* Slot Configuration Modal */}
+      {showSlotConfig && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-4">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-blue-100 rounded-lg">
+                  <Settings className="w-4 h-4 text-blue-700" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900">Slot Configuration</h3>
+              </div>
+              <button
+                onClick={() => setShowSlotConfig(false)}
+                className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Form */}
+            <div className="space-y-3">
+              {/* Slot Duration */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Slot Duration (hours)
+                </label>
+                <input
+                  type="number"
+                  step="0.25"
+                  min="0.25"
+                  max="8"
+                  value={slotConfig.slotDuration}
+                  onChange={(e) => setSlotConfig({ ...slotConfig, slotDuration: parseFloat(e.target.value) || 0.25 })}
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                />
+                <p className="text-xs text-gray-500 mt-0.5">Duration of each time slot</p>
+              </div>
+
+              {/* Break Duration */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Break Duration (hours)
+                </label>
+                <input
+                  type="number"
+                  step="0.25"
+                  min="0"
+                  max="2"
+                  value={slotConfig.breakDuration}
+                  onChange={(e) => setSlotConfig({ ...slotConfig, breakDuration: parseFloat(e.target.value) || 0 })}
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                />
+                <p className="text-xs text-gray-500 mt-0.5">Rest time between slots</p>
+              </div>
+
+              {/* Number of Slots */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Number of Slots
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={slotConfig.numberOfSlots}
+                  onChange={(e) => setSlotConfig({ ...slotConfig, numberOfSlots: parseInt(e.target.value) || 1 })}
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                />
+                <p className="text-xs text-gray-500 mt-0.5">Total number of bookable slots</p>
+              </div>
+
+              {/* Preview */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-2.5">
+                <p className="text-xs font-semibold text-blue-900 mb-1.5">Preview:</p>
+                <div className="space-y-1 text-xs text-blue-800">
+                  {fixedSlots.slice(0, 2).map((slot, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <span className="font-medium">{slot.label}:</span>
+                      <span>{slot.startTime} - {slot.endTime}</span>
+                    </div>
+                  ))}
+                  {fixedSlots.length > 2 && (
+                    <div className="text-blue-600 font-medium">
+                      ... and {fixedSlots.length - 2} more slots
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={() => setShowSlotConfig(false)}
+                className="flex-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => setShowSlotConfig(false)}
+                className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors shadow-sm text-sm"
+              >
+                Apply Settings
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Booking Detail Modal */}
+      {selectedBooking && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/55 backdrop-blur-sm"
+            onClick={() => setSelectedBooking(null)}
+          />
+          <div className="relative w-full max-w-md rounded-xl border border-white/20 bg-slate-900/95 text-white shadow-2xl">
+            {(() => {
+              const sourceConfig = getSourceConfig(selectedBooking);
+              const statusConfig = getStatusConfig(selectedBooking);
+
+              return (
+                <>
+                  <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+                    <h4 className="text-lg font-bold">Schedule Details</h4>
+                    <button
+                      onClick={() => setSelectedBooking(null)}
+                      className="rounded-md p-1.5 text-white/80 hover:bg-white/10 hover:text-white"
+                    >
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div className="space-y-3 px-5 py-4 text-sm">
+                    <div className="rounded-lg bg-white/10 px-3 py-2">
+                      <p className="text-white/60">Group / Class</p>
+                      <p className="font-semibold">{selectedBooking.groupName || 'N/A'}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="rounded-lg bg-white/10 px-3 py-2">
+                        <p className="text-white/60">Time</p>
+                        <p className="font-semibold">{selectedBooking.startTime} - {selectedBooking.endTime}</p>
+                      </div>
+                      <div className="rounded-lg bg-white/10 px-3 py-2">
+                        <p className="text-white/60">Status</p>
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${statusConfig.badgeClass}`}>
+                          {statusConfig.label}
+                        </span>
+                      </div>
+                      <div className="rounded-lg bg-white/10 px-3 py-2">
+                        <p className="text-white/60">User</p>
+                        <p className="font-semibold">{getBookerName(selectedBooking)}</p>
+                      </div>
+                      <div className="rounded-lg bg-white/10 px-3 py-2">
+                        <p className="text-white/60">Student Count</p>
+                        <p className="font-semibold">{selectedBooking.studentCount ?? 0}</p>
+                      </div>
+                    </div>
+                    <div className="rounded-lg bg-white/10 px-3 py-2">
+                      <p className="text-white/60">Schedule Type</p>
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${sourceConfig.badgeClass}`}>
+                        {sourceConfig.label}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

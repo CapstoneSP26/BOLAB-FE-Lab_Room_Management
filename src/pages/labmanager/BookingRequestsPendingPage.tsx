@@ -1,5 +1,5 @@
 import PageBreadcrumb from "../../components/common/PageBreadcrumb";
-import PendingBookingFeature from "../../features/lab-management/booking-requests/PendingBookingFeature";
+import PendingBookingFeature from "../../features/booking/components/PendingBookingFeature";
 
 export default function BookingRequestsPendingPage() {
   return (

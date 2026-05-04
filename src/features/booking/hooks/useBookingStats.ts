@@ -2,8 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import type {
   GetBookingStatsRequest,
   GetBookingStatsResponse,
-} from '../types';
-import { getBookingStats } from '../services/booking.service';
+} from '../types/booking.type';
+import { bookingApi } from '../api/bookingApi';
 
 /**
  * ===== BUSINESS LOGIC LAYER =====
@@ -11,8 +11,8 @@ import { getBookingStats } from '../services/booking.service';
  */
 export const useBookingStats = (params: GetBookingStatsRequest = {}) => {
   return useQuery<GetBookingStatsResponse>({
-    queryKey: ['bookingStats', params],
-    queryFn: () => getBookingStats(params),
+    queryKey: ["bookingStats", params],
+    queryFn: () => bookingApi.getBookingStats(params),
     staleTime: 30000, // 30 seconds
   });
 };

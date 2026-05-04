@@ -1,0 +1,209 @@
+import { ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
+import { formatIsoDateTimeForDisplay } from "../../../utils/date.util";
+import type { ScheduleDto } from "../types/schedule.type";
+
+type Props = {
+  rows: ScheduleDto[];
+  loading: boolean;
+  page: number;
+  totalPages: number;
+  totalCount: number;
+  onPageChange: (page: number) => void;
+  onEdit: (row: ScheduleDto) => void;
+  onDelete: (row: ScheduleDto) => void;
+  deletingId?: string | null;
+};
+
+export default function ScheduleManagementTable({
+  rows,
+  loading,
+  page,
+  totalPages,
+  totalCount,
+  onPageChange,
+  onEdit,
+  onDelete,
+  deletingId,
+}: Props) {
+  const getStatusLabel = (status: any) => {
+    const s = String(status);
+    switch (s) {
+      case "0": return "Not Yet"; // Just in case
+      case "1": case "Active": return "Active";
+      case "2": case "InProcess": return "In Process";
+      case "3": case "Completed": return "Completed";
+      case "4": case "Cancelled": return "Cancelled";
+      default: return s || "Unknown";
+    }
+  };
+
+  const getTypeLabel = (type: any) => {
+    const t = String(type);
+    switch (t) {
+      case "1": case "Academic": return "Academic";
+      case "2": case "Personal": return "Personal";
+      case "3": case "Maintenance": return "Maintenance";
+      case "4": case "Examination": return "Examination";
+      case "5": case "Event": return "Event";
+      default: return t || "Unknown";
+    }
+  };
+
+  const pageButtons = Array.from(
+    { length: Math.min(5, Math.max(1, totalPages)) },
+    (_, index) => {
+      const startPage = Math.max(1, Math.min(page - 2, totalPages - 4));
+      return startPage + index;
+    },
+  ).filter((value) => value <= totalPages && value > 0);
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[960px] text-left text-sm">
+          <thead className="bg-gray-50 text-xs font-semibold uppercase text-gray-500 dark:bg-white/[0.04] dark:text-gray-400">
+            <tr>
+              <th className="px-4 py-3">Room / Subject</th>
+              <th className="px-4 py-3">Slot</th>
+              <th className="px-4 py-3">Start</th>
+              <th className="px-4 py-3">End</th>
+              <th className="px-4 py-3">Type</th>
+              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3 text-right">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+            {loading ? (
+              <tr>
+                <td
+                  colSpan={7}
+                  className="px-4 py-6 text-gray-500 dark:text-gray-400"
+                >
+                  Loading schedules...
+                </td>
+              </tr>
+            ) : rows.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={7}
+                  className="px-4 py-6 text-gray-500 dark:text-gray-400"
+                >
+                  No schedules found.
+                </td>
+              </tr>
+            ) : (
+              rows.map((row) => (
+                <tr key={row.id} className="bg-white dark:bg-transparent">
+                  <td className="px-4 py-3">
+                    <div className="font-semibold text-gray-900 dark:text-white">
+                      {row.labRoomName || "—"}
+                    </div>
+                    <div className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                      {row.subjectCode || "—"}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
+                    {row.slotName || "—"}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-gray-700 dark:text-gray-300">
+                    {row.startTime
+                      ? formatIsoDateTimeForDisplay(row.startTime)
+                      : "—"}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-gray-700 dark:text-gray-300">
+                    {row.endTime
+                      ? formatIsoDateTimeForDisplay(row.endTime)
+                      : "—"}
+                  </td>
+                  <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
+                    {getTypeLabel(row.type)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-white/10 dark:text-gray-200">
+                      {getStatusLabel(row.status)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEdit(row);
+                        }}
+                        className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        disabled={deletingId === row.id}
+                        onClick={() => onDelete(row)}
+                        className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/40"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="flex flex-col gap-4 border-t border-gray-200 bg-gray-50/80 px-4 py-4 sm:flex-row sm:items-center sm:justify-between dark:border-gray-800 dark:bg-gray-900/40">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Page{" "}
+            <span className="font-semibold text-gray-900 dark:text-white">
+              {page}
+            </span>{" "}
+            / {Math.max(totalPages, 1)}. Total items:{" "}
+            <span className="font-semibold text-gray-900 dark:text-white">
+              {totalCount}
+            </span>
+          </p>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onPageChange(Math.max(1, page - 1))}
+              disabled={page <= 1}
+              className="inline-flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </button>
+
+            {pageButtons.map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => onPageChange(value)}
+                className={`h-10 w-10 rounded-lg text-sm font-semibold transition ${
+                  value === page
+                    ? "bg-brand-500 text-white"
+                    : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                }`}
+              >
+                {value}
+              </button>
+            ))}
+
+            <button
+              type="button"
+              onClick={() => onPageChange(Math.min(totalPages, page + 1))}
+              disabled={page >= totalPages}
+              className="inline-flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+    </div>
+  );
+}

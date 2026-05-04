@@ -2,9 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import type {
   GetRecentRequestsRequest,
   GetRecentRequestsResponse,
-} from '../types';
-import { getRecentRequests } from '../services/booking.service';
-
+} from '../types/booking.type';
+import { bookingApi } from '../api/bookingApi';
 /**
  * ===== BUSINESS LOGIC LAYER =====
  * Hook để lấy danh sách booking requests gần đây
@@ -12,7 +11,7 @@ import { getRecentRequests } from '../services/booking.service';
 export const useRecentRequests = (params: GetRecentRequestsRequest = {}) => {
   return useQuery<GetRecentRequestsResponse>({
     queryKey: ['recentRequests', params],
-    queryFn: () => getRecentRequests(params),
+    queryFn: () => bookingApi.getRecentRequests(params),
     staleTime: 30000, // 30 seconds
   });
 };

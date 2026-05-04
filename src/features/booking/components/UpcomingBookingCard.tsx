@@ -1,26 +1,28 @@
 import React from 'react';
 import { Calendar, Clock, Building2 } from 'lucide-react';
-import type { Booking } from '../types';
+import type { Booking } from '../types/booking.type';
 
 interface UpcomingBookingCardProps {
   booking: Booking;
   onClick?: () => void;
 }
 
-export const UpcomingBookingCard: React.FC<UpcomingBookingCardProps> = ({ 
-  booking, 
-  onClick 
+export const UpcomingBookingCard: React.FC<UpcomingBookingCardProps> = ({
+  booking,
+  onClick
 }) => {
   const getStatusColor = (status: Booking['status']) => {
     switch (status) {
-      case 'confirmed':
+      case 'Approved':
         return 'bg-green-500/20 text-green-300 border-green-500/50';
-      case 'pending':
+      case 'PendingApproval':
         return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/50';
-      case 'cancelled':
+      case 'Cancelled':
         return 'bg-red-500/20 text-red-300 border-red-500/50';
-      case 'completed':
-        return 'bg-blue-500/20 text-blue-300 border-blue-500/50';
+      case 'Rejected':
+        return 'bg-red-500/20 text-red-300 border-red-500/50';
+      case 'All':
+        return 'bg-gray-500/20 text-gray-300 border-gray-500/50';
       default:
         return 'bg-gray-500/20 text-gray-300 border-gray-500/50';
     }
@@ -36,7 +38,7 @@ export const UpcomingBookingCard: React.FC<UpcomingBookingCardProps> = ({
       {/* Status Badge */}
       <div className="flex items-start justify-between mb-3">
         <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(booking.status)}`}>
-          {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+          {String(booking.status).charAt(0).toUpperCase() + String(booking.status).slice(1)}
         </span>
         <div className="text-xs text-white/60">
           #{booking.id}
