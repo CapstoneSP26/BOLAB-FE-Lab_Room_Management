@@ -43,6 +43,8 @@ export function defaultValues(schedule?: ScheduleDto | null): CreateScheduleComm
     slotTypeId: undefined,
     subjectId: (schedule.subjectId ?? "").trim(),
     subjectCode: (schedule.subjectCode ?? "").trim(),
+    lecturerId: schedule.lecturerId,
+    groupName: schedule.groupName,
     startTime: toDatetimeLocalValue(schedule.startTime),
     endTime: schedule.endTime ? toDatetimeLocalValue(schedule.endTime) : "",
     type: mappedType,
