@@ -12,6 +12,7 @@ import {
   AlertCircle,
   Sparkles,
   User,
+  Users,
 } from "lucide-react";
 import type { LabRoomDto } from "../../labroom/types/room.type";
 import type {
@@ -25,6 +26,8 @@ import { defaultValues, STATUS_CONFIG } from "../utils/scheduleForm.utils";
 import { SearchDropdown } from "../../../components/ui/SearchDropdown";
 import { userManagementApi } from "../../users/api/userManagementApi";
 import type { UserListItem } from "../../users/types/userManagement.type";
+import { getGroups } from "../../groups/api/groupsApi";
+import type { Group } from "../../groups/types/group.type";
 
 type Props = {
   isOpen: boolean;
@@ -69,6 +72,15 @@ export default function ScheduleFormModal({
   const [lecturerResults, setLecturerResults] = useState<UserListItem[]>([]);
   const [lecturerSearching, setLecturerSearching] = useState(false);
   const [selectedLecturer, setSelectedLecturer] = useState<UserListItem | null>(null);
+  
+  // ─── Group search state ────────────────────────────────────────────
+  const [groupQuery, setGroupQuery] = useState<string>(() => {
+    if (schedule?.groupName) return schedule.groupName;
+    return "";
+  });
+  const [groupResults, setGroupResults] = useState<Group[]>([]);
+  const [groupSearching, setGroupSearching] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
 
   // Đồng bộ lại dữ liệu khi schedule thay đổi (đặc biệt quan trọng khi đổi giữa các sự kiện trên Calendar)
   useEffect(() => {
@@ -76,12 +88,14 @@ export default function ScheduleFormModal({
       setValues(defaultValues(schedule));
       setRoomQuery(schedule.labRoomName || "");
       setLecturerQuery(schedule.lecturerName || "");
+      setGroupQuery(schedule.groupName || "");
       setErrors({});
     } else if (!isOpen) {
       // Reset khi đóng modal
       setValues(defaultValues(null));
       setRoomQuery("");
       setLecturerQuery("");
+      setGroupQuery("");
     }
   }, [isOpen, schedule]);
 
@@ -138,6 +152,36 @@ export default function ScheduleFormModal({
     setLecturerResults([]);
     setValues((prev) => ({ ...prev, lecturerId: user.id }));
     setErrors((prev) => ({ ...prev, lecturerId: undefined }));
+  };
+  
+  // ─── Group search ────────────────────────────────────────────────────
+  const handleGroupSearch = useCallback(async (q: string) => {
+    setGroupQuery(q);
+    if (!q.trim()) {
+      setGroupResults([]);
+      return;
+    }
+    setGroupSearching(true);
+    try {
+      // Filter groups based on search query
+      const res = await getGroups();
+      const filtered = (res.items ?? []).filter(g => 
+        g.groupName.toLowerCase().includes(q.toLowerCase())
+      );
+      setGroupResults(filtered);
+    } catch {
+      setGroupResults([]);
+    } finally {
+      setGroupSearching(false);
+    }
+  }, []);
+
+  const handleGroupSelect = (group: Group) => {
+    setSelectedGroup(group);
+    setGroupQuery(group.groupName);
+    setGroupResults([]);
+    setValues((prev) => ({ ...prev, groupId: group.id }));
+    setErrors((prev) => ({ ...prev, groupId: undefined }));
   };
 
   if (!isOpen) return null;
@@ -361,6 +405,49 @@ export default function ScheduleFormModal({
                   <span className="text-xs font-medium text-teal-800 dark:text-teal-200">
                     <strong>{selectedLecturer.fullName}</strong>
                     {" "}· {selectedLecturer.userCode} · {selectedLecturer.email}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Group — search dropdown */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-300">
+                <Users className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                Group
+              </label>
+              <SearchDropdown<Group>
+                label=""
+                placeholder="Search by group name..."
+                value={groupQuery}
+                onSearch={(q) => void handleGroupSearch(q)}
+                results={groupResults}
+                isSearching={groupSearching}
+                getKey={(g) => g.id}
+                renderResult={(g) => (
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-semibold text-gray-800 dark:text-white">
+                      {g.groupName}
+                    </span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      Owner: {g.ownerName} · {g.memberCount ?? 0} members
+                    </span>
+                  </div>
+                )}
+                onSelect={handleGroupSelect}
+                onClear={() => {
+                  setSelectedGroup(null);
+                  setValues((prev) => ({ ...prev, groupId: undefined }));
+                }}
+                disabled={mode === "view"}
+                error={errors.groupId}
+              />
+              {selectedGroup && (
+                <div className="flex items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 dark:border-orange-500/30 dark:bg-orange-500/10">
+                  <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-orange-600 dark:text-orange-400" />
+                  <span className="text-xs font-medium text-orange-800 dark:text-orange-200">
+                    <strong>{selectedGroup.groupName}</strong>
+                    {" "}· {selectedGroup.ownerName} ({selectedGroup.memberCount ?? 0} members)
                   </span>
                 </div>
               )}

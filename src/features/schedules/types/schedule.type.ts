@@ -11,9 +11,11 @@ export interface ScheduleDto {
   subjectCode: string;
   buildingName?: string;
   lecturerName: string;
+  lecturerId?: string;
   labRoomName: string;
   userCode?: string;
   slotName: string;
+  groupId?: string;
   groupName?: string;
   startTime: string; // ISO
   endTime: string; // ISO
@@ -56,6 +58,7 @@ export interface CreateScheduleCommand {
   subjectId?: string;
   subjectCode: string;
   lecturerId?: string;
+  groupId?: string;
   startTime: string;
   endTime: string;
   type: string;
@@ -68,6 +71,8 @@ export interface UpdateScheduleCommand {
   slotTypeId?: number;
   subjectId?: string;
   subjectCode: string;
+  lecturerId?: string;
+  groupId?: string;
   startTime?: string;
   endTime?: string;
   type?: string;
