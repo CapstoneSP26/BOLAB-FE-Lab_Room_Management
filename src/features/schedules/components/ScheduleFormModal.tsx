@@ -426,7 +426,7 @@ export default function ScheduleFormModal({
                       {g.groupName}
                     </span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
-                      Owner: {g.ownerName} · {g.memberCount ?? 0} members
+                      Owner: {g.ownerName}
                     </span>
                   </div>
                 )}
@@ -443,7 +443,7 @@ export default function ScheduleFormModal({
                   <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-orange-600 dark:text-orange-400" />
                   <span className="text-xs font-medium text-orange-800 dark:text-orange-200">
                     <strong>{selectedGroup.groupName}</strong>
-                    {" "}· {selectedGroup.ownerName} ({selectedGroup.memberCount ?? 0} members)
+                    {" "}· {selectedGroup.ownerName}
                   </span>
                 </div>
               )}
