@@ -26,7 +26,7 @@ import { defaultValues, STATUS_CONFIG } from "../utils/scheduleForm.utils";
 import { SearchDropdown } from "../../../components/ui/SearchDropdown";
 import { userManagementApi } from "../../users/api/userManagementApi";
 import type { UserListItem } from "../../users/types/userManagement.type";
-import { getGroups } from "../../groups/api/groupsApi";
+import {searchGroupsByName } from "../../groups/api/groupsApi";
 import type { Group } from "../../groups/types/group.type";
 
 type Props = {
@@ -163,8 +163,7 @@ export default function ScheduleFormModal({
     }
     setGroupSearching(true);
     try {
-      // Backend handles search now
-      const res = await getGroups({ searchQuery: q });
+      const res = await searchGroupsByName(q);
       setGroupResults(res.items ?? []);
     } catch {
       setGroupResults([]);

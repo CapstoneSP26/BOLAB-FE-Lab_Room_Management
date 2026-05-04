@@ -30,6 +30,7 @@ const API_ENDPOINTS = {
   GROUP_MEMBERS: (groupId: string) => `/groups/${groupId}/members`,
   GROUP_MEMBER_DETAIL: (groupId: string, userId: string) =>
     `/groups/${groupId}/members/${userId}`,
+  SEARCH_BY_NAME: '/groups/group-name',
 } as const;
 
 const buildGroupsParams = (params: GetGroupsParams = {}) => ({
@@ -269,6 +270,39 @@ export const searchStudents = async (
   return {
     items,
     total: items.length,
+  };
+};
+
+/**
+ * Search groups by name (specific endpoint)
+ * Calls: /groups/group-name?groupName=...
+ */
+export const searchGroupsByName = async (groupName: string): Promise<GetGroupsResponse> => {
+  const response = await axiosInstance.get<any>(API_ENDPOINTS.SEARCH_BY_NAME, {
+    params: { groupName },
+  });
+  
+  // Handle different response structures
+  let groups: any[] = [];
+  if (response.data?.items && Array.isArray(response.data.items)) {
+    groups = response.data.items;
+  } else if (response.data?.data && Array.isArray(response.data.data)) {
+    groups = response.data.data;
+  } else if (Array.isArray(response.data)) {
+    groups = response.data;
+  }
+
+  // Map backend field names to frontend interface
+  const mappedGroups = groups.map((group: any) => ({
+    ...group,
+    memberCount: group.membersCount,
+  })) as Group[];
+
+  return {
+    items: mappedGroups,
+    total: mappedGroups.length,
+    pageNumber: response.data?.pageNumber || 1,
+    pageSize: response.data?.pageSize || mappedGroups.length,
   };
 };
 
