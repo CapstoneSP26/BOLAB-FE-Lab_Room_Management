@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, MapPin, Layers } from 'lucide-react';
 import { useBuildingContext } from '../../../context/BuildingContext';
+import { addCacheBuster } from '../../../utils/imageCache';
 import type { Building } from '../types/building.type';
 
 interface BuildingCarousel3DProps {
@@ -19,7 +20,7 @@ export const BuildingCarousel3D: React.FC<BuildingCarousel3DProps> = ({ building
   // Update context when active building changes
   useEffect(() => {
     if (buildings[activeIndex]) {
-      setActiveBuildingImage(buildings[activeIndex].image);
+      setActiveBuildingImage(addCacheBuster(buildings[activeIndex].image));
     }
   }, [activeIndex, buildings, setActiveBuildingImage]);
 
@@ -148,7 +149,7 @@ export const BuildingCarousel3D: React.FC<BuildingCarousel3DProps> = ({ building
             <div
               className="absolute inset-0 bg-cover bg-center scale-110"
               style={{
-                backgroundImage: `url(${building.image})`,
+                backgroundImage: `url(${addCacheBuster(building.image)})`,
                 filter: 'blur(15px) brightness(0.8)',
               }}
             />
@@ -198,7 +199,7 @@ export const BuildingCarousel3D: React.FC<BuildingCarousel3DProps> = ({ building
                   {/* Background Image */}
                   <div className="absolute inset-0">
                     <img
-                      src={building.image}
+                      src={addCacheBuster(building.image)}
                       alt={building.name}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     />
