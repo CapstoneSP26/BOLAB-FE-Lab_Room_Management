@@ -59,7 +59,7 @@ export interface CreateScheduleCommand {
   subjectId?: string;
   subjectCode: string;
   lecturerId?: string;
-  groupId?: string;
+  groupName?: string;
   startTime: string;
   endTime: string;
   type: string;
@@ -73,7 +73,7 @@ export interface UpdateScheduleCommand {
   subjectId?: string;
   subjectCode: string;
   lecturerId?: string;
-  groupId?: string;
+  groupName?: string;
   startTime?: string;
   endTime?: string;
   type?: string;

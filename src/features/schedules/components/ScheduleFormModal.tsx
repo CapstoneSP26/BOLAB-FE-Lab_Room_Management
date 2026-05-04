@@ -180,8 +180,8 @@ export default function ScheduleFormModal({
     setSelectedGroup(group);
     setGroupQuery(group.groupName);
     setGroupResults([]);
-    setValues((prev) => ({ ...prev, groupId: group.id }));
-    setErrors((prev) => ({ ...prev, groupId: undefined }));
+    setValues((prev) => ({ ...prev, groupName: group.groupName }));
+    setErrors((prev) => ({ ...prev, groupName: undefined }));
   };
 
   if (!isOpen) return null;
@@ -437,10 +437,10 @@ export default function ScheduleFormModal({
                 onSelect={handleGroupSelect}
                 onClear={() => {
                   setSelectedGroup(null);
-                  setValues((prev) => ({ ...prev, groupId: undefined }));
+                  setValues((prev) => ({ ...prev, groupName: undefined }));
                 }}
                 disabled={mode === "view"}
-                error={errors.groupId}
+                error={errors.groupName}
               />
               {selectedGroup && (
                 <div className="flex items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 dark:border-orange-500/30 dark:bg-orange-500/10">
