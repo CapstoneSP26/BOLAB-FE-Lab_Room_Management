@@ -19,6 +19,7 @@ export const useApproveBooking = () => {
       queryClient.invalidateQueries({ queryKey: ['bookings'] });
       queryClient.invalidateQueries({ queryKey: ['schedules'] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.BOOKING_REQUESTS] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
 
     },
 

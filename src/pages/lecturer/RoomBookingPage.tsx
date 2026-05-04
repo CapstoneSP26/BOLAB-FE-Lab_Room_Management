@@ -17,7 +17,6 @@ import { FLEXIBLE_ID } from "../../features/slot/constants/slot.constant";
 import { WeeklyCalendar } from "../../features/calendar/components/WeeklyCalendar";
 import { usePurposeTypes } from "../../features/booking/hooks/usePurposeTypes";
 import { useLabPolicies } from "../../features/labroom/hooks/useLabPolicies";
-import { useQueryClient } from "@tanstack/react-query";
 import { PolicyType } from "../../features/labroom";
 import { useSlotStore } from "../../store/slotStore";
 import { useNotificationStore } from "../../features/notifications/store/notificationStore";
@@ -41,6 +40,7 @@ const RoomBookingPage: React.FC = () => {
     timeSlot: string;
   } | null>(null);
   const [lastBookingId, setLastBookingId] = useState<string>("");
+  const [warningMessage, setWarningMessage] = useState<string>();
 
   const [selectedBuildingId, setSelectedBuildingId] = useState<string>(buildingIdParam);
   const [selectedRoomId, setSelectedRoomId] = useState<string>(roomIdParam);
@@ -52,8 +52,6 @@ const RoomBookingPage: React.FC = () => {
   const [pendingBooking, setPendingBooking] = useState<PendingBooking | null>(
     null,
   );
-
-  const queryClient = useQueryClient();
 
   // Fetch Slot Types for dropdown & calendar rendering
   const { } = useSlotTypes(1);
@@ -134,6 +132,7 @@ const RoomBookingPage: React.FC = () => {
         );
         setLastBookingId(data.id);
         setSuccessData(currentBookingInfo);
+        setWarningMessage(data.warningMessage);
 
         setPendingBooking(null);
         setShowConfirmPanel(false);
@@ -273,6 +272,7 @@ const RoomBookingPage: React.FC = () => {
         isOpen={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
         bookingId={lastBookingId}
+        warningMessage={warningMessage}
         roomName={selectedRoom?.roomName || ""}
         date={successData?.date || ""}
         timeSlot={successData?.timeSlot || ""}

@@ -18,6 +18,7 @@ import {
   useRecentActivities,
 } from '../../features/profile/hooks/userProfile';
 import { useNotificationPreferences } from '../../features/profile/hooks/useNotificationPreferences';
+import { RoleSwitcher } from '../../features/profile/components/RoleSwitcher';
 import { addCacheBuster } from '../../utils/imageCache';
 
 export default function ProfilePage() {
@@ -253,6 +254,9 @@ export default function ProfilePage() {
 
               </div>
             </div>
+
+            {/* Role Switcher Section */}
+            <RoleSwitcher />
 
             {/* Notification Settings Section */}
             {showNotificationSettings && (

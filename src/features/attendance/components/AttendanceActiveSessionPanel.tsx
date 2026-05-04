@@ -1,4 +1,4 @@
-import { Download, ExternalLink, QrCode, RefreshCw, UserCheck } from 'lucide-react';
+import { Download, QrCode, RefreshCw, UserCheck } from 'lucide-react';
 import type { BookingWithQR } from '../types/attendance.type';
 
 interface AttendanceActiveSessionPanelProps {
@@ -8,7 +8,6 @@ interface AttendanceActiveSessionPanelProps {
   activeDisplayBuilding: string;
   isExpired: boolean;
   isCreatingQr: boolean;
-  onOpenTVDisplay: () => void;
   onManualAttendance: () => void;
   onViewQR: () => void;
   onExport: (format: 'csv' | 'excel' | 'pdf') => void;
@@ -21,7 +20,6 @@ export function AttendanceActiveSessionPanel({
   activeDisplayBuilding,
   isExpired,
   isCreatingQr,
-  onOpenTVDisplay,
   onManualAttendance,
   onViewQR,
   onExport: _onExport, // Unused
@@ -57,16 +55,7 @@ export function AttendanceActiveSessionPanel({
         )}
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
-        <button
-          onClick={onOpenTVDisplay}
-          disabled={!actionBooking}
-          className="bg-blue-50 border-2 border-blue-300 hover:border-blue-500 hover:bg-blue-100 text-blue-700 px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
-        >
-          <ExternalLink className="w-5 h-5" />
-          <span>Open TV Display</span>
-        </button>
-
+      <div className="grid grid-cols-2 gap-3">
         <button
           onClick={onManualAttendance}
           disabled={!actionBooking}

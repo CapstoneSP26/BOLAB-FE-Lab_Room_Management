@@ -19,6 +19,7 @@ const NotificationsPage = lazy(() => import("../../pages/lecturer/NotificationsP
 const AttendanceManagementPage = lazy(() => import("../../pages/lecturer/AttendanceManagementPage.tsx"));
 const QRDisplayPage = lazy(() => import("../../pages/lecturer/QRDisplayPage.tsx"));
 const ManualAttendancePage = lazy(() => import("../../pages/lecturer/ManualAttendancePage.tsx"));
+const CameraAttendancePage = lazy(() => import("../../pages/user/CameraAttendancePage.tsx"));
 const ProfilePage = lazy(() => import("../../pages/lecturer/ProfilePage.tsx"));
 const StudentGroupsPage = lazy(() => import("../../pages/lecturer/StudentGroupsPage.tsx"));
 const GroupOverviewPage = lazy(() => import("../../pages/lecturer/GroupOverviewPage.tsx"));
@@ -34,6 +35,7 @@ const ImportGroupPage = lazy(() => import("../../pages/labmanager/ImportGroupPag
 const ReportListPage = lazy(() => import("../../pages/labmanager/ReportListPage.tsx"));
 const ReportDetailPage = lazy(() => import("../../pages/labmanager/ReportDetailPage.tsx"));
 const IncidentHistoryPage = lazy(() => import("../../pages/labmanager/ReportHistoryPage.tsx"));
+const ManagerNotificationsPage = lazy(() => import("../../pages/labmanager/NotificationsPage.tsx"));
 
 const RoomManagementPage = lazy(() => import("../../pages/admin/RoomManagementPage.tsx"))
 const ScheduleManagementPage = lazy(() => import("../../pages/admin/ScheduleManagementPage.tsx"));
@@ -48,11 +50,11 @@ const ImportLabRoomPage = lazy(() => import("../../pages/labmanager/ImportLabRoo
 export const publicRoutes: AppRoute[] = [
   { path: "/login", element: LoginPage },
   { path: "/unauthorized", element: UnauthorizedPage },
-  { path: "/calendar/:labRoomId", element: CalendarTabletPage },
+  { path: "/calendar/:roomNo", element: CalendarTabletPage },
+  { path: "/attendance/camera/:roomNo", element: CameraAttendancePage },
 ];
 
-export const sharedRoutes: AppRoute[] = [
-];
+export const sharedRoutes: AppRoute[] = [];
 
 export const studentRoutes: AppRoute[] = [
   { path: "/student", element: StudentLandingPage, roles: [Role.Student] },
@@ -77,6 +79,7 @@ export const lecturerRoutes: AppRoute[] = [
 
 export const managerRoutes: AppRoute[] = [
   { path: "/labmanager/dashboard", element: ManagerDashboard, roles: [Role.Manager] },
+  { path: "/labmanager/notifications", element: ManagerNotificationsPage, roles: [Role.Manager, Role.Admin] },
   { path: "/labmanager/lab-scheduler", element: LabSchedulerPage, roles: [Role.Manager] },
   { path: "/labmanager/booking-requests/pending", element: BookingRequestsPendingPage, roles: [Role.Manager] },
   { path: "/labmanager/booking-requests/history", element: BookingRequestsHistoryPage, roles: [Role.Manager] },
