@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { CALENDAR_CONFIG } from '../constants/calendar.constants';
 import type { CalendarEvent } from '../types/calendar.type';
 import { getPositionStyle, timeToPosition } from '../utils/calendar-math.util';
-import { addHours, format, isBefore, startOfHour } from 'date-fns';
+import { addHours, format, isBefore, startOfHour, parseISO } from 'date-fns';
 import { getEventAppearance } from '../utils/event-color.mapper';
 
 interface FlexibleGridViewProps {
@@ -12,6 +12,11 @@ interface FlexibleGridViewProps {
   events: CalendarEvent[];
   minBookingLeadTime: number;
   handleMouseDown?: (e: React.MouseEvent, dayIndex: number) => void;
+  highlightRange?: {
+    date: string;
+    startTime: string;
+    endTime: string;
+  };
 }
 
 export const FlexibleGridView: React.FC<FlexibleGridViewProps> = ({
@@ -21,6 +26,7 @@ export const FlexibleGridView: React.FC<FlexibleGridViewProps> = ({
   events,
   minBookingLeadTime = 0,
   handleMouseDown,
+  highlightRange,
 }) => {
   const { START_HOUR, END_HOUR, CELL_HEIGHT } = CALENDAR_CONFIG;
   const maxHeight = useMemo(
@@ -29,6 +35,12 @@ export const FlexibleGridView: React.FC<FlexibleGridViewProps> = ({
   );
   const now = new Date();
   const minAllowedTime = addHours(now, minBookingLeadTime);
+  const highlightStart = highlightRange
+    ? parseISO(`${highlightRange.date}T${highlightRange.startTime}:00`)
+    : null;
+  const highlightEnd = highlightRange
+    ? parseISO(`${highlightRange.date}T${highlightRange.endTime}:00`)
+    : null;
   // --- LOGIC XỬ LÝ CHỒNG LẤN (OVERLAP) ---
   const getPositionedEvents = (dayEvents: CalendarEvent[]) => {
     if (dayEvents.length === 0) return [];
@@ -177,6 +189,12 @@ export const FlexibleGridView: React.FC<FlexibleGridViewProps> = ({
           const dateStr = format(date, 'yyyy-MM-dd');
           const isMinAllowedDay = dateStr === format(minAllowedTime, 'yyyy-MM-dd');
           const isPastDay = isBefore(date, startOfHour(minAllowedTime)) && !isMinAllowedDay;
+          const isHighlightedDay = highlightRange?.date === dateStr;
+          const shouldHighlightSlot =
+            !!highlightRange &&
+            isHighlightedDay &&
+            !!highlightStart &&
+            !!highlightEnd;
 
           let lockedOverlayStyle = null;
           if (isPastDay) {
@@ -189,7 +207,7 @@ export const FlexibleGridView: React.FC<FlexibleGridViewProps> = ({
           return (
             <div
               key={dayIndex}
-              className="relative border-r border-gray-100 h-full transition-colors hover:bg-slate-50/50"
+              className={`relative border-r border-gray-100 h-full transition-colors hover:bg-slate-50/50 ${isHighlightedDay ? 'bg-amber-50/50' : ''}`}
               style={{ height: `${(END_HOUR - START_HOUR + 1) * CELL_HEIGHT}px` }}
               onMouseDown={(e) => onHandleMourseDown(e, dayIndex)}
             >
@@ -215,6 +233,19 @@ export const FlexibleGridView: React.FC<FlexibleGridViewProps> = ({
 
               {/* Sự kiện */}
               {renderColumnEvents(date)}
+
+              {shouldHighlightSlot && highlightStart && highlightEnd && (
+                <div
+                  className="absolute left-1 right-1 rounded-xl z-30 border-2 border-amber-500 bg-amber-300/25 ring-2 ring-amber-400/40 shadow-lg pointer-events-none"
+                  style={{
+                    top: `${timeToPosition(highlightRange.startTime)}px`,
+                    height: `${Math.max(
+                      24,
+                      timeToPosition(highlightRange.endTime) - timeToPosition(highlightRange.startTime),
+                    )}px`,
+                  }}
+                />
+              )}
 
               {/* Drag Preview */}
               {isDraggingThisColumn && (

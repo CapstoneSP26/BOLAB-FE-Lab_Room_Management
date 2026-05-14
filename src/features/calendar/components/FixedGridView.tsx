@@ -12,6 +12,11 @@ interface FixedGridViewProps {
   onSlotClick: (date: string, frame: any) => void;
   minBookingLeadTime: number;
   maxConcurrent: number; // Lấy từ chính LabRoomPolicy "MaxConcurrentBookings"
+  highlightRange?: {
+    date: string;
+    startTime: string;
+    endTime: string;
+  };
 }
 
 export const FixedGridView: React.FC<FixedGridViewProps> = ({
@@ -21,7 +26,8 @@ export const FixedGridView: React.FC<FixedGridViewProps> = ({
   events,
   onSlotClick,
   minBookingLeadTime = 0,
-  maxConcurrent = 1
+  maxConcurrent = 1,
+  highlightRange,
 }) => {
   const now = new Date();
   const minAllowedTime = addHours(now, minBookingLeadTime);
@@ -56,9 +62,10 @@ export const FixedGridView: React.FC<FixedGridViewProps> = ({
       <div className="grid grid-cols-7 relative">
         {weekDays.map((date, dayIndex) => {
           const dateStr = format(date, 'yyyy-MM-dd');
+          const isHighlightedDay = highlightRange?.date === dateStr;
 
           return (
-            <div key={dayIndex} className="relative border-r border-gray-200 h-full">
+            <div key={dayIndex} className={`relative border-r border-gray-200 h-full ${isHighlightedDay ? 'bg-amber-50/60' : ''}`}>
               {/* ... Vạch kẻ giờ nền ... */}
 
               {activeSlotType.slotFrames.map((frame) => {

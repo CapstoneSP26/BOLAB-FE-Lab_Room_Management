@@ -12,7 +12,7 @@ import { FlexibleGridView } from './FlexibleGridView';
 import { FixedGridView } from './FixedGridView';
 import type { PendingBooking } from '../../booking/types/booking.type';
 import { getStartOfDayVNInUTC } from '../../../utils/date.util';
-import { addDays, formatDate, isAfter, isBefore } from 'date-fns';
+import { addDays, formatDate } from 'date-fns';
 import { PolicyType, type PolicyTypeEnum } from '../../labroom';
 import { checkLabPolicies } from '../../labroom/utils/policy.util';
 import { useToast } from '../../../hooks/useToast';
@@ -39,6 +39,11 @@ export interface WeeklyCalendarProps {
   weekOffset?: number;
   onWeekChange: (offset: number) => void;
   slotTypes: SlotType[];
+  highlightRange?: {
+    date: string;
+    startTime: string;
+    endTime: string;
+  };
 }
 
 /**
@@ -54,7 +59,8 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   onSlotTypeChange,
   weekOffset = 0,
   onWeekChange,
-  slotTypes
+  slotTypes,
+  highlightRange,
 }) => {
   const appAlert = useToast();
   const { CELL_HEIGHT, START_HOUR, END_HOUR } = CALENDAR_CONFIG;
@@ -331,6 +337,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
               dragState={dragState}
               events={events}
               handleMouseDown={handleMouseDown}
+              highlightRange={highlightRange}
             />
           ) : // OldSlot Mode: Show fixed slots (slot 1, slot 2, etc.)
             currentSlotType !== undefined ? (
@@ -342,6 +349,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                 onSlotClick={handleSlotClick}
                 minBookingLeadTime={minBookingLeadTime}
                 maxConcurrent={maxConcurrentBookings}
+                highlightRange={highlightRange}
               />
             ) : null}
         </div>

@@ -21,6 +21,8 @@ import { PolicyType } from "../../features/labroom";
 import { useSlotStore } from "../../store/slotStore";
 import { useNotificationStore } from "../../features/notifications/store/notificationStore";
 import { useSlotTypes } from "../../features/slot/hooks/useSlotType";
+import { parseISO, startOfWeek, differenceInCalendarWeeks, format } from "date-fns";
+import axiosInstance from "../../api/axios";
 
 /**
  * 🗓️ Room Booking Page - Google Calendar Style
@@ -32,6 +34,9 @@ const RoomBookingPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const roomIdParam = searchParams.get("roomId") ?? "";
   const buildingIdParam = searchParams.get("buildingId") ?? "";
+  const focusDateParam = searchParams.get("focusDate") ?? "";
+  const focusStartParam = searchParams.get("focusStart") ?? "";
+  const focusEndParam = searchParams.get("focusEnd") ?? "";
   const appAlert = useToast();
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
@@ -47,8 +52,37 @@ const RoomBookingPage: React.FC = () => {
   const [selectedSlotTypeId, setSelectedSlotTypeId] =
     useState<number>(FLEXIBLE_ID);
   const [weekOffset, setWeekOffset] = useState(0);
+  const [focusRange, setFocusRange] = useState<{
+    date: string;
+    startTime: string;
+    endTime: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!focusDateParam) return;
+
+    const focusDate = parseISO(focusDateParam);
+    if (Number.isNaN(focusDate.getTime())) return;
+
+    const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+    const focusWeekStart = startOfWeek(focusDate, { weekStartsOn: 1 });
+    const diffWeeks = differenceInCalendarWeeks(focusWeekStart, weekStart, { weekStartsOn: 1 });
+    setWeekOffset(diffWeeks);
+    setFocusRange({
+      date: focusDateParam,
+      startTime: focusStartParam,
+      endTime: focusEndParam,
+    });
+  }, [focusDateParam, focusStartParam, focusEndParam]);
 
   const [showConfirmPanel, setShowConfirmPanel] = useState(false);
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [searchStartDay, setSearchStartDay] = useState<string>('');
+  const [searchEndDay, setSearchEndDay] = useState<string>('');
+  const [searchStartTime, setSearchStartTime] = useState<string>('');
+  const [searchEndTime, setSearchEndTime] = useState<string>('');
   const [pendingBooking, setPendingBooking] = useState<PendingBooking | null>(
     null,
   );
@@ -74,6 +108,11 @@ const RoomBookingPage: React.FC = () => {
     setSelectedRoomId("");
   };
 
+  useEffect(() => {
+    if (buildingIdParam) setSelectedBuildingId(buildingIdParam);
+    if (roomIdParam) setSelectedRoomId(roomIdParam);
+  }, [buildingIdParam, roomIdParam]);
+
   // Fetch Rooms data
   const { data: pagedRooms, isLoading: roomsLoading } = useLabRooms({
     buildingId: Number(selectedBuildingId),
@@ -96,6 +135,77 @@ const RoomBookingPage: React.FC = () => {
   const handleRoomChange = (labRoomId: string) => {
     setSelectedRoomId(labRoomId);
   };
+
+  const handleOpenSearchModal = () => {
+    setSearchStartDay(focusDateParam || format(new Date(), 'yyyy-MM-dd'));
+    setSearchEndDay(focusDateParam || format(new Date(), 'yyyy-MM-dd'));
+    setSearchStartTime(focusStartParam || '08:00');
+    setSearchEndTime(focusEndParam || '17:00');
+    setSearchError(null);
+    setShowSearchModal(true);
+  };
+
+  const handleSearchAndNavigate = async () => {
+    if (!searchStartDay || !searchEndDay) {
+      setSearchError('Start Day và End Day là bắt buộc.');
+      return;
+    }
+
+    setSearchLoading(true);
+    setSearchError(null);
+
+    try {
+      const params = new URLSearchParams();
+      params.set('startDay', searchStartDay);
+      params.set('endDay', searchEndDay);
+      if (selectedBuildingId) params.set('buildingId', selectedBuildingId);
+      if (selectedRoomId) params.set('labRoomId', selectedRoomId);
+      if (searchStartTime) params.set('startTime', searchStartTime);
+      if (searchEndTime) params.set('endTime', searchEndTime);
+      
+      const { data } = await axiosInstance.get('/Schedules/searchSlots/free', { params });
+      const slots = data?.data ?? data?.result?.data ?? data?.data?.data ?? data;
+      const firstSlot = Array.isArray(slots) ? slots[0] : null;
+
+      if (!firstSlot) {
+        setSearchError('Không tìm thấy khoảng trống nào phù hợp.');
+        return;
+      }
+
+      const targetRoomId = firstSlot.roomId ?? selectedRoomId;
+      const targetBuildingId = firstSlot.buildingId ?? selectedBuildingId;
+      const startDate = firstSlot.startDate ?? firstSlot.date;
+      const startTime = firstSlot.startTime;
+      const endTime = firstSlot.endTime;
+
+      setShowSearchModal(false);
+      navigate(
+        `/lecturer/book-room?buildingId=${targetBuildingId}&roomId=${targetRoomId}&focusDate=${startDate}&focusStart=${startTime}&focusEnd=${endTime}`,
+      );
+    } catch (error: any) {
+      setSearchError(error?.response?.data?.message || 'Không thể tìm khoảng trống.');
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!focusDateParam || !focusStartParam || !focusEndParam) return;
+
+    setFocusRange({
+      date: focusDateParam,
+      startTime: focusStartParam,
+      endTime: focusEndParam,
+    });
+
+    const parsedDate = new Date(focusDateParam);
+    if (Number.isNaN(parsedDate.getTime())) return;
+
+    const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+    const targetWeekStart = startOfWeek(parsedDate, { weekStartsOn: 1 });
+    const offset = differenceInCalendarWeeks(targetWeekStart, currentWeekStart, { weekStartsOn: 1 });
+    setWeekOffset(offset);
+  }, [focusDateParam, focusStartParam, focusEndParam]);
 
   // Fetch Policies Data
   const { data: policies } = useLabPolicies(Number(selectedRoomId));
@@ -206,6 +316,13 @@ const RoomBookingPage: React.FC = () => {
             />
           </div>
 
+          <button
+            onClick={handleOpenSearchModal}
+            className="mx-3 mt-4 px-4 py-3 rounded-xl border border-orange-300 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold shadow-md hover:shadow-lg hover:from-orange-600 hover:to-orange-700 transition-all"
+          >
+            Tìm khoảng trống nhanh
+          </button>
+
           {/* Instructions - Inside sidebar */}
           <div className="px-4 py-4 bg-cyan-50 border border-cyan-500 rounded-lg mx-3 my-4">
             <div className="flex items-start gap-2 mb-3">
@@ -246,6 +363,7 @@ const RoomBookingPage: React.FC = () => {
             weekOffset={weekOffset}
             onWeekChange={setWeekOffset}
             slotTypes={slotTypes}
+            highlightRange={focusRange || undefined}
           />
         )}
       </div>
@@ -267,6 +385,53 @@ const RoomBookingPage: React.FC = () => {
           purposesLoading={purposesLoading}
         />
       )}
+      {/* Search free slots modal */}
+      {showSearchModal && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowSearchModal(false)} />
+          <div className="relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
+            <div className="px-6 py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold">Tìm khoảng trống</h3>
+                <p className="text-sm text-white/90">Nhập khoảng ngày và giờ để tìm slot trống</p>
+              </div>
+              <button onClick={() => setShowSearchModal(false)} className="text-white text-2xl leading-none">×</button>
+            </div>
+            <div className="p-6 space-y-4">
+              {searchError && (
+                <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+                  {searchError}
+                </div>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Start Day *</label>
+                  <input type="date" value={searchStartDay} onChange={(e) => setSearchStartDay(e.target.value)} className="w-full px-4 py-3 border rounded-lg" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">End Day *</label>
+                  <input type="date" value={searchEndDay} onChange={(e) => setSearchEndDay(e.target.value)} className="w-full px-4 py-3 border rounded-lg" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Start Time</label>
+                  <input type="time" value={searchStartTime} onChange={(e) => setSearchStartTime(e.target.value)} className="w-full px-4 py-3 border rounded-lg" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">End Time</label>
+                  <input type="time" value={searchEndTime} onChange={(e) => setSearchEndTime(e.target.value)} className="w-full px-4 py-3 border rounded-lg" />
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button onClick={() => setShowSearchModal(false)} className="px-4 py-2 rounded-lg border">Hủy</button>
+                <button onClick={handleSearchAndNavigate} disabled={searchLoading} className="px-4 py-2 rounded-lg bg-orange-600 text-white font-semibold disabled:opacity-50">
+                  {searchLoading ? 'Đang tìm...' : 'Tìm và mở'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal thành công cuối cùng */}
       <BookingSuccessModal
         isOpen={showSuccessModal}
