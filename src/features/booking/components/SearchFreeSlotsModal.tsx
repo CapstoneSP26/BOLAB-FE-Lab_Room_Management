@@ -2,8 +2,8 @@ import React from 'react';
 import { CalendarDays, Clock, MapPin, X, Building2 } from 'lucide-react';
 import { BuildingSelector } from '../../building/components/BuildingSelector';
 import { RoomSelector } from '../../labroom/components/RoomSelector';
+import { useLabRooms } from '../../labroom/hooks/useLabRooms';
 import type { BuildingDto } from '../../building/types/building.type';
-import type { LabRoomDto } from '../../labroom/types/room.type';
 
 type FreeSlotItem = {
   roomId?: number;
@@ -25,10 +25,12 @@ interface SearchFreeSlotsModalProps {
   searchEndDay: string;
   searchStartTime: string;
   searchEndTime: string;
+  searchDuration: string;
   onChangeStartDay: (value: string) => void;
   onChangeEndDay: (value: string) => void;
   onChangeStartTime: (value: string) => void;
   onChangeEndTime: (value: string) => void;
+  onChangeDuration: (value: string) => void;
   onSearch: () => void;
   searchResults: FreeSlotItem[];
   selectedSearchSlot: FreeSlotItem | null;
@@ -36,12 +38,8 @@ interface SearchFreeSlotsModalProps {
   onConfirmSelection: () => void;
   buildings: BuildingDto[];
   buildingsLoading: boolean;
-  selectedBuildingId: string;
-  onSelectBuilding: (id: string) => void;
-  rooms: LabRoomDto[];
-  roomsLoading: boolean;
-  selectedRoomId: string;
-  onSelectRoom: (id: string) => void;
+  initialBuildingId?: string;
+  initialRoomId?: string;
 }
 
 const SkeletonLine: React.FC<{ className?: string }> = ({ className = '' }) => (
@@ -86,10 +84,12 @@ export const SearchFreeSlotsModal: React.FC<SearchFreeSlotsModalProps> = ({
   searchEndDay,
   searchStartTime,
   searchEndTime,
+  searchDuration,
   onChangeStartDay,
   onChangeEndDay,
   onChangeStartTime,
   onChangeEndTime,
+  onChangeDuration,
   onSearch,
   searchResults,
   selectedSearchSlot,
@@ -97,13 +97,40 @@ export const SearchFreeSlotsModal: React.FC<SearchFreeSlotsModalProps> = ({
   onConfirmSelection,
   buildings,
   buildingsLoading,
-  selectedBuildingId,
-  onSelectBuilding,
-  rooms,
-  roomsLoading,
-  selectedRoomId,
-  onSelectRoom,
+  initialBuildingId,
+  initialRoomId,
 }) => {
+  const [searchBuildingId, setSearchBuildingId] = React.useState(initialBuildingId ?? '');
+  const { data: pagedRooms, isLoading: roomsLoading } = useLabRooms({
+    buildingId: Number(searchBuildingId),
+    includeBuilding: true,
+  });
+  const rooms = React.useMemo(() => pagedRooms?.items ?? [], [pagedRooms]);
+  const [searchRoomId, setSearchRoomId] = React.useState(initialRoomId ?? '');
+
+  React.useEffect(() => {
+    setSearchBuildingId(initialBuildingId ?? '');
+  }, [initialBuildingId, isOpen]);
+
+  React.useEffect(() => {
+    setSearchRoomId(initialRoomId ?? '');
+  }, [initialRoomId, isOpen]);
+
+  const filteredRooms = React.useMemo(() => {
+    if (!searchBuildingId) return rooms;
+    return rooms.filter((room) => String(room.buildingId) === searchBuildingId);
+  }, [rooms, searchBuildingId]);
+
+  const handleBuildingSelect = (id: string) => {
+    setSearchBuildingId(id);
+    setSearchRoomId('');
+  };
+
+  const handleRoomSelect = (id: string) => {
+    setSearchRoomId(id);
+  };
+
+  const canSearch = Boolean(searchStartDay && searchEndDay);
   if (!isOpen) return null;
 
   return (
@@ -144,28 +171,39 @@ export const SearchFreeSlotsModal: React.FC<SearchFreeSlotsModalProps> = ({
               <label className="block text-sm font-semibold text-gray-700 mb-2">End Time</label>
               <input type="time" value={searchEndTime} onChange={(e) => onChangeEndTime(e.target.value)} className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400" />
             </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Duration</label>
+              <input
+                type="time"
+                step="60"
+                value={searchDuration}
+                onChange={(e) => onChangeDuration(e.target.value)}
+                placeholder="HH:mm"
+                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-gray-200">
             <BuildingSelector
               buildings={buildings}
               isLoading={buildingsLoading}
-              selectedId={selectedBuildingId}
-              onSelect={onSelectBuilding}
+              selectedId={searchBuildingId}
+              onSelect={handleBuildingSelect}
             />
             <RoomSelector
-              rooms={rooms}
+              rooms={filteredRooms}
               isLoading={roomsLoading}
-              selectedRoomId={selectedRoomId}
-              onSelect={onSelectRoom}
-              selectedBuildingId={selectedBuildingId}
+              selectedRoomId={searchRoomId}
+              onSelect={handleRoomSelect}
+              selectedBuildingId={searchBuildingId}
             />
           </div>
 
           <div className="flex justify-end">
             <button
               onClick={onSearch}
-              disabled={searchLoading || !searchStartDay || !searchEndDay}
+              disabled={searchLoading || !canSearch}
               className="px-4 py-2 rounded-lg bg-orange-600 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-orange-700 transition-colors"
             >
               {searchLoading ? 'Đang tìm...' : 'Tìm slot trống'}

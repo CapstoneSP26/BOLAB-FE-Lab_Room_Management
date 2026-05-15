@@ -97,6 +97,7 @@ const RoomBookingPage: React.FC = () => {
   const [searchEndDay, setSearchEndDay] = useState<string>('');
   const [searchStartTime, setSearchStartTime] = useState<string>('');
   const [searchEndTime, setSearchEndTime] = useState<string>('');
+  const [searchDuration, setSearchDuration] = useState<string>('');
   const [pendingBooking, setPendingBooking] = useState<PendingBooking | null>(
     null,
   );
@@ -176,6 +177,7 @@ const RoomBookingPage: React.FC = () => {
     setSearchEndDay(focusDateParam || format(new Date(), 'yyyy-MM-dd'));
     setSearchStartTime(focusStartParam || '08:00');
     setSearchEndTime(focusEndParam || '17:00');
+    setSearchDuration('');
     setSearchError(null);
     setSearchResults([]);
     setSelectedSearchSlot(null);
@@ -199,6 +201,10 @@ const RoomBookingPage: React.FC = () => {
       if (selectedRoomId) params.set('labRoomId', selectedRoomId);
       if (searchStartTime) params.set('startTime', searchStartTime);
       if (searchEndTime) params.set('endTime', searchEndTime);
+      if (searchDuration) {
+        const durationValue = searchDuration.length === 5 ? `${searchDuration}:00` : searchDuration;
+        params.set('duration', durationValue);
+      }
       
       const { data } = await axiosInstance.get('/Schedules/searchSlots/free', { params });
       const slots = data?.data ?? data?.result?.data ?? data?.data?.data ?? data;
@@ -240,7 +246,7 @@ const RoomBookingPage: React.FC = () => {
 
     setShowSearchModal(false);
     navigate(
-      `/lecturer/book-room?buildingId=${targetBuildingId}&roomId=${targetRoomId}&focusDate=${startDate}&focusStart=${startTime}&focusEnd=${endTime}`,
+      `/book-room?buildingId=${targetBuildingId}&roomId=${targetRoomId}&focusDate=${startDate}&focusStart=${startTime}&focusEnd=${endTime}`,
     );
   };
 
@@ -449,10 +455,12 @@ const RoomBookingPage: React.FC = () => {
         searchEndDay={searchEndDay}
         searchStartTime={searchStartTime}
         searchEndTime={searchEndTime}
+        searchDuration={searchDuration}
         onChangeStartDay={setSearchStartDay}
         onChangeEndDay={setSearchEndDay}
         onChangeStartTime={setSearchStartTime}
         onChangeEndTime={setSearchEndTime}
+        onChangeDuration={setSearchDuration}
         onSearch={handleSearchAndNavigate}
         searchResults={searchResults}
         selectedSearchSlot={selectedSearchSlot}
@@ -460,15 +468,8 @@ const RoomBookingPage: React.FC = () => {
         onConfirmSelection={handleConfirmSearchSelection}
         buildings={buildings}
         buildingsLoading={buildingsLoading}
-        selectedBuildingId={selectedBuildingId}
-        onSelectBuilding={(id) => {
-          setSelectedBuildingId(id);
-          setSelectedRoomId('');
-        }}
-        rooms={rooms}
-        roomsLoading={roomsLoading}
-        selectedRoomId={selectedRoomId}
-        onSelectRoom={setSelectedRoomId}
+        initialBuildingId={selectedBuildingId}
+        initialRoomId={selectedRoomId}
       />
 
       {/* Modal thành công cuối cùng */}
