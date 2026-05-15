@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Calendar as CalendarIcon, Building2, Info } from "lucide-react";
+import { SearchFreeSlotsModal } from "../../features/booking/components/SearchFreeSlotsModal";
 import { BookingConfirmPanel } from "../../features/booking/components/BookingConfirmPanel";
 import { BookingSuccessModal } from "../../features/booking/components/BookingSuccessModal";
 import { useCreateBooking } from "../../features/booking/hooks/useCreateBooking";
@@ -23,6 +24,17 @@ import { useNotificationStore } from "../../features/notifications/store/notific
 import { useSlotTypes } from "../../features/slot/hooks/useSlotType";
 import { parseISO, startOfWeek, differenceInCalendarWeeks, format } from "date-fns";
 import axiosInstance from "../../api/axios";
+
+type FreeSlotItem = {
+  roomId?: number;
+  buildingId?: number;
+  roomName?: string;
+  buildingName?: string;
+  startDate?: string;
+  endDate?: string;
+  startTime?: string;
+  endTime?: string;
+};
 
 /**
  * 🗓️ Room Booking Page - Google Calendar Style
@@ -79,6 +91,8 @@ const RoomBookingPage: React.FC = () => {
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [searchResults, setSearchResults] = useState<FreeSlotItem[]>([]);
+  const [selectedSearchSlot, setSelectedSearchSlot] = useState<FreeSlotItem | null>(null);
   const [searchStartDay, setSearchStartDay] = useState<string>('');
   const [searchEndDay, setSearchEndDay] = useState<string>('');
   const [searchStartTime, setSearchStartTime] = useState<string>('');
@@ -121,7 +135,28 @@ const RoomBookingPage: React.FC = () => {
   const rooms = useMemo(() => pagedRooms?.items ?? [], [pagedRooms]);
 
   useEffect(() => {
-    if (!selectedRoomId || selectedBuildingId) return;
+    if (!roomIdParam) return;
+
+    const roomId = Number(roomIdParam);
+    if (!Number.isFinite(roomId)) return;
+
+    const matchedRoom = rooms.find((room) => room.id === roomId);
+    if (!matchedRoom) return;
+
+    if (matchedRoom.buildingId && String(matchedRoom.buildingId) !== selectedBuildingId) {
+      setSelectedBuildingId(String(matchedRoom.buildingId));
+      return;
+    }
+
+    if (selectedRoomId !== roomIdParam) {
+      setSelectedRoomId(roomIdParam);
+    }
+  }, [rooms, roomIdParam, selectedBuildingId, selectedRoomId]);
+
+  useEffect(() => {
+    if (!selectedRoomId) return;
+    if (selectedBuildingId) return;
+
     const matchedRoom = rooms.find((room) => room.id === Number(selectedRoomId));
     if (matchedRoom?.buildingId) {
       setSelectedBuildingId(String(matchedRoom.buildingId));
@@ -142,6 +177,8 @@ const RoomBookingPage: React.FC = () => {
     setSearchStartTime(focusStartParam || '08:00');
     setSearchEndTime(focusEndParam || '17:00');
     setSearchError(null);
+    setSearchResults([]);
+    setSelectedSearchSlot(null);
     setShowSearchModal(true);
   };
 
@@ -165,28 +202,46 @@ const RoomBookingPage: React.FC = () => {
       
       const { data } = await axiosInstance.get('/Schedules/searchSlots/free', { params });
       const slots = data?.data ?? data?.result?.data ?? data?.data?.data ?? data;
-      const firstSlot = Array.isArray(slots) ? slots[0] : null;
+      const normalized = Array.isArray(slots)
+        ? slots.map((slot: any) => ({
+            roomId: slot.roomId,
+            buildingId: slot.buildingId,
+            roomName: slot.roomName,
+            buildingName: slot.buildingName,
+            startDate: slot.startDate,
+            endDate: slot.endDate,
+            startTime: slot.startTime?.slice(0, 5) ?? slot.startTime,
+            endTime: slot.endTime?.slice(0, 5) ?? slot.endTime,
+          }))
+        : [];
 
-      if (!firstSlot) {
+      setSearchResults(normalized);
+      setSelectedSearchSlot(normalized[0] ?? null);
+
+      if (normalized.length === 0) {
         setSearchError('Không tìm thấy khoảng trống nào phù hợp.');
         return;
       }
-
-      const targetRoomId = firstSlot.roomId ?? selectedRoomId;
-      const targetBuildingId = firstSlot.buildingId ?? selectedBuildingId;
-      const startDate = firstSlot.startDate ?? firstSlot.date;
-      const startTime = firstSlot.startTime;
-      const endTime = firstSlot.endTime;
-
-      setShowSearchModal(false);
-      navigate(
-        `/lecturer/book-room?buildingId=${targetBuildingId}&roomId=${targetRoomId}&focusDate=${startDate}&focusStart=${startTime}&focusEnd=${endTime}`,
-      );
     } catch (error: any) {
       setSearchError(error?.response?.data?.message || 'Không thể tìm khoảng trống.');
     } finally {
       setSearchLoading(false);
     }
+  };
+
+  const handleConfirmSearchSelection = () => {
+    if (!selectedSearchSlot) return;
+
+    const targetRoomId = selectedSearchSlot.roomId ?? Number(selectedRoomId);
+    const targetBuildingId = selectedSearchSlot.buildingId ?? Number(selectedBuildingId);
+    const startDate = selectedSearchSlot.startDate;
+    const startTime = selectedSearchSlot.startTime;
+    const endTime = selectedSearchSlot.endTime;
+
+    setShowSearchModal(false);
+    navigate(
+      `/lecturer/book-room?buildingId=${targetBuildingId}&roomId=${targetRoomId}&focusDate=${startDate}&focusStart=${startTime}&focusEnd=${endTime}`,
+    );
   };
 
   useEffect(() => {
@@ -385,52 +440,36 @@ const RoomBookingPage: React.FC = () => {
           purposesLoading={purposesLoading}
         />
       )}
-      {/* Search free slots modal */}
-      {showSearchModal && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setShowSearchModal(false)} />
-          <div className="relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
-            <div className="px-6 py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-bold">Tìm khoảng trống</h3>
-                <p className="text-sm text-white/90">Nhập khoảng ngày và giờ để tìm slot trống</p>
-              </div>
-              <button onClick={() => setShowSearchModal(false)} className="text-white text-2xl leading-none">×</button>
-            </div>
-            <div className="p-6 space-y-4">
-              {searchError && (
-                <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
-                  {searchError}
-                </div>
-              )}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Start Day *</label>
-                  <input type="date" value={searchStartDay} onChange={(e) => setSearchStartDay(e.target.value)} className="w-full px-4 py-3 border rounded-lg" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">End Day *</label>
-                  <input type="date" value={searchEndDay} onChange={(e) => setSearchEndDay(e.target.value)} className="w-full px-4 py-3 border rounded-lg" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Start Time</label>
-                  <input type="time" value={searchStartTime} onChange={(e) => setSearchStartTime(e.target.value)} className="w-full px-4 py-3 border rounded-lg" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">End Time</label>
-                  <input type="time" value={searchEndTime} onChange={(e) => setSearchEndTime(e.target.value)} className="w-full px-4 py-3 border rounded-lg" />
-                </div>
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <button onClick={() => setShowSearchModal(false)} className="px-4 py-2 rounded-lg border">Hủy</button>
-                <button onClick={handleSearchAndNavigate} disabled={searchLoading} className="px-4 py-2 rounded-lg bg-orange-600 text-white font-semibold disabled:opacity-50">
-                  {searchLoading ? 'Đang tìm...' : 'Tìm và mở'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <SearchFreeSlotsModal
+        isOpen={showSearchModal}
+        onClose={() => setShowSearchModal(false)}
+        searchError={searchError}
+        searchLoading={searchLoading}
+        searchStartDay={searchStartDay}
+        searchEndDay={searchEndDay}
+        searchStartTime={searchStartTime}
+        searchEndTime={searchEndTime}
+        onChangeStartDay={setSearchStartDay}
+        onChangeEndDay={setSearchEndDay}
+        onChangeStartTime={setSearchStartTime}
+        onChangeEndTime={setSearchEndTime}
+        onSearch={handleSearchAndNavigate}
+        searchResults={searchResults}
+        selectedSearchSlot={selectedSearchSlot}
+        onSelectSlot={setSelectedSearchSlot}
+        onConfirmSelection={handleConfirmSearchSelection}
+        buildings={buildings}
+        buildingsLoading={buildingsLoading}
+        selectedBuildingId={selectedBuildingId}
+        onSelectBuilding={(id) => {
+          setSelectedBuildingId(id);
+          setSelectedRoomId('');
+        }}
+        rooms={rooms}
+        roomsLoading={roomsLoading}
+        selectedRoomId={selectedRoomId}
+        onSelectRoom={setSelectedRoomId}
+      />
 
       {/* Modal thành công cuối cùng */}
       <BookingSuccessModal
