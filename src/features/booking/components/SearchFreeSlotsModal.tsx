@@ -101,6 +101,16 @@ export const SearchFreeSlotsModal: React.FC<SearchFreeSlotsModalProps> = ({
   initialRoomId,
 }) => {
   const [searchBuildingId, setSearchBuildingId] = React.useState(initialBuildingId ?? '');
+  const [highlightedSlot, setHighlightedSlot] = React.useState<FreeSlotItem | null>(null);
+
+  React.useEffect(() => {
+    if (!highlightedSlot) return;
+    const timer = setTimeout(() => {
+      setHighlightedSlot(null);
+    }, 10000); // 10 seconds
+    return () => clearTimeout(timer);
+  }, [highlightedSlot]);
+
   const { data: pagedRooms, isLoading: roomsLoading } = useLabRooms({
     buildingId: Number(searchBuildingId),
     includeBuilding: true,
@@ -169,18 +179,142 @@ export const SearchFreeSlotsModal: React.FC<SearchFreeSlotsModalProps> = ({
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">End Time</label>
-              <input type="time" value={searchEndTime} onChange={(e) => onChangeEndTime(e.target.value)} className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400" />
+              <div className="w-full px-4 py-3 border rounded-lg bg-gray-50 text-gray-700 font-semibold flex items-center">
+                11:00
+              </div>
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Duration</label>
-              <input
-                type="time"
-                step="60"
-                value={searchDuration}
-                onChange={(e) => onChangeDuration(e.target.value)}
-                placeholder="HH:mm"
-                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
-              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={searchDuration}
+                  onChange={(e) => {
+                    let value = e.target.value;
+                    // Only allow digits
+                    value = value.replace(/\D/g, '');
+                    
+                    // Limit to 4 digits max
+                    if (value.length > 4) {
+                      value = value.slice(0, 4);
+                    }
+                    
+                    // Auto-format with : after 2 digits
+                    if (value.length <= 2) {
+                      onChangeDuration(value);
+                    } else if (value.length === 3) {
+                      onChangeDuration(`${value.slice(0, 2)}:${value[2]}`);
+                    } else if (value.length === 4) {
+                      onChangeDuration(`${value.slice(0, 2)}:${value.slice(2, 4)}`);
+                    }
+                  }}
+                  onBlur={(e) => {
+                    let value = e.target.value.trim();
+                    
+                    if (!value) {
+                      onChangeDuration('');
+                      return;
+                    }
+                    
+                    // Extract only digits
+                    let digits = value.replace(/\D/g, '');
+                    
+                    if (!digits) {
+                      onChangeDuration('');
+                      return;
+                    }
+                    
+                    let hours = '00';
+                    let minutes = '00';
+                    
+                    if (digits.length === 1) {
+                      // 1 digit: interpret as minutes (e.g., "5" -> "00:05")
+                      minutes = digits.padStart(2, '0');
+                    } else if (digits.length === 2) {
+                      const num = parseInt(digits);
+                      if (num >= 24) {
+                        // Interpret as minutes (e.g., "95" would be invalid, but "50" -> "00:50")
+                        if (num >= 60) {
+                          onChangeDuration('');
+                          return;
+                        }
+                        minutes = digits;
+                      } else {
+                        // Interpret as hours (e.g., "13" -> "13:00")
+                        hours = digits;
+                      }
+                    } else if (digits.length === 3) {
+                      // HMM format (e.g., "130" -> "01:30")
+                      hours = '0' + digits[0];
+                      minutes = digits.slice(1, 3);
+                    } else if (digits.length === 4) {
+                      // HHMM format (e.g., "0950" -> "09:50")
+                      hours = digits.slice(0, 2);
+                      minutes = digits.slice(2, 4);
+                    }
+                    
+                    // Final validation
+                    const h = parseInt(hours);
+                    const m = parseInt(minutes);
+                    
+                    if (h < 24 && m < 60) {
+                      onChangeDuration(`${hours}:${minutes}`);
+                    } else {
+                      onChangeDuration('');
+                    }
+                  }}
+                  placeholder="--:--"
+                  maxLength={5}
+                  className="flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 text-center font-semibold"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!searchDuration || !searchDuration.includes(':')) {
+                      onChangeDuration('00:15');
+                    } else {
+                      const [h, m] = searchDuration.split(':').map(Number);
+                      let newMinutes = m + 15;
+                      let newHours = h;
+                      
+                      if (newMinutes >= 60) {
+                        newHours += Math.floor(newMinutes / 60);
+                        newMinutes = newMinutes % 60;
+                      }
+                      
+                      if (newHours < 24) {
+                        onChangeDuration(`${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`);
+                      }
+                    }
+                  }}
+                  className="px-3 py-3 border rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-600 font-semibold transition-colors"
+                >
+                  +
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (searchDuration && searchDuration.includes(':')) {
+                      const [h, m] = searchDuration.split(':').map(Number);
+                      let newMinutes = m - 15;
+                      let newHours = h;
+                      
+                      if (newMinutes < 0) {
+                        newHours -= 1;
+                        newMinutes += 60;
+                      }
+                      
+                      if (newHours >= 0) {
+                        onChangeDuration(`${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`);
+                      }
+                    }
+                  }}
+                  className="px-3 py-3 border rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-600 font-semibold transition-colors"
+                >
+                  −
+                </button>
+              </div>
             </div>
           </div>
 
@@ -226,12 +360,15 @@ export const SearchFreeSlotsModal: React.FC<SearchFreeSlotsModalProps> = ({
 
               <div className="max-h-72 overflow-y-auto space-y-2 pr-1">
                 {searchResults.map((slot, index) => {
-                  const isSelected = selectedSearchSlot === slot;
+                  const isSelected = highlightedSlot === slot;
                   return (
                     <button
                       key={`${slot.roomId}-${slot.startDate}-${slot.startTime}-${index}`}
                       type="button"
-                      onClick={() => onSelectSlot(slot)}
+                      onClick={() => {
+                        onSelectSlot(slot);
+                        setHighlightedSlot(slot);
+                      }}
                       className={`w-full text-left rounded-xl border p-4 transition-all ${isSelected ? 'border-orange-400 bg-orange-50 shadow-sm' : 'border-gray-200 bg-white hover:border-orange-300 hover:bg-orange-50/40'}`}
                     >
                       <div className="flex items-start justify-between gap-4">
