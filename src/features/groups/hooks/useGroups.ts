@@ -193,6 +193,8 @@ export const useAddGroupMember = (options: MutationOptions = {}) => {
       queryClient.invalidateQueries({
         queryKey: GROUPS_QUERY_KEYS.detail(variables.groupId),
       });
+      // Invalidate lists to update table
+      queryClient.invalidateQueries({ queryKey: GROUPS_QUERY_KEYS.lists() });
       onSuccess?.(data);
     },
     onError,
@@ -238,6 +240,8 @@ export const useRemoveGroupMember = (options: MutationOptions = {}) => {
       queryClient.invalidateQueries({
         queryKey: GROUPS_QUERY_KEYS.detail(variables.groupId),
       });
+      // Invalidate lists to update table
+      queryClient.invalidateQueries({ queryKey: GROUPS_QUERY_KEYS.lists() });
       onSuccess?.(null);
     },
     onError,
