@@ -179,9 +179,12 @@ export const SearchFreeSlotsModal: React.FC<SearchFreeSlotsModalProps> = ({
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">End Time</label>
-              <div className="w-full px-4 py-3 border rounded-lg bg-gray-50 text-gray-700 font-semibold flex items-center">
-                11:00
-              </div>
+              <input
+                type="time"
+                value={searchEndTime}
+                onChange={(e) => onChangeEndTime(e.target.value)}
+                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+              />
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Duration</label>

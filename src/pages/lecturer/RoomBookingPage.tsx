@@ -85,6 +85,12 @@ const RoomBookingPage: React.FC = () => {
       startTime: focusStartParam,
       endTime: focusEndParam,
     });
+
+    const timer = window.setTimeout(() => {
+      setFocusRange(null);
+    }, 10000);
+
+    return () => window.clearTimeout(timer);
   }, [focusDateParam, focusStartParam, focusEndParam]);
 
   const [showConfirmPanel, setShowConfirmPanel] = useState(false);
@@ -175,8 +181,8 @@ const RoomBookingPage: React.FC = () => {
   const handleOpenSearchModal = () => {
     setSearchStartDay(focusDateParam || format(new Date(), 'yyyy-MM-dd'));
     setSearchEndDay(focusDateParam || format(new Date(), 'yyyy-MM-dd'));
-    setSearchStartTime(focusStartParam || '08:00');
-    setSearchEndTime(focusEndParam || '17:00');
+    setSearchStartTime('07:00');
+    setSearchEndTime('23:00');
     setSearchDuration('');
     setSearchError(null);
     setSearchResults([]);
