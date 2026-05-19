@@ -12,7 +12,7 @@ import { FlexibleGridView } from './FlexibleGridView';
 import { FixedGridView } from './FixedGridView';
 import type { PendingBooking } from '../../booking/types/booking.type';
 import { getStartOfDayVNInUTC } from '../../../utils/date.util';
-import { addDays, formatDate, isAfter, isBefore } from 'date-fns';
+import { addDays, formatDate } from 'date-fns';
 import { PolicyType, type PolicyTypeEnum } from '../../labroom';
 import { checkLabPolicies } from '../../labroom/utils/policy.util';
 import { useToast } from '../../../hooks/useToast';
@@ -86,7 +86,8 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   // Fetch Policies Data
   const isFreeTimeAllowed = (policies?.[PolicyType.IsFreeTimeAllowed] ?? 'true') === 'true' ? true : false;
   const maxConcurrentBookings = Number(policies?.[PolicyType.MaxConcurrentBookings] ?? 1);
-  const minBookingLeadTime = Number(policies?.[PolicyType.MinBookingLeadTime] ?? 0)
+  const minBookingLeadTime = Number(policies?.[PolicyType.MinBookingLeadTime] ?? 0);
+  const maxBookingAdvance = Number(policies?.[PolicyType.MaxBookingAdvance] ?? 0);
 
   const { events } = useCalendarEvents({
     calendarMode: calendarMode,
@@ -326,6 +327,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
             // OutSlot Mode: Show hourly time slots with drag-to-book
             <FlexibleGridView
               minBookingLeadTime={minBookingLeadTime}
+              maxBookingAdvance={maxBookingAdvance}
               timeSlots={timeSlots}
               weekDays={weekDays}
               dragState={dragState}
@@ -341,6 +343,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                 events={events}
                 onSlotClick={handleSlotClick}
                 minBookingLeadTime={minBookingLeadTime}
+                maxBookingAdvance={maxBookingAdvance}
                 maxConcurrent={maxConcurrentBookings}
               />
             ) : null}

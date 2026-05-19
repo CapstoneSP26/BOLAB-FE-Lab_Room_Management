@@ -3,6 +3,7 @@ import { X, Sparkles, Send, Calendar, CheckCircle2, AlertCircle, Loader2, ArrowR
 import { useAISmartBooking } from '../hooks/useAISmartBooking';
 import { useCreateBooking } from '../../booking/hooks/useCreateBooking';
 import { useToast } from '../../../hooks/useToast';
+import type { AIChatMessage } from '../types/ai.type';
 
 interface AIBookingModalProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ interface AIBookingModalProps {
 
 export const AIBookingModal: React.FC<AIBookingModalProps> = ({ isOpen, onClose }) => {
   const [userPrompt, setUserPrompt] = useState('');
+  const [messages, setMessages] = useState<AIChatMessage[]>([]);
   const { parseAsync, isParsing, parseData } = useAISmartBooking();
   const { mutate: createBooking, isPending: isCreating } = useCreateBooking();
   const toast = useToast();
@@ -22,8 +24,21 @@ export const AIBookingModal: React.FC<AIBookingModalProps> = ({ isOpen, onClose 
   }, [isOpen]);
 
   const handleSend = async () => {
-    if (!userPrompt.trim() || isParsing) return;
-    await parseAsync({ userPrompt });
+    if (!userPrompt.trim()) return;
+
+    const newMessages: AIChatMessage[] = [
+      ...messages,
+      { role: 'user', content: userPrompt }
+    ];
+
+    setMessages(newMessages);
+
+    const res = await parseAsync({ messages: newMessages });
+
+    setMessages(prev => [
+      ...prev,
+      { role: 'assistant', content: res.message }
+    ]);
   };
 
   // Hàm xử lý chung cho cả primaryBooking và suggestion

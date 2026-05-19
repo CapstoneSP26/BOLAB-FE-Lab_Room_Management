@@ -2,8 +2,9 @@ import React, { useMemo } from 'react';
 import { CALENDAR_CONFIG } from '../constants/calendar.constants';
 import type { CalendarEvent } from '../types/calendar.type';
 import { getPositionStyle, timeToPosition } from '../utils/calendar-math.util';
-import { addHours, format, isBefore, startOfHour } from 'date-fns';
+import { addDays, addHours, endOfDay, format, isAfter, isBefore, startOfHour } from 'date-fns';
 import { getEventAppearance } from '../utils/event-color.mapper';
+import { getCurrentSemesterEndDate } from '../../../utils/semester.util';
 
 interface FlexibleGridViewProps {
   timeSlots: string[];
@@ -11,6 +12,7 @@ interface FlexibleGridViewProps {
   dragState?: any;
   events: CalendarEvent[];
   minBookingLeadTime: number;
+  maxBookingAdvance?: number;
   handleMouseDown?: (e: React.MouseEvent, dayIndex: number) => void;
 }
 
@@ -20,6 +22,7 @@ export const FlexibleGridView: React.FC<FlexibleGridViewProps> = ({
   dragState,
   events,
   minBookingLeadTime = 0,
+  maxBookingAdvance = 365,
   handleMouseDown,
 }) => {
   const { START_HOUR, END_HOUR, CELL_HEIGHT } = CALENDAR_CONFIG;
@@ -29,6 +32,18 @@ export const FlexibleGridView: React.FC<FlexibleGridViewProps> = ({
   );
   const now = new Date();
   const minAllowedTime = addHours(now, minBookingLeadTime);
+
+  // --- TÍNH TOÁN NGÀY GIỚI HẠN TRONG TƯƠNG LAI ---
+  const maxAllowedDate = useMemo(() => {
+    const maxAdvanceDate = addDays(now, maxBookingAdvance == 0 ? 365 : maxBookingAdvance); // Nếu BE không cấu hình thì mặc định cho phép đặt trước 14 ngày
+    const semesterEndDate = getCurrentSemesterEndDate(now);
+
+    // Lấy ngày nhỏ hơn (sớm hơn) và đặt mốc cuối ngày để chặn chính xác
+    return isBefore(maxAdvanceDate, semesterEndDate)
+      ? endOfDay(maxAdvanceDate)
+      : endOfDay(semesterEndDate);
+  }, [maxBookingAdvance]);
+
   // --- LOGIC XỬ LÝ CHỒNG LẤN (OVERLAP) ---
   const getPositionedEvents = (dayEvents: CalendarEvent[]) => {
     if (dayEvents.length === 0) return [];
@@ -151,7 +166,7 @@ export const FlexibleGridView: React.FC<FlexibleGridViewProps> = ({
     });
   };
 
-  const onHandleMourseDown = (e: React.MouseEvent, dayIndex: number) => {
+  const onHandleMouseDown = (e: React.MouseEvent, dayIndex: number) => {
     if (handleMouseDown) handleMouseDown(e, dayIndex);
   };
 
@@ -178,6 +193,10 @@ export const FlexibleGridView: React.FC<FlexibleGridViewProps> = ({
           const isMinAllowedDay = dateStr === format(minAllowedTime, 'yyyy-MM-dd');
           const isPastDay = isBefore(date, startOfHour(minAllowedTime)) && !isMinAllowedDay;
 
+          // LOGIC KHÓA TƯƠNG LAI
+          const isMaxAllowedDay = dateStr === format(maxAllowedDate, 'yyyy-MM-dd');
+          const isFutureLockedDay = isAfter(date, maxAllowedDate) && !isMaxAllowedDay;
+
           let lockedOverlayStyle = null;
           if (isPastDay) {
             lockedOverlayStyle = { top: 0, height: "100%" };
@@ -185,13 +204,21 @@ export const FlexibleGridView: React.FC<FlexibleGridViewProps> = ({
             const heightPos = Math.min(timeToPosition(format(minAllowedTime, 'HH:mm')), maxHeight);
             lockedOverlayStyle = { top: 0, height: `${heightPos}px` };
           }
-
+          // Nếu ngày này hoàn toàn vượt quá maxAllowedDate trong tương lai -> Xám toàn bộ cột
+          else if (isFutureLockedDay) {
+            lockedOverlayStyle = { top: 0, height: "100%" };
+          }
+          // Nếu là chính ngày giới hạn tương lai -> Xám phần thời gian còn lại của ngày hôm đó
+          else if (isMaxAllowedDay) {
+            const heightPos = Math.min(timeToPosition(format(maxAllowedDate, 'HH:mm')), maxHeight);
+            lockedOverlayStyle = { top: heightPos, height: `${maxHeight - heightPos}px` };
+          }
           return (
             <div
               key={dayIndex}
               className="relative border-r border-gray-100 h-full transition-colors hover:bg-slate-50/50"
               style={{ height: `${(END_HOUR - START_HOUR + 1) * CELL_HEIGHT}px` }}
-              onMouseDown={(e) => onHandleMourseDown(e, dayIndex)}
+              onMouseDown={(e) => onHandleMouseDown(e, dayIndex)}
             >
               {/* Kẻ ngang */}
               {timeSlots.map((_, i) => (

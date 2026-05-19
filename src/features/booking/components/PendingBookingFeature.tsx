@@ -26,6 +26,7 @@ import {
 } from "../../../components/ui/ComponentsParts";
 import { useRejectBooking } from "../hooks/useRejectBooking";
 import { useApproveBooking } from "../hooks/useApproveBooking";
+import ApproveBookingModal from "./ApproveBookingModal";
 
 type SlotTypeFilter = "ALL" | number;
 
@@ -50,7 +51,9 @@ export default function PendingBookingFeature() {
 
   // Reject with reason state
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [approveModalOpen, setApproveModalOpen] = useState(false);
   const [rejectId, setRejectId] = useState<string | null>(null);
+  const [approveId, setApproveId] = useState<string | null>(null);
 
   // Reset page when filters change
   useEffect(() => {
@@ -82,6 +85,8 @@ export default function PendingBookingFeature() {
     setSelected(null);
     setRejectId(null);
     setRejectModalOpen(false);
+    setApproveId(null);
+    setApproveModalOpen(false);
   };
 
   const rawData: any = pendingQuery.data;
@@ -164,10 +169,12 @@ export default function PendingBookingFeature() {
     );
   }, [q, buildingId, roomId, slotType]);
 
-  const HandleApprove = async (id: string) => {
-    const ok = window.confirm("Approve this booking?");
-    if (!ok) return;
+  const HandleOpenApproveModal = (id: string) => {
+    setApproveId(id);
+    setApproveModalOpen(true);
+  };
 
+  const HandleConfirmApprove = async (id: string) => {
     approve(id);
     closeModal();
   };
@@ -456,7 +463,7 @@ export default function PendingBookingFeature() {
                 setSelected(b);
                 setOpen(true);
               }}
-              onApprove={HandleApprove}
+              onApprove={HandleOpenApproveModal}
               handleOpenRejectModal={HandleOpenRejectModal}
             />
           </div>
@@ -498,7 +505,7 @@ export default function PendingBookingFeature() {
         open={open}
         booking={selected}
         onClose={closeModal}
-        onApprove={HandleApprove}
+        onApprove={HandleOpenApproveModal}
         handleOpenRejectModal={HandleOpenRejectModal}
       />
 
@@ -507,6 +514,14 @@ export default function PendingBookingFeature() {
         isOpen={rejectModalOpen}
         onClose={() => setRejectModalOpen(false)}
         onSubmit={handleConfirmReject}
+        isLoading={isPending}
+      />
+
+      <ApproveBookingModal
+        approveId={approveId}
+        isOpen={approveModalOpen}
+        onClose={() => setApproveModalOpen(false)}
+        onSubmit={HandleConfirmApprove}
         isLoading={isPending}
       />
     </div>

@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { SlotType } from '../../slot/types/slot.types';
 import type { CalendarEvent } from '../types/calendar.type';
 import { getPositionStyle } from '../utils/calendar-math.util';
-import { addHours, format, isBefore, parseISO } from 'date-fns';
+import { addDays, addHours, endOfDay, format, isAfter, isBefore, parseISO } from 'date-fns';
+import { getCurrentSemesterEndDate } from '../../../utils/semester.util';
 
 interface FixedGridViewProps {
   timeSlots: string[];
@@ -11,6 +12,7 @@ interface FixedGridViewProps {
   events: CalendarEvent[];
   onSlotClick: (date: string, frame: any) => void;
   minBookingLeadTime: number;
+  maxBookingAdvance: number;
   maxConcurrent: number; // Lấy từ chính LabRoomPolicy "MaxConcurrentBookings"
 }
 
@@ -21,10 +23,21 @@ export const FixedGridView: React.FC<FixedGridViewProps> = ({
   events,
   onSlotClick,
   minBookingLeadTime = 0,
-  maxConcurrent = 1
+  maxConcurrent = 1,
+  maxBookingAdvance = 14,
 }) => {
   const now = new Date();
   const minAllowedTime = addHours(now, minBookingLeadTime);
+  // --- TÍNH TOÁN NGÀY GIỚI HẠN TRONG TƯƠNG LAI ---
+  const maxAllowedDate = useMemo(() => {
+    const maxAdvanceDate = addDays(now, maxBookingAdvance == 0 ? 365 : maxBookingAdvance); // Nếu BE không cấu hình thì mặc định cho phép đặt trước 14 ngày
+    const semesterEndDate = getCurrentSemesterEndDate(now);
+
+    // Lấy ngày nhỏ hơn (sớm hơn) và bọc endOfDay để hợp lệ đến cuối ngày đó
+    return isBefore(maxAdvanceDate, semesterEndDate)
+      ? endOfDay(maxAdvanceDate)
+      : endOfDay(semesterEndDate);
+  }, [maxBookingAdvance]);
 
   return (
     <div className="flex-1 grid grid-cols-[80px_1fr] min-w-[1000px] relative bg-white">
@@ -66,6 +79,9 @@ export const FixedGridView: React.FC<FixedGridViewProps> = ({
 
                 // --- LOGIC KIỂM TRA KHÓA ---
                 const slotStartTime = parseISO(`${dateStr}T${frame.startTime}`);
+                // CẬP NHẬT ĐIỀU KIỆN KHÓA: Quá khứ (LeadTime) HOẶC Tương lai quá hạn (MaxAdvance/Học kỳ)
+                const isPastLocked = isBefore(slotStartTime, minAllowedTime);
+                const isFutureLocked = isAfter(slotStartTime, maxAllowedDate);
                 const isLocked = isBefore(slotStartTime, minAllowedTime);
 
                 const concurrentBookings = events.filter(e =>
@@ -78,6 +94,10 @@ export const FixedGridView: React.FC<FixedGridViewProps> = ({
                 const isFull = concurrentBookings.length >= maxConcurrent;
                 // Chỉ cho phép click nếu không full VÀ không bị khóa
                 const canClick = !isFull && !isLocked;
+                // Chuỗi nhãn trạng thái hiển thị
+                let lockLabel = '';
+                if (isPastLocked) lockLabel = '(Quá hạn)';
+                if (isFutureLocked) lockLabel = '(Chưa mở)';
 
                 return (
                   <div
@@ -92,7 +112,7 @@ export const FixedGridView: React.FC<FixedGridViewProps> = ({
                           : 'border-blue-100 bg-blue-50/20 hover:bg-blue-100/40 hover:border-blue-400 cursor-pointer shadow-sm z-10'
                       }`}
                   >
-                    {/* Lớp nền gạch chéo khi bị khóa (giống Flexible) */}
+                    {/* Lớp nền gạch chéo khi bị khóa (Dùng chung cho cả quá khứ và tương lai) */}
                     {isLocked && (
                       <div
                         className="absolute inset-0 z-0 opacity-[0.07] pointer-events-none"
@@ -104,7 +124,7 @@ export const FixedGridView: React.FC<FixedGridViewProps> = ({
 
                     <div className="flex justify-between items-center px-1 relative z-10">
                       <span className={`text-[9px] font-bold ${isLocked || isFull ? 'text-gray-400' : 'text-blue-600'}`}>
-                        CA {frame.orderIndex} {isLocked && '(Hết hạn)'}
+                        CA {frame.orderIndex} {lockLabel}
                       </span>
                       {!isLocked && (
                         <span className="text-[8px] text-gray-400 font-medium">
