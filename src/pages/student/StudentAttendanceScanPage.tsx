@@ -18,37 +18,31 @@ type CameraFacing = 'front' | 'back';
 
 type LocationStatus = 'idle' | 'checking' | 'allowed' | 'blocked' | 'denied';
 
-type CampusZone = {
-  name: string;
-  latitude: number;
-  longitude: number;
-  radiusMeters: number;
-};
-
-const CAMPUS_ZONE: CampusZone = {
-  name: 'Campus zone',
+const CAMPUS_ZONE = {
+  name: 'Campus area',
   latitude: 0,
   longitude: 0,
   radiusMeters: 250,
-};
+} as const;
+
+const ACCURACY_THRESHOLD_METERS = 30;
+
+const toRadians = (value: number) => (value * Math.PI) / 180;
 
 const getDistanceMeters = (
-  latitudeA: number,
-  longitudeA: number,
-  latitudeB: number,
-  longitudeB: number,
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
 ) => {
   const earthRadius = 6371000;
-  const toRadians = (value: number) => (value * Math.PI) / 180;
-
-  const deltaLat = toRadians(latitudeB - latitudeA);
-  const deltaLng = toRadians(longitudeB - longitudeA);
+  const dLat = toRadians(lat2 - lat1);
+  const dLon = toRadians(lon2 - lon1);
   const a =
-    Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
-    Math.cos(toRadians(latitudeA)) * Math.cos(toRadians(latitudeB)) *
-    Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLon / 2) ** 2;
 
-  return 2 * earthRadius * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return earthRadius * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 };
 
 export default function StudentAttendanceScanPage() {
@@ -140,15 +134,20 @@ export default function StudentAttendanceScanPage() {
           );
 
           const withinCampus = distance <= CAMPUS_ZONE.radiusMeters;
+          const accuracyAllowed = accuracy <= ACCURACY_THRESHOLD_METERS;
           setStudentLocation({ latitude, longitude, accuracy });
-          setLocationStatus(withinCampus ? 'allowed' : 'blocked');
-          setScanState(withinCampus ? 'requesting-camera' : 'location-denied');
+          setLocationStatus(withinCampus && accuracyAllowed ? 'allowed' : 'blocked');
+          setScanState(withinCampus && accuracyAllowed ? 'requesting-camera' : 'location-denied');
 
-          if (withinCampus) {
+          if (withinCampus && accuracyAllowed) {
             startScanning();
-          } else {
+          } else if (!withinCampus) {
             setLocationError(
               `You are about ${Math.round(distance)}m away from ${CAMPUS_ZONE.name}. Move inside the campus area to continue.`,
+            );
+          } else {
+            setLocationError(
+              `Location accuracy is too weak (±${Math.round(accuracy)}m). Please move to a more stable spot and try again.`,
             );
           }
         },
@@ -399,6 +398,10 @@ export default function StudentAttendanceScanPage() {
         scheduleId: finalScheduleId.trim(),
         studentId: studentId.trim(),
         isCheckIn,
+        latitude: studentLocation?.latitude,
+        longitude: studentLocation?.longitude,
+        accuracy: studentLocation?.accuracy,
+        timestamp: new Date().toISOString(),
       });
 
       setScanState('success');
@@ -619,7 +622,7 @@ export default function StudentAttendanceScanPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <WifiOff className="w-4 h-4 text-slate-500" />
-                    <span>Location accuracy matters for attendance security</span>
+                    <span>Accuracy threshold: ±{ACCURACY_THRESHOLD_METERS}m</span>
                   </div>
                   {studentLocation && (
                     <div className="pt-2 border-t border-slate-200 text-xs text-slate-500 space-y-1">
