@@ -33,7 +33,7 @@ export const AIBookingModal: React.FC<AIBookingModalProps> = ({ isOpen, onClose 
 
     setMessages(newMessages);
 
-    const res = await parseAsync({ messages: newMessages });
+    const res = await parseAsync({ userPrompt: "test" });
 
     setMessages(prev => [
       ...prev,
