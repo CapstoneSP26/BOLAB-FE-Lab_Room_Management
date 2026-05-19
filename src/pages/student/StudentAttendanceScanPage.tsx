@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router';
-import { CheckCircle, XCircle, Loader2, Camera, SwitchCamera, MapPinned, MapPin, ShieldCheck, WifiOff } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2, Camera, SwitchCamera, MapPinned, MapPin, ShieldCheck, WifiOff, TriangleAlert } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { useScanQRCode } from '../../features/attendance';
 import { useToast } from '../../hooks/useToast';
@@ -22,7 +22,7 @@ const CAMPUS_ZONE = {
   name: 'Campus area',
   latitude: 0,
   longitude: 0,
-  radiusMeters: 250,
+  radiusMeters: 50,
 } as const;
 
 const ACCURACY_THRESHOLD_METERS = 30;
@@ -102,6 +102,64 @@ export default function StudentAttendanceScanPage() {
     }
   };
 
+  const checkCampusLocation = async () => {
+    setLocationStatus('checking');
+    setScanState('location-check');
+    setLocationError('');
+
+    if (!('geolocation' in navigator)) {
+      setLocationStatus('denied');
+      setScanState('location-denied');
+      setLocationError('Your browser does not support location access.');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude, accuracy } = position.coords;
+        const distance = getDistanceMeters(
+          latitude,
+          longitude,
+          CAMPUS_ZONE.latitude,
+          CAMPUS_ZONE.longitude,
+        );
+
+        const withinCampus = distance <= CAMPUS_ZONE.radiusMeters;
+        const accuracyAllowed = accuracy <= ACCURACY_THRESHOLD_METERS;
+        setStudentLocation({ latitude, longitude, accuracy });
+        setLocationStatus(withinCampus && accuracyAllowed ? 'allowed' : 'blocked');
+        setScanState(withinCampus && accuracyAllowed ? 'requesting-camera' : 'location-denied');
+
+        if (withinCampus && accuracyAllowed) {
+          startScanning();
+        } else if (!withinCampus) {
+          setLocationError('Bạn đang ở quá xa so với phòng học.');
+        } else {
+          setLocationError(
+            `Location accuracy is too weak (±${Math.round(accuracy)}m). Please move to a more stable spot and try again.`,
+          );
+        }
+      },
+      (error) => {
+        setLocationStatus('denied');
+        setScanState('location-denied');
+
+        if (error.code === error.PERMISSION_DENIED) {
+          setLocationError('Location permission denied. Please allow location access to continue.');
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          setLocationError('Unable to determine your location. Please try again near the campus.');
+        } else {
+          setLocationError('Location check timed out. Please try again.');
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      },
+    );
+  };
+
   // Start camera when component mounts
   useEffect(() => {
     const hasUserData = user?.id;
@@ -110,66 +168,6 @@ export default function StudentAttendanceScanPage() {
     if (!hasUserData && !hasProfileData) {
       return;
     }
-
-    const checkCampusLocation = async () => {
-      setLocationStatus('checking');
-      setScanState('location-check');
-      setLocationError('');
-
-      if (!('geolocation' in navigator)) {
-        setLocationStatus('denied');
-        setScanState('location-denied');
-        setLocationError('Your browser does not support location access.');
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude, accuracy } = position.coords;
-          const distance = getDistanceMeters(
-            latitude,
-            longitude,
-            CAMPUS_ZONE.latitude,
-            CAMPUS_ZONE.longitude,
-          );
-
-          const withinCampus = distance <= CAMPUS_ZONE.radiusMeters;
-          const accuracyAllowed = accuracy <= ACCURACY_THRESHOLD_METERS;
-          setStudentLocation({ latitude, longitude, accuracy });
-          setLocationStatus(withinCampus && accuracyAllowed ? 'allowed' : 'blocked');
-          setScanState(withinCampus && accuracyAllowed ? 'requesting-camera' : 'location-denied');
-
-          if (withinCampus && accuracyAllowed) {
-            startScanning();
-          } else if (!withinCampus) {
-            setLocationError(
-              `You are about ${Math.round(distance)}m away from ${CAMPUS_ZONE.name}. Move inside the campus area to continue.`,
-            );
-          } else {
-            setLocationError(
-              `Location accuracy is too weak (±${Math.round(accuracy)}m). Please move to a more stable spot and try again.`,
-            );
-          }
-        },
-        (error) => {
-          setLocationStatus('denied');
-          setScanState('location-denied');
-
-          if (error.code === error.PERMISSION_DENIED) {
-            setLocationError('Location permission denied. Please allow location access to continue.');
-          } else if (error.code === error.POSITION_UNAVAILABLE) {
-            setLocationError('Unable to determine your location. Please try again near the campus.');
-          } else {
-            setLocationError('Location check timed out. Please try again.');
-          }
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0,
-        },
-      );
-    };
 
     const timer = setTimeout(() => {
       checkCampusLocation();
@@ -461,14 +459,14 @@ export default function StudentAttendanceScanPage() {
     setLocationError('');
     setLocationStatus('idle');
     setScannedData('');
+    setAvailableCameras([]);
+    setCameraFacing('back');
+    setStudentLocation(null);
+    isScanning.current = false;
 
-    if (studentLocation) {
-      setScanState('requesting-camera');
-      startScanning();
-      return;
-    }
-
-    setScanState('location-check');
+    setTimeout(() => {
+      checkCampusLocation();
+    }, 100);
   };
 
   // Main render
@@ -605,11 +603,22 @@ export default function StudentAttendanceScanPage() {
                   </div>
                 </div>
                 <h2 className="text-xl font-bold text-slate-900 text-center mb-2">Campus location check</h2>
-                <p className="text-slate-600 text-center mb-4">
-                  {locationStatus === 'checking'
-                    ? 'Checking if you are inside the campus area...'
-                    : locationError || `Please stand inside ${CAMPUS_ZONE.name} to continue.`}
-                </p>
+                <div className="text-center mb-4">
+                  {locationStatus === 'checking' ? (
+                    <p className="text-slate-600">Checking if you are inside the campus area...</p>
+                  ) : locationError ? (
+                    <div className="space-y-3">
+                      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-600 shadow-lg animate-bounce">
+                        <TriangleAlert className="h-8 w-8" />
+                      </div>
+                      <p className="text-2xl font-extrabold leading-tight text-amber-700">
+                        Bạn đang ở quá xa so với trường học.
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-slate-600">Please stand inside {CAMPUS_ZONE.name} to continue.</p>
+                  )}
+                </div>
 
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2 text-sm text-slate-700 mb-5">
                   <div className="flex items-center gap-2">
@@ -624,13 +633,6 @@ export default function StudentAttendanceScanPage() {
                     <WifiOff className="w-4 h-4 text-slate-500" />
                     <span>Accuracy threshold: ±{ACCURACY_THRESHOLD_METERS}m</span>
                   </div>
-                  {studentLocation && (
-                    <div className="pt-2 border-t border-slate-200 text-xs text-slate-500 space-y-1">
-                      <p>Latitude: {studentLocation.latitude.toFixed(6)}</p>
-                      <p>Longitude: {studentLocation.longitude.toFixed(6)}</p>
-                      <p>Accuracy: ±{Math.round(studentLocation.accuracy)}m</p>
-                    </div>
-                  )}
                 </div>
 
                 <button
