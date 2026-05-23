@@ -4,11 +4,11 @@ import { convertHoursUtcToVN, formatUtcDateLabel } from "../../../utils/date.uti
 
 type Props = {
   booking: BookingRequest | null;
+  conflictingBookings?: BookingRequest[];
   isLocked?: boolean;
   onClose: () => void;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
-  onSuggestAlternate: (id: string) => void;
 };
 
 function getPriorityColor(purpose: string) {
@@ -21,11 +21,11 @@ function getPriorityColor(purpose: string) {
 
 export default function RequestDetailsPanel({
   booking,
+  conflictingBookings = [],
   isLocked,
   onClose,
   onApprove,
   onReject,
-  onSuggestAlternate,
 }: Props) {
   if (!booking) {
     return (
@@ -40,6 +40,7 @@ export default function RequestDetailsPanel({
   }
 
   const priorityColor = getPriorityColor(booking.purpose ?? "");
+  const hasConflicts = conflictingBookings.length > 0;
 
   return (
     <div className="flex h-[calc(100vh-8rem)] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800 xl:sticky xl:top-6">
@@ -132,15 +133,39 @@ export default function RequestDetailsPanel({
           </p>
         </div>
 
-        {/* Conflict Summary */}
-        <div className="rounded-lg border border-rose-100 bg-rose-50/50 p-3 dark:border-rose-900/30 dark:bg-rose-900/10">
-          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-rose-800 dark:text-rose-400 mb-1">
-            System Analysis
-          </h3>
-          <p className="text-xs text-rose-700 dark:text-rose-300">
-            No overlaps detected. This slot is clear.
-          </p>
-        </div>
+        {/* System Analysis */}
+        {hasConflicts ? (
+          <div className="rounded-lg border border-rose-200 bg-rose-50/80 p-3.5 dark:border-rose-900/40 dark:bg-rose-900/20">
+            <h3 className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-rose-800 dark:text-rose-400 mb-2">
+              <AlertTriangle className="h-3.5 w-3.5" /> System Analysis
+            </h3>
+            <p className="text-xs font-medium text-rose-700 dark:text-rose-300 mb-2.5">
+              Warning! This request overlaps with {conflictingBookings.length} other pending request(s):
+            </p>
+            <div className="space-y-2">
+              {conflictingBookings.map(conflict => (
+                <div key={String(conflict.id)} className="rounded bg-white/60 px-2.5 py-2 text-[11px] border border-rose-100 dark:bg-gray-900/40 dark:border-rose-900/30">
+                  <div className="font-semibold text-rose-900 dark:text-rose-200 flex justify-between">
+                    <span>{conflict.requester?.fullName || conflict.requestedBy || "Unknown User"}</span>
+                    <span>{convertHoursUtcToVN(conflict.startTime)} - {convertHoursUtcToVN(conflict.endTime)}</span>
+                  </div>
+                  <div className="mt-0.5 text-rose-600/80 dark:text-rose-400/80 italic">
+                    Purpose: {conflict.purpose || "N/A"}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-emerald-100 bg-emerald-50/50 p-3 dark:border-emerald-900/30 dark:bg-emerald-900/10">
+            <h3 className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-emerald-800 dark:text-emerald-400 mb-1">
+              <CheckCircle2 className="h-3.5 w-3.5" /> System Analysis
+            </h3>
+            <p className="text-xs text-emerald-700 dark:text-emerald-300">
+              No overlaps detected. This slot is clear.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Sticky Footer Actions */}
@@ -176,14 +201,6 @@ export default function RequestDetailsPanel({
             <XCircle className="h-4 w-4" /> Reject
           </button>
         </div>
-        
-        <button
-          type="button"
-          onClick={() => onSuggestAlternate(String(booking.id))}
-          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-        >
-          <PencilLine className="h-3.5 w-3.5" /> Suggest Alternate
-        </button>
       </div>
     </div>
   );

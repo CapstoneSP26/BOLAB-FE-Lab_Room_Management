@@ -5,7 +5,7 @@ import { buildingApi } from "../../building/api/buildingApi";
 import { labroomApi } from "../../labroom/api/labroom.api";
 import { slotApi } from "../../slot/api/slotApi";
 import { useBookingRequests } from "../hooks/useBookingRequest";
-import BookingTimelineCanvas, { normalizeDateKey } from "./BookingTimelineCanvas";
+import BookingTimelineCanvas, { normalizeDateKey, getMinutesFrom0700 } from "./BookingTimelineCanvas";
 import RequestDetailsPanel from "./RequestDetailsPanel";
 import ApproveBookingModal from "./ApproveBookingModal";
 import RejectReasonModal from "./RejectReasonModal";
@@ -45,7 +45,7 @@ function getWeekStart(date: Date) {
 function getWeekEnd(date: Date) {
   const start = getWeekStart(date);
   const end = new Date(start);
-  end.setDate(start.getDate() + 2);
+  end.setDate(start.getDate() + 6);
   return end;
 }
 
@@ -88,17 +88,17 @@ export default function UpcomingRequestTimelinePage() {
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("ALL");
   const [conflictOnly, setConflictOnly] = useState(false);
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
-  
+
   // Modals state
   const [approveId, setApproveId] = useState<string | null>(null);
   const [rejectId, setRejectId] = useState<string | null>(null);
-  
+
   // Mutations
   const approveMutation = useApproveBooking();
   const rejectMutation = useRejectBooking();
 
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit] = useState(100);
 
   const weekStart = useMemo(() => getWeekStart(selectedDate), [selectedDate]);
   const weekEnd = useMemo(() => getWeekEnd(selectedDate), [selectedDate]);
@@ -109,9 +109,7 @@ export default function UpcomingRequestTimelinePage() {
 
   const params: GetBookingRequestsRequest = useMemo(
     () => {
-      // The timeline shows 3 days (e.g. May 23, 24, 25).
-      // If weekEnd is May 25, the backend might parse it as May 25 00:00:00 and exclude later times.
-      // We add 1 day to make the API end date exclusive (May 26 00:00:00), capturing all of May 25.
+      // The timeline shows 7 days
       const apiEndDate = new Date(weekEnd);
       apiEndDate.setDate(apiEndDate.getDate() + 1);
 
@@ -142,7 +140,7 @@ export default function UpcomingRequestTimelinePage() {
     const raw = rawData?.data ?? rawData?.items ?? [];
     return raw.filter((item) => {
       const status = String(item.status ?? "").toUpperCase();
-      return status === "1" || status === "PENDINGAPPROVAL" || status === "PENDING";
+      return status === "1" || status === "PENDINGAPPROVAL" || status === "PENDING" || status.includes("CONFLICT");
     });
   }, [rawData]);
 
@@ -153,17 +151,17 @@ export default function UpcomingRequestTimelinePage() {
     return items.filter((item) => {
       const purpose = String(item.purpose ?? "").toUpperCase();
       const matchesPriority = priorityFilter === "ALL" || purpose.includes(priorityFilter);
-      
+
       const status = String(item.status ?? "").toUpperCase();
       const hasConflict = status.includes("CONFLICT");
       const matchesConflict = !conflictOnly || hasConflict;
-      
+
       const matchesSearch =
         q.trim() === "" ||
         [item.roomName, item.buildingName, item.purpose, item.requestedBy]
           .filter(Boolean)
           .some((value) => String(value).toLowerCase().includes(q.trim().toLowerCase()));
-          
+
       return matchesPriority && matchesConflict && matchesSearch;
     });
   }, [items, priorityFilter, conflictOnly, q]);
@@ -175,7 +173,7 @@ export default function UpcomingRequestTimelinePage() {
 
   const isSelectedBookingLocked = useMemo(() => {
     if (!selectedBooking) return false;
-    
+
     // Get priority level of selected booking
     const getPriorityLevel = (purpose?: string) => {
       const text = String(purpose ?? "").toUpperCase();
@@ -184,18 +182,38 @@ export default function UpcomingRequestTimelinePage() {
       if (text.includes("LECTURE")) return 2;
       return 1;
     };
-    
+
     const selectedPriority = getPriorityLevel(selectedBooking.purpose);
-    
+
     // Check if there are ANY pending bookings in the same room AND same day with HIGHER priority
     const selectedDateKey = normalizeDateKey(selectedBooking.date || selectedBooking.startTime || selectedBooking.requestedAt);
-    const roomBookingsOnSameDay = visibleItems.filter(b => 
+    const roomBookingsOnSameDay = visibleItems.filter(b =>
       String(b.roomId) === String(selectedBooking.roomId) &&
       normalizeDateKey(b.date || b.startTime || b.requestedAt) === selectedDateKey
     );
     const hasHigherPriority = roomBookingsOnSameDay.some(b => getPriorityLevel(b.purpose) > selectedPriority);
-    
+
     return hasHigherPriority;
+  }, [selectedBooking, visibleItems]);
+
+  const conflictingBookings = useMemo(() => {
+    if (!selectedBooking) return [];
+    
+    const selectedDateKey = normalizeDateKey(selectedBooking.date || selectedBooking.startTime || selectedBooking.requestedAt);
+    const start = getMinutesFrom0700(selectedBooking.startTime);
+    const end = getMinutesFrom0700(selectedBooking.endTime);
+    
+    return visibleItems.filter(b => {
+      if (String(b.id) === String(selectedBooking.id)) return false;
+      if (String(b.roomId) !== String(selectedBooking.roomId)) return false;
+      if (normalizeDateKey(b.date || b.startTime || b.requestedAt) !== selectedDateKey) return false;
+      
+      const bStart = getMinutesFrom0700(b.startTime);
+      const bEnd = getMinutesFrom0700(b.endTime);
+      
+      // Check for time overlap
+      return start < bEnd && end > bStart;
+    });
   }, [selectedBooking, visibleItems]);
 
   const stats = useMemo<TimelineStats>(() => {
@@ -210,8 +228,6 @@ export default function UpcomingRequestTimelinePage() {
       lectureCount: countByPurpose("lecture"),
     };
   }, [items, totalCount]);
-
-  // visibleItems was moved up to avoid ReferenceError
 
   useEffect(() => {
     const loadLookups = async () => {
@@ -244,9 +260,9 @@ export default function UpcomingRequestTimelinePage() {
         const managedRooms =
           isManager && user?.id
             ? items.filter(
-                (room) =>
-                  String(room.labOwnerId ?? room.labOwner?.id ?? "") === String(user.id),
-              )
+              (room) =>
+                String(room.labOwnerId ?? room.labOwner?.id ?? "") === String(user.id),
+            )
             : items;
         setRoomOptions(managedRooms);
         if (buildingId === "ALL") {
@@ -333,11 +349,11 @@ export default function UpcomingRequestTimelinePage() {
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">The canvas is the primary interaction area for pending requests.</p>
               </div>
               <div className="flex items-center gap-2">
-                  <button type="button" onClick={() => shiftWeek(-1)} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-300">
+                <button type="button" onClick={() => shiftWeek(-1)} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-300">
                   <ChevronLeft className="h-4 w-4" />
                 </button>
                 <button type="button" onClick={() => setSelectedDate(new Date())} className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-300">Today</button>
-                  <button type="button" onClick={() => shiftWeek(1)} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-300">
+                <button type="button" onClick={() => shiftWeek(1)} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-300">
                   <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
@@ -353,7 +369,7 @@ export default function UpcomingRequestTimelinePage() {
               lanes={roomOptions.map((room) => ({
                 id: room.id,
                 name: room.roomName || `Room ${room.id}`,
-                  capacity: room.capacity,
+                capacity: room.capacity,
                 bookings: visibleItems.filter((booking) => String(booking.roomId) === String(room.id)),
               }))}
             />
@@ -366,7 +382,7 @@ export default function UpcomingRequestTimelinePage() {
                 <span className="rounded-full bg-violet-100 px-2 py-1 text-[11px] font-semibold text-violet-700 dark:bg-violet-500/10 dark:text-violet-300">Timeline</span>
               </div>
               <div className="space-y-2.5 text-xs">
-                {[["Workshop", "bg-rose-500"], ["Practical", "bg-amber-500"], ["Lecture", "bg-sky-500"], ["Conflict", "bg-red-500"], ["Pending", "bg-gray-400"]].map(([label, color]) => (
+                {[["Workshop", "bg-rose-500"], ["Practical", "bg-amber-500"], ["Lecture", "bg-sky-500"]].map(([label, color]) => (
                   <div key={label} className="flex items-center gap-2.5">
                     <span className={`h-2.5 w-2.5 rounded-full ${color}`} />
                     <span className="text-gray-700 dark:text-gray-300">{label}</span>
@@ -381,19 +397,7 @@ export default function UpcomingRequestTimelinePage() {
                 {hasActiveFilters && <span className="rounded-full bg-blue-100 px-2 py-1 text-[11px] font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">Active</span>}
               </div>
               <div className="space-y-3 text-xs">
-                <label className="block">
-                  <span className="text-gray-500 dark:text-gray-400">Search</span>
-                  <input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Search..." className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white" />
-                </label>
-                <label className="block">
-                  <span className="text-gray-500 dark:text-gray-400">Building</span>
-                  <select value={buildingId} onChange={(event) => setBuildingId(event.target.value === "ALL" ? "ALL" : Number(event.target.value))} className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white">
-                    <option value="ALL">All</option>
-                    {buildingOptions.map((building) => (
-                      <option key={String(building.id)} value={building.id}>{building.name ?? `Building ${building.id}`}</option>
-                    ))}
-                  </select>
-                </label>
+
                 <label className="block">
                   <span className="text-gray-500 dark:text-gray-400">Room</span>
                   <select value={roomId} onChange={(event) => setRoomId(event.target.value === "ALL" ? "ALL" : Number(event.target.value))} className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white">
@@ -403,15 +407,7 @@ export default function UpcomingRequestTimelinePage() {
                     ))}
                   </select>
                 </label>
-                <label className="block">
-                  <span className="text-gray-500 dark:text-gray-400">Slot type</span>
-                  <select value={slotType} onChange={(event) => setSlotType(event.target.value === "ALL" ? "ALL" : Number(event.target.value))} className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white">
-                    <option value="ALL">All</option>
-                    {slotOptions.map((slot) => (
-                      <option key={String(slot.id)} value={slot.id}>{slot.name ?? `Slot ${slot.id}`}</option>
-                    ))}
-                  </select>
-                </label>
+
                 <label className="block">
                   <span className="text-gray-500 dark:text-gray-400">Priority</span>
                   <select value={priorityFilter} onChange={(event) => setPriorityFilter(event.target.value as PriorityFilter)} className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white">
@@ -421,10 +417,7 @@ export default function UpcomingRequestTimelinePage() {
                     <option value="LECTURE">Lecture</option>
                   </select>
                 </label>
-                <button type="button" onClick={() => setConflictOnly((current) => !current)} className={`mt-1 flex w-full items-center justify-between rounded-lg border px-3 py-2 text-sm font-medium transition ${conflictOnly ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-300" : "border-gray-300 bg-white text-gray-700 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-300"}`}>
-                  <span>Conflict only</span>
-                  <span>{conflictOnly ? "Enabled" : "Disabled"}</span>
-                </button>
+
               </div>
             </section>
 
@@ -451,11 +444,11 @@ export default function UpcomingRequestTimelinePage() {
           <aside className="w-full xl:w-[380px] shrink-0 xl:sticky xl:top-6 z-20 transition-all duration-300 animate-in slide-in-from-right-4">
             <RequestDetailsPanel
               booking={selectedBooking}
+              conflictingBookings={conflictingBookings}
               isLocked={isSelectedBookingLocked}
               onClose={() => setSelectedBookingId(null)}
               onApprove={(id) => setApproveId(id)}
               onReject={(id) => setRejectId(id)}
-              onSuggestAlternate={(id) => console.log("Suggest Alternate", id)}
             />
           </aside>
         )}

@@ -57,8 +57,6 @@ export default function TimelineSidebar({
           <LegendItem label="Workshop" tone="bg-rose-500" />
           <LegendItem label="Practical" tone="bg-orange-500" />
           <LegendItem label="Lecture" tone="bg-blue-500" />
-          <LegendItem label="Conflict" tone="bg-red-500" />
-          <LegendItem label="Pending" tone="bg-amber-400" />
         </div>
       </section>
 

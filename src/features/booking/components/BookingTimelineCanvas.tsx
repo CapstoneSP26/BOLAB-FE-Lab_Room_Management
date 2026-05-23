@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { AlertTriangle } from "lucide-react";
 import type { BookingRequest } from "../types/booking.type";
 import { convertHoursUtcToVN } from "../../../utils/date.util";
@@ -24,20 +24,18 @@ type Props = {
 
 const START_HOUR = 7;
 const END_HOUR = 22;
-const TOTAL_MINUTES = (END_HOUR - START_HOUR) * 60; // (22 - 7) * 60 = 900
+const TOTAL_MINUTES = (END_HOUR - START_HOUR) * 60; // 15 * 60 = 900
+const TIME_MARKERS = Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => START_HOUR + i);
 
-const BOOKING_ROW_HEIGHT = 44;
-const BOOKING_ROW_GAP = 6;
-const BOOKING_ROW_PADDING = 10;
-const MIN_LANE_HEIGHT = 64;
-
-// Visual major time anchors
-const TIME_MARKERS = [7, 10, 13, 16, 19];
+const BOOKING_ROW_HEIGHT = 64; // Taller booking cards
+const BOOKING_ROW_PADDING = 16;
+const BOOKING_ROW_GAP = 10;
+const MIN_LANE_HEIGHT = 100; // Taller minimum lane height
 
 function getTimelineDays(date: Date) {
   const start = new Date(date);
   start.setHours(0, 0, 0, 0);
-  return Array.from({ length: 3 }, (_, index) => {
+  return Array.from({ length: 7 }, (_, index) => {
     const next = new Date(start);
     next.setDate(start.getDate() + index);
     return next;
@@ -85,9 +83,9 @@ function formatHourLabel(hour: number) {
 
 function getLocalTimeLabel(timeString?: string) {
   if (!timeString) return "";
-  // If format is HH:mm or HH:mm:ss
+  // If format is HH:mm or HH:mm:ss, it is from the backend which stores UTC DateTimeOffset
   if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(timeString)) {
-    return convertHoursUtcToVN(timeString);
+    return convertHoursUtcToVN(timeString.substring(0, 5));
   }
   if (timeString.includes("T")) {
     const d = new Date(timeString);
@@ -98,7 +96,7 @@ function getLocalTimeLabel(timeString?: string) {
   return timeString;
 }
 
-function getMinutesFrom0700(timeString?: string) {
+export function getMinutesFrom0700(timeString?: string) {
   if (!timeString) return 0;
   
   const localTimeStr = getLocalTimeLabel(timeString);
@@ -119,10 +117,10 @@ function getVisualBounds(booking: BookingRequest) {
   startMinutes = Math.max(0, Math.min(startMinutes, TOTAL_MINUTES));
   endMinutes = Math.max(0, Math.min(endMinutes, TOTAL_MINUTES));
   
-  const duration = Math.max(15, endMinutes - startMinutes); // minimum 15 mins for clickability
+  const duration = Math.max(15, endMinutes - startMinutes);
   
   const leftPercent = (startMinutes / TOTAL_MINUTES) * 100;
-  const widthPercent = (duration / TOTAL_MINUTES) * 100;
+  const widthPercent = Math.max((duration / TOTAL_MINUTES) * 100, 12); // Minimum 12% width to show text
   
   return { left: leftPercent, right: leftPercent + widthPercent };
 }
@@ -218,15 +216,16 @@ function BookingBlock({
   const durationMinutes = Math.max(15, endMinutes - startMinutes);
   
   const leftPercent = (startMinutes / TOTAL_MINUTES) * 100;
-  const widthPercent = (durationMinutes / TOTAL_MINUTES) * 100;
+  const widthPercent = Math.max((durationMinutes / TOTAL_MINUTES) * 100, 12);
   
   const conflictTone = isConflict
     ? "border-red-400 bg-[repeating-linear-gradient(135deg,rgba(248,113,113,0.1),rgba(248,113,113,0.1)_8px,transparent_8px,transparent_16px)]"
     : "";
 
   const timeLabel = `${getLocalTimeLabel(booking.startTime)} - ${getLocalTimeLabel(booking.endTime)}`;
+  const requesterName = booking.requester?.fullName || booking.requestedBy || "Unknown User";
   
-  let tooltip = `${booking.purpose || "Booking"}\n${timeLabel}\n${booking.requester?.fullName || booking.requestedBy || ""}`;
+  let tooltip = `${requesterName}\n${timeLabel}\nPurpose: ${booking.purpose || "N/A"}`;
   if (isLocked) {
     tooltip = `LOCKED: Higher priority bookings exist in this room.\n\n${tooltip}`;
   }
@@ -239,7 +238,6 @@ function BookingBlock({
       style={{ 
         left: `${leftPercent}%`, 
         width: `${widthPercent}%`, 
-        minWidth: "24px", 
         top: `${top}px`, 
         height: BOOKING_ROW_HEIGHT,
         zIndex: selected ? 50 : tone.zIndex
@@ -250,7 +248,7 @@ function BookingBlock({
       
       <div className="flex w-full flex-col gap-0.5 pl-2">
         <div className="truncate text-[11px] font-bold leading-tight">
-          {booking.purpose || "Booking"}
+          {requesterName}
         </div>
         <div className="truncate text-[9px] font-medium opacity-90">
           {timeLabel}
@@ -275,6 +273,21 @@ export default function BookingTimelineCanvas({
   onSelectBooking,
   lanes = [],
 }: Props) {
+  const leftRef = useRef<HTMLDivElement>(null);
+  const rightRef = useRef<HTMLDivElement>(null);
+
+  const handleLeftScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (rightRef.current) {
+      rightRef.current.scrollTop = e.currentTarget.scrollTop;
+    }
+  };
+
+  const handleRightScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (leftRef.current) {
+      leftRef.current.scrollTop = e.currentTarget.scrollTop;
+    }
+  };
+
   const filteredLanes = useMemo(() => {
     return lanes
       .filter((lane) => selectedRoomId === "ALL" || String(lane.id) === String(selectedRoomId))
@@ -348,12 +361,17 @@ export default function BookingTimelineCanvas({
   }, [filteredLanes, timelineDays]);
 
   return (
-    <div className="w-full overflow-x-hidden overflow-y-visible rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800/50">
+    <div className="w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800/50">
       <div className="flex w-full">
         
         {/* LEFT COLUMN: Rooms */}
-        <div className="w-[220px] shrink-0 border-r border-gray-200 bg-white z-10 dark:border-gray-700 dark:bg-gray-900">
-          <div className="flex h-14 items-center justify-between border-b border-gray-200 px-4 dark:border-gray-700">
+        <div 
+          ref={leftRef}
+          onScroll={handleLeftScroll}
+          className="w-[220px] shrink-0 border-r border-gray-200 bg-white z-10 dark:border-gray-700 dark:bg-gray-900 overflow-y-auto"
+          style={{ maxHeight: '65vh', scrollbarWidth: 'none' }}
+        >
+          <div className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-gray-200 px-4 bg-white dark:bg-gray-900 dark:border-gray-700">
             <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Rooms</span>
             <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700 dark:bg-violet-500/20 dark:text-violet-300">
               {filteredLanes.length}
@@ -365,23 +383,31 @@ export default function BookingTimelineCanvas({
               No rooms.
             </div>
           ) : (
-            lanesWithData.map((lane) => (
-              <div 
-                key={lane.id} 
-                style={{ height: lane.laneHeight }} 
-                className="flex flex-col justify-center border-b border-gray-200/60 bg-white px-4 transition-colors hover:bg-gray-50 dark:border-gray-700/60 dark:bg-gray-900 dark:hover:bg-gray-800/80"
-              >
-                <div className="truncate text-sm font-semibold text-gray-900 dark:text-white" title={lane.name}>{lane.name}</div>
-                <div className="mt-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400">
-                  Cap: {lane.capacity ?? "-"}
+            <>
+              {lanesWithData.map((lane) => (
+                <div 
+                  key={lane.id} 
+                  style={{ height: lane.laneHeight }} 
+                  className="flex flex-col justify-center border-b-2 border-gray-300 bg-white px-4 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:hover:bg-gray-800/80"
+                >
+                  <div className="truncate text-sm font-semibold text-gray-900 dark:text-white" title={lane.name}>{lane.name}</div>
+                  <div className="mt-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400">
+                    Cap: {lane.capacity ?? "-"}
+                  </div>
                 </div>
-              </div>
-            ))
+              ))}
+              <div className="h-4 w-full shrink-0 bg-white dark:bg-gray-900" /> {/* Spacer for scrollbar */}
+            </>
           )}
         </div>
 
         {/* RIGHT COLUMN: Timeline Viewport */}
-        <div className="flex-1 grid grid-cols-3 min-w-[700px] overflow-hidden bg-gray-50/30 dark:bg-gray-900/20">
+        <div 
+          ref={rightRef}
+          onScroll={handleRightScroll}
+          className="flex-1 flex overflow-x-auto overflow-y-scroll bg-gray-50/30 dark:bg-gray-900/20 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-700 relative"
+          style={{ maxHeight: '65vh' }}
+        >
           {timelineDays.map((day, dayIndex) => {
             const dayKey = normalizeDateKey(day);
             const isToday = dayKey === todayKey;
@@ -389,10 +415,10 @@ export default function BookingTimelineCanvas({
             return (
               <div 
                 key={dayKey} 
-                className={`relative flex flex-col border-gray-200/80 dark:border-gray-700/80 ${dayIndex < 2 ? 'border-r' : ''}`}
+                className={`relative flex flex-col shrink-0 min-w-full border-gray-200/80 dark:border-gray-700/80 ${dayIndex < 6 ? 'border-r' : ''}`}
               >
                 {/* Day Header */}
-                <div className={`h-14 border-b border-gray-200 px-3 py-2 dark:border-gray-700 ${isToday ? 'bg-blue-50/50 dark:bg-blue-900/10' : 'bg-white dark:bg-gray-800'}`}>
+                <div className={`sticky top-0 z-20 h-14 shrink-0 border-b border-gray-200 px-3 py-2 dark:border-gray-700 ${isToday ? 'bg-blue-50/95 backdrop-blur-sm dark:bg-blue-900/95' : 'bg-white/95 backdrop-blur-sm dark:bg-gray-800/95'}`}>
                   <div className="flex items-center gap-2 pl-1 text-xs font-bold text-gray-800 dark:text-gray-200">
                     {formatDayLabel(day)}
                     {isToday && (
@@ -430,7 +456,7 @@ export default function BookingTimelineCanvas({
                     <div 
                       key={`${lane.id}-${dayKey}`} 
                       style={{ height: lane.laneHeight }} 
-                      className={`relative border-b border-gray-200/60 transition-colors dark:border-gray-700/60 hover:bg-gray-100/40 dark:hover:bg-gray-800/40 ${isToday ? 'bg-blue-50/10 dark:bg-blue-900/5' : ''}`}
+                      className={`relative border-b-2 border-gray-300 transition-colors dark:border-gray-600 hover:bg-gray-100/40 dark:hover:bg-gray-800/40 ${isToday ? 'bg-blue-50/10 dark:bg-blue-900/5' : ''}`}
                     >
                       {/* Internal Padding Wrapper for breathing room */}
                       <div className="absolute inset-y-0 left-2 right-2">
@@ -467,6 +493,7 @@ export default function BookingTimelineCanvas({
                     </div>
                   );
                 })}
+                <div className="h-4 w-full shrink-0" /> {/* Spacer for scrollbar */}
               </div>
             );
           })}
