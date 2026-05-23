@@ -229,8 +229,8 @@ export const useRemoveGroupMember = (options: MutationOptions = {}) => {
   const { onSuccess, onError } = options;
 
   return useMutation({
-    mutationFn: (params: { groupId: string; userId: string }) =>
-      removeGroupMember(params.groupId, params.userId),
+    mutationFn: (params: { groupId: string; userId: string; subjectCode?: string }) =>
+      removeGroupMember(params.groupId, params.userId, params.subjectCode),
     onSuccess: (_, variables) => {
       // Invalidate group members list
       queryClient.invalidateQueries({

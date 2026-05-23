@@ -213,14 +213,16 @@ export const updateGroupMember = async (
 };
 
 /**
- * Remove a student from a group
+ * Remove a student from a group (optionally scoped to a subject)
  */
 export const removeGroupMember = async (
   groupId: string,
-  userId: string
+  userId: string,
+  subjectCode?: string
 ): Promise<void> => {
   await axiosInstance.delete(
-    API_ENDPOINTS.GROUP_MEMBER_DETAIL(groupId, userId)
+    API_ENDPOINTS.GROUP_MEMBER_DETAIL(groupId, userId),
+    { params: subjectCode ? { subjectCode } : undefined }
   );
 };
 

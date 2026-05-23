@@ -404,16 +404,18 @@ export default function AdminGroupManagementFeature() {
           group={selectedGroupForMembers}
           students={currentMembersData}
           isLoading={isLoadingMembers || addMemberMutation.isPending}
-          onAddStudent={async (studentId) => {
+          onAddStudent={async (studentId, subjectCode) => {
             await addMemberMutation.mutateAsync({
               groupId: selectedGroupForMembers.id,
               userId: studentId,
+              subjectCode: subjectCode || undefined,
             });
           }}
-          onRemoveStudent={async (studentId) => {
+          onRemoveStudent={async (studentId, subjectCode) => {
             await removeMemberMutation.mutateAsync({
               groupId: selectedGroupForMembers.id,
               userId: studentId,
+              subjectCode: subjectCode,
             });
           }}
         />
