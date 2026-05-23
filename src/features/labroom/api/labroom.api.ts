@@ -69,6 +69,7 @@ export const labroomApi = {
     const response = await axiosInstance.post<ApiResponse<unknown>>(
       LABROOM_API.LIST,
       body,
+      { headers: { "Content-Type": "multipart/form-data" } }
     );
 
     if (!response.data.success) {
@@ -92,9 +93,13 @@ export const labroomApi = {
     id: number,
     payload: UpdateLabRoomRequest,
   ): Promise<{ data: LabRoomDto; message: string }> => {
+    const body = mapLabRoomPayload(payload);
+    body.append("Id", String(id));
+
     const response = await axiosInstance.put<ApiResponse<unknown>>(
       LABROOM_API.DETAIL(id),
-      mapLabRoomPayload(payload),
+      body,
+      { headers: { "Content-Type": "multipart/form-data" } }
     );
 console.log("[updateRoom] Payload →", payload);
     if (!response.data.success) {

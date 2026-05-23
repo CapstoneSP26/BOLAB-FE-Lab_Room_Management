@@ -3,6 +3,7 @@ import { getRole } from "../../../utils/role";
 import type {
   DashboardRoleScope,
   DashboardStatsDto,
+  DateRange,
   IncidentDto,
   LecturerBookingRequestStat,
   PendingRequestDto,
@@ -358,13 +359,17 @@ const normalizeDashboardOverview = (
   };
 };
 
-export const getDashboardStats = async (): Promise<DashboardStatsDto> => {
+export const getDashboardStats = async (dateRange?: DateRange): Promise<DashboardStatsDto> => {
+  const params = dateRange
+    ? { startDate: dateRange.startDate, endDate: dateRange.endDate }
+    : undefined;
+
   try {
-    const overviewResponse = await axiosInstance.get(DASHBOARD_API.OVERVIEW);
+    const overviewResponse = await axiosInstance.get(DASHBOARD_API.OVERVIEW, { params });
     return normalizeDashboardOverview(overviewResponse.data, "api");
   } catch (overviewError) {
     try {
-      const legacyResponse = await axiosInstance.get(DASHBOARD_API.LEGACY_STATS);
+      const legacyResponse = await axiosInstance.get(DASHBOARD_API.LEGACY_STATS, { params });
       return normalizeDashboardOverview(legacyResponse.data, "legacy");
     } catch (legacyError) {
       console.error("Failed to fetch dashboard overview:", {

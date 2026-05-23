@@ -2,6 +2,53 @@ import type { Role } from "../../../utils/role";
 
 export type DashboardRoleScope = Extract<Role, "ADMIN" | "LAB_MANAGER">;
 
+export type TimeFilter = "1d" | "1w" | "4m" | "8m" | "1y";
+
+export interface DateRange {
+  startDate: string; // ISO date string YYYY-MM-DD
+  endDate: string;   // ISO date string YYYY-MM-DD
+}
+
+export const TIME_FILTER_OPTIONS: { value: TimeFilter; label: string }[] = [
+  { value: "1d", label: "1 Day" },
+  { value: "1w", label: "1 Week" },
+  { value: "4m", label: "4 Months" },
+  { value: "8m", label: "8 Months" },
+  { value: "1y", label: "1 Year" },
+];
+
+export function getDateRangeFromFilter(filter: TimeFilter): DateRange {
+  const now = new Date();
+  const end = now.toISOString().slice(0, 10);
+  let start: Date;
+
+  switch (filter) {
+    case "1d":
+      start = new Date(now);
+      start.setDate(now.getDate() - 1);
+      break;
+    case "1w":
+      start = new Date(now);
+      start.setDate(now.getDate() - 7);
+      break;
+    case "4m":
+      start = new Date(now);
+      start.setMonth(now.getMonth() - 4);
+      break;
+    case "8m":
+      start = new Date(now);
+      start.setMonth(now.getMonth() - 8);
+      break;
+    case "1y":
+    default:
+      start = new Date(now);
+      start.setFullYear(now.getFullYear() - 1);
+      break;
+  }
+
+  return { startDate: start.toISOString().slice(0, 10), endDate: end };
+}
+
 export interface LecturerBookingRequestStat {
   lecturerId: string;
   lecturerName: string;

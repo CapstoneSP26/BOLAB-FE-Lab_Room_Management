@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ClipboardList,
   Loader2,
@@ -17,7 +18,8 @@ import { getErrorMessage } from "../../../utils/error";
 import {
   useDeleteRoomPolicy,
   useUpdateRoomPolicy,
-  useRoomPolicies
+  useRoomPolicies,
+  QUERY_KEYS
 } from "../hooks/useLabRooms";
 import type { LabRoomPolicy } from "../types/policy.type";
 import type { LabRoomDto } from "../types/room.type";
@@ -52,9 +54,26 @@ export default function PolicyManagementModal({
     isFetching,
   } = useRoomPolicies(roomId, isOpen && roomId > 0);
 
+  const queryClient = useQueryClient();
+
   const updatePolicyMutation = useUpdateRoomPolicy({
     onSuccess: () => {
       toast.success("Policy updated", "The policy value has been saved.");
+      
+      if (effectiveEditingKey) {
+        queryClient.setQueryData(
+          [QUERY_KEYS.ROOM_POLICIES, roomId],
+          (old: LabRoomPolicy[] | undefined) => {
+            if (!old) return old;
+            return old.map((p) =>
+              (p.policyKeyName || p.policyKey) === effectiveEditingKey
+                ? { ...p, policyValue: value.trim(), isActive: active }
+                : p
+            );
+          }
+        );
+      }
+
       setEditingKey(null);
       setValue("");
       setValueError("");

@@ -5,11 +5,12 @@ import {
   getUnresolvedIncidents,
   getUserProfile,
 } from "../api/dashboardApi";
+import type { DateRange } from "../types/dashboard.type";
 
-export const useDashboardStats = () => {
+export const useDashboardStats = (dateRange?: DateRange) => {
   return useQuery({
-    queryKey: ["dashboard-stats"],
-    queryFn: getDashboardStats,
+    queryKey: ["dashboard-stats", dateRange?.startDate, dateRange?.endDate],
+    queryFn: () => getDashboardStats(dateRange),
     retry: false,
   });
 };

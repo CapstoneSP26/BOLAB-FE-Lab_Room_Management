@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, useRef, type FormEvent } from "react";
 import {
   Building2,
   Cpu,
@@ -8,6 +8,8 @@ import {
   PlusCircle,
   User,
   X,
+  Upload,
+  Trash2,
 } from "lucide-react";
 import type { BuildingDto } from "../../building/types/building.type";
 import { SearchDropdown } from "../../../components/ui/SearchDropdown";
@@ -15,6 +17,7 @@ import { userManagementApi } from "../../users/api/userManagementApi";
 import type { UserListItem } from "../../users/types/userManagement.type";
 import { getDefaultLabRoomFormValues } from "../types/room.mapper";
 import type { LabRoomDto, LabRoomFormValues } from "../types/room.type";
+import { addCacheBuster } from "../../../utils/imageCache";
 
 type Props = {
   isOpen: boolean;
@@ -44,6 +47,8 @@ export default function RoomFormModal({
     getDefaultLabRoomFormValues(room),
   );
   const [errors, setErrors] = useState<FormErrors>({});
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ─── Room manager search state ───────────────────────────────────────
   const [managerQuery, setManagerQuery] = useState<string>(() =>
@@ -78,6 +83,18 @@ export default function RoomFormModal({
             }
           : null,
       );
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+
+      // Show existing image when editing
+      const primaryImage = room?.images?.find(img => img.isPrimary) || room?.images?.[0];
+      if (mode === "edit" && primaryImage?.url) {
+        setImagePreview(addCacheBuster(primaryImage.url));
+      } else {
+        setImagePreview(null);
+      }
     }
   }, [isOpen, room]);
 
@@ -114,6 +131,28 @@ export default function RoomFormModal({
   ) => {
     setValues((prev) => ({ ...prev, [key]: value }));
     setErrors((prev) => ({ ...prev, [key]: undefined }));
+  };
+
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      handleChange("Images", file);
+      handleChange("IsImageUpdate", true);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    handleChange("Images", null);
+    handleChange("IsImageUpdate", true);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const handleManagerSearch = useCallback(async (q: string) => {
@@ -406,6 +445,53 @@ export default function RoomFormModal({
                 <option value="ACTIVE">Activate</option>
                 <option value="DEACTIVATED">De-activate</option>
               </select>
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Lab Room Image (optional)
+              </label>
+
+              {/* Image Preview */}
+              {imagePreview && (
+                <div className="relative mb-4 h-48 w-full overflow-hidden rounded-xl border border-gray-300 bg-gray-100 dark:border-gray-700 dark:bg-gray-800">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="h-full w-full object-cover"
+                    onError={() => {
+                      console.log("Modal preview image failed:", imagePreview);
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    disabled={isLoading}
+                    className="absolute right-2 top-2 flex items-center justify-center rounded-lg bg-red-500 p-2 text-white transition hover:bg-red-600 disabled:cursor-not-allowed"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+
+              {/* File Input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageSelect}
+                disabled={isLoading}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 px-4 py-6 text-sm font-medium text-gray-600 transition hover:border-brand-500 hover:bg-brand-50/30 disabled:cursor-not-allowed dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-400 dark:hover:bg-brand-500/5"
+              >
+                <Upload className="h-5 w-5" />
+                Choose Image from Device
+              </button>
             </div>
 
             <div className="md:col-span-2">
