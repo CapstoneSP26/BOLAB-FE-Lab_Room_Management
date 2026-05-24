@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useEffect } from "react";
 import { AlertTriangle } from "lucide-react";
 import type { BookingRequest } from "../types/booking.type";
 import { convertHoursUtcToVN } from "../../../utils/date.util";
@@ -276,6 +276,8 @@ export default function BookingTimelineCanvas({
   const leftRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
 
+
+
   const handleLeftScroll = (e: React.UIEvent<HTMLDivElement>) => {
     if (rightRef.current) {
       rightRef.current.scrollTop = e.currentTarget.scrollTop;
@@ -360,6 +362,20 @@ export default function BookingTimelineCanvas({
     });
   }, [filteredLanes, timelineDays]);
 
+  useEffect(() => {
+    const syncScrollbarSpace = () => {
+      if (rightRef.current && leftRef.current) {
+        const scrollbarHeight = rightRef.current.offsetHeight - rightRef.current.clientHeight;
+        leftRef.current.style.paddingBottom = `${scrollbarHeight}px`;
+      }
+    };
+    
+    syncScrollbarSpace();
+    window.addEventListener("resize", syncScrollbarSpace);
+    
+    return () => window.removeEventListener("resize", syncScrollbarSpace);
+  }, [lanesWithData]);
+
   return (
     <div className="w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800/50">
       <div className="flex w-full">
@@ -371,7 +387,7 @@ export default function BookingTimelineCanvas({
           className="w-[220px] shrink-0 border-r border-gray-200 bg-white z-10 dark:border-gray-700 dark:bg-gray-900 overflow-y-auto"
           style={{ maxHeight: '65vh', scrollbarWidth: 'none' }}
         >
-          <div className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-gray-200 px-4 bg-white dark:bg-gray-900 dark:border-gray-700">
+          <div className="sticky top-0 z-[60] flex h-14 items-center justify-between border-b border-gray-200 px-4 bg-white dark:bg-gray-900 dark:border-gray-700">
             <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Rooms</span>
             <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700 dark:bg-violet-500/20 dark:text-violet-300">
               {filteredLanes.length}
@@ -418,7 +434,7 @@ export default function BookingTimelineCanvas({
                 className={`relative flex flex-col shrink-0 min-w-full border-gray-200/80 dark:border-gray-700/80 ${dayIndex < 6 ? 'border-r' : ''}`}
               >
                 {/* Day Header */}
-                <div className={`sticky top-0 z-20 h-14 shrink-0 border-b border-gray-200 px-3 py-2 dark:border-gray-700 ${isToday ? 'bg-blue-50/95 backdrop-blur-sm dark:bg-blue-900/95' : 'bg-white/95 backdrop-blur-sm dark:bg-gray-800/95'}`}>
+                <div className={`sticky top-0 z-[60] h-14 shrink-0 border-b border-gray-200 px-3 py-2 dark:border-gray-700 ${isToday ? 'bg-blue-50/95 backdrop-blur-sm dark:bg-blue-900/95' : 'bg-white/95 backdrop-blur-sm dark:bg-gray-800/95'}`}>
                   <div className="flex items-center gap-2 pl-1 text-xs font-bold text-gray-800 dark:text-gray-200">
                     {formatDayLabel(day)}
                     {isToday && (
@@ -456,7 +472,7 @@ export default function BookingTimelineCanvas({
                     <div 
                       key={`${lane.id}-${dayKey}`} 
                       style={{ height: lane.laneHeight }} 
-                      className={`relative border-b-2 border-gray-300 transition-colors dark:border-gray-600 hover:bg-gray-100/40 dark:hover:bg-gray-800/40 ${isToday ? 'bg-blue-50/10 dark:bg-blue-900/5' : ''}`}
+                      className={`relative shrink-0 border-b-2 border-gray-300 transition-colors dark:border-gray-600 hover:bg-gray-100/40 dark:hover:bg-gray-800/40 ${isToday ? 'bg-blue-50/10 dark:bg-blue-900/5' : ''}`}
                     >
                       {/* Internal Padding Wrapper for breathing room */}
                       <div className="absolute inset-y-0 left-2 right-2">
