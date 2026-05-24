@@ -20,7 +20,7 @@ function ManagerLayoutBody({ children }: PropsWithChildren) {
         <AppHeader />
 
         {/* THAY ĐỔI Ở ĐÂY: Ưu tiên render children, nếu không có thì render Outlet */}
-        <div className="mx-auto max-w-7xl p-4 md:p-6">
+        <div className="mx-auto p-4 md:p-6">
           {children ? children : <Outlet />}
         </div>
 
