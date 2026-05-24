@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom"; // Import Outlet
+import { Outlet, useLocation } from "react-router-dom"; // Import Outlet
 import { SidebarProvider, useSidebar } from "./sidebarContext";
 import type { PropsWithChildren } from "react";
 import AppHeader from "./AppHeader";
@@ -8,6 +8,11 @@ import Backdrop from "./Backdrop";
 function ManagerLayoutBody({ children }: PropsWithChildren) {
   const { isExpanded, isHovered } = useSidebar();
   const leftClass = isExpanded || isHovered ? "lg:ml-[290px]" : "lg:ml-[90px]";
+  const location = useLocation();
+  const isFullWidthTimeline = location.pathname.startsWith("/labmanager/booking-requests/pending");
+  const contentClass = isFullWidthTimeline
+    ? "w-full max-w-none p-4 md:p-6"
+    : "mx-auto max-w-7xl p-4 md:p-6";
 
   return (
     <div className="min-h-screen xl:flex bg-gray-100 text-gray-900 dark:bg-gray-950 dark:text-white/90">
@@ -20,7 +25,7 @@ function ManagerLayoutBody({ children }: PropsWithChildren) {
         <AppHeader />
 
         {/* THAY ĐỔI Ở ĐÂY: Ưu tiên render children, nếu không có thì render Outlet */}
-        <div className="mx-auto p-4 md:p-6">
+        <div className={contentClass}>
           {children ? children : <Outlet />}
         </div>
 
