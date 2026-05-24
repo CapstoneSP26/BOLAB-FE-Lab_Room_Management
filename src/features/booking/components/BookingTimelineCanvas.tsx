@@ -145,6 +145,30 @@ function stackBookingsVisually(bookings: BookingRequest[]) {
   return rows;
 }
 
+function clusterHiddenBookings(bookings: BookingRequest[]) {
+  if (bookings.length === 0) return [];
+  
+  const sorted = [...bookings].sort((a, b) => getVisualBounds(a).left - getVisualBounds(b).left);
+  const clusters: { count: number; left: number; right: number }[] = [];
+  
+  sorted.forEach(booking => {
+    const bounds = getVisualBounds(booking);
+    if (clusters.length === 0) {
+      clusters.push({ count: 1, left: bounds.left, right: bounds.right });
+    } else {
+      const last = clusters[clusters.length - 1];
+      if (bounds.left <= last.right + 1) {
+        last.count += 1;
+        last.right = Math.max(last.right, bounds.right);
+      } else {
+        clusters.push({ count: 1, left: bounds.left, right: bounds.right });
+      }
+    }
+  });
+  
+  return clusters;
+}
+
 function getPriorityLevel(purpose?: string) {
   const text = String(purpose ?? "").toUpperCase();
   if (text.includes("WORKSHOP")) return 4;
@@ -313,6 +337,7 @@ export default function BookingTimelineCanvas({
   const lanesWithData = useMemo(() => {
     return filteredLanes.map((lane) => {
       let maxRowsAcrossDays = 0;
+      let hasHiddenBookingsAcrossDays = false;
       
       const daysData = timelineDays.map((day) => {
         const dayKey = normalizeDateKey(day);
@@ -347,16 +372,26 @@ export default function BookingTimelineCanvas({
         });
 
         const rows = stackBookingsVisually(dayBookings);
-        maxRowsAcrossDays = Math.max(maxRowsAcrossDays, rows.length);
+        
+        const MAX_VISIBLE_ROWS = 3;
+        const visibleRows = rows.slice(0, MAX_VISIBLE_ROWS);
+        const hiddenBookings = rows.slice(MAX_VISIBLE_ROWS).flat();
+        const hiddenClusters = clusterHiddenBookings(hiddenBookings);
+
+        maxRowsAcrossDays = Math.max(maxRowsAcrossDays, visibleRows.length);
+        if (hiddenClusters.length > 0) {
+          hasHiddenBookingsAcrossDays = true;
+        }
         
         const dayMaxPriority = dayBookings.length > 0
           ? Math.max(...dayBookings.map(b => getPriorityLevel(b.purpose)))
           : 1;
         
-        return { day, dayKey, rows, conflictIds, maxPriority: dayMaxPriority };
+        return { day, dayKey, rows: visibleRows, hiddenClusters, conflictIds, maxPriority: dayMaxPriority };
       });
 
-      const laneHeight = Math.max(MIN_LANE_HEIGHT, BOOKING_ROW_PADDING * 2 + maxRowsAcrossDays * BOOKING_ROW_HEIGHT + Math.max(0, maxRowsAcrossDays - 1) * BOOKING_ROW_GAP);
+      const totalVisualRows = maxRowsAcrossDays + (hasHiddenBookingsAcrossDays ? 1 : 0);
+      const laneHeight = Math.max(MIN_LANE_HEIGHT, BOOKING_ROW_PADDING * 2 + totalVisualRows * BOOKING_ROW_HEIGHT + Math.max(0, totalVisualRows - 1) * BOOKING_ROW_GAP);
 
       return { ...lane, daysData, laneHeight };
     });
@@ -505,6 +540,24 @@ export default function BookingTimelineCanvas({
                             />
                           ))
                         )}
+
+                        {/* Hidden Booking Clusters (+ N more) */}
+                        {dayData.hiddenClusters?.map((cluster, i) => (
+                          <div
+                            key={`cluster-${i}`}
+                            className="absolute flex items-center justify-center rounded-md bg-gray-100 text-[10px] font-semibold text-gray-600 shadow-sm border border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700"
+                            style={{
+                              left: `${cluster.left}%`,
+                              width: `${cluster.right - cluster.left}%`,
+                              top: `${BOOKING_ROW_PADDING + dayData.rows.length * (BOOKING_ROW_HEIGHT + BOOKING_ROW_GAP)}px`,
+                              height: '24px',
+                              zIndex: 10
+                            }}
+                            title={`${cluster.count} more request(s)`}
+                          >
+                            +{cluster.count} more
+                          </div>
+                        ))}
                       </div>
                     </div>
                   );
