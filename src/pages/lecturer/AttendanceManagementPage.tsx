@@ -66,10 +66,11 @@ export default function AttendanceManagementPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'upcoming' | 'past' | 'all'>('all');
   const [showQRModal, setShowQRModal] = useState(false);
+  const [isOthersCheckinOpen, setIsOthersCheckinOpen] = useState(false);
   const [isCreatingQr, setIsCreatingQr] = useState(false);
   const [isRefreshingQr, setIsRefreshingQr] = useState(false);
   const [stoppedQrBySessionId, setStoppedQrBySessionId] = useState<Record<string, boolean>>({});
-  const [latestQRImageBase64, setLatestQRImageBase64] = useState(''); // Store base64 QR image from backend
+  const [latestQRImageBase64, setLatestQRImageBase64] = useState('');
 
   const state = useAttendanceManagementState({
     bookingScheduleItems,
@@ -197,7 +198,23 @@ export default function AttendanceManagementPage() {
     }
   };
 
+  const handleOpenOthersCheckin = () => {
+    if (!state.activeBooking) {
+      appAlert.warning('No active class', 'There is no in-progress class to manage.');
+      return;
+    }
 
+    setIsOthersCheckinOpen(prev => !prev);
+  };
+
+  const handleOpenFaceScan = () => {
+    if (!state.activeBooking) {
+      appAlert.warning('No active class', 'There is no in-progress class to manage.');
+      return;
+    }
+
+    navigate(`/attendance/camera/${state.activeBooking.roomCode}`);
+  };
 
   useEffect(() => {
     if (!showQRModal || !state.activeBooking) {
@@ -263,7 +280,10 @@ export default function AttendanceManagementPage() {
           activeDisplayBuilding={activeDisplayBuilding}
           isExpired={isExpired}
           isCreatingQr={isCreatingQr}
+          isOthersCheckinOpen={isOthersCheckinOpen}
           onManualAttendance={handleManualAttendance}
+          onOpenOthersCheckin={handleOpenOthersCheckin}
+          onOpenFaceScan={handleOpenFaceScan}
           onViewQR={handleViewQR}
           onExport={handleExport}
         />
