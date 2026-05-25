@@ -26,6 +26,7 @@ export const GroupStudentsModal: React.FC<GroupStudentsModalProps> = ({
   const [activeSubject, setActiveSubject] = useState<string | null>(null);
   const [showAddSubject, setShowAddSubject] = useState(false);
   const [newSubjectCode, setNewSubjectCode] = useState('');
+  const [manualSubjects, setManualSubjects] = useState<string[]>([]);
 
   // ── Add student state ──
   const [showAddStudent, setShowAddStudent] = useState(false);
@@ -35,14 +36,14 @@ export const GroupStudentsModal: React.FC<GroupStudentsModalProps> = ({
   const [deletingStudentId, setDeletingStudentId] = useState<string | null>(null);
 
   // ── Derived data ──
-  // Extract unique subject codes from all members
+  // Extract unique subject codes from all members + manually added ones
   const subjectCodes = useMemo(() => {
-    const codes = new Set<string>();
+    const codes = new Set<string>([...manualSubjects]);
     students.forEach((s) => {
       if (s.subjectCode) codes.add(s.subjectCode);
     });
     return Array.from(codes).sort();
-  }, [students]);
+  }, [students, manualSubjects]);
 
   // Filter students by active subject
   const filteredStudents = useMemo(() => {
@@ -90,10 +91,15 @@ export const GroupStudentsModal: React.FC<GroupStudentsModalProps> = ({
   const handleAddSubject = () => {
     const code = newSubjectCode.trim().toUpperCase();
     if (!code) return;
-    // Set as active tab (the subject will be "created" when the first student is added)
+    
+    // Track manually added subjects so it appears as a tab immediately
+    setManualSubjects(prev => Array.from(new Set([...prev, code])));
+    
+    // Set as active tab
     setActiveSubject(code);
     setNewSubjectCode('');
     setShowAddSubject(false);
+    
     // Automatically open "Add Student" form so user can start adding
     setShowAddStudent(true);
   };
