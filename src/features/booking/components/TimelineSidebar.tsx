@@ -54,9 +54,9 @@ export default function TimelineSidebar({
       <section className="space-y-3 rounded-xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/40">
         <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">Priority Legend</h3>
         <div className="space-y-2">
-          <LegendItem label="Workshop" tone="bg-rose-500" />
-          <LegendItem label="Practical" tone="bg-orange-500" />
-          <LegendItem label="Lecture" tone="bg-blue-500" />
+          <LegendItem label="School Event" tone="bg-rose-500" />
+          <LegendItem label="Academic" tone="bg-orange-500" />
+          <LegendItem label="Normal" tone="bg-blue-500" />
         </div>
       </section>
 

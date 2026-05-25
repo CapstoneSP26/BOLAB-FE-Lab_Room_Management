@@ -41,8 +41,9 @@ export const AIBookingModal: React.FC<AIBookingModalProps> = ({ isOpen, onClose 
     ]);
   };
 
-  // Hàm xử lý chung cho cả primaryBooking và suggestion
   const executeBooking = (data: any) => {
+    if (isCreating) return;
+    
     // Backend trả về rỗng hoặc null cho date thì lấy baseDate
     const datePart = data.date || data.baseDate?.split('T')[0];
 

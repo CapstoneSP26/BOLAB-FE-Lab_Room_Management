@@ -103,7 +103,7 @@ const RoomBookingPage: React.FC = () => {
   // Create Booking Hook
   const { mutate: createBooking, isPending } = useCreateBooking();
   const handleFinalConfirm = (formData: any) => {
-    if (!pendingBooking) return;
+    if (!pendingBooking || isPending) return;
 
     const currentBookingInfo = {
       date: pendingBooking.date,
