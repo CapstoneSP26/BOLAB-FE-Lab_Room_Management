@@ -53,5 +53,15 @@ export const TEMPLATE_VARIABLES: Record<number, VariableItem[]> = {
     { key: "EndTime", description: "Thời gian kết thúc sử dụng" },
     { key: "Purpose", description: "Lý do/Mục đích mượn phòng Lab" },
     { key: "AdminApprovalLink", description: "Đường dẫn đến trang duyệt đơn của Admin" },
+  ],
+  [EmailType.RejectedByPriority]: [
+    { key: "ReceiverName", description: "Tên người nhận (Giảng viên/Sinh viên phụ trách)" },
+    { key: "TargetType", description: "Loại đối tượng bị hủy (Lịch chính khóa / Đơn đặt lẻ)" },
+    { key: "TargetName", description: "Tên môn học hoặc Tên phòng hiển thị cụ thể" },
+    { key: "RoomName", description: "Tên phòng Lab bị trùng lịch" },
+    { key: "Date", description: "Ngày diễn ra lịch bị hủy" },
+    { key: "TimeSlot", description: "Khung thời gian cụ thể (Từ mấy giờ đến mấy giờ)" },
+    { key: "Reason", description: "Mô tả chi tiết nguyên nhân ưu tiên hệ thống" },
+    { key: "ActionLink", description: "Link dẫn đến trang cá nhân đặt lại" }
   ]
 };
