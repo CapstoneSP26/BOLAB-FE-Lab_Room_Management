@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { buildingApi } from "../../building/api/buildingApi";
 import { labroomApi } from "../../labroom/api/labroom.api";
 import { slotApi } from "../../slot/api/slotApi";
-import { useBookingRequests } from "../hooks/useBookingRequest";
+import { QUERY_KEYS, useBookingRequests } from "../hooks/useBookingRequest";
 import BookingTimelineCanvas, { normalizeDateKey, getMinutesFrom0700 } from "./BookingTimelineCanvas";
 import RequestDetailsPanel from "./RequestDetailsPanel";
 import ApproveBookingModal from "./ApproveBookingModal";
@@ -25,15 +25,20 @@ import { ReportStatCard } from "../../../components/ui/ComponentsParts";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { Role } from "../../../constants/role";
 
+import { useSignalRListener } from '../../../hooks/useSignalRListener';
+
+import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from '../../../hooks/useToast';
+
 type SlotTypeFilter = "ALL" | number;
-type PriorityFilter = "ALL" | "WORKSHOP" | "PRACTICAL" | "LECTURE";
+type PriorityFilter = "ALL" | "SCHOOL EVENT" | "ACADEMIC" | "NORMAL";
 
 type TimelineStats = {
   totalPending: number;
   conflictCount: number;
-  workshopCount: number;
-  practicalCount: number;
-  lectureCount: number;
+  schoolEventCount: number;
+  academicCount: number;
+  normalCount: number;
 };
 
 function getWeekStart(date: Date) {
@@ -102,6 +107,9 @@ export default function UpcomingRequestTimelinePage() {
 
   const weekStart = useMemo(() => getWeekStart(selectedDate), [selectedDate]);
   const weekEnd = useMemo(() => getWeekEnd(selectedDate), [selectedDate]);
+
+  const appAlert = useToast();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     setPage(1);
@@ -175,13 +183,13 @@ export default function UpcomingRequestTimelinePage() {
     if (!selectedBooking) return false;
 
     // Get priority level of selected booking
-    const getPriorityLevel = (purpose?: string) => {
+    function getPriorityLevel(purpose?: string) {
       const text = String(purpose ?? "").toUpperCase();
-      if (text.includes("WORKSHOP")) return 4;
-      if (text.includes("PRACTICAL")) return 3;
-      if (text.includes("LECTURE")) return 2;
+      if (text.includes("SCHOOL EVENT")) return 4;
+      if (text.includes("ACADEMIC")) return 3;
+      if (text.includes("NORMAL")) return 2;
       return 1;
-    };
+    }
 
     const selectedPriority = getPriorityLevel(selectedBooking.purpose);
 
@@ -198,19 +206,19 @@ export default function UpcomingRequestTimelinePage() {
 
   const conflictingBookings = useMemo(() => {
     if (!selectedBooking) return [];
-    
+
     const selectedDateKey = normalizeDateKey(selectedBooking.date || selectedBooking.startTime || selectedBooking.requestedAt);
     const start = getMinutesFrom0700(selectedBooking.startTime);
     const end = getMinutesFrom0700(selectedBooking.endTime);
-    
+
     return visibleItems.filter(b => {
       if (String(b.id) === String(selectedBooking.id)) return false;
       if (String(b.roomId) !== String(selectedBooking.roomId)) return false;
       if (normalizeDateKey(b.date || b.startTime || b.requestedAt) !== selectedDateKey) return false;
-      
+
       const bStart = getMinutesFrom0700(b.startTime);
       const bEnd = getMinutesFrom0700(b.endTime);
-      
+
       // Check for time overlap
       return start < bEnd && end > bStart;
     });
@@ -223,9 +231,9 @@ export default function UpcomingRequestTimelinePage() {
     return {
       totalPending: totalCount,
       conflictCount: Math.floor(totalCount / 4),
-      workshopCount: countByPurpose("workshop"),
-      practicalCount: countByPurpose("practical"),
-      lectureCount: countByPurpose("lecture"),
+      schoolEventCount: countByPurpose("SCHOOL EVENT"),
+      academicCount: countByPurpose("ACADEMIC"),
+      normalCount: countByPurpose("NORMAL"),
     };
   }, [items, totalCount]);
 
@@ -296,6 +304,26 @@ export default function UpcomingRequestTimelinePage() {
     });
   };
 
+  useSignalRListener("booking.new", async (payload: any) => {
+    console.log("Received calendar.statusUpdated event with payload:", payload);
+    const isCurrentRoom = roomOptions.some(room => String(room.id) === String(payload.labRoomId));
+    if (!isCurrentRoom) return; // Nếu sự kiện không liên quan đến phòng đang xem, bỏ qua
+
+    // Trong lúc này UI sẽ mượt hơn vì Booking cũ đã biến mất
+    const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+    await delay(1800);
+
+    // 3. REFETCH cưỡng chế cho Schedules
+    // Sử dụng refetch thay vì invalidate để đảm bảo nó gọi API ngay lập tức
+    await queryClient.refetchQueries({
+      predicate: (query) =>
+        query.queryKey[0] === QUERY_KEYS.BOOKING_REQUESTS,
+      type: 'active' // Chỉ fetch lại những gì đang hiện trên màn hình
+    });
+
+    appAlert.success("Cập nhật", "Upcoming requests đã được đồng bộ mới nhất.");
+  });
+
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800/50">
@@ -332,9 +360,9 @@ export default function UpcomingRequestTimelinePage() {
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <ReportStatCard label="Workshop" value={stats.workshopCount} color="amber" />
-          <ReportStatCard label="Practical" value={stats.practicalCount} color="emerald" />
-          <ReportStatCard label="Lecture" value={stats.lectureCount} color="blue" />
+          <ReportStatCard label="School Event" value={stats.schoolEventCount} color="amber" />
+          <ReportStatCard label="Academic" value={stats.academicCount} color="emerald" />
+          <ReportStatCard label="Normal" value={stats.normalCount} color="blue" />
           <ReportStatCard label="Visible" value={visibleItems.length} color="purple" />
         </div>
       </div>
@@ -382,7 +410,7 @@ export default function UpcomingRequestTimelinePage() {
                 <span className="rounded-full bg-violet-100 px-2 py-1 text-[11px] font-semibold text-violet-700 dark:bg-violet-500/10 dark:text-violet-300">Timeline</span>
               </div>
               <div className="space-y-2.5 text-xs">
-                {[["Workshop", "bg-rose-500"], ["Practical", "bg-amber-500"], ["Lecture", "bg-sky-500"]].map(([label, color]) => (
+                {[["SCHOOL EVENT", "bg-rose-500"], ["ACADEMIC", "bg-amber-500"], ["NORMAL", "bg-sky-500"]].map(([label, color]) => (
                   <div key={label} className="flex items-center gap-2.5">
                     <span className={`h-2.5 w-2.5 rounded-full ${color}`} />
                     <span className="text-gray-700 dark:text-gray-300">{label}</span>
@@ -412,9 +440,9 @@ export default function UpcomingRequestTimelinePage() {
                   <span className="text-gray-500 dark:text-gray-400">Priority</span>
                   <select value={priorityFilter} onChange={(event) => setPriorityFilter(event.target.value as PriorityFilter)} className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900/40 dark:text-white">
                     <option value="ALL">All</option>
-                    <option value="WORKSHOP">Workshop</option>
-                    <option value="PRACTICAL">Practical</option>
-                    <option value="LECTURE">Lecture</option>
+                    <option value="SCHOOL EVENT">School Event</option>
+                    <option value="ACADEMIC">Academic</option>
+                    <option value="NORMAL">Normal</option>
                   </select>
                 </label>
 
