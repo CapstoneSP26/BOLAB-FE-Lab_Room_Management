@@ -57,6 +57,8 @@ export const attendanceApi = {
   /**
    * Scan a QR code for attendance
    * GET /api/attendances/scan-qrcode?qrId={qrId}&scheduleId={scheduleId}&studentId={studentId}&isCheckIn={isCheckIn}
+   *
+   * FE only gathers data; BE decides approval/denial.
    */
   scanQRCode: (params: ScanQRCodeRequest) =>
     axiosInstance.get<ScanQRCodeResponse>(

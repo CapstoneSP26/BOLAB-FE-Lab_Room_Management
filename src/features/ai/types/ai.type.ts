@@ -45,3 +45,8 @@ export interface AIParseResponse {
   conflictDetails: string[];
   requiresUserConfirmation: boolean;
 }
+
+export type AIChatMessage = {
+  role: 'user' | 'assistant';
+  content: string;
+};

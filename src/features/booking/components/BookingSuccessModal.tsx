@@ -19,7 +19,6 @@ interface BookingSuccessModalProps {
 export const BookingSuccessModal: React.FC<BookingSuccessModalProps> = ({
   isOpen,
   onClose,
-  bookingId,
   warningMessage,
   roomName,
   date,

@@ -12,7 +12,7 @@ import {
   FPTLogo,
 } from "../../components/icon/index.ts";
 import { useAuthStore } from "../../store/useAuthStore.ts";
-import { Building } from "lucide-react"
+import { Building, Mail } from "lucide-react"
 type IconProps = React.SVGProps<SVGSVGElement> & { size?: number };
 type IconComp = React.ComponentType<IconProps>;
 
@@ -89,6 +89,13 @@ const AppSidebar: React.FC = () => {
           { name: "Import Groups", path: p("/groups/import") },
           { name: "Import LabRoom", path: p("/labrooms/import") },
         ],
+      },
+
+      {
+        icon: Mail,
+        name: "Email Templates",
+        path: p("/email-templates"),
+        show: isAdmin,
       },
 
       // --- BOOKING REQUESTS (Chỉ Manager) ---
