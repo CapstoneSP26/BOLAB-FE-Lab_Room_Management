@@ -40,6 +40,11 @@ export interface WeeklyCalendarProps {
   weekOffset?: number;
   onWeekChange: (offset: number) => void;
   slotTypes: SlotType[];
+  highlightRange?: {
+    date: string;
+    startTime: string;
+    endTime: string;
+  };
 }
 
 /**
@@ -55,7 +60,8 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   onSlotTypeChange,
   weekOffset = 0,
   onWeekChange,
-  slotTypes
+  slotTypes,
+  highlightRange,
 }) => {
   const { user } = useAuthStore();
   const appAlert = useToast();
@@ -363,6 +369,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
               dragState={dragState}
               events={events}
               handleMouseDown={handleMouseDown}
+              highlightRange={highlightRange}
             />
           ) : // OldSlot Mode: Show fixed slots (slot 1, slot 2, etc.)
             currentSlotType !== undefined ? (
@@ -375,6 +382,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                 minBookingLeadTime={minBookingLeadTime}
                 maxBookingAdvance={maxBookingAdvance}
                 maxConcurrent={maxConcurrentBookings}
+                highlightRange={highlightRange}
               />
             ) : null}
         </div>

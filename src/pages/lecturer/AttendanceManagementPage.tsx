@@ -66,10 +66,11 @@ export default function AttendanceManagementPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'upcoming' | 'past' | 'all'>('all');
   const [showQRModal, setShowQRModal] = useState(false);
+  const [othersCheckinMode, setOthersCheckinMode] = useState<'menu' | 'qr' | 'face' | null>(null);
   const [isCreatingQr, setIsCreatingQr] = useState(false);
   const [isRefreshingQr, setIsRefreshingQr] = useState(false);
   const [stoppedQrBySessionId, setStoppedQrBySessionId] = useState<Record<string, boolean>>({});
-  const [latestQRImageBase64, setLatestQRImageBase64] = useState(''); // Store base64 QR image from backend
+  const [latestQRImageBase64, setLatestQRImageBase64] = useState('');
 
   const state = useAttendanceManagementState({
     bookingScheduleItems,
@@ -171,6 +172,7 @@ export default function AttendanceManagementPage() {
       return;
     }
 
+    setOthersCheckinMode('qr');
     setIsCreatingQr(true);
     try {
       const bookingId = state.activeBooking.bookingId;
@@ -197,7 +199,24 @@ export default function AttendanceManagementPage() {
     }
   };
 
+  const handleOpenOthersCheckin = () => {
+    if (!state.activeBooking) {
+      appAlert.warning('No active class', 'There is no in-progress class to manage.');
+      return;
+    }
 
+    setOthersCheckinMode(prev => (prev === 'menu' ? null : 'menu'));
+  };
+
+  const handleOpenFaceScan = () => {
+    if (!state.activeBooking) {
+      appAlert.warning('No active class', 'There is no in-progress class to manage.');
+      return;
+    }
+
+    setOthersCheckinMode('face');
+    navigate(`/attendance/camera/${state.activeBooking.roomCode}`);
+  };
 
   useEffect(() => {
     if (!showQRModal || !state.activeBooking) {
@@ -263,7 +282,10 @@ export default function AttendanceManagementPage() {
           activeDisplayBuilding={activeDisplayBuilding}
           isExpired={isExpired}
           isCreatingQr={isCreatingQr}
+          othersCheckinMode={othersCheckinMode}
           onManualAttendance={handleManualAttendance}
+          onOpenOthersCheckin={handleOpenOthersCheckin}
+          onOpenFaceScan={handleOpenFaceScan}
           onViewQR={handleViewQR}
           onExport={handleExport}
         />
