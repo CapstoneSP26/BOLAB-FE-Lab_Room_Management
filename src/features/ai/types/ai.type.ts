@@ -37,7 +37,7 @@ export interface AIPrimaryBooking {
  * Response trả về từ AI Controller
  */
 export interface AIParseResponse {
-  status: 'Success' | 'Partial' | 'Failure';
+  status: 'Success' | 'MissingRoom' | 'ConflictDetected' | 'ParseError' | 'SystemError' | 'QuotaExceeded';
   message: string;
   confidence: number;
   primaryBooking: AIPrimaryBooking | null;
