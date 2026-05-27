@@ -158,16 +158,27 @@ console.log("[updateRoom] Payload →", payload);
         LABROOM_API.POLICY_DETAIL(labRoomId, policyKey),
         mapLabRoomPolicyUpdatePayload(payload),
       )
-      .then(
-        (response) =>
-          normalizeLabRoomPolicies(response.data)[0] ?? {
+      .then((response) => {
+        const raw = response.data;
+        const unwrapped =
+          raw && typeof raw === "object" && "data" in (raw as object)
+            ? (raw as { data: unknown }).data
+            : raw;
+
+        const parsed = normalizeLabRoomPolicies(
+          Array.isArray(unwrapped) ? unwrapped : [unwrapped],
+        )[0];
+
+        return (
+          parsed ?? {
             labRoomId,
             policyKey: policyKey as LabRoomPolicy["policyKey"],
             policyKeyName: policyKey,
             policyValue: payload.policyValue ?? "",
-            isActive: payload.isActive ?? true,
-          },
-      ),
+            isActive: payload.isActive ?? false,
+          }
+        );
+      }),
 
   deleteLabPolicy: (labRoomId: number, policyKey: string) =>
     axiosInstance
