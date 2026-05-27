@@ -16,6 +16,7 @@ export const EmailType = {
   BookingPending: 4,   // Hệ thống đã tiếp nhận yêu cầu (Chờ duyệt)
   BookingReminder: 5,
   NewClassSchedule: 6, // Lịch học mới tại phòng LAB
+  RejectedByPriority: 7, // Yêu cầu bị từ chối do ưu tiên 
 } as const;
 
 export type EmailType = (typeof EmailType)[keyof typeof EmailType];

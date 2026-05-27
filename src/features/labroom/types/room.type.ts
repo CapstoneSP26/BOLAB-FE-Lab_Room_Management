@@ -4,12 +4,6 @@ export interface LabImageDto {
   isPrimary: boolean;
 }
 
-export interface ResultMessage<T> {
-  success: boolean;
-  message: string;
-  data?: T;
-}
-
 export interface ApiResponse<T = unknown> {
   success: boolean;
   message: string;

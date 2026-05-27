@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { buildingApi } from "../../building/api/buildingApi";
 import { labroomApi } from "../../labroom/api/labroom.api";
 import { slotApi } from "../../slot/api/slotApi";
-import { useBookingRequests } from "../hooks/useBookingRequest";
+import { QUERY_KEYS, useBookingRequests } from "../hooks/useBookingRequest";
 import BookingTimelineCanvas, { normalizeDateKey, getMinutesFrom0700 } from "./BookingTimelineCanvas";
 import RequestDetailsPanel from "./RequestDetailsPanel";
 import ApproveBookingModal from "./ApproveBookingModal";
@@ -25,8 +25,13 @@ import { ReportStatCard } from "../../../components/ui/ComponentsParts";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { Role } from "../../../constants/role";
 
+import { useSignalRListener } from '../../../hooks/useSignalRListener';
+
+import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from '../../../hooks/useToast';
+
 type SlotTypeFilter = "ALL" | number;
-type PriorityFilter = "ALL" | "SCHOOL EVENT" | "ACADEMIC" | "NORMAL";
+type PriorityFilter = "ALL" | "WORKSHOP" | "PRACTICAL" | "LECTURE";
 
 type TimelineStats = {
   totalPending: number;
@@ -103,6 +108,9 @@ export default function UpcomingRequestTimelinePage() {
   const weekStart = useMemo(() => getWeekStart(selectedDate), [selectedDate]);
   const weekEnd = useMemo(() => getWeekEnd(selectedDate), [selectedDate]);
 
+  const appAlert = useToast();
+  const queryClient = useQueryClient();
+
   useEffect(() => {
     setPage(1);
   }, [q, buildingId, roomId, slotType, selectedDate]);
@@ -175,13 +183,13 @@ export default function UpcomingRequestTimelinePage() {
     if (!selectedBooking) return false;
 
     // Get priority level of selected booking
-    const getPriorityLevel = (purpose?: string) => {
+    function getPriorityLevel(purpose?: string) {
       const text = String(purpose ?? "").toUpperCase();
-      if (text.includes("SCHOOL EVENT")) return 3;
-      if (text.includes("ACADEMIC")) return 2;
-      if (text.includes("NORMAL")) return 1;
-      return 0;
-    };
+      if (text.includes("SCHOOL EVENT")) return 4;
+      if (text.includes("ACADEMIC")) return 3;
+      if (text.includes("NORMAL")) return 2;
+      return 1;
+    }
 
     const selectedPriority = getPriorityLevel(selectedBooking.purpose);
 
@@ -223,9 +231,9 @@ export default function UpcomingRequestTimelinePage() {
     return {
       totalPending: totalCount,
       conflictCount: Math.floor(totalCount / 4),
-      schoolEventCount: countByPurpose("school event"),
-      academicCount: countByPurpose("academic"),
-      normalCount: countByPurpose("normal"),
+      schoolEventCount: countByPurpose("SCHOOL EVENT"),
+      academicCount: countByPurpose("ACADEMIC"),
+      normalCount: countByPurpose("NORMAL"),
     };
   }, [items, totalCount]);
 
@@ -296,6 +304,26 @@ export default function UpcomingRequestTimelinePage() {
     });
   };
 
+  useSignalRListener("booking.new", async (payload: any) => {
+    console.log("Received calendar.statusUpdated event with payload:", payload);
+    const isCurrentRoom = roomOptions.some(room => String(room.id) === String(payload.labRoomId));
+    if (!isCurrentRoom) return; // Nếu sự kiện không liên quan đến phòng đang xem, bỏ qua
+
+    // Trong lúc này UI sẽ mượt hơn vì Booking cũ đã biến mất
+    const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+    await delay(1800);
+
+    // 3. REFETCH cưỡng chế cho Schedules
+    // Sử dụng refetch thay vì invalidate để đảm bảo nó gọi API ngay lập tức
+    await queryClient.refetchQueries({
+      predicate: (query) =>
+        query.queryKey[0] === QUERY_KEYS.BOOKING_REQUESTS,
+      type: 'active' // Chỉ fetch lại những gì đang hiện trên màn hình
+    });
+
+    appAlert.success("Cập nhật", "Upcoming requests đã được đồng bộ mới nhất.");
+  });
+
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800/50">
@@ -332,9 +360,9 @@ export default function UpcomingRequestTimelinePage() {
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <ReportStatCard label="School Event" value={stats.schoolEventCount} color="rose" />
-          <ReportStatCard label="Academic" value={stats.academicCount} color="amber" />
-          <ReportStatCard label="Normal" value={stats.normalCount} color="emerald" />
+          <ReportStatCard label="School Event" value={stats.schoolEventCount} color="amber" />
+          <ReportStatCard label="Academic" value={stats.academicCount} color="emerald" />
+          <ReportStatCard label="Normal" value={stats.normalCount} color="blue" />
           <ReportStatCard label="Visible" value={visibleItems.length} color="purple" />
         </div>
       </div>
@@ -382,7 +410,7 @@ export default function UpcomingRequestTimelinePage() {
                 <span className="rounded-full bg-violet-100 px-2 py-1 text-[11px] font-semibold text-violet-700 dark:bg-violet-500/10 dark:text-violet-300">Timeline</span>
               </div>
               <div className="space-y-2.5 text-xs">
-                {[["School Event", "bg-rose-500"], ["Academic", "bg-amber-500"], ["Normal", "bg-emerald-500"]].map(([label, color]) => (
+                {[["SCHOOL EVENT", "bg-rose-500"], ["ACADEMIC", "bg-amber-500"], ["NORMAL", "bg-sky-500"]].map(([label, color]) => (
                   <div key={label} className="flex items-center gap-2.5">
                     <span className={`h-2.5 w-2.5 rounded-full ${color}`} />
                     <span className="text-gray-700 dark:text-gray-300">{label}</span>

@@ -19,6 +19,7 @@ import { useToast } from '../../../hooks/useToast';
 import type { SlotType } from '../../slot/types/slot.types';
 import { useSignalRListener } from '../../../hooks/useSignalRListener';
 import { useQueryClient } from '@tanstack/react-query';
+import { useAuthStore } from '../../../store/useAuthStore';
 
 interface DragState {
   isActive: boolean;
@@ -39,6 +40,11 @@ export interface WeeklyCalendarProps {
   weekOffset?: number;
   onWeekChange: (offset: number) => void;
   slotTypes: SlotType[];
+  highlightRange?: {
+    date: string;
+    startTime: string;
+    endTime: string;
+  };
 }
 
 /**
@@ -54,8 +60,10 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   onSlotTypeChange,
   weekOffset = 0,
   onWeekChange,
-  slotTypes
+  slotTypes,
+  highlightRange,
 }) => {
+  const { user } = useAuthStore();
   const appAlert = useToast();
   const { CELL_HEIGHT, START_HOUR, END_HOUR } = CALENDAR_CONFIG;
   const [dragState, setDragState] = useState<DragState>({
@@ -108,7 +116,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     // 2. ĐỢI 1 KHOẢNG NGẮN (Ví dụ 1s) để Backend xử lý xong MediatR Event (tạo Schedule)
     // Trong lúc này UI sẽ mượt hơn vì Booking cũ đã biến mất
     const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
-    await delay(1000);
+    await delay(1800);
 
     // 3. REFETCH cưỡng chế cho Schedules
     // Sử dụng refetch thay vì invalidate để đảm bảo nó gọi API ngay lập tức
@@ -119,8 +127,36 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
       type: 'active' // Chỉ fetch lại những gì đang hiện trên màn hình
     });
 
-    appAlert.success("Cập nhật", "Lịch phòng đã được đồng bộ mới nhất.");
+    appAlert.success("Cập nhật", "Lịch phòng vừa được cập nhật, đồng bộ mới nhất.");
   });
+
+  useSignalRListener("booking.new", async (payload: any) => {
+    if (user?.id == payload.publisherId) return; // Nếu sự kiện không liên quan đến booking của mình, bỏ qua
+    // 1. XÓA NGAY LẬP TỨC cache của Bookings
+    // Vì chắc chắn cái Booking này không còn là "Pending", xóa đi để UI không hiện nó nữa
+    queryClient.removeQueries({
+      predicate: (query) =>
+        query.queryKey[0] === "bookings" &&
+        (query.queryKey[1] as any)?.labRoomId === payload.labRoomId
+    });
+
+    // 2. ĐỢI 1 KHOẢNG NGẮN (Ví dụ 1s) để Backend xử lý xong MediatR Event (tạo Schedule)
+    // Trong lúc này UI sẽ mượt hơn vì Booking cũ đã biến mất
+    const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+    await delay(1800);
+
+    // 3. REFETCH cưỡng chế cho Schedules
+    // Sử dụng refetch thay vì invalidate để đảm bảo nó gọi API ngay lập tức
+    await queryClient.refetchQueries({
+      predicate: (query) =>
+        query.queryKey[0] === "schedules" &&
+        (query.queryKey[1] as any)?.labRoomId === payload.labRoomId,
+      type: 'active' // Chỉ fetch lại những gì đang hiện trên màn hình
+    });
+
+    appAlert.success("Cập nhật", "Phòng vừa có thêm 1 booking mới, lịch phòng đã được đồng bộ mới nhất.");
+  });
+
   const gridRef = useRef<HTMLDivElement>(null);
 
   // Generate time slots (7:00 AM - 10:00 PM, hourly display only)
@@ -333,6 +369,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
               dragState={dragState}
               events={events}
               handleMouseDown={handleMouseDown}
+              highlightRange={highlightRange}
             />
           ) : // OldSlot Mode: Show fixed slots (slot 1, slot 2, etc.)
             currentSlotType !== undefined ? (
@@ -345,6 +382,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                 minBookingLeadTime={minBookingLeadTime}
                 maxBookingAdvance={maxBookingAdvance}
                 maxConcurrent={maxConcurrentBookings}
+                highlightRange={highlightRange}
               />
             ) : null}
         </div>

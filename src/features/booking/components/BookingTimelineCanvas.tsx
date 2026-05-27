@@ -98,30 +98,30 @@ function getLocalTimeLabel(timeString?: string) {
 
 export function getMinutesFrom0700(timeString?: string) {
   if (!timeString) return 0;
-  
+
   const localTimeStr = getLocalTimeLabel(timeString);
   const match = localTimeStr.match(/(\d{1,2}):(\d{2})/);
   if (!match) return 0;
 
   const hour = Number(match[1]);
   const minute = Number(match[2]);
-  
+
   return (hour - START_HOUR) * 60 + minute;
 }
 
 function getVisualBounds(booking: BookingRequest) {
   let startMinutes = getMinutesFrom0700(booking.startTime);
   let endMinutes = getMinutesFrom0700(booking.endTime);
-  
+
   // Clamp to 7h - 22h boundaries
   startMinutes = Math.max(0, Math.min(startMinutes, TOTAL_MINUTES));
   endMinutes = Math.max(0, Math.min(endMinutes, TOTAL_MINUTES));
-  
+
   const duration = Math.max(15, endMinutes - startMinutes);
-  
+
   const leftPercent = (startMinutes / TOTAL_MINUTES) * 100;
   const widthPercent = Math.max((duration / TOTAL_MINUTES) * 100, 12); // Minimum 12% width to show text
-  
+
   return { left: leftPercent, right: leftPercent + widthPercent };
 }
 
@@ -147,10 +147,10 @@ function stackBookingsVisually(bookings: BookingRequest[]) {
 
 function clusterHiddenBookings(bookings: BookingRequest[]) {
   if (bookings.length === 0) return [];
-  
+
   const sorted = [...bookings].sort((a, b) => getVisualBounds(a).left - getVisualBounds(b).left);
   const clusters: { count: number; left: number; right: number }[] = [];
-  
+
   sorted.forEach(booking => {
     const bounds = getVisualBounds(booking);
     if (clusters.length === 0) {
@@ -165,16 +165,16 @@ function clusterHiddenBookings(bookings: BookingRequest[]) {
       }
     }
   });
-  
+
   return clusters;
 }
 
 function getPriorityLevel(purpose?: string) {
   const text = String(purpose ?? "").toUpperCase();
-  if (text.includes("SCHOOL EVENT")) return 3;
-  if (text.includes("ACADEMIC")) return 2;
-  if (text.includes("NORMAL")) return 1;
-  return 0;
+  if (text.includes("SCHOOL EVENT")) return 4;
+  if (text.includes("ACADEMIC")) return 3;
+  if (text.includes("NORMAL")) return 2;
+  return 1;
 }
 
 function getBookingTone(booking: BookingRequest) {
@@ -230,25 +230,25 @@ function BookingBlock({
   isLocked?: boolean;
 }) {
   const tone = getBookingTone(booking);
-  
+
   let startMinutes = getMinutesFrom0700(booking.startTime);
   let endMinutes = getMinutesFrom0700(booking.endTime);
-  
+
   startMinutes = Math.max(0, Math.min(startMinutes, TOTAL_MINUTES));
   endMinutes = Math.max(0, Math.min(endMinutes, TOTAL_MINUTES));
-  
+
   const durationMinutes = Math.max(15, endMinutes - startMinutes);
-  
+
   const leftPercent = (startMinutes / TOTAL_MINUTES) * 100;
   const widthPercent = Math.max((durationMinutes / TOTAL_MINUTES) * 100, 12);
-  
+
   const conflictTone = isConflict
     ? "border-red-400 bg-[repeating-linear-gradient(135deg,rgba(248,113,113,0.1),rgba(248,113,113,0.1)_8px,transparent_8px,transparent_16px)]"
     : "";
 
   const timeLabel = `${getLocalTimeLabel(booking.startTime)} - ${getLocalTimeLabel(booking.endTime)}`;
   const requesterName = booking.requester?.fullName || booking.requestedBy || "Unknown User";
-  
+
   let tooltip = `${requesterName}\n${timeLabel}\nPurpose: ${booking.purpose || "N/A"}`;
   if (isLocked) {
     tooltip = `LOCKED: Higher priority bookings exist in this room.\n\n${tooltip}`;
@@ -259,17 +259,17 @@ function BookingBlock({
       type="button"
       onClick={onClick}
       title={tooltip}
-      style={{ 
-        left: `${leftPercent}%`, 
-        width: `${widthPercent}%`, 
-        top: `${top}px`, 
+      style={{
+        left: `${leftPercent}%`,
+        width: `${widthPercent}%`,
+        top: `${top}px`,
         height: BOOKING_ROW_HEIGHT,
         zIndex: selected ? 50 : tone.zIndex
       }}
       className={`absolute flex flex-col justify-center overflow-hidden rounded-xl border p-1.5 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${selected ? "ring-2 ring-blue-500 shadow-md scale-[1.02]" : ""} ${tone.ring} ${conflictTone}`}
     >
       <div className={`absolute left-0 top-0 h-full w-1 ${tone.accent}`} />
-      
+
       <div className="flex w-full flex-col gap-0.5 pl-2">
         <div className="truncate text-[11px] font-bold leading-tight">
           {requesterName}
@@ -340,7 +340,7 @@ export default function BookingTimelineCanvas({
       let maxRowsAcrossDays = 0;
       let hasHiddenBookingsAcrossDays = false;
       let needsCollapseButtonAcrossDays = false;
-      
+
       const daysData = timelineDays.map((day) => {
         const dayKey = normalizeDateKey(day);
         const dayBookings = lane.bookings
@@ -348,7 +348,7 @@ export default function BookingTimelineCanvas({
           .sort((a, b) => {
             const priorityDiff = getPriorityLevel(b.purpose) - getPriorityLevel(a.purpose);
             if (priorityDiff !== 0) return priorityDiff;
-            
+
             const startA = getMinutesFrom0700(a.startTime);
             const startB = getMinutesFrom0700(b.startTime);
             return startA - startB;
@@ -374,10 +374,10 @@ export default function BookingTimelineCanvas({
         });
 
         const rows = stackBookingsVisually(dayBookings);
-        
+
         const isExpanded = expandedLanes[`${lane.id}-${dayKey}`];
         const MAX_VISIBLE_ROWS = isExpanded ? rows.length : 3;
-        
+
         const visibleRows = rows.slice(0, MAX_VISIBLE_ROWS);
         const hiddenBookings = rows.slice(MAX_VISIBLE_ROWS).flat();
         const hiddenClusters = clusterHiddenBookings(hiddenBookings);
@@ -389,11 +389,11 @@ export default function BookingTimelineCanvas({
         if (isExpanded && rows.length > 3) {
           needsCollapseButtonAcrossDays = true;
         }
-        
+
         const dayMaxPriority = dayBookings.length > 0
           ? Math.max(...dayBookings.map(b => getPriorityLevel(b.purpose)))
           : 1;
-        
+
         return { day, dayKey, rows: visibleRows, hiddenClusters, conflictIds, maxPriority: dayMaxPriority, isExpanded };
       });
 
@@ -411,19 +411,19 @@ export default function BookingTimelineCanvas({
         leftRef.current.style.paddingBottom = `${scrollbarHeight}px`;
       }
     };
-    
+
     syncScrollbarSpace();
     window.addEventListener("resize", syncScrollbarSpace);
-    
+
     return () => window.removeEventListener("resize", syncScrollbarSpace);
   }, [lanesWithData]);
 
   return (
     <div className="w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800/50">
       <div className="flex w-full">
-        
+
         {/* LEFT COLUMN: Rooms */}
-        <div 
+        <div
           ref={leftRef}
           onScroll={handleLeftScroll}
           className="w-[220px] shrink-0 border-r border-gray-200 bg-white z-10 dark:border-gray-700 dark:bg-gray-900 overflow-y-auto"
@@ -435,7 +435,7 @@ export default function BookingTimelineCanvas({
               {filteredLanes.length}
             </span>
           </div>
-          
+
           {lanesWithData.length === 0 ? (
             <div className="p-6 text-center text-xs text-gray-500 dark:text-gray-400">
               No rooms.
@@ -443,9 +443,9 @@ export default function BookingTimelineCanvas({
           ) : (
             <>
               {lanesWithData.map((lane) => (
-                <div 
-                  key={lane.id} 
-                  style={{ height: lane.laneHeight }} 
+                <div
+                  key={lane.id}
+                  style={{ height: lane.laneHeight }}
                   className="flex flex-col justify-center border-b-2 border-gray-300 bg-white px-4 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:hover:bg-gray-800/80"
                 >
                   <div className="truncate text-sm font-semibold text-gray-900 dark:text-white" title={lane.name}>{lane.name}</div>
@@ -460,7 +460,7 @@ export default function BookingTimelineCanvas({
         </div>
 
         {/* RIGHT COLUMN: Timeline Viewport */}
-        <div 
+        <div
           ref={rightRef}
           onScroll={handleRightScroll}
           className="flex-1 flex overflow-x-auto overflow-y-scroll bg-gray-50/30 dark:bg-gray-900/20 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-700 relative"
@@ -471,8 +471,8 @@ export default function BookingTimelineCanvas({
             const isToday = dayKey === todayKey;
 
             return (
-              <div 
-                key={dayKey} 
+              <div
+                key={dayKey}
                 className={`relative flex flex-col shrink-0 min-w-full border-gray-200/80 dark:border-gray-700/80 ${dayIndex < 6 ? 'border-r' : ''}`}
               >
                 {/* Day Header */}
@@ -485,16 +485,16 @@ export default function BookingTimelineCanvas({
                       </span>
                     )}
                   </div>
-                  
+
                   {/* Padded marker area */}
                   <div className="relative mt-1 h-4 w-full text-[10px] font-medium text-gray-500 dark:text-gray-400">
                     <div className="absolute inset-x-2">
                       {TIME_MARKERS.map((hour) => {
                         const markerLeftPercent = ((hour - START_HOUR) * 60 / TOTAL_MINUTES) * 100;
                         return (
-                          <div 
-                            key={hour} 
-                            style={{ left: `${markerLeftPercent}%` }} 
+                          <div
+                            key={hour}
+                            style={{ left: `${markerLeftPercent}%` }}
                             className="absolute top-0 -translate-x-1/2 whitespace-nowrap hover:text-gray-900 hover:font-bold dark:hover:text-gray-200 transition-colors"
                           >
                             {formatHourLabel(hour)}
@@ -511,22 +511,22 @@ export default function BookingTimelineCanvas({
                   if (!dayData) return null;
 
                   return (
-                    <div 
-                      key={`${lane.id}-${dayKey}`} 
-                      style={{ height: lane.laneHeight }} 
-                      className={`relative shrink-0 border-b-2 border-gray-300 transition-colors dark:border-gray-600 hover:bg-gray-100/40 dark:hover:bg-gray-800/40 ${isToday ? 'bg-blue-50/10 dark:bg-blue-900/5' : ''}`}
+                    <div
+                      key={`${lane.id}-${dayKey}`}
+                      style={{ height: lane.laneHeight }}
+                      className={`relative border-b-2 border-gray-300 transition-colors dark:border-gray-600 hover:bg-gray-100/40 dark:hover:bg-gray-800/40 ${isToday ? 'bg-blue-50/10 dark:bg-blue-900/5' : ''}`}
                     >
                       {/* Internal Padding Wrapper for breathing room */}
                       <div className="absolute inset-y-0 left-2 right-2">
-                        
+
                         {/* Vertical Grid Lines */}
                         <div className="absolute inset-0 pointer-events-none">
                           {TIME_MARKERS.map((hour) => {
                             const markerLeftPercent = ((hour - START_HOUR) * 60 / TOTAL_MINUTES) * 100;
                             return (
-                              <div 
-                                key={hour} 
-                                style={{ left: `${markerLeftPercent}%` }} 
+                              <div
+                                key={hour}
+                                style={{ left: `${markerLeftPercent}%` }}
                                 className="absolute top-0 bottom-0 border-l border-dashed border-gray-300/60 dark:border-gray-600/50"
                               />
                             );
@@ -534,7 +534,7 @@ export default function BookingTimelineCanvas({
                         </div>
 
                         {/* Bookings */}
-                        {dayData.rows.flatMap((row, rowIndex) => 
+                        {dayData.rows.flatMap((row, rowIndex) =>
                           row.map(booking => (
                             <BookingBlock
                               key={String(booking.id)}
@@ -567,7 +567,7 @@ export default function BookingTimelineCanvas({
                             +{cluster.count} more
                           </button>
                         ))}
-                        
+
                         {/* Collapse Button */}
                         {dayData.isExpanded && dayData.rows.length > 3 && (() => {
                           const allBounds = dayData.rows.flat().map(b => {
@@ -580,7 +580,7 @@ export default function BookingTimelineCanvas({
                             const w = Math.max((dur / TOTAL_MINUTES) * 100, 12);
                             return { left: l, right: l + w };
                           });
-                          
+
                           let centerPercent = 50;
                           if (allBounds.length > 0) {
                             const minL = Math.min(...allBounds.map(b => b.left));

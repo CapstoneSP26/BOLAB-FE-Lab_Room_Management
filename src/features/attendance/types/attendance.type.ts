@@ -83,6 +83,10 @@ export interface ScanQRCodeRequest {
   scheduleId: string;
   studentId: string;
   isCheckIn: boolean;
+  latitude?: number;
+  longitude?: number;
+  accuracy?: number;
+  timestamp?: string;
 }
 
 /**
@@ -91,6 +95,23 @@ export interface ScanQRCodeRequest {
 export interface ScanQRCodeResponse {
   success: boolean;
   message: string;
+  approved?: boolean;
+  denied?: boolean;
+  reason?:
+    | 'INVALID_QR'
+    | 'EXPIRED_QR'
+    | 'SESSION_NOT_ACTIVE'
+    | 'OUTSIDE_CAMPUS'
+    | 'LOW_LOCATION_ACCURACY'
+    | 'REPLAY_DETECTED'
+    | 'ALREADY_MARKED'
+    | 'TIME_WINDOW_CLOSED'
+    | 'LOCATION_PERMISSION_DENIED'
+    | 'LOCATION_UNAVAILABLE'
+    | 'MOCK_LOCATION_SUSPECTED';
+  campusDistanceMeters?: number;
+  campusRadiusMeters?: number;
+  minAccuracyMeters?: number;
 }
 
 /**
