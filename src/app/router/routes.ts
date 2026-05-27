@@ -40,6 +40,7 @@ const ManagerNotificationsPage = lazy(() => import("../../pages/labmanager/Notif
 const RoomManagementPage = lazy(() => import("../../pages/admin/RoomManagementPage.tsx"))
 const ScheduleManagementPage = lazy(() => import("../../pages/admin/ScheduleManagementPage.tsx"));
 const BuildingManagementPage = lazy(() => import("../../pages/admin/BuildingManagementPage.tsx"));
+const EmailTemplateManagementPage = lazy(() => import("../../pages/admin/EmailTemplateManagementPage.tsx"));
 
 const StudentLandingPage = lazy(() => import("../../pages/student/StudentLandingPage.tsx"));
 const StudentProfilePage = lazy(() => import("../../pages/student/StudentProfilePage.tsx"));
@@ -67,7 +68,7 @@ export const lecturerRoutes: AppRoute[] = [
   { path: "/", element: HomePage, roles: [Role.Lecturer] },
   { path: "/buildings/:id", element: BuildingDetail, roles: [Role.Lecturer] },
   { path: "/my-bookings", element: BookingHistoryPage, roles: [Role.Lecturer] },
-  { path: "/book-room", element: RoomBookingPage, roles: [Role.Lecturer] },
+  { path: "/book-room", element: RoomBookingPage, roles: [Role.Lecturer, Role.Admin] },
   { path: "/lab-room/:id", element: LabRoomDetailsPage, roles: [Role.Lecturer] },
   { path: "/attendance", element: AttendanceManagementPage, roles: [Role.Lecturer] },
   { path: "/attendance/manual/:sessionId", element: ManualAttendancePage, roles: [Role.Lecturer] },
@@ -95,6 +96,7 @@ export const managerRoutes: AppRoute[] = [
   { path: "/labmanager/slot-management", element: ScheduleManagementPage, roles: [Role.Admin] },
   { path: "/labmanager/building-management", element: BuildingManagementPage, roles: [Role.Admin] },
   { path: "/labmanager/user-management", element: UserManagementPage, roles: [Role.Admin] },
+  { path: "/labmanager/email-templates", element: EmailTemplateManagementPage, roles: [Role.Admin] },
 ];
 
 export const adminRoutes = [

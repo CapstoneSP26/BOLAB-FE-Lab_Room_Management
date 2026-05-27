@@ -26,7 +26,6 @@ interface FaceScanContainerProps {
 export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
   onFaceScanned,
   onError,
-  isLoading = false,
   onCaptureComplete,
   scheduleId,
 }) => {
@@ -47,13 +46,13 @@ export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
       try {
         setStatus('loading');
         console.log('🚀 Initializing camera and face detection...');
-        
+
         await loadModel();
         console.log('✅ Models loaded');
-        
+
         await startCamera();
         console.log('✅ Camera started');
-        
+
         clearTrackedFaces();
         setStatus('ready');
         console.log('✅ Ready for scanning');
@@ -93,7 +92,7 @@ export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
 
         // Run face-api detection
         const detectionResult = await detectFaces(canvas);
-        
+
         if (detectionCount % 10 === 0) {
           console.log(`📊 Detection #${detectionCount}:`, {
             success: detectionResult.success,

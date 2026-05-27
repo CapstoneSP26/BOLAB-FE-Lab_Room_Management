@@ -256,6 +256,14 @@ export interface ApproveBookingRequestResponse {
   data: BookingRequest;
 }
 
+export interface ApproveBookingResponse {
+  bookingId: string;
+  status: string;
+  cancelledScheduleIds: string[];
+  rejectedBookingIds: string[];
+  message: string;
+}
+
 export interface RejectBookingRequestResponse {
   data: BookingRequest;
 }

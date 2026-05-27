@@ -1,40 +1,76 @@
 /**
  * StudentLandingPage - Student Dashboard
- * Main landing page for students with access to profile and attendance scanning
+ * Friendlier timetable-first landing page for students.
  */
 
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { useEffect, useMemo, useState } from 'react';
 import {
-  QrCode, Clock, AlertCircle,
-  Calendar, Loader2, ChevronLeft, ChevronRight
-
+  AlertCircle,
+  Calendar,
+  ChevronRight,
+  Clock,
+  Loader2,
+  MapPin,
+  QrCode,
+  ScanLine,
+  Sparkles,
 } from 'lucide-react';
 import { useSchedulesStudent } from '../../features/schedules/hooks/useSchedules';
 
-// Status mapping: active = lecturer session is running, inactive = otherwise
-const STATUS_MAP: Record<number, string> = {
+const STATUS_MAP: Record<number, 'inactive' | 'active'> = {
   1: 'inactive',
   2: 'active',
   3: 'inactive',
   4: 'inactive',
 };
 
-// Format time from ISO string to HH:mm - HH:mm (UTC+7)
+type ScheduleCard = {
+  id: string;
+  subjectCode: string;
+  labRoomName: string;
+  lecturerName: string;
+  startTime: string;
+  endTime: string;
+  slotName: string;
+  status: 'inactive' | 'active' | string;
+  dayLabel: string;
+  dateKey: string;
+  dateLabel: string;
+};
+
+const WEEK_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const ITEMS_PER_PAGE = 50;
+
+const vietnamDate = (input: string | Date) => {
+  const date = input instanceof Date ? input : new Date(input);
+  return new Date(date.getTime() + 7 * 60 * 60 * 1000);
+};
+
+const formatDateKey = (date: Date) => date.toISOString().split('T')[0];
+
+const getWeekRange = (date: Date) => {
+  const start = new Date(date);
+  const day = start.getDay() === 0 ? 7 : start.getDay();
+  start.setDate(start.getDate() - day + 1);
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  end.setHours(23, 59, 59, 999);
+
+  return { start, end };
+};
+
 const formatTimeSlot = (startTime: string, endTime: string): string => {
   try {
-    const start = new Date(startTime);
-    const end = new Date(endTime);
+    const start = vietnamDate(startTime);
+    const end = vietnamDate(endTime);
 
-    // Convert to UTC+7 by adding 7 hours to milliseconds
-    const startUTC7 = new Date(start.getTime() + 7 * 60 * 60 * 1000);
-    const endUTC7 = new Date(end.getTime() + 7 * 60 * 60 * 1000);
-
-    // Use getUTC methods to get hours/minutes from UTC+7 adjusted time
-    const startHours = startUTC7.getUTCHours().toString().padStart(2, '0');
-    const startMinutes = startUTC7.getUTCMinutes().toString().padStart(2, '0');
-    const endHours = endUTC7.getUTCHours().toString().padStart(2, '0');
-    const endMinutes = endUTC7.getUTCMinutes().toString().padStart(2, '0');
+    const startHours = start.getUTCHours().toString().padStart(2, '0');
+    const startMinutes = start.getUTCMinutes().toString().padStart(2, '0');
+    const endHours = end.getUTCHours().toString().padStart(2, '0');
+    const endMinutes = end.getUTCMinutes().toString().padStart(2, '0');
 
     return `${startHours}:${startMinutes} - ${endHours}:${endMinutes}`;
   } catch {
@@ -42,240 +78,311 @@ const formatTimeSlot = (startTime: string, endTime: string): string => {
   }
 };
 
-// Transform raw API data to match ScheduleDto structure
-const transformScheduleData = (data: any) => ({
-  ...data,
-  status: STATUS_MAP[data.status] || data.status,
-  slotName: formatTimeSlot(data.startTime, data.endTime),
-});
+const formatDayLabel = (date: Date) =>
+  date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+
+const formatWeekRangeLabel = (start: Date, end: Date) =>
+  `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  })}`;
+
+const transformScheduleData = (data: any): ScheduleCard => {
+  const start = vietnamDate(data.startTime);
+  const dateKey = formatDateKey(start);
+
+  return {
+    id: data.id,
+    subjectCode: data.subjectCode,
+    labRoomName: data.labRoomName,
+    lecturerName: data.lecturerName,
+    startTime: data.startTime,
+    endTime: data.endTime,
+    slotName: formatTimeSlot(data.startTime, data.endTime),
+    status: STATUS_MAP[data.status] || data.status,
+    dayLabel: WEEK_DAYS[start.getUTCDay() === 0 ? 6 : start.getUTCDay() - 1],
+    dateKey,
+    dateLabel: formatDayLabel(start),
+  };
+};
 
 export default function StudentLandingPage() {
   const navigate = useNavigate();
-  const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 10;
+  const [weekOffset, setWeekOffset] = useState(0);
 
-  // Fetch today's schedules from /api/schedules/schedule-student
-  // Get today's date in UTC+7 (Vietnam timezone)
-  const today = new Date(new Date().getTime() + 7 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const currentDate = vietnamDate(new Date());
+  const baseWeek = getWeekRange(currentDate);
+  const weekStart = new Date(baseWeek.start);
+  weekStart.setDate(baseWeek.start.getDate() + weekOffset * 7);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  weekEnd.setHours(23, 59, 59, 999);
+  const today = formatDateKey(currentDate);
+  const weekStartKey = formatDateKey(weekStart);
+  const weekEndKey = formatDateKey(weekEnd);
+  const weekRangeLabel = formatWeekRangeLabel(weekStart, weekEnd);
+
   const { data: scheduleResponse, isLoading: classesLoading, error: classesError } = useSchedulesStudent({
-    fromDate: today,
-    toDate: today,
-    pageNumber: currentPage,
+    fromDate: weekStartKey,
+    toDate: weekEndKey,
+    pageNumber: 1,
     pageSize: ITEMS_PER_PAGE,
   });
 
-  // Transform raw API data to match ScheduleDto structure
-  const upcomingClasses = useMemo(() => {
+  const schedules = useMemo(() => {
     const items = scheduleResponse?.items || [];
-    return items.map(transformScheduleData);
+    return items.map(transformScheduleData).sort((a, b) => a.startTime.localeCompare(b.startTime));
   }, [scheduleResponse]);
 
-  // Fallback pagination: if backend returns more than pageSize items, paginate safely on client.
-  const serverPageSize = scheduleResponse?.pageSize ?? ITEMS_PER_PAGE;
-  const isServerPaginationBroken =
-    !!scheduleResponse && upcomingClasses.length > serverPageSize;
+  const groupedByDate = useMemo(() => {
+    return schedules.reduce<Record<string, ScheduleCard[]>>((acc, item) => {
+      acc[item.dateKey] ??= [];
+      acc[item.dateKey].push(item);
+      return acc;
+    }, {});
+  }, [schedules]);
 
-  const totalClasses = isServerPaginationBroken
-    ? upcomingClasses.length
-    : scheduleResponse?.totalCount ?? upcomingClasses.length;
+  const todaySchedules = useMemo(
+    () => schedules.filter((item) => item.dateKey === today),
+    [schedules, today],
+  );
 
-  const totalPages = isServerPaginationBroken
-    ? Math.max(1, Math.ceil(totalClasses / ITEMS_PER_PAGE))
-    : Math.max(1, scheduleResponse?.totalPages ?? 1);
+  const weekDays = useMemo(() => {
+    const days = Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(weekStart);
+      date.setDate(weekStart.getDate() + index);
+      const dateKey = formatDateKey(date);
 
-  const paginatedClasses = useMemo(() => {
-    if (!isServerPaginationBroken) {
-      return upcomingClasses;
-    }
+      return {
+        dateKey,
+        dayLabel: WEEK_DAYS[index],
+        dateLabel: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        classes: groupedByDate[dateKey] ?? [],
+      };
+    });
 
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    const end = start + ITEMS_PER_PAGE;
-    return upcomingClasses.slice(start, end);
-  }, [upcomingClasses, isServerPaginationBroken, currentPage]);
+    return days;
+  }, [groupedByDate, weekStart]);
 
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
+  const ongoingClass = useMemo(
+    () =>
+      todaySchedules.find((item) => item.status === 'active') ??
+      schedules.find((item) => item.status === 'active'),
+    [todaySchedules, schedules],
+  );
+
+  const nextClass = useMemo(
+    () =>
+      todaySchedules.find((item) => item.status !== 'active') ??
+      schedules.find((item) => item.status !== 'active'),
+    [todaySchedules, schedules],
+  );
 
   const handleScanQRFromClass = (scheduleId: string) => {
     navigate(`/student/scan-attendance/${scheduleId}`);
   };
 
-  const getStatusColor = (status: string) => {
-    if (status === 'active') return 'bg-emerald-50 border-emerald-200 text-emerald-700'; // green for active session
-    if (status === 'inactive') return 'bg-blue-50 border-blue-200 text-blue-700'; // blue for scheduled
-    return 'bg-slate-50 border-slate-200 text-slate-700';
-  };
-
-  const getStatusBadge = (status: string) => {
-    if (status === 'active') return <AlertCircle className="w-4 h-4" />; // actively in session
-    if (status === 'inactive') return <Clock className="w-4 h-4" />; // waiting
-    return null;
-  };
-
-  const getStatusLabel = (status: string) => {
-    if (status === 'active') return 'Ongoing';
-    if (status === 'inactive') return 'Scheduled';
-    return status;
-  };
-
   const isOngoing = (status: string) => status === 'active';
 
+  const statusMeta = (status: string) => {
+    if (status === 'active') {
+      return {
+        label: 'Ongoing',
+        icon: <ScanLine className="w-4 h-4" />,
+        className: 'bg-emerald-50 border-emerald-200 text-emerald-700',
+      };
+    }
+
+    return {
+      label: 'Upcoming',
+      icon: <Clock className="w-4 h-4" />,
+      className: 'bg-blue-50 border-blue-200 text-blue-700',
+    };
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-white">
       <div className="w-full px-4 md:max-w-7xl md:mx-auto py-4 md:py-8 space-y-4 md:space-y-8">
-        {/* Today's Classes - Table Format */}
-        <div className="bg-white rounded-xl md:rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
-          <div className="px-4 md:px-8 py-4 md:py-6 border-b border-slate-100">
-            <div className="flex items-center justify-between">
+        <section className="flex flex-col gap-3 rounded-3xl bg-slate-900 px-5 py-5 text-white shadow-2xl md:flex-row md:items-center md:justify-between md:px-8">
+          <div>
+            <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-blue-100 backdrop-blur">
+              <Sparkles className="h-3.5 w-3.5" />
+              Weekly timetable
+            </p>
+            <h1 className="mt-3 text-2xl font-bold md:text-4xl">Your classes this week</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-200 md:text-base">
+              Open this page, see every class in the current week, and jump straight into the next action without digging through a long table.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 md:min-w-[320px]">
+            <div className="rounded-2xl bg-white/10 p-4 backdrop-blur">
+              <p className="text-xs uppercase tracking-wide text-slate-300">Today</p>
+              <p className="mt-2 text-2xl font-semibold">{todaySchedules.length}</p>
+              <p className="text-xs text-slate-300">classes scheduled</p>
+            </div>
+            <div className="rounded-2xl bg-emerald-500/15 p-4 backdrop-blur">
+              <p className="text-xs uppercase tracking-wide text-emerald-200">Action now</p>
+              <p className="mt-2 text-2xl font-semibold">{ongoingClass ? 'Scan' : 'Wait'}</p>
+              <p className="text-xs text-emerald-100">one tap attendance</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-3xl bg-white shadow-lg ring-1 ring-slate-200/70 overflow-hidden">
+          <div className="border-b border-slate-100 px-4 py-4 md:px-6 md:py-5">
+            <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg md:text-2xl font-bold text-slate-900">Today's Classes</h2>
-                <p className="text-xs md:text-sm text-slate-500 mt-1">Your schedule for today</p>
+                <h2 className="text-lg font-bold text-slate-900 md:text-2xl">Weekly timetable</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  A week view that makes it easy to see where you need to be today, tomorrow, and later in the week.
+                </p>
               </div>
-              <Calendar className="w-5 h-5 md:w-6 md:h-6 text-slate-400" />
+              <div className="flex items-center gap-2 rounded-full bg-slate-50 px-3 py-2 text-xs text-slate-600 md:text-sm">
+                <MapPin className="h-4 w-4" />
+                Week {weekOffset === 0 ? 'this' : weekOffset > 0 ? `+${weekOffset}` : weekOffset} • {weekRangeLabel}
+              </div>
             </div>
           </div>
 
           {classesLoading ? (
-            <div className="px-4 md:px-8 py-12 text-center">
-              <Loader2 className="w-8 h-8 animate-spin text-slate-400 mx-auto mb-3" />
-              <p className="text-slate-500 text-sm">Loading your schedule...</p>
+            <div className="px-6 py-16 text-center">
+              <Loader2 className="mx-auto mb-3 h-9 w-9 animate-spin text-slate-400" />
+              <p className="text-sm text-slate-500">Loading your timetable...</p>
             </div>
           ) : classesError ? (
-            <div className="px-4 md:px-8 py-12 text-center text-red-600">
-              <AlertCircle className="w-8 h-8 mx-auto mb-3" />
-              <p className="text-sm">Failed to load schedule</p>
+            <div className="px-6 py-16 text-center text-red-600">
+              <AlertCircle className="mx-auto mb-3 h-9 w-9" />
+              <p className="text-sm font-medium">Failed to load schedule</p>
+              <p className="mt-1 text-sm text-red-500">Please try again in a moment.</p>
             </div>
-          ) : paginatedClasses.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50">
-                    <th className="px-4 md:px-6 py-3 font-semibold text-slate-700 text-xs md:text-sm">Subject</th>
-                    <th className="px-4 md:px-6 py-3 font-semibold text-slate-700 text-xs md:text-sm whitespace-nowrap">Time</th>
-                    <th className="hidden sm:table-cell px-4 md:px-6 py-3 font-semibold text-slate-700 text-xs md:text-sm">Room</th>
-                    <th className="hidden md:table-cell px-4 md:px-6 py-3 font-semibold text-slate-700 text-xs md:text-sm">Lecturer</th>
-                    <th className="px-4 md:px-6 py-3 font-semibold text-slate-700 text-xs md:text-sm text-center">Status</th>
-                    <th className="px-4 md:px-6 py-3 font-semibold text-slate-700 text-xs md:text-sm text-center">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {paginatedClasses.map((cls) => (
-                    <tr key={cls.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-4 md:px-6 py-4">
-                        <div className="font-semibold text-slate-900 text-xs md:text-sm">{cls.subjectCode}</div>
-                      </td>
-                      <td className="px-4 md:px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-1 text-slate-600 text-xs md:text-sm">
-                          <Clock className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" />
-                          <span>{cls.slotName}</span>
+          ) : schedules.length > 0 ? (
+            <div className="space-y-4 p-4 md:p-6">
+              <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Week view</p>
+                  <p className="text-sm font-bold text-slate-900">{weekRangeLabel}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setWeekOffset((value) => value - 1)}
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+                  >
+                    Previous week
+                  </button>
+                  <button
+                    onClick={() => setWeekOffset((value) => value + 1)}
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+                  >
+                    Next week
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-7">
+                {weekDays.map((day) => {
+                  const isToday = day.dateKey === today;
+                  const hasClasses = day.classes.length > 0;
+
+                  return (
+                    <div
+                      key={day.dateKey}
+                      className={`rounded-2xl border p-3 transition ${
+                        isToday ? 'border-blue-300 bg-blue-50/70' : 'border-slate-200 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{day.dayLabel}</p>
+                          <p className="mt-1 text-sm font-bold text-slate-900">{day.dateLabel}</p>
                         </div>
-                      </td>
-                      <td className="hidden sm:table-cell px-4 md:px-6 py-4">
-                        <div className="text-slate-600 text-xs md:text-sm">{cls.labRoomName}</div>
-                      </td>
-                      <td className="hidden md:table-cell px-4 md:px-6 py-4">
-                        <div className="text-slate-600 text-xs md:text-sm">{cls.lecturerName}</div>
-                      </td>
-                      <td className="px-4 md:px-6 py-4 text-center">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                            cls.status
-                          )}`}
-                        >
-                          {getStatusBadge(cls.status)}
-                          <span className="hidden xs:inline">{getStatusLabel(cls.status)}</span>
-                        </span>
-                      </td>
-                      <td className="px-4 md:px-6 py-4 text-center">
-                        {isOngoing(cls.status) && (
-                          <button
-                            onClick={() => handleScanQRFromClass(cls.id)}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-xs md:text-sm transition-colors flex items-center gap-1 mx-auto whitespace-nowrap"
-                          >
-                            <QrCode className="w-3 h-3 md:w-4 md:h-4" />
-                            <span className="hidden xs:inline">Scan</span>
-                          </button>
+                        {isToday && (
+                          <span className="rounded-full bg-blue-600 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">
+                            Today
+                          </span>
                         )}
-                        {cls.status === 'inactive' && (
-                          <div className="text-slate-500 text-xs">Scheduled</div>
+                      </div>
+
+                      <div className="mt-3 space-y-2">
+                        {hasClasses ? (
+                          day.classes.map((item) => {
+                            const meta = statusMeta(item.status);
+                            return (
+                              <button
+                                key={item.id}
+                                onClick={() => handleScanQRFromClass(item.id)}
+                                className={`w-full rounded-2xl border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-md ${meta.className}`}
+                              >
+                                <div className="flex items-start justify-between gap-2">
+                                  <div>
+                                    <p className="text-[11px] font-medium uppercase tracking-wide opacity-80">{item.slotName}</p>
+                                    <p className="mt-1 text-sm font-semibold text-slate-900">{item.subjectCode}</p>
+                                  </div>
+                                  <ChevronRight className="h-4 w-4 flex-shrink-0" />
+                                </div>
+                                <p className="mt-2 text-[11px] text-slate-600">{item.labRoomName}</p>
+                                {isOngoing(item.status) ? (
+                                  <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-1 text-[10px] font-semibold text-white">
+                                    <ScanLine className="h-3 w-3" />
+                                    Scan now
+                                  </p>
+                                ) : (
+                                  <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-blue-600 px-2 py-1 text-[10px] font-semibold text-white">
+                                    <Clock className="h-3 w-3" />
+                                    Upcoming
+                                  </p>
+                                )}
+                              </button>
+                            );
+                          })
+                        ) : (
+                          <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-3 py-6 text-center text-xs text-slate-500">
+                            Free day
+                          </div>
                         )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600 md:flex md:items-center md:justify-between">
+                <p>
+                  Tap a class card to scan attendance, or use the floating button for the fastest path.
+                </p>
+                <p className="mt-2 font-medium text-slate-900 md:mt-0">
+                  Focus on the class happening now, then prepare for the next one.
+                </p>
+              </div>
             </div>
           ) : (
-            <div className="px-4 md:px-8 py-12 text-center text-slate-500">
-              <Calendar className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-              <p className="text-sm md:text-base">No classes scheduled for today</p>
+            <div className="px-6 py-16 text-center text-slate-500">
+              <Calendar className="mx-auto mb-3 h-12 w-12 text-slate-300" />
+              <p className="text-base font-medium text-slate-700">You have no classes scheduled today.</p>
+              <p className="mt-1 text-sm">Enjoy your free time or check your profile for the next day&apos;s classes.</p>
             </div>
           )}
-
-          {/* Pagination Controls */}
-          {totalClasses > 0 && (
-            <div className="px-4 md:px-8 py-4 border-t border-slate-100 flex items-center justify-between">
-              <div className="text-xs md:text-sm text-slate-600">
-                Page {currentPage} of {totalPages} • {totalClasses} classes
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage <= 1}
-                  className="flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs md:text-sm"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  <span className="hidden xs:inline">Previous</span>
-                </button>
-                <button
-                  onClick={() => setCurrentPage((p) => p + 1)}
-                  disabled={currentPage >= totalPages}
-                  className="flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs md:text-sm"
-                >
-                  <span className="hidden xs:inline">Next</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Quick Tips */}
-        <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl md:rounded-2xl shadow-md border border-blue-200 p-4 md:p-8">
-          <div className="flex items-start gap-3 md:gap-4">
-            <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-600 rounded-lg md:rounded-xl flex items-center justify-center flex-shrink-0">
-              <AlertCircle className="w-5 h-5 md:w-6 md:h-6 text-white" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-base md:text-lg font-bold text-slate-900 mb-2 md:mb-3">Quick Tips for Attendance</h3>
-              <ul className="space-y-1.5 md:space-y-2 text-xs md:text-sm text-slate-700">
-                <li>• ✓ Scan the QR code displayed by your lecturer each class</li>
-                <li>• ✓ Make sure your camera is working before class starts</li>
-                <li>• ✓ Check your attendance record regularly on your profile</li>
-                <li>• ✓ Contact your lecturer if you have any attendance issues</li>
-              </ul>
-            </div>
-          </div>
-        </div>
+        </section>
       </div>
 
-      {/* Floating Action Button - Scan QR */}
       <button
         onClick={() => {
-          const ongoingClass = upcomingClasses.find(cls => isOngoing(cls.status));
           if (ongoingClass) {
             navigate(`/student/scan-attendance/${ongoingClass.id}`);
-          } else {
-            navigate(`/student/scan-attendance/general`);
+            return;
           }
+
+          if (nextClass) {
+            navigate(`/student/scan-attendance/${nextClass.id}`);
+            return;
+          }
+
+          navigate('/student/scan-attendance/general');
         }}
-        className="fixed bottom-6 right-6 md:bottom-8 md:right-8 group w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-2xl transition-all duration-300 flex items-center justify-center text-white z-40"
-        title="Scan QR Code"
+        className="fixed bottom-6 right-6 z-40 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-xl transition hover:scale-105 hover:from-blue-700 hover:to-blue-800 md:bottom-8 md:right-8 md:h-20 md:w-20"
+        title="Open attendance scanner"
       >
-        <QrCode className="w-8 h-8 md:w-10 md:h-10 group-hover:scale-110 transition-transform" />
+        <QrCode className="h-8 w-8 md:h-10 md:w-10" />
       </button>
     </div>
   );
