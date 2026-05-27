@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { X, Search, UserPlus, UserMinus, Loader2, Plus, BookOpen } from 'lucide-react';
 import type { Group, GroupMemberDto } from '../types/group.type';
 import { useSearchStudents } from '../hooks/useGroups';
+import { useToast } from '../../../hooks/useToast';
 
 interface GroupStudentsModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export const GroupStudentsModal: React.FC<GroupStudentsModalProps> = ({
   onRemoveStudent,
 }) => {
   // ── Subject tabs state ──
+  const toast = useToast();
   const [activeSubject, setActiveSubject] = useState<string | null>(null);
   const [showAddSubject, setShowAddSubject] = useState(false);
   const [newSubjectCode, setNewSubjectCode] = useState('');
@@ -106,6 +108,12 @@ export const GroupStudentsModal: React.FC<GroupStudentsModalProps> = ({
 
   const handleAddStudent = async () => {
     if (!selectedStudentId || !onAddStudent || !activeSubject) return;
+
+    // Hard check: Prevent adding if the student is already in the current subject
+    if (existingStudentIds.includes(selectedStudentId)) {
+      toast.error('Student already exists', `This student is already in the subject ${activeSubject}`);
+      return;
+    }
 
     try {
       await onAddStudent(selectedStudentId, activeSubject);
