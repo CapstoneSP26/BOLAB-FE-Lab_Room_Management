@@ -66,7 +66,7 @@ export default function AttendanceManagementPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'upcoming' | 'past' | 'all'>('all');
   const [showQRModal, setShowQRModal] = useState(false);
-  const [othersCheckinMode, setOthersCheckinMode] = useState<'qr' | 'face' | null>(null);
+  const [othersCheckinMode, setOthersCheckinMode] = useState<'menu' | 'qr' | 'face' | null>(null);
   const [isCreatingQr, setIsCreatingQr] = useState(false);
   const [isRefreshingQr, setIsRefreshingQr] = useState(false);
   const [stoppedQrBySessionId, setStoppedQrBySessionId] = useState<Record<string, boolean>>({});
@@ -205,7 +205,7 @@ export default function AttendanceManagementPage() {
       return;
     }
 
-    setOthersCheckinMode(prev => (prev ? null : 'qr'));
+    setOthersCheckinMode(prev => (prev === 'menu' ? null : 'menu'));
   };
 
   const handleOpenFaceScan = () => {

@@ -8,7 +8,7 @@ interface AttendanceActiveSessionPanelProps {
   activeDisplayBuilding: string;
   isExpired: boolean;
   isCreatingQr: boolean;
-  othersCheckinMode: 'qr' | 'face' | null;
+  othersCheckinMode: 'menu' | 'qr' | 'face' | null;
   onManualAttendance: () => void;
   onOpenOthersCheckin: () => void;
   onOpenFaceScan: () => void;
@@ -105,8 +105,8 @@ export function AttendanceActiveSessionPanel({
               Close
             </button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {othersCheckinMode !== 'face' && (
+          {othersCheckinMode === 'menu' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               <button
                 onClick={onViewQR}
                 disabled={isCreatingQr}
@@ -115,8 +115,6 @@ export function AttendanceActiveSessionPanel({
                 {isCreatingQr ? <RefreshCw className="w-5 h-5 animate-spin" /> : <QrCode className="w-5 h-5" />}
                 <span>{isCreatingQr ? 'Creating QR...' : 'QR Check-in'}</span>
               </button>
-            )}
-            {othersCheckinMode !== 'qr' && (
               <button
                 type="button"
                 onClick={onOpenFaceScan}
@@ -125,8 +123,26 @@ export function AttendanceActiveSessionPanel({
                 <Camera className="w-5 h-5" />
                 <span>FaceScan Check-in</span>
               </button>
-            )}
-          </div>
+            </div>
+          )}
+          {othersCheckinMode === 'qr' && (
+            <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-center">
+              <div className="flex items-center justify-center gap-2 text-blue-700 font-semibold">
+                <QrCode className="w-5 h-5" />
+                <span>QR Check-in selected</span>
+              </div>
+              <p className="mt-2 text-sm text-blue-700">QR session is active. FaceScan is hidden until you close or switch back.</p>
+            </div>
+          )}
+          {othersCheckinMode === 'face' && (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-center">
+              <div className="flex items-center justify-center gap-2 text-emerald-700 font-semibold">
+                <Camera className="w-5 h-5" />
+                <span>FaceScan Check-in selected</span>
+              </div>
+              <p className="mt-2 text-sm text-emerald-700">FaceScan is active. QR is hidden until you close or switch back.</p>
+            </div>
+          )}
         </div>
       )}
     </div>
