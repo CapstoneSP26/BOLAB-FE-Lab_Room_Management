@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Calendar as CalendarIcon, Building2, Info } from "lucide-react";
 import { BookingConfirmPanel } from "../../features/booking/components/BookingConfirmPanel";
 import { BookingSuccessModal } from "../../features/booking/components/BookingSuccessModal";
+import { ExclusiveWarningModal } from "../../features/booking/components/ExclusiveWarningModal";
 import { useCreateBooking } from "../../features/booking/hooks/useCreateBooking";
 import { useLabRooms } from "../../features/labroom/hooks/useLabRooms";
 import { useToast } from "../../hooks/useToast";
@@ -21,6 +22,7 @@ import { PolicyType } from "../../features/labroom";
 import { useSlotStore } from "../../store/slotStore";
 import { useNotificationStore } from "../../features/notifications/store/notificationStore";
 import { useSlotTypes } from "../../features/slot/hooks/useSlotType";
+import { useAuthStore } from "../../store/useAuthStore";
 
 /**
  * 🗓️ Room Booking Page - Google Calendar Style
@@ -53,6 +55,13 @@ const RoomBookingPage: React.FC = () => {
     null,
   );
 
+  // States quản lý dữ liệu cho Modal cảnh báo riêng biệt
+  const [showExclusiveModal, setShowExclusiveModal] = useState(false);
+  const [tempFormData, setTempFormData] = useState<any>(null);
+
+  // Fetch Current User
+  const { user } = useAuthStore();
+
   // Fetch Slot Types for dropdown & calendar rendering
   const { } = useSlotTypes(1);
   const { slotTypes } = useSlotStore();
@@ -60,7 +69,14 @@ const RoomBookingPage: React.FC = () => {
 
   // Fetch Booking Purpose
   const { data: pagedPurposes, isLoading: purposesLoading } = usePurposeTypes();
-  const purposes = useMemo(() => pagedPurposes?.items ?? [], [pagedPurposes]);
+  const purposes = useMemo(() => {
+    const sortedPurposes = pagedPurposes?.items.slice().sort((a, b) => a.id - b.id) ?? [];
+    if (user?.roles.includes("Admin")) {
+      return sortedPurposes;
+    }
+    const lecturerAllowedPurposes = sortedPurposes.filter(purpose => purpose.id != 3);
+    return lecturerAllowedPurposes;
+  }, [pagedPurposes, user]);
 
   // Fetch Buildings data
   const { data: pagedBuildings, isLoading: buildingsLoading } = useBuildings();
@@ -102,7 +118,8 @@ const RoomBookingPage: React.FC = () => {
 
   // Create Booking Hook
   const { mutate: createBooking, isPending } = useCreateBooking();
-  const handleFinalConfirm = (formData: any) => {
+
+  const executeBookingCreation = (formData: any) => {
     if (!pendingBooking) return;
 
     const currentBookingInfo = {
@@ -110,11 +127,10 @@ const RoomBookingPage: React.FC = () => {
       timeSlot: `${pendingBooking.startTime} - ${pendingBooking.endTime}`,
     };
 
-    // Tại đây mới tạo Object theo đúng kiểu CreateBookingCommand
     const command: CreateBookingCommand = {
       labRoomId: Number(selectedRoomId),
       slotTypeId: pendingBooking.slotTypeId,
-      purposeTypeId: formData.purposeId,
+      purposeTypeId: Number(formData.purposeId),
       startTime: new Date(`${pendingBooking.date}T${pendingBooking.startTime}`).toISOString(),
       endTime: new Date(`${pendingBooking.date}T${pendingBooking.endTime}`).toISOString(),
       studentCount: formData.studentCount,
@@ -125,31 +141,34 @@ const RoomBookingPage: React.FC = () => {
 
     createBooking(command, {
       onSuccess: async (data) => {
-        // 1. Lưu ID và thông tin vừa đặt
-        appAlert.success(
-          "Đặt lịch thành công!",
-          `Mã đặt chỗ của bạn là: ${data.id}`,
-        );
+        appAlert.success("Đặt lịch thành công!", `Mã đặt chỗ của bạn là: ${data.id}`);
         setLastBookingId(data.id);
         setSuccessData(currentBookingInfo);
         setWarningMessage(data.warningMessage);
 
         setPendingBooking(null);
         setShowConfirmPanel(false);
+        setShowExclusiveModal(false); // Đóng modal con
+        setTempFormData(null);
         setShowSuccessModal(true);
 
-        // Push booking-related notification immediately (without waiting polling/realtime).
         await fetchLatestByBookingId(data.id);
       },
       onError: (err: any) => {
         const backendMessage = err.response?.data?.error;
-        const message = backendMessage
-          ? backendMessage
-          : "Không thể tạo lịch đặt. Vui lòng kiểm tra lại thời gian.";
-
-        appAlert.error("Lỗi đặt lịch", message);
+        appAlert.error("Lỗi đặt lịch", backendMessage || "Không thể tạo lịch đặt.");
       },
     });
+  };
+
+  // Đánh chặn khi nhấn xác nhận trên Panel
+  const handleFinalConfirm = (formData: any) => {
+    if (Number(formData.purposeId) === 3) {
+      setTempFormData(formData);
+      setShowExclusiveModal(true); // Mở Modal bảo mật
+    } else {
+      executeBookingCreation(formData);
+    }
   };
 
   const handleCalendarDragComplete = (data: PendingBooking) => {
@@ -267,6 +286,15 @@ const RoomBookingPage: React.FC = () => {
           purposesLoading={purposesLoading}
         />
       )}
+      <ExclusiveWarningModal
+        isOpen={showExclusiveModal}
+        isLoading={isPending}
+        onClose={() => {
+          setShowExclusiveModal(false);
+          setTempFormData(null);
+        }}
+        onConfirm={() => executeBookingCreation(tempFormData)}
+      />
       {/* Modal thành công cuối cùng */}
       <BookingSuccessModal
         isOpen={showSuccessModal}
