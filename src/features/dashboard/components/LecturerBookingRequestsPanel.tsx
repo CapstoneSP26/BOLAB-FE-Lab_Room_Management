@@ -21,7 +21,7 @@ export default function LecturerBookingRequestsPanel({
             Lecturer Booking Requests
           </h3>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Each lecturer created how many booking requests today.
+            Each lecturer created how many booking requests.
           </p>
         </div>
         <div className="rounded-xl bg-brand-50 p-3 text-brand-500 dark:bg-brand-500/10 dark:text-brand-300">

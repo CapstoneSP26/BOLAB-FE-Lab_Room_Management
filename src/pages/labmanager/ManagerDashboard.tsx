@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { FileDown, Loader2 } from "lucide-react";
 import DashboardMetrics from "../../features/dashboard/components/DashboardMetrics";
 import LecturerBookingRequestsPanel from "../../features/dashboard/components/LecturerBookingRequestsPanel";
@@ -10,9 +10,10 @@ import {
   type TimeFilter,
   getDateRangeFromFilter,
 } from "../../features/dashboard/types/dashboard.type";
-import { exportDashboardPdf } from "../../features/dashboard/utils/exportDashboardPdf";
+import { exportDashboardPdfFile } from "../../features/dashboard/api/dashboardApi";
 import { LoadingFallback } from "../../components/ui/LoadingFallback";
 import { getErrorMessage } from "../../utils/error";
+import { useToast } from "../../hooks/useToast";
 
 const PERIOD_LABELS: Record<TimeFilter, string> = {
   "1d": "Today",
@@ -25,24 +26,20 @@ const PERIOD_LABELS: Record<TimeFilter, string> = {
 export default function ManagerDashboard() {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("1d");
   const [exporting, setExporting] = useState(false);
-  const dashboardRef = useRef<HTMLDivElement>(null);
+  const toast = useToast();
 
   const dateRange = getDateRangeFromFilter(timeFilter);
-  const { data, isLoading, error } = useDashboardStats(dateRange);
+  const { data, isLoading, error } = useDashboardStats(timeFilter, dateRange);
 
   const handleExportPdf = async () => {
-    if (!dashboardRef.current) return;
     setExporting(true);
     try {
-      // Give the element a stable id for the utility
-      dashboardRef.current.id = "dashboard-print-area";
-      await exportDashboardPdf({
-        elementId: "dashboard-print-area",
-        fileName: `bolab-dashboard-${timeFilter}-${dateRange.startDate}-to-${dateRange.endDate}.pdf`,
-        period: PERIOD_LABELS[timeFilter],
-      });
+      const fileName = `bolab-dashboard-${timeFilter}-${dateRange.startDate}-to-${dateRange.endDate}.pdf`;
+      await exportDashboardPdfFile(timeFilter, fileName);
+      toast.success("Export PDF", "PDF exported successfully!");
     } catch (err) {
       console.error("PDF export failed:", err);
+      toast.error("Export PDF Failed", getErrorMessage(err, "Failed to export PDF. Please try again."));
     } finally {
       setExporting(false);
     }
@@ -127,8 +124,8 @@ export default function ManagerDashboard() {
       </section>
 
       {/* ─── Printable content area ───────────────────────────────────── */}
-      <div ref={dashboardRef} className="space-y-6">
-        <DashboardMetrics stats={stats} />
+      <div className="space-y-6">
+        <DashboardMetrics stats={stats} timeFilter={timeFilter} />
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-5">
           <div className="xl:col-span-3">
