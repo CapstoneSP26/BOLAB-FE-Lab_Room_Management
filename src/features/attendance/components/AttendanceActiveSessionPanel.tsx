@@ -8,7 +8,7 @@ interface AttendanceActiveSessionPanelProps {
   activeDisplayBuilding: string;
   isExpired: boolean;
   isCreatingQr: boolean;
-  isOthersCheckinOpen: boolean;
+  othersCheckinMode: 'qr' | 'face' | null;
   onManualAttendance: () => void;
   onOpenOthersCheckin: () => void;
   onOpenFaceScan: () => void;
@@ -23,7 +23,7 @@ export function AttendanceActiveSessionPanel({
   activeDisplayBuilding,
   isExpired,
   isCreatingQr,
-  isOthersCheckinOpen,
+  othersCheckinMode,
   onManualAttendance,
   onOpenOthersCheckin,
   onOpenFaceScan,
@@ -71,11 +71,10 @@ export function AttendanceActiveSessionPanel({
 
         <button
           onClick={onOpenOthersCheckin}
-          disabled={isOthersCheckinOpen}
           className="bg-slate-50 border-2 border-slate-300 hover:border-slate-500 hover:bg-slate-100 text-slate-700 px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
         >
           <Camera className="w-5 h-5" />
-          <span>{isOthersCheckinOpen ? 'Others Checkin Open' : 'Others Checkin'}</span>
+          <span>{othersCheckinMode ? 'Others Checkin Open' : 'Others Checkin'}</span>
         </button>
       </div>
 
@@ -92,12 +91,12 @@ export function AttendanceActiveSessionPanel({
         </div>
       </div>
 
-      {isOthersCheckinOpen && (
+      {othersCheckinMode && (
         <div className="mt-4 rounded-2xl border border-slate-200 bg-white/80 p-4">
           <div className="flex items-center justify-between gap-3 mb-3">
             <div>
               <p className="text-sm font-semibold text-slate-900">Other check-in methods</p>
-              <p className="text-xs text-slate-500">Choose QR or FaceScan only when needed.</p>
+              <p className="text-xs text-slate-500">Select one method. Choosing one will hide the other.</p>
             </div>
             <button
               onClick={onOpenOthersCheckin}
@@ -107,22 +106,26 @@ export function AttendanceActiveSessionPanel({
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            <button
-              onClick={onViewQR}
-              disabled={isCreatingQr}
-              className="bg-blue-50 border border-blue-200 hover:border-blue-400 hover:bg-blue-100 text-blue-700 px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
-            >
-              {isCreatingQr ? <RefreshCw className="w-5 h-5 animate-spin" /> : <QrCode className="w-5 h-5" />}
-              <span>{isCreatingQr ? 'Creating QR...' : 'QR Check-in'}</span>
-            </button>
-            <button
-              type="button"
-              onClick={onOpenFaceScan}
-              className="bg-emerald-50 border border-emerald-200 hover:border-emerald-400 hover:bg-emerald-100 text-emerald-700 px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
-            >
-              <Camera className="w-5 h-5" />
-              <span>FaceScan Check-in</span>
-            </button>
+            {othersCheckinMode !== 'face' && (
+              <button
+                onClick={onViewQR}
+                disabled={isCreatingQr}
+                className="bg-blue-50 border border-blue-200 hover:border-blue-400 hover:bg-blue-100 text-blue-700 px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
+              >
+                {isCreatingQr ? <RefreshCw className="w-5 h-5 animate-spin" /> : <QrCode className="w-5 h-5" />}
+                <span>{isCreatingQr ? 'Creating QR...' : 'QR Check-in'}</span>
+              </button>
+            )}
+            {othersCheckinMode !== 'qr' && (
+              <button
+                type="button"
+                onClick={onOpenFaceScan}
+                className="bg-emerald-50 border border-emerald-200 hover:border-emerald-400 hover:bg-emerald-100 text-emerald-700 px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
+              >
+                <Camera className="w-5 h-5" />
+                <span>FaceScan Check-in</span>
+              </button>
+            )}
           </div>
         </div>
       )}

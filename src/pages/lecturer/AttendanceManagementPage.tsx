@@ -66,7 +66,7 @@ export default function AttendanceManagementPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'upcoming' | 'past' | 'all'>('all');
   const [showQRModal, setShowQRModal] = useState(false);
-  const [isOthersCheckinOpen, setIsOthersCheckinOpen] = useState(false);
+  const [othersCheckinMode, setOthersCheckinMode] = useState<'qr' | 'face' | null>(null);
   const [isCreatingQr, setIsCreatingQr] = useState(false);
   const [isRefreshingQr, setIsRefreshingQr] = useState(false);
   const [stoppedQrBySessionId, setStoppedQrBySessionId] = useState<Record<string, boolean>>({});
@@ -172,6 +172,7 @@ export default function AttendanceManagementPage() {
       return;
     }
 
+    setOthersCheckinMode('qr');
     setIsCreatingQr(true);
     try {
       const bookingId = state.activeBooking.bookingId;
@@ -204,7 +205,7 @@ export default function AttendanceManagementPage() {
       return;
     }
 
-    setIsOthersCheckinOpen(prev => !prev);
+    setOthersCheckinMode(prev => (prev ? null : 'qr'));
   };
 
   const handleOpenFaceScan = () => {
@@ -213,6 +214,7 @@ export default function AttendanceManagementPage() {
       return;
     }
 
+    setOthersCheckinMode('face');
     navigate(`/attendance/camera/${state.activeBooking.roomCode}`);
   };
 
@@ -280,7 +282,7 @@ export default function AttendanceManagementPage() {
           activeDisplayBuilding={activeDisplayBuilding}
           isExpired={isExpired}
           isCreatingQr={isCreatingQr}
-          isOthersCheckinOpen={isOthersCheckinOpen}
+          othersCheckinMode={othersCheckinMode}
           onManualAttendance={handleManualAttendance}
           onOpenOthersCheckin={handleOpenOthersCheckin}
           onOpenFaceScan={handleOpenFaceScan}
