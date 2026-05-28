@@ -34,7 +34,7 @@ export default function LecturerBookingRequestsPanel({
           No lecturer booking request data is available yet.
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="max-h-[380px] space-y-3 overflow-y-auto pr-2">
           {lecturers.map((lecturer, index) => (
             <div
               key={lecturer.lecturerId || `${lecturer.lecturerName}-${index}`}

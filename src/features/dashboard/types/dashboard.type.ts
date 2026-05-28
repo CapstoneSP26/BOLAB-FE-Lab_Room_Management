@@ -25,7 +25,6 @@ export function getDateRangeFromFilter(filter: TimeFilter): DateRange {
   switch (filter) {
     case "1d":
       start = new Date(now);
-      start.setDate(now.getDate() - 1);
       break;
     case "1w":
       start = new Date(now);
