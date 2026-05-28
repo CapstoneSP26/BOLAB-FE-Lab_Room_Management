@@ -20,7 +20,6 @@ import {
   isBookingUpcoming,
 } from '../../utils/date.util';
 import { AttendanceBookingCard } from '../../features/booking/components/AttendanceBookingCard';
-import { AttendanceStats } from '../../features/attendance/components/AttendanceStats';
 import { AttendanceToolbar } from '../../features/attendance/components/AttendanceToolbar';
 import { AttendanceActiveSessionPanel } from '../../features/attendance/components/AttendanceActiveSessionPanel';
 import {
@@ -235,17 +234,6 @@ export default function AttendanceManagementPage() {
     navigate(`/attendance/manual/${state.activeBooking.bookingId}`);
   };
 
-  const handleExport = async (_format: 'csv' | 'excel' | 'pdf') => {
-    if (!state.activeBooking) return;
-
-    try {
-      // Export functionality not available in current backend API
-      appAlert.warning('Export', 'Export functionality will be available in future updates');
-    } catch {
-      appAlert.error('Export failed', 'Could not export attendance file.');
-    }
-  };
-
   const activeDisplayRoom = state.activeBooking?.roomName || 'Unknown Room';
   const activeDisplayBuilding = state.activeBooking?.buildingName || 'Unknown Building';
 
@@ -263,13 +251,6 @@ export default function AttendanceManagementPage() {
               <h1 className="text-3xl font-bold text-slate-900">Attendance Management</h1>
               <p className="text-slate-600 mt-1">Track student attendance and manage active QR sessions</p>
             </div>
-            {state.activeBooking && (
-              <AttendanceStats
-                totalStudents={0}
-                presentStudents={0}
-                absentStudents={0}
-              />
-            )}
           </div>
         </div>
       </div>
@@ -287,7 +268,6 @@ export default function AttendanceManagementPage() {
           onOpenOthersCheckin={handleOpenOthersCheckin}
           onOpenFaceScan={handleOpenFaceScan}
           onViewQR={handleViewQR}
-          onExport={handleExport}
         />
 
         <AttendanceToolbar

@@ -406,7 +406,7 @@ const RoomBookingPage: React.FC = () => {
             onClick={handleOpenSearchModal}
             className="mx-3 mt-4 px-4 py-3 rounded-xl border border-orange-300 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold shadow-md hover:shadow-lg hover:from-orange-600 hover:to-orange-700 transition-all"
           >
-            Tìm khoảng trống nhanh
+            Find Available Slot
           </button>
 
           {/* Instructions - Inside sidebar */}

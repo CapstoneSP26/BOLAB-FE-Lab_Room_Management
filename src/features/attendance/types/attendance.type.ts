@@ -7,9 +7,10 @@
 import type { ScheduleStatus } from '../../schedules/types/schedule.type';
 
 /**
- * Booking Status - uses ScheduleStatus values
+ * Booking Status
+ * Normalized for UI so we can display both backend states and derived states.
  */
-export type BookingStatus = ScheduleStatus;
+export type BookingStatus = ScheduleStatus | 'Available' | 'Done';
 
 /**
  * Attendance Status

@@ -1,4 +1,4 @@
-import { Camera, Download, QrCode, RefreshCw, UserCheck } from 'lucide-react';
+import { Camera, QrCode, RefreshCw, UserCheck } from 'lucide-react';
 import type { BookingWithQR } from '../types/attendance.type';
 
 interface AttendanceActiveSessionPanelProps {
@@ -13,7 +13,6 @@ interface AttendanceActiveSessionPanelProps {
   onOpenOthersCheckin: () => void;
   onOpenFaceScan: () => void;
   onViewQR: () => void;
-  onExport: (format: 'csv' | 'excel' | 'pdf') => void;
 }
 
 export function AttendanceActiveSessionPanel({
@@ -28,7 +27,6 @@ export function AttendanceActiveSessionPanel({
   onOpenOthersCheckin,
   onOpenFaceScan,
   onViewQR,
-  onExport: _onExport,
 }: AttendanceActiveSessionPanelProps) {
   if (!actionBooking) return null;
 
@@ -76,19 +74,6 @@ export function AttendanceActiveSessionPanel({
           <Camera className="w-5 h-5" />
           <span>{othersCheckinMode ? 'Others Checkin Open' : 'Others Checkin'}</span>
         </button>
-      </div>
-
-      <div className="relative group mt-3">
-        <button className="w-full bg-slate-50 border-2 border-slate-300 hover:border-slate-500 hover:bg-slate-100 text-slate-700 px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2">
-          <Download className="w-5 h-5" />
-          <span>Export Attendance</span>
-        </button>
-
-        <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
-          <button onClick={() => _onExport('csv')} className="w-full text-left px-4 py-3 hover:bg-slate-50 rounded-t-xl text-slate-700 font-medium text-sm transition-colors">Export as CSV</button>
-          <button onClick={() => _onExport('excel')} className="w-full text-left px-4 py-3 hover:bg-slate-50 text-slate-700 font-medium text-sm transition-colors">Export as Excel</button>
-          <button onClick={() => _onExport('pdf')} className="w-full text-left px-4 py-3 hover:bg-slate-50 rounded-b-xl text-slate-700 font-medium text-sm transition-colors">Export as PDF</button>
-        </div>
       </div>
 
       {othersCheckinMode && (

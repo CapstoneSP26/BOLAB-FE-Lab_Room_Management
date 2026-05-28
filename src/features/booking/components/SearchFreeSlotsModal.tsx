@@ -1,5 +1,5 @@
 import React from 'react';
-import { CalendarDays, Clock, MapPin, X, Building2 } from 'lucide-react';
+import { CalendarDays, Clock, MapPin, X, Building2, Sparkles, RotateCcw, Search } from 'lucide-react';
 import { BuildingSelector } from '../../building/components/BuildingSelector';
 import { RoomSelector } from '../../labroom/components/RoomSelector';
 import { useLabRooms } from '../../labroom/hooks/useLabRooms';
@@ -126,6 +126,14 @@ export const SearchFreeSlotsModal: React.FC<SearchFreeSlotsModalProps> = ({
     setSearchRoomId(initialRoomId ?? '');
   }, [initialRoomId, isOpen]);
 
+  const resetQuickSearch = () => {
+    onChangeStartDay('');
+    onChangeEndDay('');
+    onChangeStartTime('');
+    onChangeEndTime('');
+    onChangeDuration('');
+  };
+
   const filteredRooms = React.useMemo(() => {
     if (!searchBuildingId) return rooms;
     return rooms.filter((room) => String(room.buildingId) === searchBuildingId);
@@ -146,14 +154,18 @@ export const SearchFreeSlotsModal: React.FC<SearchFreeSlotsModalProps> = ({
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-scale-in max-h-[90vh] flex flex-col">
-        <div className="px-6 py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white flex items-center justify-between shrink-0">
-          <div>
-            <h3 className="text-xl font-bold">Tìm khoảng trống</h3>
-            <p className="text-sm text-white/90">Nhập khoảng ngày và giờ để tìm slot trống</p>
+      <div className="relative bg-white w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden animate-scale-in max-h-[92vh] flex flex-col border border-orange-100">
+        <div className="px-6 py-5 bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500 text-white flex items-start justify-between gap-4 shrink-0">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold tracking-wide uppercase">
+              <Sparkles className="w-3.5 h-3.5" />
+              Quick slot search
+            </div>
+            <h3 className="text-2xl font-bold leading-tight">Find Available Slot</h3>
+            <p className="text-sm text-white/90 max-w-xl">Pick a time range, then narrow down by building and room. You can search fast without filling every field first.</p>
           </div>
-          <button onClick={onClose} className="text-white/90 hover:text-white transition-colors">
-            <X className="w-6 h-6" />
+          <button onClick={onClose} className="rounded-full bg-white/10 p-2 text-white/90 hover:bg-white/20 hover:text-white transition-colors">
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -164,159 +176,180 @@ export const SearchFreeSlotsModal: React.FC<SearchFreeSlotsModalProps> = ({
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Start Day *</label>
-              <input type="date" value={searchStartDay} onChange={(e) => onChangeStartDay(e.target.value)} className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400" />
+          <div className="rounded-2xl border border-orange-100 bg-gradient-to-br from-orange-50 to-white p-4 space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-bold text-gray-900">Time range</p>
+                <p className="text-xs text-gray-500">Set the start and end time for your search</p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const today = new Date().toISOString().slice(0, 10);
+                    onChangeStartDay(today);
+                    onChangeEndDay(today);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-orange-200 bg-white px-3 py-1.5 text-xs font-semibold text-orange-700 hover:bg-orange-50"
+                >
+                  <CalendarDays className="w-3.5 h-3.5" />
+                  Today
+                </button>
+                <button
+                  type="button"
+                  onClick={resetQuickSearch}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  Reset
+                </button>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">End Day *</label>
-              <input type="date" value={searchEndDay} onChange={(e) => onChangeEndDay(e.target.value)} className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400" />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Start Time</label>
-              <input type="time" value={searchStartTime} onChange={(e) => onChangeStartTime(e.target.value)} className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400" />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">End Time</label>
-              <input
-                type="time"
-                value={searchEndTime}
-                onChange={(e) => onChangeEndTime(e.target.value)}
-                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Duration</label>
-              <div className="flex items-center gap-2">
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Start Day *</label>
+                <input type="date" value={searchStartDay} onChange={(e) => onChangeStartDay(e.target.value)} className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">End Day *</label>
+                <input type="date" value={searchEndDay} onChange={(e) => onChangeEndDay(e.target.value)} className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Start Time</label>
+                <input type="time" value={searchStartTime} onChange={(e) => onChangeStartTime(e.target.value)} className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">End Time</label>
                 <input
-                  type="text"
-                  inputMode="numeric"
-                  value={searchDuration}
-                  onChange={(e) => {
-                    let value = e.target.value;
-                    // Only allow digits
-                    value = value.replace(/\D/g, '');
-                    
-                    // Limit to 4 digits max
-                    if (value.length > 4) {
-                      value = value.slice(0, 4);
-                    }
-                    
-                    // Auto-format with : after 2 digits
-                    if (value.length <= 2) {
-                      onChangeDuration(value);
-                    } else if (value.length === 3) {
-                      onChangeDuration(`${value.slice(0, 2)}:${value[2]}`);
-                    } else if (value.length === 4) {
-                      onChangeDuration(`${value.slice(0, 2)}:${value.slice(2, 4)}`);
-                    }
-                  }}
-                  onBlur={(e) => {
-                    let value = e.target.value.trim();
-                    
-                    if (!value) {
-                      onChangeDuration('');
-                      return;
-                    }
-                    
-                    // Extract only digits
-                    let digits = value.replace(/\D/g, '');
-                    
-                    if (!digits) {
-                      onChangeDuration('');
-                      return;
-                    }
-                    
-                    let hours = '00';
-                    let minutes = '00';
-                    
-                    if (digits.length === 1) {
-                      // 1 digit: interpret as minutes (e.g., "5" -> "00:05")
-                      minutes = digits.padStart(2, '0');
-                    } else if (digits.length === 2) {
-                      const num = parseInt(digits);
-                      if (num >= 24) {
-                        // Interpret as minutes (e.g., "95" would be invalid, but "50" -> "00:50")
-                        if (num >= 60) {
-                          onChangeDuration('');
-                          return;
-                        }
-                        minutes = digits;
-                      } else {
-                        // Interpret as hours (e.g., "13" -> "13:00")
-                        hours = digits;
-                      }
-                    } else if (digits.length === 3) {
-                      // HMM format (e.g., "130" -> "01:30")
-                      hours = '0' + digits[0];
-                      minutes = digits.slice(1, 3);
-                    } else if (digits.length === 4) {
-                      // HHMM format (e.g., "0950" -> "09:50")
-                      hours = digits.slice(0, 2);
-                      minutes = digits.slice(2, 4);
-                    }
-                    
-                    // Final validation
-                    const h = parseInt(hours);
-                    const m = parseInt(minutes);
-                    
-                    if (h < 24 && m < 60) {
-                      onChangeDuration(`${hours}:${minutes}`);
-                    } else {
-                      onChangeDuration('');
-                    }
-                  }}
-                  placeholder="--:--"
-                  maxLength={5}
-                  className="flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 text-center font-semibold"
+                  type="time"
+                  value={searchEndTime}
+                  onChange={(e) => onChangeEndTime(e.target.value)}
+                  className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white"
                 />
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!searchDuration || !searchDuration.includes(':')) {
-                      onChangeDuration('00:15');
-                    } else {
-                      const [h, m] = searchDuration.split(':').map(Number);
-                      let newMinutes = m + 15;
-                      let newHours = h;
-                      
-                      if (newMinutes >= 60) {
-                        newHours += Math.floor(newMinutes / 60);
-                        newMinutes = newMinutes % 60;
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Duration</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={searchDuration}
+                    onChange={(e) => {
+                      let value = e.target.value;
+                      value = value.replace(/\D/g, '');
+
+                      if (value.length > 4) {
+                        value = value.slice(0, 4);
                       }
-                      
-                      if (newHours < 24) {
-                        onChangeDuration(`${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`);
+
+                      if (value.length <= 2) {
+                        onChangeDuration(value);
+                      } else if (value.length === 3) {
+                        onChangeDuration(`${value.slice(0, 2)}:${value[2]}`);
+                      } else if (value.length === 4) {
+                        onChangeDuration(`${value.slice(0, 2)}:${value.slice(2, 4)}`);
                       }
-                    }
-                  }}
-                  className="px-3 py-3 border rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-600 font-semibold transition-colors"
-                >
-                  +
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (searchDuration && searchDuration.includes(':')) {
-                      const [h, m] = searchDuration.split(':').map(Number);
-                      let newMinutes = m - 15;
-                      let newHours = h;
-                      
-                      if (newMinutes < 0) {
-                        newHours -= 1;
-                        newMinutes += 60;
+                    }}
+                    onBlur={(e) => {
+                      let value = e.target.value.trim();
+
+                      if (!value) {
+                        onChangeDuration('');
+                        return;
                       }
-                      
-                      if (newHours >= 0) {
-                        onChangeDuration(`${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`);
+
+                      const digits = value.replace(/\D/g, '');
+
+                      if (!digits) {
+                        onChangeDuration('');
+                        return;
                       }
-                    }
-                  }}
-                  className="px-3 py-3 border rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-600 font-semibold transition-colors"
-                >
-                  −
-                </button>
+
+                      let hours = '00';
+                      let minutes = '00';
+
+                      if (digits.length === 1) {
+                        minutes = digits.padStart(2, '0');
+                      } else if (digits.length === 2) {
+                        const num = parseInt(digits, 10);
+                        if (num >= 24) {
+                          if (num >= 60) {
+                            onChangeDuration('');
+                            return;
+                          }
+                          minutes = digits;
+                        } else {
+                          hours = digits;
+                        }
+                      } else if (digits.length === 3) {
+                        hours = `0${digits[0]}`;
+                        minutes = digits.slice(1, 3);
+                      } else if (digits.length === 4) {
+                        hours = digits.slice(0, 2);
+                        minutes = digits.slice(2, 4);
+                      }
+
+                      const h = parseInt(hours, 10);
+                      const m = parseInt(minutes, 10);
+
+                      if (h < 24 && m < 60) {
+                        onChangeDuration(`${hours}:${minutes}`);
+                      } else {
+                        onChangeDuration('');
+                      }
+                    }}
+                    placeholder="--:--"
+                    maxLength={5}
+                    className="flex-1 px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 text-center font-semibold bg-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!searchDuration || !searchDuration.includes(':')) {
+                        onChangeDuration('00:15');
+                      } else {
+                        const [h, m] = searchDuration.split(':').map(Number);
+                        let newMinutes = m + 15;
+                        let newHours = h;
+
+                        if (newMinutes >= 60) {
+                          newHours += Math.floor(newMinutes / 60);
+                          newMinutes %= 60;
+                        }
+
+                        if (newHours < 24) {
+                          onChangeDuration(`${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`);
+                        }
+                      }
+                    }}
+                    className="px-3 py-3 border rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-600 font-semibold transition-colors"
+                  >
+                    +
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (searchDuration && searchDuration.includes(':')) {
+                        const [h, m] = searchDuration.split(':').map(Number);
+                        let newMinutes = m - 15;
+                        let newHours = h;
+
+                        if (newMinutes < 0) {
+                          newHours -= 1;
+                          newMinutes += 60;
+                        }
+
+                        if (newHours >= 0) {
+                          onChangeDuration(`${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`);
+                        }
+                      }
+                    }}
+                    className="px-3 py-3 border rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-600 font-semibold transition-colors"
+                  >
+                    −
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -337,13 +370,17 @@ export const SearchFreeSlotsModal: React.FC<SearchFreeSlotsModalProps> = ({
             />
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-xs text-gray-500 flex items-center gap-2">
+              <Search className="w-4 h-4 text-orange-500" />
+              <span>Tip: choose a shorter range for faster results.</span>
+            </div>
             <button
               onClick={onSearch}
               disabled={searchLoading || !canSearch}
-              className="px-4 py-2 rounded-lg bg-orange-600 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-orange-700 transition-colors"
+              className="px-5 py-3 rounded-xl bg-orange-600 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-orange-700 transition-colors shadow-sm"
             >
-              {searchLoading ? 'Đang tìm...' : 'Tìm slot trống'}
+              {searchLoading ? 'Searching...' : 'Find Available Slot'}
             </button>
           </div>
 
@@ -399,23 +436,31 @@ export const SearchFreeSlotsModal: React.FC<SearchFreeSlotsModalProps> = ({
               </div>
             </div>
           ) : (
-            <div className="text-sm text-gray-500 border-t border-gray-200 pt-4">
-              Chưa có kết quả. Hãy bấm tìm để xem danh sách slot trống.
+            <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 h-8 w-8 rounded-full bg-white shadow-sm flex items-center justify-center text-orange-500">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-700">No results yet</p>
+                  <p className="mt-1">Select a date range and tap <span className="font-semibold text-orange-600">Find Available Slot</span> to see matching openings.</p>
+                </div>
+              </div>
             </div>
           )}
 
-          <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+          <div className="flex flex-col gap-3 border-t border-gray-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-xs text-gray-500">
-              Chọn khoảng ngày trước, sau đó bấm tìm để xem các slot trống.
+              You can search first, then fine-tune by building or room.
             </div>
             <div className="flex gap-3">
-              <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors">Hủy</button>
+              <button onClick={onClose} className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50 transition-colors">Cancel</button>
               <button
                 onClick={onConfirmSelection}
                 disabled={!selectedSearchSlot}
-                className="px-4 py-2 rounded-lg bg-orange-600 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-orange-700 transition-colors"
+                className="px-4 py-2 rounded-xl bg-orange-600 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-orange-700 transition-colors"
               >
-                Mở slot đã chọn
+                Open selected slot
               </button>
             </div>
           </div>
