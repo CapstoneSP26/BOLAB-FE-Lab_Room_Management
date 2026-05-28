@@ -40,7 +40,9 @@ export function getDateRangeFromFilter(filter: TimeFilter): DateRange {
   switch (filter) {
     case "1d": {
       startDate = getLocalDateString(now);
-      endDate = startDate;
+      const tomorrow = new Date(now);
+      tomorrow.setDate(now.getDate() + 1);
+      endDate = getLocalDateString(tomorrow);
       break;
     }
     case "1w": {
