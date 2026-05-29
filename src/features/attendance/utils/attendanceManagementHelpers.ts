@@ -1,6 +1,6 @@
 import type { BookingWithQR, BookingStatus } from '../types/attendance.type';
 import type { ScheduleDto } from '../../schedules/types/schedule.type';
-import { parseTimeValue } from '../../../utils/date.util';
+import { isBookingPast, isNowInsideFeatureBookingWindow, parseTimeValue } from '../../../utils/date.util';
 
 export const normalizeRoomName = (value: string) => value.trim().toLowerCase();
 
@@ -35,9 +35,47 @@ export const mapScheduleDtoToAttendanceBooking = (schedule: ScheduleDto): Bookin
   const dateSource = schedule.startTime || schedule.endTime;
   const start = parseTimeValue(dateSource, schedule.startTime);
   const end = parseTimeValue(dateSource, schedule.endTime);
-  const now = new Date();
-  const isPast = !Number.isNaN(end.getTime()) ? end < now : false;
   const hasValidStart = !Number.isNaN(start.getTime());
+  const hasValidEnd = !Number.isNaN(end.getTime());
+  const isPast = hasValidEnd ? isBookingPast({
+    bookingId: schedule.id,
+    roomName: schedule.labRoomName || 'Unknown Room',
+    roomCode: getRoomCodeFromName(schedule.labRoomName || 'Room'),
+    buildingName: 'Unknown Building',
+    date: hasValidStart ? start.toISOString() : dateSource,
+    startTime: schedule.startTime,
+    endTime: schedule.endTime,
+    status: normalizeBookingStatus(schedule.status),
+    purpose: schedule.subjectCode || 'Schedule session',
+    hasQRSession: false,
+    isUpcoming: true,
+    isPast: false,
+  }) : false;
+  const isCurrentWindow = hasValidStart && hasValidEnd
+    ? isNowInsideFeatureBookingWindow({
+      bookingId: schedule.id,
+      roomName: schedule.labRoomName || 'Unknown Room',
+      roomCode: getRoomCodeFromName(schedule.labRoomName || 'Room'),
+      buildingName: 'Unknown Building',
+      date: hasValidStart ? start.toISOString() : dateSource,
+      startTime: schedule.startTime,
+      endTime: schedule.endTime,
+      status: normalizeBookingStatus(schedule.status),
+      purpose: schedule.subjectCode || 'Schedule session',
+      hasQRSession: false,
+      isUpcoming: true,
+      isPast: false,
+    })
+    : false;
+
+  const normalizedStatus = normalizeBookingStatus(schedule.status);
+  const displayStatus: BookingStatus = normalizedStatus === 'Cancelled'
+    ? 'Cancelled'
+    : isPast
+      ? 'Done'
+      : isCurrentWindow
+        ? normalizedStatus
+        : 'Available';
 
   return {
     bookingId: schedule.id,
@@ -47,7 +85,7 @@ export const mapScheduleDtoToAttendanceBooking = (schedule: ScheduleDto): Bookin
     date: hasValidStart ? start.toISOString() : dateSource,
     startTime: schedule.startTime,
     endTime: schedule.endTime,
-    status: normalizeBookingStatus(schedule.status),
+    status: displayStatus,
     purpose: schedule.subjectCode || 'Schedule session',
     hasQRSession: false,
     qrSessionId: undefined,
