@@ -5,6 +5,8 @@ import { useCreateBooking } from '../../booking/hooks/useCreateBooking';
 import { useToast } from '../../../hooks/useToast';
 import type { AIChatMessage } from '../types/ai.type';
 
+import { useAuthStore } from '../../../store/useAuthStore';
+
 interface AIBookingModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -15,6 +17,7 @@ export const AIBookingModal: React.FC<AIBookingModalProps> = ({ isOpen, onClose 
   const [messages, setMessages] = useState<AIChatMessage[]>([]);
   const { parseAsync, isParsing, parseData } = useAISmartBooking();
   const { mutate: createBooking, isPending: isCreating } = useCreateBooking();
+  const { user, checkAuth } = useAuthStore();
   const toast = useToast();
 
   useEffect(() => {
@@ -23,22 +26,30 @@ export const AIBookingModal: React.FC<AIBookingModalProps> = ({ isOpen, onClose 
     }
   }, [isOpen]);
 
-  const handleSend = async () => {
-    if (!userPrompt.trim()) return;
+  const handleSend = async (eOrPrompt?: React.MouseEvent | string | void) => {
+    const textToUse = typeof eOrPrompt === 'string' ? eOrPrompt : userPrompt;
+    if (!textToUse.trim()) return;
+
+    if (typeof eOrPrompt === 'string') {
+      setUserPrompt(textToUse);
+    }
 
     const newMessages: AIChatMessage[] = [
       ...messages,
-      { role: 'user', content: userPrompt }
+      { role: 'user', content: textToUse }
     ];
 
     setMessages(newMessages);
 
-    const res = await parseAsync({ userPrompt: "test" });
+    const res = await parseAsync({ userPrompt: textToUse });
 
     setMessages(prev => [
       ...prev,
       { role: 'assistant', content: res.message }
     ]);
+    
+    // Refresh user profile to get the latest AI Quota
+    checkAuth();
   };
 
   const executeBooking = (data: any) => {
@@ -92,7 +103,12 @@ export const AIBookingModal: React.FC<AIBookingModalProps> = ({ isOpen, onClose 
         <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
           {/* Input Section */}
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nhập yêu cầu</label>
+            <div className="flex justify-between items-center">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nhập yêu cầu</label>
+              <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${user?.aiRequestQuota && user.aiRequestQuota > 0 ? 'text-orange-500 bg-orange-50' : 'text-red-500 bg-red-50'}`}>
+                Còn lại: {user?.aiRequestQuota ?? 0}/20 lượt
+              </span>
+            </div>
             <div className="relative group">
               <textarea
                 className="w-full p-4 pr-14 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-orange-500 focus:bg-white outline-none transition-all resize-none text-gray-700 shadow-sm"
@@ -110,13 +126,35 @@ export const AIBookingModal: React.FC<AIBookingModalProps> = ({ isOpen, onClose 
                 {isParsing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
               </button>
             </div>
+            {/* Prompt Suggestions */}
+            {!parseData && !userPrompt && (
+              <div className="flex flex-wrap gap-2 pt-1 animate-in fade-in duration-300">
+                {[
+                  "Đặt Software Lab chiều mai từ 13:00 đến 15:00",
+                  "Tìm phòng lab cho 30 sinh viên sáng thứ 6 tuần này",
+                  "Cần mượn phòng họp gấp chiều nay lúc 14:00"
+                ].map((suggestion, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setUserPrompt(suggestion)}
+                    className="text-[11px] font-medium bg-gray-100 hover:bg-orange-50 hover:text-orange-600 text-gray-500 px-3 py-1.5 rounded-full transition-colors border border-gray-200 hover:border-orange-200 text-left"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* AI Response Section */}
           {parseData && (
             <div className="space-y-5 animate-in fade-in slide-in-from-top-4 duration-500">
               {/* Message Banner */}
-              <div className={`p-4 rounded-2xl flex gap-3 shadow-sm ${parseData.status === 'Success' ? 'bg-green-50 text-green-800' : 'bg-amber-50 text-amber-800'}`}>
+              <div className={`p-4 rounded-2xl flex gap-3 shadow-sm ${
+                parseData.status === 'Success' ? 'bg-green-50 text-green-800' 
+                : parseData.status === 'QuotaExceeded' ? 'bg-red-50 text-red-800 border border-red-200'
+                : 'bg-amber-50 text-amber-800'
+              }`}>
                 {parseData.status === 'Success' ? <CheckCircle2 className="w-5 h-5 shrink-0" /> : <AlertCircle className="w-5 h-5 shrink-0" />}
                 <div className="text-sm">
                   <p className="font-bold">AI: {parseData.message}</p>

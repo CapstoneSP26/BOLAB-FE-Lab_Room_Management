@@ -6,4 +6,5 @@ export interface UserAuth {
   roleId?: string;
   campusId: number;
   avatarUrl?: string;
+  aiRequestQuota: number;
 }
