@@ -5,17 +5,44 @@ import type { ApexOptions } from "apexcharts";
 import DropdownMenu, {
   type DropdownMenuItem,
 } from "../../notifications/components/DropdownMenu";
-import type { DashboardStatsDto } from "../types/dashboard.type";
+import type { DashboardStatsDto, TimeFilter } from "../types/dashboard.type";
 
 type MonthlyTargetProps = {
   value?: number;
   stats?: DashboardStatsDto;
+  timeFilter?: TimeFilter;
 };
 
 export default function MonthlyTarget({
   value = 0,
   stats,
+  timeFilter = "1d",
 }: MonthlyTargetProps) {
+  const getPeriodText = (filter: TimeFilter) => {
+    switch (filter) {
+      case "1w": return "7 days";
+      case "4m": return "4 months";
+      case "8m": return "8 months";
+      case "1y": return "1 year";
+      case "1d":
+      default: return "today";
+    }
+  };
+
+  const getCapitalizedPeriodText = (filter: TimeFilter) => {
+    switch (filter) {
+      case "1w": return "7 Days";
+      case "4m": return "4 Months";
+      case "8m": return "8 Months";
+      case "1y": return "1 Year";
+      case "1d":
+      default: return "Today";
+    }
+  };
+
+  const periodText = getPeriodText(timeFilter);
+  const capitalizedPeriodText = getCapitalizedPeriodText(timeFilter);
+
   const menuItems: DropdownMenuItem[] = useMemo(
     () => [
       { label: "View More", onClick: () => console.log("View More clicked") },
@@ -72,11 +99,11 @@ export default function MonthlyTarget({
         <div className="flex justify-between">
           <div>
             <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-              Check-in Compliance (Today)
+              Check-in Compliance ({capitalizedPeriodText})
             </h3>
             <p className="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">
               Percentage of approved bookings that have at least one successful
-              check-in today.
+              check-in {periodText}.
             </p>
           </div>
 
@@ -129,7 +156,7 @@ export default function MonthlyTarget({
         {/* Target */}
         <div>
           <p className="mb-1 text-center text-theme-xs text-gray-500 dark:text-gray-400 sm:text-sm">
-            Approved Today
+            Approved {capitalizedPeriodText}
           </p>
           <p className="text-center text-base font-semibold text-gray-800 dark:text-white/90 sm:text-lg">
             {approvedBookingsToday}

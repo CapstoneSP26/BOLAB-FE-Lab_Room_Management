@@ -314,17 +314,31 @@ export const normalizeLabRoomPolicies = (raw: unknown): LabRoomPolicy[] => {
 
 export const mapLabRoomPayload = (
   payload: CreateLabRoomRequest | UpdateLabRoomRequest,
-) => ({
-  roomName: payload.roomName.trim(),
-  roomNo: payload.roomNo.trim(),
-  location: payload.location?.trim() || undefined,
-  capacity: Number(payload.capacity),
-  hasEquipment: payload.hasEquipment,
-  description: payload.description?.trim() || undefined,
-  buildingId: Number(payload.buildingId),
-  labOwnerId: payload.labOwnerId || undefined,
-  isActive: payload.isActive ?? true,
-});
+) => {
+  const formData = new FormData();
+  formData.append("RoomName", payload.roomName.trim());
+  formData.append("RoomNo", payload.roomNo.trim());
+  if (payload.location?.trim()) {
+    formData.append("Location", payload.location.trim());
+  }
+  formData.append("Capacity", String(Number(payload.capacity)));
+  formData.append("HasEquipment", String(payload.hasEquipment));
+  if (payload.description?.trim()) {
+    formData.append("Description", payload.description.trim());
+  }
+  formData.append("BuildingId", String(Number(payload.buildingId)));
+  if (payload.labOwnerId) {
+    formData.append("LabOwnerId", payload.labOwnerId);
+  }
+  formData.append("IsActive", String(payload.isActive ?? true));
+  formData.append("IsImageUpdate", String(payload.IsImageUpdate ?? false));
+
+  if (payload.Images instanceof File) {
+    formData.append("Images", payload.Images);
+  }
+
+  return formData;
+};
 
 /** PUT policy: body contains updatable fields except labRoomId/policyKey (on URL). */
 export const mapLabRoomPolicyUpdatePayload = (
@@ -349,6 +363,8 @@ export const getDefaultLabRoomFormValues = (
   labOwnerId: room?.labOwnerId ?? room?.labOwner?.id ?? "",
   labOwner: room?.labOwner ?? null,
   isActive: room?.isActive ?? true,
+  Images: null,
+  IsImageUpdate: false,
 });
 
 export const getLabRoomStatusLabel = (isActive: boolean) =>

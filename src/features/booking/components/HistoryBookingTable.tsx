@@ -3,6 +3,7 @@ import type { BookingRequest } from "../../booking/types/booking.type";
 import {
   formatUtcDateLabel,
   formatBookingTimeLabel,
+  formatIsoDateTimeForDisplay,
 } from "../../../utils/date.util";
 import { statusClass } from "../../../utils/status";
 
@@ -50,7 +51,7 @@ export default function HistoryBookingTable({
               <th className="px-4 py-3">Booking</th>
               <th className="px-4 py-3">Room</th>
               <th className="px-4 py-3">Time</th>
-              <th className="px-4 py-3">Group</th>
+              <th className="px-4 py-3">Decided At</th>
               <th className="px-4 py-3">Purpose</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3 text-right">Actions</th>
@@ -104,7 +105,10 @@ export default function HistoryBookingTable({
                   </td>
 
                   <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
-                    {b.studentCount ?? "-"}
+                    <div className="whitespace-nowrap">
+                      {/* @ts-ignore - Backend usually returns updatedAt */}
+                      {(b.updatedAt || b.UpdatedAt) ? formatIsoDateTimeForDisplay((b.updatedAt || b.UpdatedAt) as string) : "-"}
+                    </div>
                   </td>
 
                   <td className="px-4 py-4">

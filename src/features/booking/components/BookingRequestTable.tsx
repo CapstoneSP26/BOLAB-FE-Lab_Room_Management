@@ -1,6 +1,6 @@
 import type { BookingRequest } from "../../booking/types/booking.type";
 import { statusClass } from "../../../utils/status";
-import { convertHoursUtcToVN } from "../../../utils/date.util";
+import { convertHoursUtcToVN, formatIsoDateTimeForDisplay } from "../../../utils/date.util";
 import { CheckCircle2, ChevronLeft, ChevronRight, Eye, XCircle } from "lucide-react";
 type Props = {
   loading: boolean;
@@ -51,6 +51,7 @@ export default function BookingTable({
               <th className="px-4 py-3">Quantity</th>
               <th className="px-4 py-3">Purpose</th>
               <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Created At</th>
               <th className="px-4 py-3 text-right">
                 {hasActions ? "Actions" : "View"}
               </th>
@@ -113,6 +114,11 @@ export default function BookingTable({
                     </span>
                   </td>
 
+                  <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
+                    <div className="whitespace-nowrap">
+                      {b.requestedAt ? formatIsoDateTimeForDisplay(b.requestedAt) : "-"}
+                    </div>
+                  </td>
                   <td className="px-4 py-4">
                     <div className="flex justify-end gap-2">
                       <button

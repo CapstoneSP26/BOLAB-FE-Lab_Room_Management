@@ -68,6 +68,8 @@ export interface LabRoomFormValues {
   labOwnerId?: string;
   labOwner?: LabOwnerDto | null;
   isActive: boolean;
+  Images?: File | null;
+  IsImageUpdate?: boolean;
 }
 
 export interface LabRoomMutationPayload {
@@ -80,6 +82,8 @@ export interface LabRoomMutationPayload {
   buildingId: number;
   labOwnerId?: string;
   isActive?: boolean;
+  Images?: File | null;
+  IsImageUpdate?: boolean;
 }
 
 export type CreateLabRoomRequest = LabRoomMutationPayload;

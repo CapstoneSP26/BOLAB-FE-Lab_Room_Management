@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ClipboardList,
   Loader2,
@@ -17,7 +18,8 @@ import { getErrorMessage } from "../../../utils/error";
 import {
   useDeleteRoomPolicy,
   useUpdateRoomPolicy,
-  useRoomPolicies
+  useRoomPolicies,
+  QUERY_KEYS
 } from "../hooks/useLabRooms";
 import type { LabRoomPolicy } from "../types/policy.type";
 import type { LabRoomDto } from "../types/room.type";
@@ -52,13 +54,9 @@ export default function PolicyManagementModal({
     isFetching,
   } = useRoomPolicies(roomId, isOpen && roomId > 0);
 
+  const queryClient = useQueryClient();
+
   const updatePolicyMutation = useUpdateRoomPolicy({
-    onSuccess: () => {
-      toast.success("Policy updated", "The policy value has been saved.");
-      setEditingKey(null);
-      setValue("");
-      setValueError("");
-    },
     onError: (error) => {
       toast.error(
         "Update failed",
@@ -119,11 +117,44 @@ export default function PolicyManagementModal({
     event.preventDefault();
     if (!effectiveEditingKey || !validateValue()) return;
 
-    await updatePolicyMutation.mutateAsync({
-      labRoomId: roomId,
-      policyKey: effectiveEditingKey,
-      payload: { policyValue: value.trim(), isActive: active },
-    });
+    const submittedKey = effectiveEditingKey;
+    const submittedValue = value.trim();
+    const submittedIsActive = active;
+
+    console.log("[PolicyModal] Submitting →", { submittedKey, submittedValue, submittedIsActive });
+
+    try {
+      const result = await updatePolicyMutation.mutateAsync({
+        labRoomId: roomId,
+        policyKey: submittedKey,
+        payload: { policyValue: submittedValue, isActive: submittedIsActive },
+      });
+
+      console.log("[PolicyModal] BE response →", result);
+
+      toast.success("Policy updated", "The policy value has been saved.");
+
+      queryClient.setQueryData(
+        [QUERY_KEYS.ROOM_POLICIES, roomId],
+        (old: LabRoomPolicy[] | undefined) => {
+          if (!old) return old;
+          const updated = old.map((p) =>
+            (p.policyKeyName || p.policyKey) === submittedKey
+              ? { ...p, policyValue: submittedValue, isActive: submittedIsActive }
+              : p
+          );
+          console.log("[PolicyModal] Cache after setQueryData →", updated);
+          return updated;
+        }
+      );
+
+      setEditingKey(null);
+      setValue("");
+      setValueError("");
+      setActive(true);
+    } catch {
+      // error already handled by onError callback
+    }
   };
 
   const activeMeta = effectiveEditingKey

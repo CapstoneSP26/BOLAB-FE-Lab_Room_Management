@@ -3,10 +3,12 @@ import { getRole } from "../../../utils/role";
 import type {
   DashboardRoleScope,
   DashboardStatsDto,
+  DateRange,
   IncidentDto,
   LecturerBookingRequestStat,
   PendingRequestDto,
   RoomBookingStat,
+  TimeFilter,
   UserProfileDto,
 } from "../types/dashboard.type";
 
@@ -18,6 +20,7 @@ const DASHBOARD_API = {
   PENDING_REQUESTS: "/dashboard/pending-requests",
   UNRESOLVED_INCIDENTS: "/incidents/unresolved",
   USER_PROFILE: "/users/me",
+  PDF_FILE: "/dashboard/pdfFile",
 } as const;
 
 const asRecord = (value: unknown): MaybeRecord =>
@@ -358,13 +361,27 @@ const normalizeDashboardOverview = (
   };
 };
 
-export const getDashboardStats = async (): Promise<DashboardStatsDto> => {
+export const getDashboardStats = async (
+  timeType?: TimeFilter,
+  dateRange?: DateRange,
+): Promise<DashboardStatsDto> => {
+  const params: Record<string, string> = {};
+  if (timeType) params.timeType = timeType;
+  if (dateRange) {
+    params.startDate = dateRange.startDate;
+    params.endDate = dateRange.endDate;
+  }
+
   try {
-    const overviewResponse = await axiosInstance.get(DASHBOARD_API.OVERVIEW);
+    const overviewResponse = await axiosInstance.get(DASHBOARD_API.OVERVIEW, {
+      params: Object.keys(params).length > 0 ? params : undefined,
+    });
     return normalizeDashboardOverview(overviewResponse.data, "api");
   } catch (overviewError) {
     try {
-      const legacyResponse = await axiosInstance.get(DASHBOARD_API.LEGACY_STATS);
+      const legacyResponse = await axiosInstance.get(DASHBOARD_API.LEGACY_STATS, {
+        params: Object.keys(params).length > 0 ? params : undefined,
+      });
       return normalizeDashboardOverview(legacyResponse.data, "legacy");
     } catch (legacyError) {
       console.error("Failed to fetch dashboard overview:", {
@@ -395,4 +412,31 @@ export const getUserProfile = async (): Promise<UserProfileDto> => {
     DASHBOARD_API.USER_PROFILE,
   );
   return response.data;
+};
+
+/**
+ * Fetch a server-generated PDF report from the backend.
+ * The backend returns the raw PDF bytes as `application/pdf`.
+ */
+export const exportDashboardPdfFile = async (
+  timeType: TimeFilter,
+  fileName = "report.pdf",
+): Promise<void> => {
+  const response = await axiosInstance.get(DASHBOARD_API.PDF_FILE, {
+    params: { timeType },
+    responseType: "blob",
+  });
+
+  // Create a temporary URL for the blob and trigger download
+  const blob = new Blob([response.data], { type: "application/pdf" });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+
+  // Clean up
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
 };
