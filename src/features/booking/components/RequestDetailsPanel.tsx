@@ -1,4 +1,4 @@
-import { CheckCircle2, PencilLine, X, XCircle, Info, MapPin, Users, CalendarDays, Clock, FileText, AlertTriangle } from "lucide-react";
+import { CheckCircle2, X, XCircle, Info, MapPin, Users, CalendarDays, Clock, FileText, AlertTriangle } from "lucide-react";
 import type { BookingRequest } from "../types/booking.type";
 import { convertHoursUtcToVN, formatUtcDateLabel } from "../../../utils/date.util";
 
@@ -13,9 +13,9 @@ type Props = {
 
 function getPriorityColor(purpose: string) {
   const p = purpose.toUpperCase();
-  if (p.includes("WORKSHOP")) return "bg-red-100 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20";
-  if (p.includes("PRACTICAL")) return "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20";
-  if (p.includes("LECTURE")) return "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20";
+  if (p.includes("SCHOOL_EVENT")) return "bg-red-100 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20";
+  if (p.includes("ACADEMIC")) return "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20";
+  if (p.includes("NORMAL")) return "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20";
   return "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700";
 }
 
@@ -94,7 +94,7 @@ export default function RequestDetailsPanel({
               {formatUtcDateLabel(booking.date)}
             </div>
           </div>
-          
+
           <div className="rounded-lg border border-gray-100 bg-gray-50 p-2.5 dark:border-gray-700 dark:bg-gray-800/50">
             <div className="flex items-center gap-1.5 text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1">
               <Clock className="h-3.5 w-3.5" /> Time
@@ -178,21 +178,20 @@ export default function RequestDetailsPanel({
             Please process the higher priority booking in this room first before approving this request.
           </div>
         )}
-        
+
         <div className="flex gap-2">
           <button
             type="button"
             onClick={() => !isLocked && onApprove(String(booking.id))}
             disabled={isLocked}
-            className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-xs font-semibold shadow-sm transition ${
-              isLocked 
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-500" 
-                : "bg-emerald-600 text-white hover:bg-emerald-700"
-            }`}
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-xs font-semibold shadow-sm transition ${isLocked
+              ? "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-500"
+              : "bg-emerald-600 text-white hover:bg-emerald-700"
+              }`}
           >
             <CheckCircle2 className="h-4 w-4" /> Approve
           </button>
-          
+
           <button
             type="button"
             onClick={() => onReject(String(booking.id))}

@@ -1,4 +1,4 @@
-export const getEventAppearance = (type: number | string, status: number | string, isBooking: boolean, priorityLevel?: number) => {
+export const getEventAppearance = (status: number | string, isBooking: boolean, priorityLevel?: number) => {
   // 1. Nếu là Booking đang chờ duyệt (Hệ màu Amber/Gold cảnh báo)
   if (isBooking) {
     return {

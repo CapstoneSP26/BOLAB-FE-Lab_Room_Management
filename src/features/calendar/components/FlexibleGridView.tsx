@@ -106,7 +106,7 @@ export const FlexibleGridView: React.FC<FlexibleGridViewProps> = ({
       const baseStyle = getPositionStyle(startTime, endTime);
 
       const isBooking = event.type === 'BOOKING';
-      const appearance = getEventAppearance(event.rawOrigin.type, event.status, isBooking, event.priorityLevel);
+      const appearance = getEventAppearance(event.status, isBooking, event.priorityLevel);
       const isInProcess = event.status === 2;
 
       return (
