@@ -81,17 +81,17 @@ function formatWeekLabel(date: Date) {
 export default function UpcomingRequestTimelinePage() {
   const user = useAuthStore((state) => state.user);
   const isManager = Boolean(user?.roles?.includes(Role.Manager));
-  const [buildingOptions, setBuildingOptions] = useState<BuildingDto[]>([]);
+  const [, setBuildingOptions] = useState<BuildingDto[]>([]);
   const [roomOptions, setRoomOptions] = useState<LabRoomDto[]>([]);
-  const [slotOptions, setSlotOptions] = useState<SlotType[]>([]);
+  const [, setSlotOptions] = useState<SlotType[]>([]);
 
-  const [q, setQ] = useState("");
+  const [q,] = useState("");
   const [roomId, setRoomId] = useState<number | "ALL">("ALL");
-  const [buildingId, setBuildingId] = useState<number | "ALL">("ALL");
-  const [slotType, setSlotType] = useState<SlotTypeFilter>("ALL");
+  const [buildingId,] = useState<number | "ALL">("ALL");
+  const [slotType,] = useState<SlotTypeFilter>("ALL");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("ALL");
-  const [conflictOnly, setConflictOnly] = useState(false);
+  const [conflictOnly,] = useState(false);
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
 
   // Modals state
