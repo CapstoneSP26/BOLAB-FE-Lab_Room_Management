@@ -109,6 +109,9 @@ export const useCreateLabRoom = (options: MutationOptions<LabRoomDto> = {}) => {
       void queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.ROOMS_MANAGEMENT],
       });
+      void queryClient.invalidateQueries({
+        queryKey: ["labrooms"],
+      });
       options.onSuccess?.(data, message);
     },
     onError: (error: Error) => {
@@ -147,6 +150,9 @@ export const useUpdateLabRoom = (options: MutationOptions<LabRoomDto> = {}) => {
       void queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.ROOMS_MANAGEMENT],
       });
+      void queryClient.invalidateQueries({
+        queryKey: ["labrooms"],
+      });
       options.onSuccess?.(data, message);
     },
     onError: (error: Error) => {
@@ -168,19 +174,7 @@ export const useUpdateLabRoomStatus = (
       room: LabRoomDto;
       isActive: boolean;
     }) => {
-      const payload: UpdateLabRoomRequest = {
-        buildingId: room.buildingId,
-        roomName: room.roomName,
-        roomNo: room.roomNo,
-        location: room.location ?? "",
-        capacity: room.capacity,
-        hasEquipment: room.hasEquipment,
-        description: room.description ?? "",
-        labOwnerId: room.labOwnerId ?? room.labOwner?.id,
-        isActive,
-      };
-
-      return labroomApi.updateRoom(room.id, payload);
+      return labroomApi.updateRoomStatus(room.id, isActive);
     },
     onSuccess: ({ data, message }) => {
       queryClient.setQueriesData(
@@ -200,6 +194,9 @@ export const useUpdateLabRoomStatus = (
       void queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.ROOMS_MANAGEMENT],
       });
+      void queryClient.invalidateQueries({
+        queryKey: ["labrooms"],
+      });
 
       options.onSuccess?.(data, message);
     },
@@ -216,6 +213,9 @@ export const useDeleteLabRoom = (options: MutationOptions<void> = {}) => {
     onSuccess: ({ message }) => {
       void queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.ROOMS_MANAGEMENT],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["labrooms"],
       });
       options.onSuccess?.(undefined, message);
     },

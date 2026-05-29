@@ -66,8 +66,7 @@ export const labroomApi = {
 
     const response = await axiosInstance.post<ApiResponse<unknown>>(
       LABROOM_API.LIST,
-      body,
-      { headers: { "Content-Type": "multipart/form-data" } }
+      body
     );
 
     if (!response.data.success) {
@@ -92,12 +91,12 @@ export const labroomApi = {
     payload: UpdateLabRoomRequest,
   ): Promise<{ data: LabRoomDto; message: string }> => {
     const body = mapLabRoomPayload(payload);
-    body.append("Id", String(id));
+    // Since it's JSON now, we can just assign the Id
+    (body as any).Id = id;
 
     const response = await axiosInstance.put<ApiResponse<unknown>>(
       LABROOM_API.DETAIL(id),
-      body,
-      { headers: { "Content-Type": "multipart/form-data" } }
+      body
     );
     if (!response.data.success) {
       throw new Error(response.data.message || "Failed to update room");
@@ -122,7 +121,11 @@ export const labroomApi = {
     isActive: boolean,
   ): Promise<{ data: LabRoomDto; message: string }> =>
     axiosInstance
-      .patch<ApiResponse<unknown>>(LABROOM_API.STATUS(id), { isActive })
+      .patch<ApiResponse<unknown>>(LABROOM_API.STATUS(id), isActive, {
+        headers: {
+          "Content-Type": "application/json"
+        }
+      })
       .then((response) => {
         if (!response.data.success) {
           throw new Error(response.data.message || "Failed to update room status");
