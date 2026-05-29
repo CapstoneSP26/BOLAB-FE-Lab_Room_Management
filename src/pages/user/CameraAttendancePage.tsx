@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
 import { AlertCircle, Camera } from 'lucide-react';
-import { useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import { FaceScanContainer } from '../../features/attendance/components/FaceScanContainer';
+import { useActiveSession } from '../../context/ActiveSessionContext';
 
 export const CameraAttendancePage: React.FC = () => {
   const { roomNo } = useParams<{ roomNo: string }>();
+  const location = useLocation();
+  const { activeSession } = useActiveSession();
   const [error, setError] = useState<string | null>(null);
+  const scheduleId = activeSession?.scheduleId ?? (location.state as { scheduleId?: string } | undefined)?.scheduleId;
+  const sessionReady = Boolean(scheduleId);
 
   return (
     <div className="relative flex flex-col items-center justify-start w-full h-screen px-8 py-6 md:px-10 md:py-12 pt-0 bg-slate-50">
@@ -19,10 +24,14 @@ export const CameraAttendancePage: React.FC = () => {
               Face Recognition Attendance
             </h1>
           </div>
-          <div className="mt-3 flex items-center justify-center">
+          <div className="mt-3 flex items-center justify-center gap-3 flex-wrap">
             <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-5 py-2">
               <span className="text-sm font-semibold text-blue-700 uppercase tracking-wide">Room</span>
               <span className="text-2xl md:text-3xl font-black text-blue-900 leading-none">{roomNo ?? 'Unknown'}</span>
+            </div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2">
+              <span className="text-sm font-semibold text-emerald-700 uppercase tracking-wide">Session</span>
+              <span className="text-sm md:text-base font-bold text-emerald-900 leading-none">{scheduleId ?? 'Loading...'}</span>
             </div>
           </div>
         </div>
@@ -40,9 +49,17 @@ export const CameraAttendancePage: React.FC = () => {
                 <p className="text-red-800 text-sm">Room number is missing from the route.</p>
               </div>
             </div>
+          ) : !sessionReady || !scheduleId ? (
+            <div className="flex-1 flex items-center justify-center p-6">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3 max-w-md w-full">
+                <AlertCircle className="text-amber-600 flex-shrink-0" size={20} />
+                <p className="text-amber-800 text-sm">Session is not ready yet. Please open this page from the active attendance session.</p>
+              </div>
+            </div>
           ) : (
             <div className="flex-1 px-6 py-6">
               <FaceScanContainer
+                scheduleId={scheduleId}
                 onFaceScanned={() => {}}
                 onError={(message: string) => {
                   setError(message);

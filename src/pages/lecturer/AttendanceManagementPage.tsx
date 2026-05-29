@@ -30,7 +30,7 @@ import {
 export default function AttendanceManagementPage() {
   const appAlert = useToast();
   const navigate = useNavigate();
-  const { activeSession: _ } = useActiveSession();
+  const { activeSession: _, setActiveSession } = useActiveSession();
 
   const bookingScheduleParams = useMemo(() => DEFAULT_ATTENDANCE_SCHEDULE_PARAMS, []);
 
@@ -213,8 +213,19 @@ export default function AttendanceManagementPage() {
       return;
     }
 
+    const nextSession = {
+      id: state.activeBooking.bookingId,
+      scheduleId: state.activeBooking.bookingId,
+      roomName: state.activeBooking.roomName,
+      buildingName: state.activeBooking.buildingName,
+      isActive: true,
+    };
+
+    setActiveSession(nextSession);
     setOthersCheckinMode('face');
-    navigate(`/attendance/camera/${state.activeBooking.roomCode}`);
+    navigate(`/attendance/camera/${state.activeBooking.roomCode}`, {
+      state: { scheduleId: state.activeBooking.bookingId },
+    });
   };
 
   useEffect(() => {
