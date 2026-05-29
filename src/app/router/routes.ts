@@ -67,7 +67,7 @@ export const lecturerRoutes: AppRoute[] = [
   { path: "/profile", element: ProfilePage, roles: [Role.Lecturer] },
   { path: "/", element: HomePage, roles: [Role.Lecturer] },
   { path: "/buildings/:id", element: BuildingDetail, roles: [Role.Lecturer] },
-  { path: "/my-bookings", element: BookingHistoryPage, roles: [Role.Lecturer] },
+  { path: "/my-bookings", element: BookingHistoryPage, roles: [Role.Lecturer, Role.Admin] },
   { path: "/book-room", element: RoomBookingPage, roles: [Role.Lecturer, Role.Admin] },
   { path: "/lab-room/:id", element: LabRoomDetailsPage, roles: [Role.Lecturer] },
   { path: "/attendance", element: AttendanceManagementPage, roles: [Role.Lecturer] },

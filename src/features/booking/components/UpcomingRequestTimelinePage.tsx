@@ -305,7 +305,6 @@ export default function UpcomingRequestTimelinePage() {
   };
 
   useSignalRListener("booking.new", async (payload: any) => {
-    console.log("Received calendar.statusUpdated event with payload:", payload);
     const isCurrentRoom = roomOptions.some(room => String(room.id) === String(payload.labRoomId));
     if (!isCurrentRoom) return; // Nếu sự kiện không liên quan đến phòng đang xem, bỏ qua
 

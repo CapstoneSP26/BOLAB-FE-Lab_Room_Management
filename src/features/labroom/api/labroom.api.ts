@@ -63,8 +63,6 @@ export const labroomApi = {
     payload: CreateLabRoomRequest,
   ): Promise<{ data: LabRoomDto; message: string }> => {
     const body = mapLabRoomPayload(payload);
-    // Debug: xem payload thực tế gửi lên
-    console.log("[createRoom] payload →", JSON.stringify(body, null, 2));
 
     const response = await axiosInstance.post<ApiResponse<unknown>>(
       LABROOM_API.LIST,
@@ -96,7 +94,6 @@ export const labroomApi = {
       LABROOM_API.DETAIL(id),
       mapLabRoomPayload(payload),
     );
-console.log("[updateRoom] Payload →", payload);
     if (!response.data.success) {
       throw new Error(response.data.message || "Failed to update room");
     }
