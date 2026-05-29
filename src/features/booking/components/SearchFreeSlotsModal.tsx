@@ -114,6 +114,7 @@ export const SearchFreeSlotsModal: React.FC<SearchFreeSlotsModalProps> = ({
   const { data: pagedRooms, isLoading: roomsLoading } = useLabRooms({
     buildingId: Number(searchBuildingId),
     includeBuilding: true,
+    isActive: true,
   });
   const rooms = React.useMemo(() => pagedRooms?.items ?? [], [pagedRooms]);
   const [searchRoomId, setSearchRoomId] = React.useState(initialRoomId ?? '');

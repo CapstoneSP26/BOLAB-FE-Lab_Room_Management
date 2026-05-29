@@ -58,7 +58,7 @@ export const RoomSelector: React.FC<RoomSelectorProps> = ({
               }}
             >
               <option value="">-- Chọn phòng thực hành --</option>
-              {rooms.map((room) => (
+              {rooms.filter((room) => room.isActive !== false).map((room) => (
                 <option key={room.id} value={room.id}>
                   {room.roomName} {room.roomNo ? `[${room.roomNo}]` : ''}
                 </option>

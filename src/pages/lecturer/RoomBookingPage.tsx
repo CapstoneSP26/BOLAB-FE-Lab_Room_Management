@@ -154,6 +154,7 @@ const RoomBookingPage: React.FC = () => {
   const { data: pagedRooms, isLoading: roomsLoading } = useLabRooms({
     buildingId: Number(selectedBuildingId),
     includeBuilding: true,
+    isActive: true,
   });
   const rooms = useMemo(() => pagedRooms?.items ?? [], [pagedRooms]);
 
