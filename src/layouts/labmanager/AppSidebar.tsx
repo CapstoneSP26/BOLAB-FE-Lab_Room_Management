@@ -143,6 +143,12 @@ const AppSidebar: React.FC = () => {
       },
       {
         icon: ListIcon,
+        name: "Group Management",
+        path: p("/group-management"),
+        show: isAdmin,
+      },
+      {
+        icon: ListIcon,
         name: "User Management",
         path: p("/user-management"),
         show: isAdmin,

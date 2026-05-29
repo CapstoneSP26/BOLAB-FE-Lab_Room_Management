@@ -40,6 +40,7 @@ const ManagerNotificationsPage = lazy(() => import("../../pages/labmanager/Notif
 const RoomManagementPage = lazy(() => import("../../pages/admin/RoomManagementPage.tsx"))
 const ScheduleManagementPage = lazy(() => import("../../pages/admin/ScheduleManagementPage.tsx"));
 const BuildingManagementPage = lazy(() => import("../../pages/admin/BuildingManagementPage.tsx"));
+const GroupManagementPage = lazy(() => import("../../pages/admin/GroupManagementPage.tsx"));
 const EmailTemplateManagementPage = lazy(() => import("../../pages/admin/EmailTemplateManagementPage.tsx"));
 
 const StudentLandingPage = lazy(() => import("../../pages/student/StudentLandingPage.tsx"));
@@ -96,6 +97,7 @@ export const managerRoutes: AppRoute[] = [
   { path: "/labmanager/slot-management", element: ScheduleManagementPage, roles: [Role.Admin] },
   { path: "/labmanager/building-management", element: BuildingManagementPage, roles: [Role.Admin] },
   { path: "/labmanager/user-management", element: UserManagementPage, roles: [Role.Admin] },
+  { path: "/labmanager/group-management", element: GroupManagementPage, roles: [Role.Admin] },
   { path: "/labmanager/email-templates", element: EmailTemplateManagementPage, roles: [Role.Admin] },
 ];
 
