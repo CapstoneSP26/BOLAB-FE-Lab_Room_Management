@@ -1,6 +1,6 @@
 import { Filter, Flag, MapPin, Users } from "lucide-react";
 
-type PriorityFilter = "ALL" | "WORKSHOP" | "PRACTICAL" | "LECTURE";
+type PriorityFilter = "ALL" | "SCHOOL_EVENT" | "ACADEMIC" | "NORMAL";
 
 type RoomSummary = {
   id: string | number;
@@ -82,9 +82,9 @@ export default function TimelineSidebar({
           className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
         >
           <option value="ALL">All priorities</option>
-          <option value="WORKSHOP">Workshop</option>
-          <option value="PRACTICAL">Practical</option>
-          <option value="LECTURE">Lecture</option>
+          <option value="SCHOOL_EVENT">School Event</option>
+          <option value="ACADEMIC">Academic</option>
+          <option value="NORMAL">Normal</option>
         </select>
       </section>
 

@@ -3,7 +3,7 @@ import { AlertTriangle } from "lucide-react";
 import type { BookingRequest } from "../types/booking.type";
 import { convertHoursUtcToVN } from "../../../utils/date.util";
 
-type PriorityFilter = "ALL" | "SCHOOL EVENT" | "ACADEMIC" | "NORMAL";
+type PriorityFilter = "ALL" | "SCHOOL_EVENT" | "ACADEMIC" | "NORMAL";
 
 type RoomLane = {
   id: string | number;

@@ -115,6 +115,7 @@ export interface BookingRequest {
     fullName: string;
     userCode: string;
     email: string;
+    avatarUrl?: string;
   }
 }
 
