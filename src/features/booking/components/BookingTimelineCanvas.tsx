@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useEffect, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import type { BookingRequest } from "../types/booking.type";
 import { convertHoursUtcToVN } from "../../../utils/date.util";
@@ -145,6 +145,30 @@ function stackBookingsVisually(bookings: BookingRequest[]) {
   return rows;
 }
 
+function clusterHiddenBookings(bookings: BookingRequest[]) {
+  if (bookings.length === 0) return [];
+
+  const sorted = [...bookings].sort((a, b) => getVisualBounds(a).left - getVisualBounds(b).left);
+  const clusters: { count: number; left: number; right: number }[] = [];
+
+  sorted.forEach(booking => {
+    const bounds = getVisualBounds(booking);
+    if (clusters.length === 0) {
+      clusters.push({ count: 1, left: bounds.left, right: bounds.right });
+    } else {
+      const last = clusters[clusters.length - 1];
+      if (bounds.left <= last.right + 1) {
+        last.count += 1;
+        last.right = Math.max(last.right, bounds.right);
+      } else {
+        clusters.push({ count: 1, left: bounds.left, right: bounds.right });
+      }
+    }
+  });
+
+  return clusters;
+}
+
 function getPriorityLevel(purpose?: string) {
   const text = String(purpose ?? "").toUpperCase();
   if (text.includes("SCHOOL EVENT")) return 4;
@@ -175,8 +199,8 @@ function getBookingTone(booking: BookingRequest) {
 
   if (purpose.includes("NORMAL")) {
     return {
-      ring: "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-900/50 dark:bg-blue-950/20 dark:text-blue-100",
-      accent: "bg-blue-500",
+      ring: "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-100",
+      accent: "bg-emerald-500",
       priority: "Normal",
       zIndex: 10,
     };
@@ -185,7 +209,7 @@ function getBookingTone(booking: BookingRequest) {
   return {
     ring: "border-gray-200 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white",
     accent: "bg-gray-400",
-    priority: "Normal",
+    priority: "Other",
     zIndex: 5,
   };
 }
@@ -275,6 +299,9 @@ export default function BookingTimelineCanvas({
 }: Props) {
   const leftRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
+  const [expandedLanes, setExpandedLanes] = useState<Record<string, boolean>>({});
+
+
 
   const handleLeftScroll = (e: React.UIEvent<HTMLDivElement>) => {
     if (rightRef.current) {
@@ -311,6 +338,8 @@ export default function BookingTimelineCanvas({
   const lanesWithData = useMemo(() => {
     return filteredLanes.map((lane) => {
       let maxRowsAcrossDays = 0;
+      let hasHiddenBookingsAcrossDays = false;
+      let needsCollapseButtonAcrossDays = false;
 
       const daysData = timelineDays.map((day) => {
         const dayKey = normalizeDateKey(day);
@@ -345,20 +374,49 @@ export default function BookingTimelineCanvas({
         });
 
         const rows = stackBookingsVisually(dayBookings);
-        maxRowsAcrossDays = Math.max(maxRowsAcrossDays, rows.length);
+
+        const isExpanded = expandedLanes[`${lane.id}-${dayKey}`];
+        const MAX_VISIBLE_ROWS = isExpanded ? rows.length : 3;
+
+        const visibleRows = rows.slice(0, MAX_VISIBLE_ROWS);
+        const hiddenBookings = rows.slice(MAX_VISIBLE_ROWS).flat();
+        const hiddenClusters = clusterHiddenBookings(hiddenBookings);
+
+        maxRowsAcrossDays = Math.max(maxRowsAcrossDays, visibleRows.length);
+        if (hiddenClusters.length > 0) {
+          hasHiddenBookingsAcrossDays = true;
+        }
+        if (isExpanded && rows.length > 3) {
+          needsCollapseButtonAcrossDays = true;
+        }
 
         const dayMaxPriority = dayBookings.length > 0
           ? Math.max(...dayBookings.map(b => getPriorityLevel(b.purpose)))
           : 1;
 
-        return { day, dayKey, rows, conflictIds, maxPriority: dayMaxPriority };
+        return { day, dayKey, rows: visibleRows, hiddenClusters, conflictIds, maxPriority: dayMaxPriority, isExpanded };
       });
 
-      const laneHeight = Math.max(MIN_LANE_HEIGHT, BOOKING_ROW_PADDING * 2 + maxRowsAcrossDays * BOOKING_ROW_HEIGHT + Math.max(0, maxRowsAcrossDays - 1) * BOOKING_ROW_GAP);
+      const totalVisualRows = maxRowsAcrossDays + (hasHiddenBookingsAcrossDays || needsCollapseButtonAcrossDays ? 1 : 0);
+      const laneHeight = Math.max(MIN_LANE_HEIGHT, BOOKING_ROW_PADDING * 2 + totalVisualRows * BOOKING_ROW_HEIGHT + Math.max(0, totalVisualRows - 1) * BOOKING_ROW_GAP);
 
       return { ...lane, daysData, laneHeight };
     });
-  }, [filteredLanes, timelineDays]);
+  }, [filteredLanes, timelineDays, expandedLanes]);
+
+  useEffect(() => {
+    const syncScrollbarSpace = () => {
+      if (rightRef.current && leftRef.current) {
+        const scrollbarHeight = rightRef.current.offsetHeight - rightRef.current.clientHeight;
+        leftRef.current.style.paddingBottom = `${scrollbarHeight}px`;
+      }
+    };
+
+    syncScrollbarSpace();
+    window.addEventListener("resize", syncScrollbarSpace);
+
+    return () => window.removeEventListener("resize", syncScrollbarSpace);
+  }, [lanesWithData]);
 
   return (
     <div className="w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800/50">
@@ -371,7 +429,7 @@ export default function BookingTimelineCanvas({
           className="w-[220px] shrink-0 border-r border-gray-200 bg-white z-10 dark:border-gray-700 dark:bg-gray-900 overflow-y-auto"
           style={{ maxHeight: '65vh', scrollbarWidth: 'none' }}
         >
-          <div className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-gray-200 px-4 bg-white dark:bg-gray-900 dark:border-gray-700">
+          <div className="sticky top-0 z-[60] flex h-14 items-center justify-between border-b border-gray-200 px-4 bg-white dark:bg-gray-900 dark:border-gray-700">
             <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Rooms</span>
             <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700 dark:bg-violet-500/20 dark:text-violet-300">
               {filteredLanes.length}
@@ -418,7 +476,7 @@ export default function BookingTimelineCanvas({
                 className={`relative flex flex-col shrink-0 min-w-full border-gray-200/80 dark:border-gray-700/80 ${dayIndex < 6 ? 'border-r' : ''}`}
               >
                 {/* Day Header */}
-                <div className={`sticky top-0 z-20 h-14 shrink-0 border-b border-gray-200 px-3 py-2 dark:border-gray-700 ${isToday ? 'bg-blue-50/95 backdrop-blur-sm dark:bg-blue-900/95' : 'bg-white/95 backdrop-blur-sm dark:bg-gray-800/95'}`}>
+                <div className={`sticky top-0 z-[60] h-14 shrink-0 border-b border-gray-200 px-3 py-2 dark:border-gray-700 ${isToday ? 'bg-blue-50/95 backdrop-blur-sm dark:bg-blue-900/95' : 'bg-white/95 backdrop-blur-sm dark:bg-gray-800/95'}`}>
                   <div className="flex items-center gap-2 pl-1 text-xs font-bold text-gray-800 dark:text-gray-200">
                     {formatDayLabel(day)}
                     {isToday && (
@@ -489,6 +547,65 @@ export default function BookingTimelineCanvas({
                             />
                           ))
                         )}
+
+                        {/* Hidden Booking Clusters (+ N more) */}
+                        {dayData.hiddenClusters?.map((cluster, i) => (
+                          <button
+                            type="button"
+                            onClick={() => setExpandedLanes(prev => ({ ...prev, [`${lane.id}-${dayKey}`]: true }))}
+                            key={`cluster-${i}`}
+                            className="absolute flex items-center justify-center rounded-md bg-gray-100 text-[10px] font-semibold text-gray-600 shadow-sm border border-gray-200 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-700 cursor-pointer"
+                            style={{
+                              left: `${cluster.left}%`,
+                              width: `${cluster.right - cluster.left}%`,
+                              top: `${BOOKING_ROW_PADDING + dayData.rows.length * (BOOKING_ROW_HEIGHT + BOOKING_ROW_GAP)}px`,
+                              height: '24px',
+                              zIndex: 10
+                            }}
+                            title={`${cluster.count} more request(s)`}
+                          >
+                            +{cluster.count} more
+                          </button>
+                        ))}
+
+                        {/* Collapse Button */}
+                        {dayData.isExpanded && dayData.rows.length > 3 && (() => {
+                          const allBounds = dayData.rows.flat().map(b => {
+                            let startMin = getMinutesFrom0700(b.startTime);
+                            let endMin = getMinutesFrom0700(b.endTime);
+                            startMin = Math.max(0, Math.min(startMin, TOTAL_MINUTES));
+                            endMin = Math.max(0, Math.min(endMin, TOTAL_MINUTES));
+                            const dur = Math.max(15, endMin - startMin);
+                            const l = (startMin / TOTAL_MINUTES) * 100;
+                            const w = Math.max((dur / TOTAL_MINUTES) * 100, 12);
+                            return { left: l, right: l + w };
+                          });
+
+                          let centerPercent = 50;
+                          if (allBounds.length > 0) {
+                            const minL = Math.min(...allBounds.map(b => b.left));
+                            const maxR = Math.max(...allBounds.map(b => b.right));
+                            centerPercent = (minL + maxR) / 2;
+                          }
+
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => setExpandedLanes(prev => ({ ...prev, [`${lane.id}-${dayKey}`]: false }))}
+                              className="absolute flex items-center justify-center rounded-md bg-orange-50 text-[10px] font-semibold text-orange-600 shadow-sm border border-orange-200 transition-colors hover:bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800/50 dark:hover:bg-orange-900/50 cursor-pointer"
+                              style={{
+                                left: `${centerPercent}%`,
+                                transform: 'translateX(-50%)',
+                                width: '120px',
+                                top: `${BOOKING_ROW_PADDING + dayData.rows.length * (BOOKING_ROW_HEIGHT + BOOKING_ROW_GAP)}px`,
+                                height: '24px',
+                                zIndex: 10
+                              }}
+                            >
+                              Collapse
+                            </button>
+                          );
+                        })()}
                       </div>
                     </div>
                   );

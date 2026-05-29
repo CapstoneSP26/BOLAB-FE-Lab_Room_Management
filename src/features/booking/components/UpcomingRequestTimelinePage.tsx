@@ -31,7 +31,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from '../../../hooks/useToast';
 
 type SlotTypeFilter = "ALL" | number;
-type PriorityFilter = "ALL" | "SCHOOL EVENT" | "ACADEMIC" | "NORMAL";
+type PriorityFilter = "ALL" | "WORKSHOP" | "PRACTICAL" | "LECTURE";
 
 type TimelineStats = {
   totalPending: number;
