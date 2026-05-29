@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Users, MessageSquare, ClipboardCheck, Repeat2 } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { formatDate } from '../../../utils/formatDate';
@@ -34,13 +34,28 @@ export const BookingConfirmPanel: React.FC<BookingConfirmPanelProps> = ({
   loading = false,
   purposes,
   purposesLoading,
-
 }) => {
   const [reason, setReason] = useState('');
   const [studentCount, setStudentCount] = useState(1);
   const [isRecurring, setIsRecurring] = useState(false);
   const [weeks, setWeeks] = useState(1);
   const [purposeId, setPurposeId] = useState<number>(purposes[0]?.id || 1);
+
+  // ==================== LOGIC NÂNG CẤP CHẶN RECURRING ====================
+  // Tìm đối tượng Purpose đang được chọn trên giao diện
+  const selectedPurpose = purposes.find((p) => p.id === purposeId);
+
+  // Kiểm tra độ ưu tiên dựa trên trường priorityLevel từ API trả về (Cấp 2 & 3 là Độc quyền)
+  const isExclusivePurpose = selectedPurpose ? selectedPurpose.id >= 2 : false;
+
+  // Mỗi khi người dùng thay đổi Loại mục đích, nếu rơi vào mục đích Độc quyền -> Tự động reset trạng thái lặp lại về mặc định
+  useEffect(() => {
+    if (isExclusivePurpose) {
+      setIsRecurring(false);
+      setWeeks(1);
+    }
+  }, [purposeId, isExclusivePurpose]);
+  // =======================================================================
 
   const parsedDate = new Date(selectedDate);
   const isValidDate = !Number.isNaN(parsedDate.getTime());
@@ -120,7 +135,7 @@ export const BookingConfirmPanel: React.FC<BookingConfirmPanelProps> = ({
               <div>
                 <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wide mb-2.5">
                   <ClipboardCheck className="w-4 h-4 text-orange-500" />
-                  Mục đích sử dụng
+                  Mức độ ưu tiên
                 </label>
                 {purposesLoading ? (
                   <div className="h-11 bg-slate-100 animate-pulse rounded-lg" />
@@ -144,47 +159,51 @@ export const BookingConfirmPanel: React.FC<BookingConfirmPanelProps> = ({
                 )}
               </div>
 
-              {/* Recurring */}
-              <div>
-                <label className="flex items-center gap-3 cursor-pointer select-none group p-3.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 transition-all">
-                  <input
-                    type="checkbox"
-                    checked={isRecurring}
-                    onChange={(e) => setIsRecurring(e.target.checked)}
-                    className="w-5 h-5 accent-orange-600 rounded cursor-pointer"
-                  />
-                  <div className="flex items-center gap-2 flex-1">
-                    <Repeat2 className="w-4 h-4 text-orange-500" />
-                    <span className="text-sm font-semibold text-slate-900">Lặp lại hàng tuần</span>
-                  </div>
-                </label>
+              {/* ==================== ĐIỀU KIỆN HIỂN THỊ RECURRING BLOCK ==================== */}
+              {/* Chỉ render khối lặp lại hàng tuần nếu mục đích chọn có priorityLevel < 2 (Mức Normal) */}
+              {!isExclusivePurpose && (
+                <div className="animate-in fade-in-50 duration-200">
+                  <label className="flex items-center gap-3 cursor-pointer select-none group p-3.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 transition-all">
+                    <input
+                      type="checkbox"
+                      checked={isRecurring}
+                      onChange={(e) => setIsRecurring(e.target.checked)}
+                      className="w-5 h-5 accent-orange-600 rounded cursor-pointer"
+                    />
+                    <div className="flex items-center gap-2 flex-1">
+                      <Repeat2 className="w-4 h-4 text-orange-500" />
+                      <span className="text-sm font-semibold text-slate-900">Lặp lại hàng tuần</span>
+                    </div>
+                  </label>
 
-                {isRecurring && (
-                  <div className="mt-3 p-4 bg-gradient-to-br from-orange-50 to-white rounded-xl border border-orange-200 shadow-sm animate-in slide-in-from-top-2">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Số tuần</span>
-                        <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-bold">{weeks}</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="1"
-                        max="4"
-                        value={weeks}
-                        onChange={(e) => setWeeks(Number(e.target.value))}
-                        style={{
-                          background: `linear-gradient(to right, #f97316 0%, #f97316${((weeks - 1) / (4 - 1)) * 100}%, #e2e8f0 ${(weeks / 4) * 100}%, #e2e8f0 100%)`
-                        }}
-                        className="w-full h-2.5 rounded-lg appearance-none cursor-pointer"
-                      />
-                      <div className="flex justify-between text-xs text-slate-500 font-medium mt-2">
-                        <span>1 tuần</span>
-                        <span>4 tuần</span>
+                  {isRecurring && (
+                    <div className="mt-3 p-4 bg-gradient-to-br from-orange-50 to-white rounded-xl border border-orange-200 shadow-sm animate-in slide-in-from-top-2">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Số tuần</span>
+                          <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-bold">{weeks}</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="1"
+                          max="4"
+                          value={weeks}
+                          onChange={(e) => setWeeks(Number(e.target.value))}
+                          style={{
+                            background: `linear-gradient(to right, #f97316 0%, #f97316 ${((weeks - 1) / (4 - 1)) * 100}%, #e2e8f0 ${(weeks / 4) * 100}%, #e2e8f0 100%)`
+                          }}
+                          className="w-full h-2.5 rounded-lg appearance-none cursor-pointer"
+                        />
+                        <div className="flex justify-between text-xs text-slate-500 font-medium mt-2">
+                          <span>1 tuần</span>
+                          <span>4 tuần</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
+              {/* ========================================================================= */}
             </div>
           </div>
 

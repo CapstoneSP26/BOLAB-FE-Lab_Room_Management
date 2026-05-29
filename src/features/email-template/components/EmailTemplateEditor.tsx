@@ -9,7 +9,6 @@ interface Props {
 }
 
 export default function EmailTemplateEditor({ template, content, onChange }: Props) {
-  console.log("content in editor", content);
   const updateMutation = useUpdateEmailTemplate();
 
   const handleSave = () => {

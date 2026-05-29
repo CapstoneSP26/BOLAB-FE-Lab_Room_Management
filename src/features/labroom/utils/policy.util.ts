@@ -91,7 +91,6 @@ export const checkLabPolicies = (
   const maxAllowedDate = isAdvanceSooner
     ? endOfDay(maxAdvanceDate)
     : endOfDay(semesterEndDate);
-  console.log("Max Allowed Date:", maxAllowedDate);
   // Nếu thời gian bắt đầu của người dùng vượt quá mốc chặn trên
   if (isAfter(startDateTime, maxAllowedDate)) {
     if (isAdvanceSooner) {

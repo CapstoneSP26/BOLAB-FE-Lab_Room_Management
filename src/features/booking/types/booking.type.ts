@@ -12,6 +12,7 @@ export interface BookingDto {
   endTime: string;
   studentCount: number;
   reason?: string;
+  priorityLevel?: number; // 1: Normal, 2: Academic, 3: School Event (dùng để sắp xếp ưu tiên hiển thị)
 
   status: string;
   createdAt: string;

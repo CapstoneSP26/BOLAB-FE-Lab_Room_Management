@@ -23,6 +23,7 @@ export interface ScheduleDto {
   studentCount: number;
   status: ScheduleStatus;
   type: string;
+  schedulePriority?: number; // 1: Normal, 2: Academic, 3: School Event (dùng để sắp xếp ưu tiên hiển thị)
 }
 
 export interface GetSchedulesParams {

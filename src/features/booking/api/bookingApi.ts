@@ -137,9 +137,9 @@ export const bookingApi = {
   /**
   * Cancel Booking
   */
-  cancelBooking: (bookingId: string) =>
+  cancelBooking: (bookingId: string, cancelReason: string | null) =>
     axiosInstance
-      .post<{ success: boolean; message: string }>(`/bookings/cancel/${bookingId}`)
+      .post<{ success: boolean; message: string }>(`/bookings/cancel/${bookingId}`, { cancelReason })
       .then((res) => res.data),
 }
 

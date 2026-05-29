@@ -58,6 +58,8 @@ export interface CalendarEvent {
   color?: string;
   slotName?: string; // Tên loại slot, dùng để hiển thị trong tooltip
   groupName?: string
+  studentCount?: number;
+  priorityLevel?: number; // 1: Normal, 2: Academic, 3: School Event (dùng để sắp xếp ưu tiên hiển thị)
 }
 
 export interface Schedule {
