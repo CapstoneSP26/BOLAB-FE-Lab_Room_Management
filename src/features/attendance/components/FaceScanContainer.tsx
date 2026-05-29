@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Camera, X, CheckCircle, AlertCircle, Loader2, MapPin, ShieldCheck, WifiOff, TriangleAlert } from 'lucide-react';
+import axiosInstance from '../../../api/axios';
 import { useCameraStream } from '../hooks/useCameraStream';
 import { useFaceApiDetection } from '../hooks/useFaceApiDetection';
 
@@ -26,14 +27,14 @@ interface FaceScanContainerProps {
 type ScanStatus = 'location-check' | 'location-denied' | 'loading' | 'ready' | 'detecting' | 'error';
 type LocationStatus = 'idle' | 'checking' | 'allowed' | 'blocked' | 'denied';
 
-const CAMPUS_ZONE = {
-  name: 'Campus area',
-  latitude: 0,
-  longitude: 0,
-  radiusMeters: 50,
-} as const;
+const CAMPUS_RADIUS_METERS = 100;
+const ACCURACY_THRESHOLD_METERS = 100;
+const CAMPUS_LOCATION_API = 'campuses/location';
 
-const ACCURACY_THRESHOLD_METERS = 30;
+type CampusLocation = {
+  latitude: number;
+  longitude: number;
+};
 
 const toRadians = (value: number) => (value * Math.PI) / 180;
 
@@ -65,6 +66,7 @@ export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
   const [locationStatus, setLocationStatus] = useState<LocationStatus>('idle');
   const [locationError, setLocationError] = useState('');
   const [, setStudentLocation] = useState<{ latitude: number; longitude: number; accuracy: number } | null>(null);
+  const [campusLocation, setCampusLocation] = useState<CampusLocation | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [detectedCount, setDetectedCount] = useState(0);
   const [pendingRecognition, setPendingRecognition] = useState<PendingRecognition | null>(null);
@@ -73,10 +75,34 @@ export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
   const lastCaptureRef = useRef<number>(0);
   const CAPTURE_COOLDOWN = 500; // ms between detection checks
 
+  const fetchCampusLocation = async () => {
+    try {
+      const response = await axiosInstance.get<CampusLocation | null>(CAMPUS_LOCATION_API);
+      const campus = response.data;
+
+      if (!campus || typeof campus.latitude !== 'number' || typeof campus.longitude !== 'number') {
+        throw new Error('Campus location is not available.');
+      }
+
+      setCampusLocation(campus);
+      return campus;
+    } catch (error) {
+      console.error('Failed to load campus location:', error);
+      setCampusLocation(null);
+      setLocationStatus('denied');
+      setStatus('location-denied');
+      setLocationError('Unable to load campus location. Please try again later.');
+      return null;
+    }
+  };
+
   const checkCampusLocation = async () => {
     setLocationStatus('checking');
     setStatus('location-check');
     setLocationError('');
+
+    const campus = campusLocation || await fetchCampusLocation();
+    if (!campus) return false;
 
     if (!('geolocation' in navigator)) {
       setLocationStatus('denied');
@@ -92,11 +118,11 @@ export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
           const distance = getDistanceMeters(
             latitude,
             longitude,
-            CAMPUS_ZONE.latitude,
-            CAMPUS_ZONE.longitude,
+            campus.latitude,
+            campus.longitude,
           );
 
-          const withinCampus = distance <= CAMPUS_ZONE.radiusMeters;
+          const withinCampus = distance <= CAMPUS_RADIUS_METERS;
           const accuracyAllowed = accuracy <= ACCURACY_THRESHOLD_METERS;
           const isAllowed = withinCampus && accuracyAllowed;
 
@@ -370,11 +396,11 @@ export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
             <div className="mt-3 space-y-2 text-sm text-amber-800">
               <div className="flex items-center gap-2">
                 <MapPin size={16} />
-                <span>{CAMPUS_ZONE.name}</span>
+                <span>Campus location: {campusLocation ? `${campusLocation.latitude.toFixed(6)}, ${campusLocation.longitude.toFixed(6)}` : 'Loading...'}</span>
               </div>
               <div className="flex items-center gap-2">
                 <ShieldCheck size={16} />
-                <span>Allowed radius: {CAMPUS_ZONE.radiusMeters}m</span>
+                <span>Allowed radius: {CAMPUS_RADIUS_METERS}m</span>
               </div>
               <div className="flex items-center gap-2">
                 <WifiOff size={16} />
