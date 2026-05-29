@@ -8,6 +8,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router';
 import { CheckCircle, XCircle, Loader2, Camera, SwitchCamera, MapPinned, MapPin, ShieldCheck, WifiOff, TriangleAlert } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
+import axiosInstance from '../../api/axios';
 import { useScanQRCode } from '../../features/attendance';
 import { useToast } from '../../hooks/useToast';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -18,14 +19,14 @@ type CameraFacing = 'front' | 'back';
 
 type LocationStatus = 'idle' | 'checking' | 'allowed' | 'blocked' | 'denied';
 
-const CAMPUS_ZONE = {
-  name: 'Campus area',
-  latitude: 0,
-  longitude: 0,
-  radiusMeters: 50,
-} as const;
+const CAMPUS_RADIUS_METERS = 100;
+const ACCURACY_THRESHOLD_METERS = 75;
+const CAMPUS_LOCATION_API = 'campuses/location';
 
-const ACCURACY_THRESHOLD_METERS = 30;
+type CampusLocation = {
+  latitude: number;
+  longitude: number;
+};
 
 const toRadians = (value: number) => (value * Math.PI) / 180;
 
@@ -59,6 +60,7 @@ export default function StudentAttendanceScanPage() {
   const [locationStatus, setLocationStatus] = useState<LocationStatus>('idle');
   const [locationError, setLocationError] = useState('');
   const [studentLocation, setStudentLocation] = useState<{ latitude: number; longitude: number; accuracy: number } | null>(null);
+  const [campusLocation, setCampusLocation] = useState<CampusLocation | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isScanning = useRef(false);
   const scanAttempts = useRef(0);
@@ -102,10 +104,34 @@ export default function StudentAttendanceScanPage() {
     }
   };
 
+  const fetchCampusLocation = async () => {
+    try {
+      const response = await axiosInstance.get<CampusLocation | null>(CAMPUS_LOCATION_API);
+      const campus = response.data;
+
+      if (!campus || typeof campus.latitude !== 'number' || typeof campus.longitude !== 'number') {
+        throw new Error('Campus location is not available.');
+      }
+
+      setCampusLocation(campus);
+      return campus;
+    } catch (error) {
+      console.error('Failed to load campus location:', error);
+      setCampusLocation(null);
+      setLocationStatus('denied');
+      setScanState('location-denied');
+      setLocationError('Unable to load campus location. Please try again later.');
+      return null;
+    }
+  };
+
   const checkCampusLocation = async () => {
     setLocationStatus('checking');
     setScanState('location-check');
     setLocationError('');
+
+    const campus = campusLocation || await fetchCampusLocation();
+    if (!campus) return;
 
     if (!('geolocation' in navigator)) {
       setLocationStatus('denied');
@@ -120,11 +146,11 @@ export default function StudentAttendanceScanPage() {
         const distance = getDistanceMeters(
           latitude,
           longitude,
-          CAMPUS_ZONE.latitude,
-          CAMPUS_ZONE.longitude,
+          campus.latitude,
+          campus.longitude,
         );
 
-        const withinCampus = distance <= CAMPUS_ZONE.radiusMeters;
+        const withinCampus = distance <= CAMPUS_RADIUS_METERS;
         const accuracyAllowed = accuracy <= ACCURACY_THRESHOLD_METERS;
         setStudentLocation({ latitude, longitude, accuracy });
         setLocationStatus(withinCampus && accuracyAllowed ? 'allowed' : 'blocked');
@@ -133,7 +159,7 @@ export default function StudentAttendanceScanPage() {
         if (withinCampus && accuracyAllowed) {
           startScanning();
         } else if (!withinCampus) {
-          setLocationError('Bạn đang ở quá xa so với phòng học.');
+          setLocationError('Bạn đang ở quá xa so với trường học.');
         } else {
           setLocationError(
             `Location accuracy is too weak (±${Math.round(accuracy)}m). Please move to a more stable spot and try again.`,
@@ -616,18 +642,18 @@ export default function StudentAttendanceScanPage() {
                       </p>
                     </div>
                   ) : (
-                    <p className="text-slate-600">Please stand inside {CAMPUS_ZONE.name} to continue.</p>
+                    <p className="text-slate-600">Please stand inside the campus radius to continue.</p>
                   )}
                 </div>
 
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2 text-sm text-slate-700 mb-5">
                   <div className="flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-slate-500" />
-                    <span>{CAMPUS_ZONE.name}</span>
+                    <span>Campus location: {campusLocation ? `${campusLocation.latitude.toFixed(6)}, ${campusLocation.longitude.toFixed(6)}` : 'Loading...'}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-slate-500" />
-                    <span>Allowed radius: {CAMPUS_ZONE.radiusMeters}m</span>
+                    <span>Allowed radius: {CAMPUS_RADIUS_METERS}m</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <WifiOff className="w-4 h-4 text-slate-500" />
