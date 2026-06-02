@@ -1,5 +1,6 @@
 import { axiosInstance } from "../../../api";
 import type { PagedResponse } from "../../../types/pagination.types";
+import { type ResultMessage } from "../../../types/response.type";
 import type {
   BookingDto,
   CreateBookingCommand,
@@ -19,6 +20,7 @@ import type {
   GetBookingByIdResponse,
   GetBookingByScheduleIdResponse,
   ApproveBookingRequestResponse,
+  ApproveBookingResponse,
   RejectBookingRequestResponse,
   GetBookingStatusLookupResponse,
 } from "../types/booking.type";
@@ -121,7 +123,7 @@ export const bookingApi = {
   */
   approveBooking: (bookingId: string) =>
     axiosInstance
-      .put<boolean>(`/Bookings/${bookingId}/approve`, { bookingId: bookingId }) // Kiểm tra lại Route của Controller bạn đặt
+      .put<ResultMessage<ApproveBookingResponse>>(`/Bookings/${bookingId}/approve`, { bookingId: bookingId }) // Kiểm tra lại Route của Controller bạn đặt
       .then((res) => res.data),
 
   /**
@@ -135,9 +137,9 @@ export const bookingApi = {
   /**
   * Cancel Booking
   */
-  cancelBooking: (bookingId: string) =>
+  cancelBooking: (bookingId: string, cancelReason: string | null) =>
     axiosInstance
-      .post<{ success: boolean; message: string }>(`/bookings/cancel/${bookingId}`)
+      .post<{ success: boolean; message: string }>(`/bookings/cancel/${bookingId}`, { cancelReason })
       .then((res) => res.data),
 }
 

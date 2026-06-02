@@ -65,3 +65,22 @@ export const getDynamicSemesters = (): string[] => {
   }
   return result;
 };
+
+// --- HÀM BỔ TRỢ: Lấy ngày cuối cùng của kì học dựa vào ngày hiện tại ---
+export const getCurrentSemesterEndDate = (date: Date): Date => {
+  const year = date.getFullYear();
+
+  // Định nghĩa khoảng thời gian cho các kì (Ví dụ phổ biến, bạn có thể điều chỉnh lại ngày tháng cho đúng thực tế)
+  // Kì Spring (SP): Tháng 1 - Tháng 4 (Kết thúc 30/04)
+  // Kì Summer (SU): Tháng 5 - Tháng 8 (Kết thúc 31/08)
+  // Kì Fall (FA): Tháng 9 - Tháng 12 (Kết thúc 31/12)
+  const month = date.getMonth(); // 0 = Tháng 1, 11 = Tháng 12
+
+  if (month >= 0 && month <= 3) {
+    return new Date(year, 3, 30); // 30/04
+  } else if (month >= 4 && month <= 7) {
+    return new Date(year, 7, 31); // 31/08
+  } else {
+    return new Date(year, 11, 31); // 31/12
+  }
+};

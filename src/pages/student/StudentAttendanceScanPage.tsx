@@ -6,15 +6,45 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router';
-import { CheckCircle, XCircle, Loader2, Camera, SwitchCamera } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2, Camera, SwitchCamera, MapPinned, MapPin, ShieldCheck, WifiOff, TriangleAlert } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
+import axiosInstance from '../../api/axios';
 import { useScanQRCode } from '../../features/attendance';
 import { useToast } from '../../hooks/useToast';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useProfile } from '../../features/profile';
 
-type ScanState = 'idle' | 'requesting-camera' | 'scanning' | 'processing' | 'success' | 'error' | 'no-camera';
+type ScanState = 'idle' | 'requesting-camera' | 'scanning' | 'processing' | 'success' | 'error' | 'no-camera' | 'location-check' | 'location-denied';
 type CameraFacing = 'front' | 'back';
+
+type LocationStatus = 'idle' | 'checking' | 'allowed' | 'blocked' | 'denied';
+
+const CAMPUS_RADIUS_METERS = 100;
+const ACCURACY_THRESHOLD_METERS = 100;
+const CAMPUS_LOCATION_API = 'campuses/location';
+
+type CampusLocation = {
+  latitude: number;
+  longitude: number;
+};
+
+const toRadians = (value: number) => (value * Math.PI) / 180;
+
+const getDistanceMeters = (
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+) => {
+  const earthRadius = 6371000;
+  const dLat = toRadians(lat2 - lat1);
+  const dLon = toRadians(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLon / 2) ** 2;
+
+  return earthRadius * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+};
 
 export default function StudentAttendanceScanPage() {
   const { scheduleId } = useParams<{ scheduleId: string }>();
@@ -27,6 +57,10 @@ export default function StudentAttendanceScanPage() {
   const [, setScannedData] = useState('');
   const [cameraFacing, setCameraFacing] = useState<CameraFacing>('back');
   const [availableCameras, setAvailableCameras] = useState<{ id: string; label: string }[]>([]);
+  const [locationStatus, setLocationStatus] = useState<LocationStatus>('idle');
+  const [locationError, setLocationError] = useState('');
+  const [studentLocation, setStudentLocation] = useState<{ latitude: number; longitude: number; accuracy: number } | null>(null);
+  const [campusLocation, setCampusLocation] = useState<CampusLocation | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isScanning = useRef(false);
   const scanAttempts = useRef(0);
@@ -70,10 +104,91 @@ export default function StudentAttendanceScanPage() {
     }
   };
 
+  const fetchCampusLocation = async () => {
+    try {
+      const response = await axiosInstance.get<CampusLocation | null>(CAMPUS_LOCATION_API);
+      const campus = response.data;
+
+      if (!campus || typeof campus.latitude !== 'number' || typeof campus.longitude !== 'number') {
+        throw new Error('Campus location is not available.');
+      }
+
+      setCampusLocation(campus);
+      return campus;
+    } catch (error) {
+      console.error('Failed to load campus location:', error);
+      setCampusLocation(null);
+      setLocationStatus('denied');
+      setScanState('location-denied');
+      setLocationError('Unable to load campus location. Please try again later.');
+      return null;
+    }
+  };
+
+  const checkCampusLocation = async () => {
+    setLocationStatus('checking');
+    setScanState('location-check');
+    setLocationError('');
+
+    const campus = campusLocation || await fetchCampusLocation();
+    if (!campus) return;
+
+    if (!('geolocation' in navigator)) {
+      setLocationStatus('denied');
+      setScanState('location-denied');
+      setLocationError('Your browser does not support location access.');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude, accuracy } = position.coords;
+        const distance = getDistanceMeters(
+          latitude,
+          longitude,
+          campus.latitude,
+          campus.longitude,
+        );
+
+        const withinCampus = distance <= CAMPUS_RADIUS_METERS;
+        const accuracyAllowed = accuracy <= ACCURACY_THRESHOLD_METERS;
+        setStudentLocation({ latitude, longitude, accuracy });
+        setLocationStatus(withinCampus && accuracyAllowed ? 'allowed' : 'blocked');
+        setScanState(withinCampus && accuracyAllowed ? 'requesting-camera' : 'location-denied');
+
+        if (withinCampus && accuracyAllowed) {
+          startScanning();
+        } else if (!withinCampus) {
+          setLocationError('Bạn đang ở quá xa so với trường học.');
+        } else {
+          setLocationError(
+            `Location accuracy is too weak (±${Math.round(accuracy)}m). Please move to a more stable spot and try again.`,
+          );
+        }
+      },
+      (error) => {
+        setLocationStatus('denied');
+        setScanState('location-denied');
+
+        if (error.code === error.PERMISSION_DENIED) {
+          setLocationError('Location permission denied. Please allow location access to continue.');
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          setLocationError('Unable to determine your location. Please try again near the campus.');
+        } else {
+          setLocationError('Location check timed out. Please try again.');
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      },
+    );
+  };
+
   // Start camera when component mounts
   useEffect(() => {
-    // Don't start scanning until we have user data AND profile data loaded
-    const hasUserData = user?.id;  // ← Changed from user?.sub to user?.Id
+    const hasUserData = user?.id;
     const hasProfileData = (profileData as any)?.id;
 
     if (!hasUserData && !hasProfileData) {
@@ -81,7 +196,7 @@ export default function StudentAttendanceScanPage() {
     }
 
     const timer = setTimeout(() => {
-      startScanning();
+      checkCampusLocation();
     }, 100);
 
     return () => {
@@ -307,6 +422,10 @@ export default function StudentAttendanceScanPage() {
         scheduleId: finalScheduleId.trim(),
         studentId: studentId.trim(),
         isCheckIn,
+        latitude: studentLocation?.latitude,
+        longitude: studentLocation?.longitude,
+        accuracy: studentLocation?.accuracy,
+        timestamp: new Date().toISOString(),
       });
 
       setScanState('success');
@@ -363,8 +482,17 @@ export default function StudentAttendanceScanPage() {
   const handleRetry = () => {
     setScanState('idle');
     setErrorMessage('');
+    setLocationError('');
+    setLocationStatus('idle');
     setScannedData('');
-    startScanning();
+    setAvailableCameras([]);
+    setCameraFacing('back');
+    setStudentLocation(null);
+    isScanning.current = false;
+
+    setTimeout(() => {
+      checkCampusLocation();
+    }, 100);
   };
 
   // Main render
@@ -487,6 +615,62 @@ export default function StudentAttendanceScanPage() {
             </div>
           )}
 
+          {/* Campus location check state */}
+          {(scanState === 'location-check' || scanState === 'location-denied') && (
+            <div className="min-h-screen flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full">
+                <div className="flex justify-center mb-4">
+                  <div className={`w-16 h-16 rounded-full flex items-center justify-center ${locationStatus === 'allowed' ? 'bg-emerald-100' : 'bg-blue-100'}`}>
+                    {locationStatus === 'allowed' ? (
+                      <ShieldCheck className="w-8 h-8 text-emerald-600" />
+                    ) : (
+                      <MapPinned className="w-8 h-8 text-blue-600" />
+                    )}
+                  </div>
+                </div>
+                <h2 className="text-xl font-bold text-slate-900 text-center mb-2">Campus location check</h2>
+                <div className="text-center mb-4">
+                  {locationStatus === 'checking' ? (
+                    <p className="text-slate-600">Checking if you are inside the campus area...</p>
+                  ) : locationError ? (
+                    <div className="space-y-3">
+                      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-600 shadow-lg animate-bounce">
+                        <TriangleAlert className="h-8 w-8" />
+                      </div>
+                      <p className="text-2xl font-extrabold leading-tight text-amber-700">
+                        Bạn đang ở quá xa so với trường học.
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-slate-600">Please stand inside the campus radius to continue.</p>
+                  )}
+                </div>
+
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2 text-sm text-slate-700 mb-5">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-slate-500" />
+                    <span>Campus location: {campusLocation ? `${campusLocation.latitude.toFixed(6)}, ${campusLocation.longitude.toFixed(6)}` : 'Loading...'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-slate-500" />
+                    <span>Allowed radius: {CAMPUS_RADIUS_METERS}m</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <WifiOff className="w-4 h-4 text-slate-500" />
+                    <span>Accuracy threshold: ±{ACCURACY_THRESHOLD_METERS}m</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleRetry}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
+                >
+                  Retry location check
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Requesting camera / Processing state */}
           {(scanState === 'requesting-camera' || scanState === 'processing') && (
             <div className="min-h-screen flex items-center justify-center p-4">
@@ -507,16 +691,19 @@ export default function StudentAttendanceScanPage() {
           {/* Scanning state - show camera */}
           {scanState === 'scanning' && (
             <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 flex flex-col">
-              {/* Header */}
               <div className="bg-slate-800/80 backdrop-blur-sm border-b border-slate-700/50 px-4 py-5">
-                <div className="max-w-3xl mx-auto text-center">
+                <div className="max-w-3xl mx-auto text-center space-y-2">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-emerald-200">
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    Campus verified
+                  </div>
                   <h1 className="text-2xl font-bold text-white mb-1.5">Scan QR Code for Attendance</h1>
                   <p className="text-sm text-slate-300 flex items-center justify-center gap-2">
                     <span className="relative flex h-2 w-2">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                     </span>
-                    Scanning... Position the QR code within the frame
+                    You are inside the campus. Position the QR code within the frame.
                   </p>
                 </div>
               </div>

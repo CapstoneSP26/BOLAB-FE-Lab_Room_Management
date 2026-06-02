@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Camera, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { Camera, X, CheckCircle, AlertCircle, Loader2, MapPin, ShieldCheck, WifiOff, TriangleAlert } from 'lucide-react';
+import axiosInstance from '../../../api/axios';
 import { useCameraStream } from '../hooks/useCameraStream';
 import { useFaceApiDetection } from '../hooks/useFaceApiDetection';
 
@@ -23,16 +24,49 @@ interface FaceScanContainerProps {
   scheduleId?: string;
 }
 
+type ScanStatus = 'location-check' | 'location-denied' | 'loading' | 'ready' | 'detecting' | 'error';
+type LocationStatus = 'idle' | 'checking' | 'allowed' | 'blocked' | 'denied';
+
+const CAMPUS_RADIUS_METERS = 100;
+const ACCURACY_THRESHOLD_METERS = 100;
+const CAMPUS_LOCATION_API = 'campuses/location';
+
+type CampusLocation = {
+  latitude: number;
+  longitude: number;
+};
+
+const toRadians = (value: number) => (value * Math.PI) / 180;
+
+const getDistanceMeters = (
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+) => {
+  const earthRadius = 6371000;
+  const dLat = toRadians(lat2 - lat1);
+  const dLon = toRadians(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLon / 2) ** 2;
+
+  return earthRadius * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+};
+
 export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
   onFaceScanned,
   onError,
-  isLoading = false,
   onCaptureComplete,
   scheduleId,
 }) => {
   const { videoRef, isStreaming, error: cameraError, startCamera, stopCamera, captureFrame } = useCameraStream();
   const { isModelLoaded, loadModel, detectFaces, clearTrackedFaces } = useFaceApiDetection();
-  const [status, setStatus] = useState<'loading' | 'ready' | 'detecting' | 'error'>('loading');
+  const [status, setStatus] = useState<ScanStatus>('location-check');
+  const [locationStatus, setLocationStatus] = useState<LocationStatus>('idle');
+  const [locationError, setLocationError] = useState('');
+  const [, setStudentLocation] = useState<{ latitude: number; longitude: number; accuracy: number } | null>(null);
+  const [campusLocation, setCampusLocation] = useState<CampusLocation | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [detectedCount, setDetectedCount] = useState(0);
   const [pendingRecognition, setPendingRecognition] = useState<PendingRecognition | null>(null);
@@ -41,31 +75,137 @@ export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
   const lastCaptureRef = useRef<number>(0);
   const CAPTURE_COOLDOWN = 500; // ms between detection checks
 
+  const fetchCampusLocation = async () => {
+    try {
+      const response = await axiosInstance.get<CampusLocation | null>(CAMPUS_LOCATION_API);
+      const campus = response.data;
+
+      if (!campus || typeof campus.latitude !== 'number' || typeof campus.longitude !== 'number') {
+        throw new Error('Campus location is not available.');
+      }
+
+      setCampusLocation(campus);
+      return campus;
+    } catch (error) {
+      console.error('Failed to load campus location:', error);
+      setCampusLocation(null);
+      setLocationStatus('denied');
+      setStatus('location-denied');
+      setLocationError('Unable to load campus location. Please try again later.');
+      return null;
+    }
+  };
+
+  const checkCampusLocation = async () => {
+    setLocationStatus('checking');
+    setStatus('location-check');
+    setLocationError('');
+
+    const campus = campusLocation || await fetchCampusLocation();
+    if (!campus) return false;
+
+    if (!('geolocation' in navigator)) {
+      setLocationStatus('denied');
+      setStatus('location-denied');
+      setLocationError('Your browser does not support location access.');
+      return false;
+    }
+
+    return new Promise<boolean>((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude, accuracy } = position.coords;
+          const distance = getDistanceMeters(
+            latitude,
+            longitude,
+            campus.latitude,
+            campus.longitude,
+          );
+
+          const withinCampus = distance <= CAMPUS_RADIUS_METERS;
+          const accuracyAllowed = accuracy <= ACCURACY_THRESHOLD_METERS;
+          const isAllowed = withinCampus && accuracyAllowed;
+
+          setStudentLocation({ latitude, longitude, accuracy });
+          setLocationStatus(isAllowed ? 'allowed' : 'blocked');
+          setStatus(isAllowed ? 'loading' : 'location-denied');
+
+          if (!withinCampus) {
+            setLocationError('Bạn đang ở quá xa so với phòng học.');
+          } else if (!accuracyAllowed) {
+            setLocationError(`Location accuracy is too weak (±${Math.round(accuracy)}m). Please move to a more stable spot and try again.`);
+          }
+
+          resolve(isAllowed);
+        },
+        (error) => {
+          setLocationStatus('denied');
+          setStatus('location-denied');
+
+          if (error.code === error.PERMISSION_DENIED) {
+            setLocationError('Location permission denied. Please allow location access to continue.');
+          } else if (error.code === error.POSITION_UNAVAILABLE) {
+            setLocationError('Unable to determine your location. Please try again near the campus.');
+          } else {
+            setLocationError('Location check timed out. Please try again.');
+          }
+
+          resolve(false);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        },
+      );
+    });
+  };
+
+  const handleRetry = () => {
+    setStatus('location-check');
+    setLocationStatus('idle');
+    setLocationError('');
+    setStudentLocation(null);
+    setDetectedCount(0);
+    setPendingRecognition(null);
+    setIsDetectionActive(true);
+    setIsProcessing(false);
+    lastCaptureRef.current = 0;
+
+    void initializeScanner();
+  };
+
+  const initializeScanner = async () => {
+    try {
+      setStatus('loading');
+      console.log('🚀 Checking campus location...');
+
+      const isAllowed = await checkCampusLocation();
+      if (!isAllowed) {
+        return;
+      }
+
+      console.log('✅ Location allowed, loading face detection...');
+      await loadModel();
+      console.log('✅ Models loaded');
+
+      await startCamera();
+      console.log('✅ Camera started');
+
+      clearTrackedFaces();
+      setStatus('ready');
+      console.log('✅ Ready for scanning');
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Initialization failed';
+      console.error('❌ Init error:', errorMsg);
+      setStatus('error');
+      onError?.(errorMsg);
+    }
+  };
+
   // Initialize camera and load face-api model
   useEffect(() => {
-    const initialize = async () => {
-      try {
-        setStatus('loading');
-        console.log('🚀 Initializing camera and face detection...');
-        
-        await loadModel();
-        console.log('✅ Models loaded');
-        
-        await startCamera();
-        console.log('✅ Camera started');
-        
-        clearTrackedFaces();
-        setStatus('ready');
-        console.log('✅ Ready for scanning');
-      } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : 'Initialization failed';
-        console.error('❌ Init error:', errorMsg);
-        setStatus('error');
-        onError?.(errorMsg);
-      }
-    };
-
-    initialize();
+    void initializeScanner();
 
     return () => {
       console.log('🛑 Cleaning up camera');
@@ -93,7 +233,7 @@ export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
 
         // Run face-api detection
         const detectionResult = await detectFaces(canvas);
-        
+
         if (detectionCount % 10 === 0) {
           console.log(`📊 Detection #${detectionCount}:`, {
             success: detectionResult.success,
@@ -185,6 +325,10 @@ export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
 
   const getStatusColor = () => {
     switch (status) {
+      case 'location-check':
+        return 'bg-blue-500';
+      case 'location-denied':
+        return 'bg-amber-500';
       case 'loading':
         return 'bg-yellow-500';
       case 'ready':
@@ -200,6 +344,12 @@ export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
 
   const getStatusText = () => {
     switch (status) {
+      case 'location-check':
+        return locationStatus === 'checking'
+          ? 'Checking campus location...'
+          : 'Verifying your location...';
+      case 'location-denied':
+        return 'Location required';
       case 'loading':
         return 'Initializing camera...';
       case 'ready':
@@ -229,10 +379,43 @@ export const FaceScanContainer: React.FC<FaceScanContainerProps> = ({
     <div className="w-full space-y-4">
       {/* Status Bar */}
       <div className={`flex items-center gap-2 p-4 rounded-lg text-white ${getStatusColor()}`}>
+        {status === 'location-check' && <MapPin size={20} />}
+        {status === 'location-check' && locationStatus === 'checking' && <Loader2 className="animate-spin" size={20} />}
+        {status === 'location-denied' && <TriangleAlert size={20} />}
         {status === 'loading' && <Camera className="animate-spin" size={20} />}
         {status === 'detecting' && <CheckCircle size={20} />}
         <span className="font-medium">{getStatusText()}</span>
       </div>
+
+      {/* Location Messages */}
+      {status === 'location-denied' && locationError && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-900 px-4 py-3 rounded-lg flex items-start gap-3">
+          <TriangleAlert size={20} className="flex-shrink-0 mt-0.5 text-amber-600" />
+          <div>
+            <p className="font-medium">{locationError}</p>
+            <div className="mt-3 space-y-2 text-sm text-amber-800">
+              <div className="flex items-center gap-2">
+                <MapPin size={16} />
+                <span>Campus location: {campusLocation ? `${campusLocation.latitude.toFixed(6)}, ${campusLocation.longitude.toFixed(6)}` : 'Loading...'}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <ShieldCheck size={16} />
+                <span>Allowed radius: {CAMPUS_RADIUS_METERS}m</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <WifiOff size={16} />
+                <span>Accuracy threshold: ±{ACCURACY_THRESHOLD_METERS}m</span>
+              </div>
+            </div>
+            <button
+              onClick={handleRetry}
+              className="mt-4 rounded-lg bg-amber-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-amber-700"
+            >
+              Retry location check
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Error Messages */}
       {cameraError && (

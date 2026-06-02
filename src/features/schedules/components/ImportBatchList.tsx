@@ -55,7 +55,7 @@ export const ImportBatchList = ({ batches, onDelete, onReimport, isDeleting }: I
                       <RefreshCw className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => { if (confirm("Xóa đợt import này sẽ xóa toàn bộ lịch liên quan?")) onDelete(batch.id) }}
+                      onClick={() => { if (confirm("Xóa đợt import này sẽ xóa toàn bộ lịch liên quan?")) onDelete(Number(batch.id)) }}
                       disabled={isDeleting}
                       className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
                       title="Xóa đợt này"

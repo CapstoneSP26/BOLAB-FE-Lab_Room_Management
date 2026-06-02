@@ -12,7 +12,7 @@ import {
   FPTLogo,
 } from "../../components/icon/index.ts";
 import { useAuthStore } from "../../store/useAuthStore.ts";
-import { Building } from "lucide-react"
+import { Building, Mail, BookPlus } from "lucide-react"
 type IconProps = React.SVGProps<SVGSVGElement> & { size?: number };
 type IconComp = React.ComponentType<IconProps>;
 
@@ -91,6 +91,13 @@ const AppSidebar: React.FC = () => {
         ],
       },
 
+      {
+        icon: Mail,
+        name: "Email Templates",
+        path: p("/email-templates"),
+        show: isAdmin,
+      },
+
       // --- BOOKING REQUESTS (Chỉ Manager) ---
       {
         icon: ListBookingRequest,
@@ -101,7 +108,12 @@ const AppSidebar: React.FC = () => {
           { name: "Approve/Reject History", path: p("/booking-requests/history") },
         ],
       },
-
+      {
+        icon: BookPlus,
+        name: "Book Schedule",
+        show: isAdmin,
+        path: "/book-room",
+      },
       // --- REPORTS & INCIDENTS (Chung) ---
       { icon: ListIcon, name: "Report List", path: p("/reports") },
       {
@@ -132,6 +144,12 @@ const AppSidebar: React.FC = () => {
         icon: Building,
         name: "Building Management",
         path: p("/building-management"),
+        show: isAdmin,
+      },
+      {
+        icon: ListIcon,
+        name: "Group Management",
+        path: p("/group-management"),
         show: isAdmin,
       },
       {

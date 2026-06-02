@@ -228,7 +228,6 @@ export const useDeleteLabRoom = (options: MutationOptions<void> = {}) => {
 export const useUpdateRoomPolicy = (
   options: MutationOptions<LabRoomPolicy> = {},
 ) => {
-  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({
@@ -240,10 +239,7 @@ export const useUpdateRoomPolicy = (
       policyKey: string;
       payload: LabRoomPolicyUpdatePayload;
     }) => labroomApi.updateLabPolicy(labRoomId, policyKey, payload),
-    onSuccess: (data, variables) => {
-      void queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.ROOM_POLICIES, variables.labRoomId],
-      });
+    onSuccess: (data) => {
       options.onSuccess?.(data, "");
     },
     onError: (error: Error) => {

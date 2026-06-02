@@ -5,3 +5,4 @@ export interface User {
   avatarUrl?: string;
   role?: string;
 }
+

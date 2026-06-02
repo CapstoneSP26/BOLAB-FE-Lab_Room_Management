@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import type { BookingRequest } from "../../booking/types/booking.type";
 import { InfoCard, InfoRow, Skeleton } from "./BookingRequestModalParts";
 import { norm } from "../../../utils/status";
-import { formatUtcDateLabel, convertHoursUtcToVN } from "../../../utils/date.util";
+import { formatUtcDateLabel, convertHoursUtcToVN, formatIsoDateTimeForDisplay } from "../../../utils/date.util";
 import { AlertCircle, Calendar } from "lucide-react";
 
 type Props = {
@@ -212,7 +212,8 @@ export default function BookingRequestReviewModal({
                     />
                     <InfoRow
                       label="Date"
-                      value={booking.date || "-"}
+                      // @ts-ignore
+                      value={booking.date ? formatUtcDateLabel(booking.date) : (booking.startTime ? formatUtcDateLabel(booking.startTime) : "-")}
                       mono
                     />
                     <InfoRow
@@ -235,23 +236,33 @@ export default function BookingRequestReviewModal({
                     />
                     <InfoRow
                       label="Students"
-                      value={String(booking.studentCount ?? "-")}
+                      // @ts-ignore
+                      value={String(booking.studentCount ?? booking.StudentCount ?? booking.totalStudents ?? "-")}
                     />
                   </InfoCard>
 
                   <InfoCard title="Requester">
                     <InfoRow
                       label="Full Name"
-                      value={booking.requester?.fullName || "-"}
+                      // @ts-ignore
+                      value={booking.requester?.fullName ?? booking.userFullName ?? booking.userName ?? booking.requestedBy ?? "-"}
                     />
                     <InfoRow
                       label="User code"
-                      value={booking.requester?.userCode || "-"}
+                      // @ts-ignore
+                      value={booking.requester?.userCode ?? booking.userCode ?? "-"}
                       mono
                     />
                     <InfoRow
                       label="Email"
-                      value={booking.requester?.email || "-"}
+                      // @ts-ignore
+                      value={booking.requester?.email ?? booking.userEmail ?? booking.email ?? "-"}
+                    />
+                    <InfoRow
+                      label="Created at"
+                      // @ts-ignore
+                      value={(booking.requestedAt ?? booking.createdAt ?? booking.updatedAt) ? formatIsoDateTimeForDisplay(String(booking.requestedAt ?? booking.createdAt ?? booking.updatedAt)) : "-"}
+                      mono
                     />
                   </InfoCard>
                 </div>

@@ -4,10 +4,12 @@ import {
   isAfter,
   isBefore,
   parse,
-  isValid
+  isValid,
+  endOfDay
 } from 'date-fns';
 import type { PolicyTypeEnum, PolicyValidationResult } from '../types/policy.type';
 import { PolicyType, PolicyTypeEnumValue } from '../types/policy.type';
+import { getCurrentSemesterEndDate } from '../../../utils/semester.util';
 
 const POLICY_TYPE_BY_NUMBER: Record<number, PolicyTypeEnum> = Object.fromEntries(
   (Object.entries(PolicyTypeEnumValue) as [PolicyTypeEnum, number][]).map(
@@ -78,17 +80,32 @@ export const checkLabPolicies = (
     }
   }
 
-  // Rule: Thời gian đặt trước tối đa (MaxBookingAdvance - đơn vị: Ngày)
-  if (policies[PolicyType.MaxBookingAdvance]) {
-    const maxDays = parseInt(policies[PolicyType.MaxBookingAdvance]);
-    const latestAllowed = addDays(now, maxDays);
-    if (isAfter(startDateTime, latestAllowed)) {
+  // --- THAY ĐỔI ĐIỀU KIỆN TẠI ĐÂY ---
+  // Rule: Thời gian đặt trước tối đa (Phụ thuộc vào MaxBookingAdvance HOẶC Ngày cuối học kỳ)
+  const maxDays = Number(policies?.[PolicyType.MaxBookingAdvance] ?? 365);
+  const maxAdvanceDate = addDays(now, maxDays);
+  const semesterEndDate = getCurrentSemesterEndDate(now);
+
+  // Tìm mốc thời gian giới hạn nhỏ hơn (sớm hơn) và lấy mốc cuối ngày (23:59:59)
+  const isAdvanceSooner = isBefore(maxAdvanceDate, semesterEndDate);
+  const maxAllowedDate = isAdvanceSooner
+    ? endOfDay(maxAdvanceDate)
+    : endOfDay(semesterEndDate);
+  // Nếu thời gian bắt đầu của người dùng vượt quá mốc chặn trên
+  if (isAfter(startDateTime, maxAllowedDate)) {
+    if (isAdvanceSooner) {
       return {
         isValid: false,
         message: `Phòng này chỉ cho phép đặt trước tối đa trong vòng ${maxDays} ngày.`
       };
+    } else {
+      return {
+        isValid: false,
+        message: 'Bạn chỉ được phép đặt các ngày nằm trong học kỳ hiện tại.'
+      };
     }
   }
+
 
   // Rule: Giờ giới nghiêm (CurfewTime - ví dụ: "22:00")
   if (policies[PolicyType.CurfewTime]) {

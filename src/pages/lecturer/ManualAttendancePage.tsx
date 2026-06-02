@@ -211,12 +211,12 @@ export default function ManualAttendancePage() {
   if (!sessionLoading && (!students || students.length === 0)) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-lg border border-red-200 p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <XCircle className="w-8 h-8 text-red-600" />
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-8 max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Users className="w-8 h-8 text-slate-600" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">Session Not Found</h1>
-          <p className="text-slate-600 mb-4">This session does not exist or has been deleted.</p>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">No Students Available</h1>
+          <p className="text-slate-600 mb-4">There are no attendance records or enrolled students for this session yet.</p>
           <button
             onClick={() => navigate('/attendance')}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl font-semibold"

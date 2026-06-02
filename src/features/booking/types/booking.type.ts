@@ -12,6 +12,7 @@ export interface BookingDto {
   endTime: string;
   studentCount: number;
   reason?: string;
+  priorityLevel?: number; // 1: Normal, 2: Academic, 3: School Event (dùng để sắp xếp ưu tiên hiển thị)
 
   status: string;
   createdAt: string;
@@ -114,6 +115,7 @@ export interface BookingRequest {
     fullName: string;
     userCode: string;
     email: string;
+    avatarUrl?: string;
   }
 }
 
@@ -254,6 +256,14 @@ export interface GetBookingByScheduleIdResponse {
 
 export interface ApproveBookingRequestResponse {
   data: BookingRequest;
+}
+
+export interface ApproveBookingResponse {
+  bookingId: string;
+  status: string;
+  cancelledScheduleIds: string[];
+  rejectedBookingIds: string[];
+  message: string;
 }
 
 export interface RejectBookingRequestResponse {

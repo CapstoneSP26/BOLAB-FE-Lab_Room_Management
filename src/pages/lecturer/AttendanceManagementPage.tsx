@@ -20,7 +20,6 @@ import {
   isBookingUpcoming,
 } from '../../utils/date.util';
 import { AttendanceBookingCard } from '../../features/booking/components/AttendanceBookingCard';
-import { AttendanceStats } from '../../features/attendance/components/AttendanceStats';
 import { AttendanceToolbar } from '../../features/attendance/components/AttendanceToolbar';
 import { AttendanceActiveSessionPanel } from '../../features/attendance/components/AttendanceActiveSessionPanel';
 import {
@@ -31,7 +30,7 @@ import {
 export default function AttendanceManagementPage() {
   const appAlert = useToast();
   const navigate = useNavigate();
-  const { activeSession: _ } = useActiveSession();
+  const { activeSession: _, setActiveSession } = useActiveSession();
 
   const bookingScheduleParams = useMemo(() => DEFAULT_ATTENDANCE_SCHEDULE_PARAMS, []);
 
@@ -66,10 +65,11 @@ export default function AttendanceManagementPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'upcoming' | 'past' | 'all'>('all');
   const [showQRModal, setShowQRModal] = useState(false);
+  const [othersCheckinMode, setOthersCheckinMode] = useState<'menu' | 'qr' | 'face' | null>(null);
   const [isCreatingQr, setIsCreatingQr] = useState(false);
   const [isRefreshingQr, setIsRefreshingQr] = useState(false);
   const [stoppedQrBySessionId, setStoppedQrBySessionId] = useState<Record<string, boolean>>({});
-  const [latestQRImageBase64, setLatestQRImageBase64] = useState(''); // Store base64 QR image from backend
+  const [latestQRImageBase64, setLatestQRImageBase64] = useState('');
 
   const state = useAttendanceManagementState({
     bookingScheduleItems,
@@ -171,6 +171,7 @@ export default function AttendanceManagementPage() {
       return;
     }
 
+    setOthersCheckinMode('qr');
     setIsCreatingQr(true);
     try {
       const bookingId = state.activeBooking.bookingId;
@@ -197,7 +198,35 @@ export default function AttendanceManagementPage() {
     }
   };
 
+  const handleOpenOthersCheckin = () => {
+    if (!state.activeBooking) {
+      appAlert.warning('No active class', 'There is no in-progress class to manage.');
+      return;
+    }
 
+    setOthersCheckinMode(prev => (prev === 'menu' ? null : 'menu'));
+  };
+
+  const handleOpenFaceScan = () => {
+    if (!state.activeBooking) {
+      appAlert.warning('No active class', 'There is no in-progress class to manage.');
+      return;
+    }
+
+    const nextSession = {
+      id: state.activeBooking.bookingId,
+      scheduleId: state.activeBooking.bookingId,
+      roomName: state.activeBooking.roomName,
+      buildingName: state.activeBooking.buildingName,
+      isActive: true,
+    };
+
+    setActiveSession(nextSession);
+    setOthersCheckinMode('face');
+    navigate(`/attendance/camera/${state.activeBooking.roomCode}`, {
+      state: { scheduleId: state.activeBooking.bookingId },
+    });
+  };
 
   useEffect(() => {
     if (!showQRModal || !state.activeBooking) {
@@ -214,17 +243,6 @@ export default function AttendanceManagementPage() {
   const handleManualAttendance = () => {
     if (!state.activeBooking) return;
     navigate(`/attendance/manual/${state.activeBooking.bookingId}`);
-  };
-
-  const handleExport = async (_format: 'csv' | 'excel' | 'pdf') => {
-    if (!state.activeBooking) return;
-
-    try {
-      // Export functionality not available in current backend API
-      appAlert.warning('Export', 'Export functionality will be available in future updates');
-    } catch {
-      appAlert.error('Export failed', 'Could not export attendance file.');
-    }
   };
 
   const activeDisplayRoom = state.activeBooking?.roomName || 'Unknown Room';
@@ -244,13 +262,6 @@ export default function AttendanceManagementPage() {
               <h1 className="text-3xl font-bold text-slate-900">Attendance Management</h1>
               <p className="text-slate-600 mt-1">Track student attendance and manage active QR sessions</p>
             </div>
-            {state.activeBooking && (
-              <AttendanceStats
-                totalStudents={0}
-                presentStudents={0}
-                absentStudents={0}
-              />
-            )}
           </div>
         </div>
       </div>
@@ -263,9 +274,11 @@ export default function AttendanceManagementPage() {
           activeDisplayBuilding={activeDisplayBuilding}
           isExpired={isExpired}
           isCreatingQr={isCreatingQr}
+          othersCheckinMode={othersCheckinMode}
           onManualAttendance={handleManualAttendance}
+          onOpenOthersCheckin={handleOpenOthersCheckin}
+          onOpenFaceScan={handleOpenFaceScan}
           onViewQR={handleViewQR}
-          onExport={handleExport}
         />
 
         <AttendanceToolbar

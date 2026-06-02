@@ -36,15 +36,15 @@ export default function RoomBookingStatsTable({
           No room booking statistics are available yet.
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-gray-200 text-xs uppercase text-gray-500 dark:border-gray-800 dark:text-gray-400">
+        <div className="max-h-[800px] overflow-x-auto overflow-y-auto pr-2">
+          <table className="min-w-full text-left text-sm relative">
+            <thead className="sticky top-0 z-10 border-b border-gray-200 bg-white text-xs uppercase text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
               <tr>
-                <th className="pb-3 pr-4">Room</th>
-                <th className="pb-3 pr-4">Bookings</th>
-                <th className="pb-3 pr-4">Approved</th>
-                <th className="pb-3 pr-4">Incidents</th>
-                <th className="pb-3">Utilization</th>
+                <th className="pb-3 pr-4 pt-2">Room</th>
+                <th className="pb-3 pr-4 pt-2">Bookings</th>
+                <th className="pb-3 pr-4 pt-2">Approved</th>
+                <th className="pb-3 pr-4 pt-2">Incidents</th>
+                <th className="pb-3 pt-2">Utilization</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">

@@ -125,7 +125,7 @@ export default function HistoryBookingFeature() {
     const item = items.find((x) => String(x.id) === String(id));
     if (item) {
       setSelected(item);
-      setOpen(true);
+    setOpen(true);
     }
   };
 

@@ -4,12 +4,6 @@ export interface LabImageDto {
   isPrimary: boolean;
 }
 
-export interface ResultMessage<T> {
-  success: boolean;
-  message: string;
-  data?: T;
-}
-
 export interface ApiResponse<T = unknown> {
   success: boolean;
   message: string;
@@ -74,6 +68,8 @@ export interface LabRoomFormValues {
   labOwnerId?: string;
   labOwner?: LabOwnerDto | null;
   isActive: boolean;
+  Images?: File | null;
+  IsImageUpdate?: boolean;
 }
 
 export interface LabRoomMutationPayload {
@@ -86,6 +82,8 @@ export interface LabRoomMutationPayload {
   buildingId: number;
   labOwnerId?: string;
   isActive?: boolean;
+  Images?: File | null;
+  IsImageUpdate?: boolean;
 }
 
 export type CreateLabRoomRequest = LabRoomMutationPayload;

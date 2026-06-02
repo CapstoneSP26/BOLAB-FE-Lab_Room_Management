@@ -11,8 +11,6 @@ import {
 import type { NotificationItem } from "../types/notification.type";
 import {
   getNotificationFallbackRoute,
-  getTypeBadgeClass,
-  getTypeDotClass,
   openNotificationTarget,
 } from "../utils/notificationMenu.util";
 import { getErrorMessage } from "../../../utils/error";
@@ -227,11 +225,10 @@ export default function NotificationMenu() {
               notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-4 hover:bg-gray-50 cursor-pointer transition-all dark:hover:bg-gray-800/50 ${
-                    !notification.isRead
+                  className={`p-4 hover:bg-gray-50 cursor-pointer transition-all dark:hover:bg-gray-800/50 ${!notification.isRead
                       ? "bg-blue-50/50 hover:bg-blue-50 dark:bg-blue-500/5"
                       : ""
-                  }`}
+                    }`}
                   onClick={() => handleItemClick(notification)}
                 >
                   <div className="flex items-start gap-3">
@@ -256,11 +253,10 @@ export default function NotificationMenu() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <h4
-                          className={`text-sm font-semibold truncate ${
-                            !notification.isRead
+                          className={`text-sm font-semibold truncate ${!notification.isRead
                               ? "text-gray-900 dark:text-white"
                               : "text-gray-700 dark:text-gray-200"
-                          }`}
+                            }`}
                         >
                           {notification.title}
                         </h4>

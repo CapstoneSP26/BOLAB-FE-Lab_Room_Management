@@ -21,7 +21,7 @@ export default function LecturerBookingRequestsPanel({
             Lecturer Booking Requests
           </h3>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Each lecturer created how many booking requests today.
+            Each lecturer created how many booking requests.
           </p>
         </div>
         <div className="rounded-xl bg-brand-50 p-3 text-brand-500 dark:bg-brand-500/10 dark:text-brand-300">
@@ -34,7 +34,7 @@ export default function LecturerBookingRequestsPanel({
           No lecturer booking request data is available yet.
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="max-h-[380px] space-y-3 overflow-y-auto pr-2">
           {lecturers.map((lecturer, index) => (
             <div
               key={lecturer.lecturerId || `${lecturer.lecturerName}-${index}`}
